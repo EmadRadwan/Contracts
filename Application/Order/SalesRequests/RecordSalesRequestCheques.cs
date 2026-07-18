@@ -32,6 +32,9 @@ public class RecordSalesRequestCheques
     public class Command : IRequest<Result<List<ListChequeableSalesRequestPayments.ChequeablePaymentDto>>>
     {
         public string SalesRequestId { get; set; } = null!;
+        // Bank the cheques were drawn on (the customer's own bank, not ours) - free text,
+        // entered once for the whole batch, and echoed into the reclass transaction descriptions.
+        public string CustomerBankName { get; set; } = null!;
         public List<ChequeEntry> Cheques { get; set; } = new();
     }
 
@@ -40,6 +43,7 @@ public class RecordSalesRequestCheques
         public CommandValidator()
         {
             RuleFor(x => x.SalesRequestId).NotEmpty();
+            RuleFor(x => x.CustomerBankName).NotEmpty();
             RuleFor(x => x.Cheques).NotEmpty();
             RuleForEach(x => x.Cheques).ChildRules(cheque =>
             {
@@ -193,12 +197,17 @@ public class RecordSalesRequestCheques
 
                 foreach (var cheque in request.Cheques)
                 {
+                    var receivedDescription =
+                        $"استلام شيك رقم {cheque.ChequeNumber} من بنك العميل {request.CustomerBankName} - طلب مبيعات {sr.SalesRequestId}";
+                    var reclassDescription =
+                        $"استلام شيك رقم {cheque.ChequeNumber} من بنك العميل {request.CustomerBankName}، وإعادة تصنيفه من الذمم المدينة - طلب مبيعات {sr.SalesRequestId}";
+
                     var acctgTransId = await _acctgTransService.CreateAcctgTrans(new CreateAcctgTransParams
                     {
                         AcctgTransTypeId = "APARTMENT_SALE_CHEQUE",
                         TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
                         IsPosted = "Y",
-                        Description = $"Cheque #{cheque.ChequeNumber} received - SR {sr.SalesRequestId}",
+                        Description = receivedDescription,
                         GlFiscalTypeId = "ACTUAL",
                         SalesRequestId = sr.SalesRequestId,
                         PaymentId = cheque.PaymentId,
@@ -214,7 +223,7 @@ public class RecordSalesRequestCheques
                         AcctgTransEntryTypeId = "_NA_",
                         Amount = cheque.Amount,
                         ReconcileStatusId = "AES_NOT_RECONCILED",
-                        Description = $"Cheque #{cheque.ChequeNumber} received - SR {sr.SalesRequestId}",
+                        Description = receivedDescription,
                         OrganizationPartyId = companyPartyId,
                         ProductId = sr.ProductId,
                         PartyId = sr.FromPartyId,
@@ -231,7 +240,7 @@ public class RecordSalesRequestCheques
                         AcctgTransEntryTypeId = "_NA_",
                         Amount = cheque.Amount,
                         ReconcileStatusId = "AES_NOT_RECONCILED",
-                        Description = $"Cheque #{cheque.ChequeNumber} received, reclassified from receivable - SR {sr.SalesRequestId}",
+                        Description = reclassDescription,
                         OrganizationPartyId = companyPartyId,
                         ProductId = sr.ProductId,
                         PartyId = sr.FromPartyId,

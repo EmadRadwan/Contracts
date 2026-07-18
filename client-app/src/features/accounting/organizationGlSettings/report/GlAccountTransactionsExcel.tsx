@@ -12,6 +12,7 @@ interface TransactionRow {
     acctgTransId: string;
     transactionDate: string;          // ISO string – will be formatted in Excel
     acctgTransTypeId: string;
+    acctgTransTypeDescription?: string;
     invoiceId?: string;
     paymentId?: string;
     workEffortId?: string;
@@ -47,6 +48,25 @@ const utils = {
     rtlEmbed: (t: string) => /\p{Script=Arabic}/u.test(t) ? `\u202B${t}` : t,
 };
 
+// Logo fetch previously failed completely silently on a non-OK response (only actual network
+// errors were logged) \u2014 one retry covers a transient hiccup, and every failure path now logs
+// enough (status/statusText, or the thrown error) to diagnose it instead of just showing
+// "Logo Unavailable" with no clue why.
+async function fetchLogoBuffer(label: string): Promise<ArrayBuffer | null> {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+            const resp = await fetch('/goldenlandlogo.jpg');
+            if (resp.ok) {
+                return await (await resp.blob()).arrayBuffer();
+            }
+            console.warn(`${label}: logo fetch returned ${resp.status} ${resp.statusText} (attempt ${attempt})`);
+        } catch (e) {
+            console.warn(`${label}: logo fetch threw (attempt ${attempt})`, e);
+        }
+    }
+    return null;
+}
+
 export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProps> = ({
                                                                                           accountCode,
                                                                                           accountName,
@@ -74,13 +94,10 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
 
         // ---- logo -------------------------------------------------------
         let logoId: number | null = null;
-        try {
-            const resp = await fetch('/goldenlandlogo.jpg');
-            if (resp.ok) {
-                const buf = await (await resp.blob()).arrayBuffer();
-                logoId = workbook.addImage({ buffer: buf, extension: 'jpeg' });
-            }
-        } catch (e) { console.warn('Logo failed', e); }
+        const logoBuf = await fetchLogoBuffer('GlAccountTransactionsExcel');
+        if (logoBuf) {
+            logoId = workbook.addImage({ buffer: logoBuf, extension: 'jpeg' });
+        }
 
         const ws = workbook.addWorksheet(accountCode.slice(0, 31) || 'Transactions');
         ws.pageSetup = { paperSize: 9, orientation: 'landscape' };
@@ -170,7 +187,7 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
             const row = ws.addRow([
                 utils.safeString(r.acctgTransId),
                 r.transactionDate,
-                utils.safeString(r.acctgTransTypeId),
+                utils.rtlEmbed(utils.safeString(r.acctgTransTypeDescription || r.acctgTransTypeId)),
                 utils.safeString(r.invoiceId),
                 utils.safeString(r.paymentId),
                 utils.safeString(r.paymentRefNum),

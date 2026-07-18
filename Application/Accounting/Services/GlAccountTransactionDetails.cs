@@ -13,6 +13,13 @@ public class GetGlAccountTransactionDetails
         public string OrganizationPartyId { get; set; }
         public string GlAccountId { get; set; }
         public bool IncludePrePeriodTransactions { get; set; } = true;
+
+        // When false (default), a SHIPMENT_RECEIPT that was later found to duplicate a
+        // PURCHASE_INVOICE's ACCOUNTS_PAYABLE credit — and its matching
+        // RemediateSupplyCertificateDuplicateAp correction — are hidden as a pair, since the
+        // correction was sized to exactly cancel the receipt and the two only exist because of that
+        // historical fix. Set true to see the full, uncollapsed posting history instead.
+        public bool ShowCorrectedDuplicatePairs { get; set; } = false;
     }
 
     public class Handler : IRequestHandler<Query, Result<GlAccountTransactionDetails>>
@@ -132,6 +139,42 @@ public class GetGlAccountTransactionDetails
                     .ThenBy(x => x.AcctgTransId)
                     .ToListAsync(cancellationToken);
 
+                // 4b. Hide corrected duplicate pairs (default) — a SHIPMENT_RECEIPT that
+                // RemediateSupplyCertificateDuplicateAp later found duplicating a PURCHASE_INVOICE's
+                // ACCOUNTS_PAYABLE credit, plus the INTERNAL_ACCTG_TRANS correction posted for it. The
+                // correction amount always equals the receipt's credit by construction, so hiding both
+                // never changes EndingBalance — only removes a pair that would otherwise repeat the
+                // same figure twice for no reason visible in this report.
+                decimal hiddenDebitTotal = 0m;
+                decimal hiddenCreditTotal = 0m;
+
+                if (!request.ShowCorrectedDuplicatePairs)
+                {
+                    var corrections = await _context.AcctgTrans
+                        .Where(t => t.AcctgTransTypeId == "INTERNAL_ACCTG_TRANS" &&
+                                    t.Description == "DUPLICATE_AP_CORRECTION_SUPPLY_CERTIFICATE" &&
+                                    t.IsPosted == "Y")
+                        .Select(t => new { t.AcctgTransId, t.WorkEffortId })
+                        .ToListAsync(cancellationToken);
+
+                    var correctionAcctgTransIds = corrections.Select(c => c.AcctgTransId).ToHashSet();
+                    var correctedWorkEffortIds = corrections
+                        .Where(c => !string.IsNullOrEmpty(c.WorkEffortId))
+                        .Select(c => c.WorkEffortId!)
+                        .ToHashSet();
+
+                    var hidden = transactions.Where(t =>
+                        correctionAcctgTransIds.Contains(t.AcctgTransId) ||
+                        (t.AcctgTransTypeId == "SHIPMENT_RECEIPT" &&
+                         !string.IsNullOrEmpty(t.WorkEffortId) &&
+                         correctedWorkEffortIds.Contains(t.WorkEffortId))).ToList();
+
+                    hiddenDebitTotal = hidden.Where(t => t.DebitCreditFlag == "D").Sum(t => t.Amount);
+                    hiddenCreditTotal = hidden.Where(t => t.DebitCreditFlag == "C").Sum(t => t.Amount);
+
+                    transactions = transactions.Except(hidden).ToList();
+                }
+
                 // 5. Calculate aggregates using consistent cutoffs
                 // Opening = everything BEFORE the period starts (≤ day before FromDate)
                 var openingDebits = await (
@@ -212,8 +255,8 @@ public class GetGlAccountTransactionDetails
                     ? openingDebits - openingCredits
                     : openingCredits - openingDebits);
 
-                decimal postedDebits = (decimal)periodDebits;
-                decimal postedCredits = (decimal)periodCredits;
+                decimal postedDebits = (decimal)periodDebits - hiddenDebitTotal;
+                decimal postedCredits = (decimal)periodCredits - hiddenCreditTotal;
 
                 decimal endingBalance = isDebit
                     ? openingBalance + postedDebits - postedCredits

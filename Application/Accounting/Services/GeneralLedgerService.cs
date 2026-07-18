@@ -22,6 +22,7 @@ public interface IGeneralLedgerService
     Task<string> CreateAcctgTransForConstructionCertificateInvoice(string invoiceId);
     Task<string> CreateAcctgTransForShipmentReceipt(string receiptId);
     Task<string> CreateAcctgTransForShipmentReceiptForProject(string receiptId);
+    Task<string> CreateAcctgTransAndEntries(CreateAcctgTransAndEntriesParams parameters);
     Task<string> CreateAcctgTransAndEntriesForIncomingPayment(string paymentId);
     Task<string> CreateAcctgTransAndEntriesForPaymentApplication(string paymentApplicationId);
     Task<string> CreateAcctgTransForWorkEffortIssuance(string workEffortId, string inventoryItemId);
@@ -238,11 +239,6 @@ public class GeneralLedgerService : IGeneralLedgerService
 
         var acctgTransEntries = new List<AcctgTransEntry>();
 
-        // Logic to determine credit account type
-        var creditAccountTypeId = string.IsNullOrEmpty(shipmentReceipt?.ReturnId)
-            ? "ACCOUNTS_PAYABLE"
-            : "COGS_ACCOUNT";
-
         //get partyAcctPreference by organizationPartyId
         var partyAcctgPreference =
             await _acctgMiscService.GetPartyAccountingPreferences(inventoryItem.OwnerPartyId!);
@@ -318,6 +314,7 @@ public class GeneralLedgerService : IGeneralLedgerService
 
         string? workEffortId = null;
         string? projectId = null;
+        string? certificateCategory = null;
 
         if (!string.IsNullOrEmpty(shipmentReceipt.OrderId))
         {
@@ -325,7 +322,7 @@ public class GeneralLedgerService : IGeneralLedgerService
                 .Where(we => we.RelatedOrderId == shipmentReceipt.OrderId)
                 .Select(we => new
                 {
-                    we.WorkEffortId, we.ProjectId
+                    we.WorkEffortId, we.ProjectId, we.CertificateCategory
                 }) // REFACTOR: Project both needed IDs in a single query for efficiency
                 .FirstOrDefaultAsync();
 
@@ -334,8 +331,22 @@ public class GeneralLedgerService : IGeneralLedgerService
                 workEffortId = workEffort.WorkEffortId;
                 projectId = workEffort
                     .ProjectId; // REFACTOR: Extract ProjectId alongside WorkEffortId to avoid multiple DB queries
+                certificateCategory = workEffort.CertificateCategory;
             }
         }
+
+        // Logic to determine credit account type. SUPPLY_PROCUREMENT_CERTIFICATE receipts book to the
+        // UNINVOICED_SHIP_RCPT clearing account (GL 214000) instead of ACCOUNTS_PAYABLE directly: the
+        // purchase invoice is auto-generated right after this receipt (see
+        // ReceiveInventoryFromPurchaseOrder.cs) and is what now credits the vendor's real
+        // ACCOUNTS_PAYABLE — crediting AP here too would double the liability for the same delivery.
+        // Other certificate categories (e.g. workmanship) keep crediting ACCOUNTS_PAYABLE directly, as
+        // before, since they don't have a matching invoice posted right after receipt.
+        var creditAccountTypeId = !string.IsNullOrEmpty(shipmentReceipt?.ReturnId)
+            ? "COGS_ACCOUNT"
+            : certificateCategory == "SUPPLY_PROCUREMENT_CERTIFICATE"
+                ? "UNINVOICED_SHIP_RCPT"
+                : "ACCOUNTS_PAYABLE";
 
         //Credit
         var creditEntry = new AcctgTransEntry
@@ -2295,10 +2306,35 @@ public class GeneralLedgerService : IGeneralLedgerService
             var certificate = await _context.OrderItemBillings
                 .Where(ob => ob.InvoiceId == invoiceId)
                 .Join(_context.WorkEfforts.Where(w => w.WorkEffortTypeId == "PROJECT_CERTIFICATE"),
-                    ob => ob.OrderId, w => w.RelatedOrderId, (ob, w) => new { w.WorkEffortId, w.Description })
+                    ob => ob.OrderId, w => w.RelatedOrderId,
+                    (ob, w) => new { w.WorkEffortId, w.Description, w.CertificateCategory })
                 .FirstOrDefaultAsync();
             string? certificateWorkEffortId = certificate?.WorkEffortId;
             string? certificateDescription = certificate?.Description;
+
+            // SUPPLY_PROCUREMENT_CERTIFICATE invoices debit UNINVOICED_SHIP_RCPT (GL 214000) instead of
+            // the invoice item's own default account (PINV_CERTIFICATE_SUPPLY_ITEM -> 124420, Projects
+            // Under Construction) — but ONLY when this certificate's own SHIPMENT_RECEIPT actually
+            // credited 214000 in the first place (post-fix receipts). Certificates received before this
+            // fix existed still have their SHIPMENT_RECEIPT crediting ACCOUNTS_PAYABLE directly; for
+            // those, debiting 214000 here would leave it permanently uncleared (nothing ever credited
+            // it) while ALSO leaving AP double-credited (receipt + this invoice) — a new, worse bug than
+            // the one being fixed. Branching on the certificate's CertificateCategory alone doesn't
+            // distinguish these two cases; checking what the receipt actually posted does. For legacy
+            // receipts, this falls back to the original behavior (debit 124420), which reproduces the
+            // familiar receipt+invoice AP duplication — already handled by
+            // RemediateSupplyCertificateDuplicateAp, so nothing new is left unbalanced.
+            bool isSupplyCertificateInvoice = false;
+            if (certificate?.CertificateCategory == "SUPPLY_PROCUREMENT_CERTIFICATE" &&
+                !string.IsNullOrEmpty(certificateWorkEffortId))
+            {
+                isSupplyCertificateInvoice = await _context.AcctgTrans
+                    .Where(t => t.WorkEffortId == certificateWorkEffortId &&
+                                t.AcctgTransTypeId == "SHIPMENT_RECEIPT" &&
+                                t.IsPosted == "Y")
+                    .SelectMany(t => t.AcctgTransEntries)
+                    .AnyAsync(e => e.DebitCreditFlag == "C" && e.GlAccountTypeId == "UNINVOICED_SHIP_RCPT");
+            }
 
             var acctgTransEntries = new List<AcctgTransEntry>();
             int seqNum = 1; // Initialize sequence number for AcctgTransEntrySeqId
@@ -2393,8 +2429,8 @@ public class GeneralLedgerService : IGeneralLedgerService
                     RoleTypeId = "BILL_FROM_VENDOR",
                     ProductId = invoiceItem.ProductId,
                     // InvoiceItemTypeId is used as glAccountTypeId which will be resolved later
-                    GlAccountTypeId = invoiceItem.InvoiceItemTypeId,
-                    GlAccountId = invoiceItem.OverrideGlAccountId,
+                    GlAccountTypeId = isSupplyCertificateInvoice ? "UNINVOICED_SHIP_RCPT" : invoiceItem.InvoiceItemTypeId,
+                    GlAccountId = isSupplyCertificateInvoice ? null : invoiceItem.OverrideGlAccountId,
                     OrigAmount = finalAmount,
                     OrigCurrencyUomId = invoice.CurrencyUomId,
                     Description = invoiceItem.Description ?? certificateDescription
@@ -5460,18 +5496,18 @@ public class GeneralLedgerService : IGeneralLedgerService
             if (payment.IsBankTransfer == true)
             {
                 paymentType = "BankTransfer";
-                paymentTypeDescription = "Bank Transfer";
+                paymentTypeDescription = "تحويل بنكي";
             }
             else if (!string.IsNullOrEmpty(payment.ChequeNumber))
             {
                 paymentType = "Cheque";
-                paymentTypeDescription = "Cheque";
+                paymentTypeDescription = "شيك";
                 chequeOrTransferRef = $"#{payment.ChequeNumber}";
             }
             else
             {
                 paymentType = "Cash";
-                paymentTypeDescription = "Cash";
+                paymentTypeDescription = "نقدي";
             }
 
             // Determine credit GL account
@@ -5498,8 +5534,8 @@ public class GeneralLedgerService : IGeneralLedgerService
             }
 
             // Main transaction description
-            var description = $"Apartment incoming payment - {paymentTypeDescription} {chequeOrTransferRef} - " +
-                              $"Payment {payment.PaymentId} - SR {payment.SalesRequestId}";
+            var description = $"تحصيل دفعة شقة - {paymentTypeDescription} {chequeOrTransferRef} - " +
+                              $"دفعة {payment.PaymentId} - طلب مبيعات {payment.SalesRequestId}";
 
             var acctgTransParams = new CreateAcctgTransParams
             {
@@ -5522,9 +5558,9 @@ public class GeneralLedgerService : IGeneralLedgerService
             // ────────────────────────────────────────────────
             string debitDescription = paymentType switch
             {
-                "BankTransfer" => $"Bank transfer received from customer {chequeOrTransferRef}",
-                "Cheque" => $"Bank deposit - Cleared cheque {chequeOrTransferRef}",
-                _ => "Cash receipt from customer"
+                "BankTransfer" => $"تحويل بنكي مستلم من العميل {chequeOrTransferRef}",
+                "Cheque" => $"إيداع بنكي - تحصيل شيك {chequeOrTransferRef}",
+                _ => "دفعة نقدية مستلمة من العميل"
             };
 
             var debitEntry = new AcctgTransEntry

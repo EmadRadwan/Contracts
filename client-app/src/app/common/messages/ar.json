@@ -414,6 +414,8 @@
       "action": "تسجيل الشيكات المستلمة",
       "title": "تسجيل الشيكات المستلمة",
       "bank": "البنك *",
+      "customerBankName": "بنك العميل *",
+      "customerBankNamePlaceholder": "اسم البنك الذي صدر عنه الشيك",
       "startingChequeNumber": "رقم الشيك الأول",
       "generate": "توليد الأرقام",
       "dueDate": "تاريخ الاستحقاق",
@@ -422,10 +424,13 @@
       "chequeNumber": "رقم الشيك",
       "chequeNumberPlaceholder": "رقم الشيك",
       "none": "لا توجد أقساط بانتظار شيك",
+      "maintenanceDeposit": "وديعة الصيانة",
+      "maintenanceNone": "لا توجد وديعة صيانة بانتظار شيك",
       "save": "حفظ",
       "saved": "تم تسجيل الشيكات بنجاح",
       "saveError": "فشل تسجيل الشيكات",
       "bankRequired": "يرجى اختيار البنك",
+      "customerBankRequired": "يرجى إدخال اسم بنك العميل",
       "loadError": "فشل تحميل الأقساط القابلة للتسجيل"
     },
     "list": {

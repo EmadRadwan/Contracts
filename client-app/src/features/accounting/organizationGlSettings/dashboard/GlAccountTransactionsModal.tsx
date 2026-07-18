@@ -76,6 +76,7 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
             acctgTransId: t.acctgTransId ?? '',
             transactionDate: t.transactionDate ?? '',
             acctgTransTypeId: t.acctgTransTypeId ?? '',
+            acctgTransTypeDescription: t.acctgTransTypeDescription ?? t.acctgTransTypeId ?? '',
             invoiceId: t.invoiceId,
             paymentId: t.paymentId,
             workEffortId: t.certificateNumber,

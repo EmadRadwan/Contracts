@@ -222,12 +222,15 @@ public class UpdatePayment
                         var reversalReceivableGlAccountId = await GetReceivableGlAccountId(
                             reversalCompanyPartyId, original.PartyIdFrom, cancellationToken);
 
+                        var reversalDescription =
+                            $"إلغاء شيك رقم {original.ChequeNumber} (تم تغيير طريقة الدفع) - دفعة {dto.PaymentId}";
+
                         var reversalAcctgTransId = await _acctgTransService.CreateAcctgTrans(new CreateAcctgTransParams
                         {
                             AcctgTransTypeId = "APARTMENT_SALE_CHEQUE",
                             TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
                             IsPosted = "Y",
-                            Description = $"Cheque #{original.ChequeNumber} reversed (payment method changed) - Payment {dto.PaymentId}",
+                            Description = reversalDescription,
                             GlFiscalTypeId = "ACTUAL",
                             SalesRequestId = original.SalesRequestId,
                             PaymentId = dto.PaymentId,
@@ -245,7 +248,7 @@ public class UpdatePayment
                             AcctgTransEntryTypeId = "_NA_",
                             Amount = outstandingChequeAmount,
                             ReconcileStatusId = "AES_NOT_RECONCILED",
-                            Description = $"Reverse cheque reclass - cheque #{original.ChequeNumber} no longer applies - Payment {dto.PaymentId}",
+                            Description = reversalDescription,
                             OrganizationPartyId = reversalCompanyPartyId,
                             PartyId = original.PartyIdFrom,
                             CreatedStamp = reversalStamp,
@@ -261,7 +264,7 @@ public class UpdatePayment
                             AcctgTransEntryTypeId = "_NA_",
                             Amount = outstandingChequeAmount,
                             ReconcileStatusId = "AES_NOT_RECONCILED",
-                            Description = $"Reverse cheque reclass - cheque #{original.ChequeNumber} no longer applies - Payment {dto.PaymentId}",
+                            Description = reversalDescription,
                             OrganizationPartyId = reversalCompanyPartyId,
                             PartyId = original.PartyIdFrom,
                             CreatedStamp = reversalStamp,

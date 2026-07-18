@@ -72,6 +72,7 @@ export const RecordChequesDialog: React.FC<RecordChequesDialogProps> = ({
     const [rows, setRows] = useState<ChequeRow[]>([]);
     const [bank, setBank] = useState<PaymentMethodOption | null>(null);
     const [startingChequeNumber, setStartingChequeNumber] = useState("");
+    const [customerBankName, setCustomerBankName] = useState("");
 
     const banks = ((paymentMethods ?? []) as PaymentMethodOption[]).filter((pm) =>
         BANK_PAYMENT_METHOD_TYPE_IDS.includes(pm.paymentMethodTypeId ?? "")
@@ -87,8 +88,12 @@ export const RecordChequesDialog: React.FC<RecordChequesDialogProps> = ({
         if (!open) {
             setBank(null);
             setStartingChequeNumber("");
+            setCustomerBankName("");
         }
     }, [open]);
+
+    const installmentRows = rows.filter((r) => r.paymentTypeId !== "RECEIPT_MAINTENANCE_AMOUNT");
+    const maintenanceRows = rows.filter((r) => r.paymentTypeId === "RECEIPT_MAINTENANCE_AMOUNT");
 
     const handleChequeNumberChange = (paymentId: string, value: string) => {
         setRows((prev) =>
@@ -118,17 +123,22 @@ export const RecordChequesDialog: React.FC<RecordChequesDialogProps> = ({
     };
 
     const readyRows = rows.filter((r) => r.chequeNumber.trim().length > 0);
-    const canSave = !!bank && readyRows.length > 0 && !isSaving;
+    const canSave = !!bank && !!customerBankName.trim() && readyRows.length > 0 && !isSaving;
 
     const handleSave = async () => {
         if (!bank) {
             toast.error(t("bankRequired", "Please select the bank"));
             return;
         }
+        if (!customerBankName.trim()) {
+            toast.error(t("customerBankRequired", "Please enter the customer's bank"));
+            return;
+        }
 
         try {
             await recordCheques({
                 salesRequestId,
+                customerBankName: customerBankName.trim(),
                 cheques: readyRows.map((r) => ({
                     paymentId: r.paymentId,
                     paymentMethodId: bank.paymentMethodId,
@@ -180,6 +190,15 @@ export const RecordChequesDialog: React.FC<RecordChequesDialogProps> = ({
                     >
                         {t("generate", "Generate")}
                     </Button>
+
+                    <TextField
+                        label={t("customerBankName", "Customer's Bank *")}
+                        placeholder={t("customerBankNamePlaceholder", "Bank the cheque was drawn on")}
+                        size="small"
+                        value={customerBankName}
+                        onChange={(e) => setCustomerBankName(e.target.value)}
+                        sx={{ minWidth: 260 }}
+                    />
                 </Box>
 
                 {isFetching ? (
@@ -191,17 +210,40 @@ export const RecordChequesDialog: React.FC<RecordChequesDialogProps> = ({
                 ) : rows.length === 0 ? (
                     <Alert severity="info">{t("none", "No installments are pending a cheque.")}</Alert>
                 ) : (
-                    <KendoGrid data={rows} style={{ maxHeight: 400 }}>
-                        <Column field="dueDate" title={t("dueDate", "Due Date")} width="120px" />
-                        <Column field="comments" title={t("description", "Description")} />
-                        <Column field="amount" title={t("amount", "Amount")} format="{0:n2}" width="120px" />
-                        <Column
-                            field="chequeNumber"
-                            title={t("chequeNumber", "Cheque Number")}
-                            cell={chequeNumberCell}
-                            width="160px"
-                        />
-                    </KendoGrid>
+                    <>
+                        {installmentRows.length > 0 && (
+                            <KendoGrid data={installmentRows} style={{ maxHeight: 400 }}>
+                                <Column field="dueDate" title={t("dueDate", "Due Date")} width="120px" />
+                                <Column field="comments" title={t("description", "Description")} />
+                                <Column field="amount" title={t("amount", "Amount")} format="{0:n2}" width="120px" />
+                                <Column
+                                    field="chequeNumber"
+                                    title={t("chequeNumber", "Cheque Number")}
+                                    cell={chequeNumberCell}
+                                    width="160px"
+                                />
+                            </KendoGrid>
+                        )}
+
+                        {maintenanceRows.length > 0 && (
+                            <Box sx={{ mt: 3 }}>
+                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                    {t("maintenanceDeposit", "Maintenance Deposit")}
+                                </Typography>
+                                <KendoGrid data={maintenanceRows} style={{ maxHeight: 200 }}>
+                                    <Column field="dueDate" title={t("dueDate", "Due Date")} width="120px" />
+                                    <Column field="comments" title={t("description", "Description")} />
+                                    <Column field="amount" title={t("amount", "Amount")} format="{0:n2}" width="120px" />
+                                    <Column
+                                        field="chequeNumber"
+                                        title={t("chequeNumber", "Cheque Number")}
+                                        cell={chequeNumberCell}
+                                        width="160px"
+                                    />
+                                </KendoGrid>
+                            </Box>
+                        )}
+                    </>
                 )}
             </DialogContent>
             <DialogActions>

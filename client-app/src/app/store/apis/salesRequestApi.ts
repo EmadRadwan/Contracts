@@ -202,12 +202,12 @@ const salesRequestApi = createApi({
             }),
             recordSalesRequestCheques: builder.mutation<
                 ChequeablePaymentDto[],
-                { salesRequestId: string; cheques: ChequeEntryDto[] }
+                { salesRequestId: string; customerBankName: string; cheques: ChequeEntryDto[] }
                 >({
-                query: ({ salesRequestId, cheques }) => ({
+                query: ({ salesRequestId, customerBankName, cheques }) => ({
                     url: `salesRequests/${salesRequestId}/cheques`,
                     method: "POST",
-                    body: { salesRequestId, cheques },
+                    body: { salesRequestId, customerBankName, cheques },
                 }),
                 invalidatesTags: ["SalesRequestChequeablePayments"],
             }),

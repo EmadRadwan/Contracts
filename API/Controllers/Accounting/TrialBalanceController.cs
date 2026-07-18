@@ -24,31 +24,35 @@ public class TrialBalanceController : BaseApiController
         string selectedAccountingCompanyId,
         string customTimePeriodId,
         string glAccountId,
-        [FromQuery] bool includePrePeriodTransactions = true)
+        [FromQuery] bool includePrePeriodTransactions = true,
+        [FromQuery] bool showCorrectedDuplicatePairs = false)
     {
         return HandleResult(await Mediator.Send(new GetGlAccountTransactionDetails.Query
         {
             CustomTimePeriodId = customTimePeriodId,
             OrganizationPartyId = selectedAccountingCompanyId,
             GlAccountId = glAccountId,
-            IncludePrePeriodTransactions = includePrePeriodTransactions
+            IncludePrePeriodTransactions = includePrePeriodTransactions,
+            ShowCorrectedDuplicatePairs = showCorrectedDuplicatePairs
         }));
     }
-    
+
     [HttpGet("{selectedAccountingCompanyId}/{customTimePeriodId}/{glAccountId}/generateGlAccountTransactionDetails")]
     [AllowAnonymous]
     public async Task<IActionResult> GenerateGlAccountTransactionDetails(
         string selectedAccountingCompanyId,
         string customTimePeriodId,
         string glAccountId,
-        [FromQuery] bool includePrePeriodTransactions = true)
+        [FromQuery] bool includePrePeriodTransactions = true,
+        [FromQuery] bool showCorrectedDuplicatePairs = false)
     {
         return HandleResult(await Mediator.Send(new GetGlAccountTransactionDetails.Query
         {
             CustomTimePeriodId = customTimePeriodId,
             OrganizationPartyId = selectedAccountingCompanyId,
             GlAccountId = glAccountId,
-            IncludePrePeriodTransactions = includePrePeriodTransactions
+            IncludePrePeriodTransactions = includePrePeriodTransactions,
+            ShowCorrectedDuplicatePairs = showCorrectedDuplicatePairs
         }));
     }
 }

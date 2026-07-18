@@ -23,6 +23,16 @@ public class InvoicesController : BaseApiController
         return HandleResult(await Mediator.Send(command));
     }
 
+    // One-off correction for the duplicate ACCOUNTS_PAYABLE credit the above remediation (and the
+    // live bug it papered over) left behind — see RemediateSupplyCertificateDuplicateAp.cs.
+    // PartyIdSuppliers is a required allowlist — same convention, no "remediate everything" mode.
+    [HttpPost("remediateSupplyCertificateDuplicateAp", Name = "RemediateSupplyCertificateDuplicateAp")]
+    public async Task<IActionResult> RemediateSupplyCertificateDuplicateAp(
+        [FromBody] RemediateSupplyCertificateDuplicateAp.Command command)
+    {
+        return HandleResult(await Mediator.Send(command));
+    }
+
 
     [HttpPost("createInvoice", Name = "CreateInvoice")]
     public async Task<IActionResult> CreateInvoice(InvoiceDto3 invoiceDto)
