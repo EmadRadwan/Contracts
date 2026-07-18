@@ -12,6 +12,7 @@ import {
 import {
     Edit as EditIcon,
     Person as PersonIcon,
+    Handshake,
     AttachMoney as MoneyIcon,
     CalendarToday as CalendarIcon,
     MoreVert as MoreVertIcon,
@@ -191,6 +192,14 @@ const SalesOpportunityBoard: React.FC<SalesOpportunityBoardProps> = ({ onEditOpp
                                                 </Typography>
                                             </Box>
                                         )}
+                                        {opportunity.brokerName && (
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                                                <Handshake fontSize="small" color="action" />
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {opportunity.brokerName}
+                                                </Typography>
+                                            </Box>
+                                        )}
 
                                         {/* Close Date */}
                                         {opportunity.estimatedCloseDate && (
@@ -207,10 +216,10 @@ const SalesOpportunityBoard: React.FC<SalesOpportunityBoardProps> = ({ onEditOpp
                                             <Tooltip title={opportunity.leads.map((c: any) => c.partyName).join(', ')}>
                                                 <Chip
                                                     icon={<PersonIcon />}
-                                                    label={opportunity.leads.length === 1 ? '1 lead' : `${opportunity.leads.length} leads`}
+                                                    label={opportunity.leads.length === 1 ? getTranslatedLabel("general.lead_1", "One lead") : `${opportunity.leads.length} ${getTranslatedLabel("general.leads")}`}
                                                     size="small"
                                                     variant="outlined"
-                                                    sx={{ mt: 1, height: 22, fontSize: '0.7rem', width: '7em' }}
+                                                    sx={{ mt: 1, height: 22, fontSize: '0.7rem', width: '10em' }}
                                                 />
                                             </Tooltip>
                                         )}
@@ -220,7 +229,7 @@ const SalesOpportunityBoard: React.FC<SalesOpportunityBoardProps> = ({ onEditOpp
 
                             {stageOpportunities.length === 0 && (
                                 <Box sx={{ p: 3, textAlign: 'center', color: 'text.disabled', border: '1px dashed', borderColor: 'divider', borderRadius: 1 }}>
-                                    <Typography variant="body2">No deals in this stage</Typography>
+                                    <Typography variant="body2">{getTranslatedLabel(`${localizationKey}.noDeals`)}</Typography>
                                 </Box>
                             )}
                         </Box>

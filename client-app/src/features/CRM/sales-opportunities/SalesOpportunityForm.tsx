@@ -177,7 +177,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                     <Typography variant="h6" fontWeight="medium">
                         {editMode === 2
                             ? getTranslatedLabel(`${localizationKey}.editTitle`, 'Edit Opportunity: {0}').replace("{0}", opportunity?.salesOpportunityId || "")
-                            : getTranslatedLabel(`${localizationKey}.createTitle`, 'Create New Opportunity')}
+                            : getTranslatedLabel(`${localizationKey}.createNew`, 'Create New Opportunity')}
                     </Typography>
 
                     {editMode === 2 && opportunity && (
@@ -202,7 +202,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                                     <Grid item xs={4}>
                                         <Field
                                             name="opportunityStageId"
-                                            label={getTranslatedLabel(`${localizationKey}.stage`, 'Stage *')}
+                                            label={getTranslatedLabel(`${localizationKey}.form.stage`, 'Stage *')}
                                             component={MemoizedFormDropDownList}
                                             data={stages || []}
                                             dataItemKey="opportunityStageId"
@@ -234,7 +234,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                                     <Grid item xs={4}>
                                         <Field
                                             name="productId"
-                                            label={getTranslatedLabel(`${localizationKey}.unit`, 'Unit')}
+                                            label={getTranslatedLabel(`${localizationKey}.form.unit`, 'Unit')}
                                             component={FormSimpleComboBoxVirtualApartmentsByProject}
                                             projectId={selectedProjectId}   // ← This is the key fix
                                         />
@@ -243,7 +243,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                                     <Grid item xs={4}>
                                         <Field
                                             name="ownerPartyId"
-                                            label={getTranslatedLabel(`${localizationKey}.owner`, 'Owner *')}
+                                            label={getTranslatedLabel(`${localizationKey}.form.owner`, 'Owner *')}
                                             component={FormComboBoxVirtualPartySalesRep}
                                             validator={requiredValidator}
                                         />
@@ -253,7 +253,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                                         <Grid item xs={4}>
                                             <Field
                                                 name="brokerPartyId"
-                                                label={getTranslatedLabel(`${localizationKey}.broker`, 'Broker *')}
+                                                label={getTranslatedLabel(`${localizationKey}.form.broker`, 'Broker *')}
                                                 component={FormComboBoxVirtualPartyBroker}
                                                 validator={requiredValidator}
                                             />
@@ -264,7 +264,7 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                                         {/* Inside the Linked Leads Section */}
                                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                                             <Typography variant="subtitle2" color="text.secondary">
-                                                {getTranslatedLabel(`${localizationKey}.linkedLeads`, 'Linked Leads')}
+                                                {getTranslatedLabel(`${localizationKey}.form.linkedLeads`, 'Linked Leads *')}
                                             </Typography>
 
                                             <Button

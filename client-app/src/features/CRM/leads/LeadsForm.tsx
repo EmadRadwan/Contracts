@@ -79,12 +79,10 @@ const LeadForm: React.FC<LeadFormProps> = ({
         }
         : {
             firstName: '',
-            middleName: '',
             infoString: '',
             mobileContactNumber: '',
             address1: '',
             address2: '',
-            city: '',
             geoId: 'EGY',
             dataSourceId: '',
             leadTemperatureId: 'F',
@@ -156,26 +154,8 @@ const LeadForm: React.FC<LeadFormProps> = ({
                                 label={getTranslatedLabel(`${localizationKey}.firstName`, 'First Name')}
                                 component={FormInput}
                                 validator={requiredValidator}
-                                placeholder={getTranslatedLabel(`${localizationKey}.firstNamePlaceholder`, 'Enter First Name')}
+                                placeholder={getTranslatedLabel(`${localizationKey}.firstNamePlaceholder`, 'Enter Name')}
                             />
-                        </Grid>
-
-                        <Grid item xs={6}>
-                            <Field
-                                name="middleName"
-                                label={getTranslatedLabel(`${localizationKey}.lastName`, 'Last Name')}
-                                component={FormInput}
-                                validator={requiredValidator}
-                                placeholder={getTranslatedLabel(`${localizationKey}.lastNamePlaceholder`, 'Enter Last Name')}
-                            />
-                        </Grid>
-
-                        {/* Contact Information */}
-                        <Grid item xs={12}>
-                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                {getTranslatedLabel(`${localizationKey}.contactInformation`, 'Contact Information')}
-                            </Typography>
-                            <Divider sx={{ mb: 2 }} />
                         </Grid>
 
                         <Grid item xs={6}>
@@ -188,12 +168,54 @@ const LeadForm: React.FC<LeadFormProps> = ({
                             />
                         </Grid>
 
+                        {/*<Grid item xs={6}>
+                            <Field
+                                name="middleName"
+                                label={getTranslatedLabel(`${localizationKey}.lastName`, 'Last Name')}
+                                component={FormInput}
+                                validator={requiredValidator}
+                                placeholder={getTranslatedLabel(`${localizationKey}.lastNamePlaceholder`, 'Enter Last Name')}
+                            />
+                        </Grid> */}
+
+                        {/* Contact Information */}
+                        <Grid item xs={12}>
+                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                {getTranslatedLabel(`${localizationKey}.contactInformation`, 'Contact Information')}
+                            </Typography>
+                            <Divider sx={{ mb: 2 }} />
+                        </Grid>
+
+                        <Grid item xs={6}>
+                            {isModal ? (
+                                <Field
+                                    name="geoId"
+                                    label={getTranslatedLabel(`${localizationKey}.country`, 'Country Code')}
+                                    component={MemoizedModalFormDropdown}
+                                    data={countries || []}
+                                    dataItemKey="geoId"
+                                    textField="geoName"
+                                    validator={requiredValidator}
+                                />
+                            ) : (
+                                <Field
+                                    name="geoId"
+                                    label={getTranslatedLabel(`${localizationKey}.country`, 'Country')}
+                                    component={MemoizedFormDropDownList}
+                                    dataItemKey="geoId"
+                                    textField="geoName"
+                                    data={countries || []}
+                                    validator={requiredValidator}
+                                />
+                            )}
+                        </Grid>
+
                         <Grid item xs={6}>
                             <Field
                                 name="mobileContactNumber"
                                 label={getTranslatedLabel(`${localizationKey}.mobile`, 'Mobile')}
                                 component={FormInput}
-                                placeholder="+20 987 654 321"
+                                placeholder="01XXXXXXXXX"
                             />
                         </Grid>
 
@@ -260,58 +282,23 @@ const LeadForm: React.FC<LeadFormProps> = ({
                             <Divider sx={{ mb: 2 }} />
                         </Grid>
 
-                        <Grid item xs={12}>
+                        <Grid item xs={6}>
                             <Field
                                 name="address1"
                                 label={getTranslatedLabel(`${localizationKey}.address1`, 'Address Line 1')}
                                 component={FormInput}
-                                placeholder="Street name and building number"
                             />
                         </Grid>
 
-                        <Grid item xs={12}>
+                        <Grid item xs={6}>
                             <Field
                                 name="address2"
                                 label={getTranslatedLabel(`${localizationKey}.address2`, 'Address Line 2 (Optional)')}
                                 component={FormInput}
-                                placeholder="Apartment, floor, etc."
                             />
                         </Grid>
 
-                        <Grid item container xs={12}>
-                            <Grid item xs={6}>
-                                <Field
-                                    name="city"
-                                    label={getTranslatedLabel(`${localizationKey}.city`, 'City')}
-                                    component={FormInput}
-                                    placeholder="Cairo"
-                                />
-                            </Grid>
-                        </Grid>
-
-                        <Grid item xs={6}>
-                            {isModal ? (
-                                <Field
-                                    name="geoId"
-                                    label={getTranslatedLabel(`${localizationKey}.country`, 'Country')}
-                                    component={MemoizedModalFormDropdown}
-                                    data={countries || []}
-                                    dataItemKey="geoId"
-                                    textField="geoName"
-                                    validator={requiredValidator}
-                                />
-                            ) : (
-                                <Field
-                                    name="geoId"
-                                    label={getTranslatedLabel(`${localizationKey}.country`, 'Country')}
-                                    component={MemoizedFormDropDownList}
-                                    dataItemKey="geoId"
-                                    textField="geoName"
-                                    data={countries || []}
-                                    validator={requiredValidator}
-                                />
-                            )}
-                        </Grid>
+                        
                     </Grid>
 
                     {/* Error Alert */}
@@ -355,47 +342,47 @@ const LeadForm: React.FC<LeadFormProps> = ({
 
     // Add this just before the final return statements, after formContent
 
-const duplicateAlertDialog = (
-    <Dialog
-        open={!!duplicateLeadId}
-        onClose={() => setDuplicateLeadId(null)}
-        maxWidth="xs"
-        fullWidth
-    >
-        {/* Header */}
-        <Box sx={{ p: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-            <Typography variant="h6" fontWeight="bold" sx={{ textAlign: 'center' }}>
-                {getTranslatedLabel(`${localizationKey}.duplicateLeadTitle`, 'Lead Already Exists')}
-            </Typography>
-        </Box>
-
-        {/* Body */}
-        <Box sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="body1" sx={{ mb: 3 }}>
-                {getTranslatedLabel(`${localizationKey}.duplicateLeadMessage`, 'This lead already exists.')}
-            </Typography>
-
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-                <Button
-                    variant="outlined"
-                    onClick={() => setDuplicateLeadId(null)}
-                >
-                    {getTranslatedLabel(`${localizationKey}.dismiss`, 'Dismiss')}
-                </Button>
-                <Button
-                    variant="contained"
-                    onClick={() => {
-                        navigate(`/leads`, {state: {duplicateLeadId}}); // adjust to your route
-                        setDuplicateLeadId(null);
-                        onClose();
-                    }}
-                >
-                    {getTranslatedLabel(`${localizationKey}.goToLeadDetails`, 'Go to Lead Details')}
-                </Button>
+    const duplicateAlertDialog = (
+        <Dialog
+            open={!!duplicateLeadId}
+            onClose={() => setDuplicateLeadId(null)}
+            maxWidth="xs"
+            fullWidth
+        >
+            {/* Header */}
+            <Box sx={{ p: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Typography variant="h6" fontWeight="bold" sx={{ textAlign: 'center' }}>
+                    {getTranslatedLabel(`${localizationKey}.duplicateLeadTitle`, 'Lead Already Exists')}
+                </Typography>
             </Box>
-        </Box>
-    </Dialog>
-);
+
+            {/* Body */}
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+                <Typography variant="body1" sx={{ mb: 3 }}>
+                    {getTranslatedLabel(`${localizationKey}.duplicateLeadMessage`, 'This lead already exists.')}
+                </Typography>
+
+                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+                    <Button
+                        variant="outlined"
+                        onClick={() => setDuplicateLeadId(null)}
+                    >
+                        {getTranslatedLabel(`${localizationKey}.dismiss`, 'Dismiss')}
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => {
+                            navigate(`/leads`, { state: { duplicateLeadId } }); // adjust to your route
+                            setDuplicateLeadId(null);
+                            onClose();
+                        }}
+                    >
+                        {getTranslatedLabel(`${localizationKey}.goToLeadDetails`, 'Go to Lead Details')}
+                    </Button>
+                </Box>
+            </Box>
+        </Dialog>
+    );
 
     // ==================== MODAL MODE ====================
     if (isModal) {
@@ -444,7 +431,7 @@ const duplicateAlertDialog = (
                     {formContent}
                 </Box>
             </Paper>
-             {duplicateAlertDialog}
+            {duplicateAlertDialog}
         </>
     );
 };

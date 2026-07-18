@@ -34,7 +34,8 @@ public class SalesOpportunitiesController : BaseApiController
             EstimatedCloseDateTo = closeDateTo,
             SearchTerm = search,
             SortBy = sortBy,
-            SortDescending = sortDesc
+            SortDescending = sortDesc,
+            Language = GetLanguage()
         }));
     }
 

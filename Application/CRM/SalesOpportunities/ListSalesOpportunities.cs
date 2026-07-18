@@ -20,6 +20,8 @@ public class ListSalesOpportunities
         public string? SearchTerm { get; init; }
         public string? SortBy { get; init; } = "createdStamp";
         public bool SortDescending { get; init; } = true;
+
+        public string Language {get; set; }
     }
 
     public class Handler : IRequestHandler<Query, Result<List<SalesOpportunityDto>>>
@@ -128,7 +130,7 @@ public class ListSalesOpportunities
                     CurrencyUomId = o.CurrencyUomId,
                     EstimatedProbability = o.EstimatedProbability,
                     OpportunityStageId = o.OpportunityStageId,
-                    OpportunityStageName = o.OpportunityStage?.Description,
+                    OpportunityStageName = request.Language == "ar" ? o.OpportunityStage?.DescriptionArabic :  o.OpportunityStage?.Description,
                     StageSequenceNum = o.OpportunityStage?.SequenceNum,
                     OwnerPartyId = ownerRole?.PartyId,
                     OwnerName = ownerRole != null ? GetPartyName(ownerRole.Party) : null,

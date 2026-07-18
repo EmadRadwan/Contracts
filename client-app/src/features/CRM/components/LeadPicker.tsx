@@ -115,6 +115,7 @@ const LeadPicker: React.FC<LeadPickerProps> = ({
                     {...params}
                     label={defaultLabel}
                     placeholder={defaultPlaceholder}
+                    direction={'rtl'}
                     InputProps={{
                         ...params.InputProps,
                         endAdornment: (
