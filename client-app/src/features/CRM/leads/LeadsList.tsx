@@ -184,13 +184,13 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
                 onDataStateChange={dataStateChange}
             >
 
-                <Column
+                {/* <Column
                     field="partyId"
                     title=" "
                     width={130}
                     headerCell={() => null}
 
-                />
+                /> */}
                 <Column
                     field="fullName"
                     title={getTranslatedLabel(`${localizationKey}.name`, 'Name')}
