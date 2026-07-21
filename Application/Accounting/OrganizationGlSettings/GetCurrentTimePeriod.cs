@@ -24,8 +24,13 @@ public class GetCurrentTimePeriod
 
         public async Task<Result<CustomTimePeriodDto>> Handle(Query request, CancellationToken cancellationToken)
         {
+            var now = DateTime.Now;
+
             var customTimePeriod = await _context.CustomTimePeriods
-                .Where(x => x.OrganizationPartyId == request.OrganizationPartyId && x.IsClosed != "Y")
+                .Where(x => x.OrganizationPartyId == request.OrganizationPartyId
+                            && x.IsClosed != "Y"
+                            && x.FromDate <= now
+                            && (x.ThruDate == null || x.ThruDate >= now))
                 .OrderByDescending(x => x.FromDate)
                 .Select(x => new CustomTimePeriodDto
                 {
@@ -41,7 +46,7 @@ public class GetCurrentTimePeriod
                 }).FirstOrDefaultAsync(cancellationToken);
 
             if (customTimePeriod == null)
-                return Result<CustomTimePeriodDto>.Failure("No open time period found for this organization");
+                return Result<CustomTimePeriodDto>.Failure("No open time period covering today's date was found for this organization");
 
             return Result<CustomTimePeriodDto>.Success(customTimePeriod);
         }
