@@ -31,7 +31,11 @@ public class MappingProfiles : Profile
 
         CreateMap<ProductCategory, ProductCategoryDto>();
         CreateMap<Product, Product>();
-        CreateMap<Product, ProductDto>();
+        CreateMap<Product, ProductDto>()
+            // PiecesIncluded is int? on Product but decimal? on ProductDto; ProjectTo can't
+            // auto-convert nullable numeric types across an expression tree, so it needs an
+            // explicit cast here or every GetProduct call throws AutoMapperMappingException.
+            .ForMember(d => d.PiecesIncluded, o => o.MapFrom(s => (decimal?)s.PiecesIncluded));
         /*CreateMap<Product, ProductRecord>()
             .ForMember(d => d.ProductTypeDescription, o => o.MapFrom(s => s.ProductType!.Description))
             .ForMember(d => d.PrimaryProductCategoryDescription,
