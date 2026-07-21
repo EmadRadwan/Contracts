@@ -12,6 +12,13 @@ public class CustomTimePeriodsController : BaseApiController
         return HandleResult(await Mediator.Send(new ListCustomTimePeriodsLov.Query()));
     }
 
+    [HttpGet("{organizationPartyId}/getCurrentTimePeriod")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetCurrentTimePeriod(string organizationPartyId)
+    {
+        return HandleResult(await Mediator.Send(new GetCurrentTimePeriod.Query { OrganizationPartyId = organizationPartyId }));
+    }
+
     [HttpGet("listCustomTimePeriodTypesLov")]
     public async Task<IActionResult> ListCustomTimePeriodTypesLov()
     {

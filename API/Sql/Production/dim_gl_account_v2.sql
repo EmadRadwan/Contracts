@@ -1,3 +1,13 @@
+-- Data-only change, 2026-07-19 (console_9.sql, no impact on this view's
+-- SQL): added GL_SUB_ACCOUNT_COURSE_LABEL 'Partner Investment Participations'
+-- (جارى شركاء - مشاركات استثمارية, SORT_ORDER 275) and reassigned 14
+-- GL_ACCOUNT rows to it — 250280-283, 250310-390, 250440. Note: parent
+-- account 250270 (parent of 250280-283) was intentionally left on its
+-- old label 'Project Partnerships' (مشاركات المشاريع), so it no longer
+-- matches its own children's SUBACCOUNT — harmless for reporting
+-- since visuals should filter on IS_LEAF = 1, but worth knowing if
+-- browsing the hierarchy by SUBACCOUNT_AR looks inconsistent there.
+
 CREATE OR REPLACE VIEW Dim_gl_account AS
 SELECT
     -- ── Grain ────────────────────────────────────────────────────────────────
@@ -35,6 +45,17 @@ SELECT
     a.GL_SUB_ACCOUNT_COURSE_LABEL_ID                AS SUBACCOUNT,
     gsa.DESCRIPTION_ARABIC                          AS SUBACCOUNT_AR,
 
+    -- ── Unique grouping key (v2.1) ────────────────────────────────────────────
+    -- The same SUBACCOUNT label is reused under different ACCOUNT parents
+    -- (e.g. 'Other Receivables' appears under both INVENTORY and
+    -- OTHER_CURRENT_ASSETS), so grouping on SUBACCOUNT_AR alone silently
+    -- merges unrelated accounts. Use this key instead when a stable,
+    -- unambiguous grouping is required.
+    CONCAT(
+        COALESCE(a.GL_ACCOUNT_COURSE_LABEL_ID, ''), '|',
+        COALESCE(a.GL_SUB_ACCOUNT_COURSE_LABEL_ID, '')
+    )                                                AS SUBACCOUNT_KEY,
+
     -- ── Sort keys (drive correct P&L / BS ordering in Power BI matrix) ───────
     gr.SORT_ORDER                                   AS REPORT_SORT,
     gcc.SORT_ORDER                                  AS CLASS_SORT,
@@ -63,6 +84,17 @@ SELECT
         THEN 1 ELSE 0
     END                                             AS IS_OPERATING,
 
+    -- ── Hierarchy position (v2.1) ─────────────────────────────────────────────
+    -- The view intentionally includes both leaf (posting) accounts and
+    -- parent rollup accounts — some parents (e.g. 110000, 111010) carry
+    -- their own postings, so a leaf-only filter would drop real balances.
+    -- These flags let Power BI opt into leaf-only filtering per visual
+    -- instead (e.g. Banks slicer: SUBACCOUNT = 'Cash at Bank' AND IS_LEAF = 1).
+    COALESCE(kids.CHILD_COUNT, 0)                   AS HAS_CHILDREN,
+    CASE WHEN COALESCE(kids.CHILD_COUNT, 0) = 0
+         THEN 1 ELSE 0
+    END                                             AS IS_LEAF,
+
     -- Timestamp for incremental refresh in Power BI / Power Query
     a.LAST_UPDATED_STAMP
 
@@ -87,9 +119,17 @@ FROM GL_ACCOUNT_ORGANIZATION ao
          LEFT JOIN GL_ACCOUNT_COURSE_LABEL acl
                    ON acl.GL_ACCOUNT_COURSE_LABEL_ID = a.GL_ACCOUNT_COURSE_LABEL_ID
 
-         -- NEW: SubAccount lookup
+         -- SubAccount lookup
          LEFT JOIN GL_SUB_ACCOUNT_COURSE_LABEL gsa
                    ON gsa.GL_SUB_ACCOUNT_COURSE_LABEL_ID = a.GL_SUB_ACCOUNT_COURSE_LABEL_ID
+
+         -- NEW (v2.1): direct-child count per account, for HAS_CHILDREN/IS_LEAF
+         LEFT JOIN (
+             SELECT PARENT_GL_ACCOUNT_ID, COUNT(*) AS CHILD_COUNT
+             FROM GL_ACCOUNT
+             WHERE PARENT_GL_ACCOUNT_ID IS NOT NULL
+             GROUP BY PARENT_GL_ACCOUNT_ID
+         ) kids ON kids.PARENT_GL_ACCOUNT_ID = a.GL_ACCOUNT_ID
 
 WHERE
     a.GL_REPORT_ID                  IS NOT NULL

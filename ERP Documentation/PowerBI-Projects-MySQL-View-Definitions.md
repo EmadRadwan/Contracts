@@ -504,21 +504,33 @@ LEFT JOIN (
 ### `Dim_gl_account`
 
 **What it does:**
-Builds the classified chart of accounts hierarchy used by all financial statement measures. It joins each leaf-level GL account to its classification labels at five hierarchy levels (Report, Class, SubClass, SubClass2, Account, SubAccount), resolves their Arabic descriptions and sort orders, and derives two Power BI-specific helper columns: `MEASURE_TYPE` (tells DAX whether to use FTP or TTD) and `IS_CURRENT` / `IS_OPERATING` flags.
+Builds the classified chart of accounts hierarchy used by all financial statement measures. It joins each GL account to its classification labels at five hierarchy levels (Report, Class, SubClass, SubClass2, Account, SubAccount), resolves their Arabic descriptions and sort orders, and derives Power BI-specific helper columns: `MEASURE_TYPE` (tells DAX whether to use FTP or TTD), `IS_CURRENT` / `IS_OPERATING` flags, `SUBACCOUNT_KEY` (an unambiguous grouping key), and `HAS_CHILDREN` / `IS_LEAF` (hierarchy-position flags).
 
-Only leaf accounts are included — accounts that have no children in the hierarchy. This prevents double-counting when parent account totals would otherwise roll up sums already counted at the leaf level.
+**Updated 2026-07-19** (`API/Sql/Production/dim_gl_account_v2.sql`, applied via `console_8.sql`): the view now includes **both** leaf (posting) accounts and parent rollup accounts — it does **not** filter to leaf-only. An earlier leaf-only `NOT EXISTS` filter (shown below in a prior revision of this doc) was found to not actually be deployed: 11 non-leaf accounts (e.g. `111010` النقدية, 1098 rows) carry their own postings, and a leaf-only filter would silently drop those balances from every report on the model. Instead, `IS_LEAF` (1 = real posting account, 0 = rollup header) and `HAS_CHILDREN` (direct-child count) are exposed as columns so individual visuals can opt into leaf-only filtering where appropriate (e.g. the Banks page slicer: `SUBACCOUNT = 'Cash at Bank' AND IS_LEAF = 1`) without affecting visuals that rely on parent-level balances.
 
-**Source tables:** `GL_ACCOUNT_ORGANIZATION`, `GL_ACCOUNT` (×2 for parent), `GL_REPORT`, `GL_CLASS_COURSE`, `GL_SUB_CLASS`, `GL_SUB_CLASS_2`, `GL_ACCOUNT_COURSE_LABEL`, `GL_SUB_ACCOUNT_COURSE_LABEL`
+The same change also added `SUBACCOUNT_KEY` — a `ACCOUNT|SUBACCOUNT` composite — because the same `SUBACCOUNT` label is reused under different `ACCOUNT` parents (e.g. 'Other Receivables' appears under both `INVENTORY` and `OTHER_CURRENT_ASSETS`), so grouping on `SUBACCOUNT_AR` alone silently merges unrelated accounts.
+
+Same session also fixed underlying data: `124410` (شيكات تحت التحصيل / Cheques Under Collection) was reclassified off the `Cash at Bank` sub-account label onto a new dedicated `Cheques Under Collection` label (it isn't a bank — its parent account is `100010`, current assets, not `110000`, banks), and 5 accounts with `NULL` sub-account labels were backfilled (3 live banks — `113300`, `114300`, `115300` — and 2 cash-on-hand accounts — `111701`, `111702`) that were previously silently excluded from any `SUBACCOUNT_AR`-filtered measure. See `dim-gl-account-classification-fixes.sql` (repo root, `Project-19/`) for the full investigation and remaining unresolved items (37 accounts still unlabeled, a `SORT_ORDER` collision at 200, and whether `124410` should move to `RECEIVABLES` under IFRS).
+
+**Follow-up, same day** (`API/Sql/Production/console_9.sql`): a new sub-account label `Partner Investment Participations` / **جارى شركاء - مشاركات استثمارية** (`SORT_ORDER 275`) was added, consolidating 14 previously-scattered partner/investor participation accounts under one label:
+- `250280`–`250283` (parent `250270`) — previously `Project Partnerships` (مشاركات المشاريع)
+- `250310`–`250390` (parent `250300`) — previously `Temp Partnerships` (مشاركات مؤقتة استثمار عقاري) for 6 of the 9, `NULL` for the other 3 (`250370`, `250380`, `250390`)
+- `250440` (parent `250400`, a different `ACCOUNT` family — دائنو شراء أسهم / Stock Purchase Payables) — previously the generic `Other Payables` (ذمم دائنة أخرى); only its `SUBACCOUNT` changed, its `ACCOUNT`/parent hierarchy is untouched
+
+**Known inconsistency left in place:** account `250270` is the *parent* of 4 of the reassigned accounts (`250280`–`250283`) and still carries the old `Project Partnerships` label — it was intentionally left alone (out of scope), so it no longer matches its own children's `SUBACCOUNT`. Harmless for any visual that filters `IS_LEAF = 1`, but worth knowing if browsing the hierarchy by `SUBACCOUNT_AR` looks inconsistent at that node. `250300` (parent of the other 9) already had an unrelated pre-existing label mismatch with its children, predating this change.
+
+**Source tables:** `GL_ACCOUNT_ORGANIZATION`, `GL_ACCOUNT` (×3 — self, parent, and child-count subquery), `GL_REPORT`, `GL_CLASS_COURSE`, `GL_SUB_CLASS`, `GL_SUB_CLASS_2`, `GL_ACCOUNT_COURSE_LABEL`, `GL_SUB_ACCOUNT_COURSE_LABEL`
 
 **Key logic:**
 - Only includes accounts active in the organisation (`FROM_DATE <= NOW()` and `THRU_DATE IS NULL OR > NOW()`)
 - Only includes fully-classified accounts — all five classification levels must be non-null
 - Excludes structural/non-posting account classes: `DEBIT`, `CREDIT`, `RESOURCE`, `NON_POSTING`
-- Only leaf accounts: `NOT EXISTS (SELECT 1 FROM GL_ACCOUNT child WHERE child.PARENT_GL_ACCOUNT_ID = a.GL_ACCOUNT_ID)`
+- No leaf-only filter — both rollup and posting accounts are included; use `IS_LEAF` to filter per visual
 - `SIGN_MULTIPLIER` comes from the account label — controls whether the amount adds or subtracts in `Total_FTP` DAX measure
+- `HAS_CHILDREN` / `IS_LEAF` come from a `LEFT JOIN` subquery counting direct children per `PARENT_GL_ACCOUNT_ID`
 
 ```sql
-CREATE VIEW `Dim_gl_account` AS
+CREATE OR REPLACE VIEW `Dim_gl_account` AS
 SELECT
     ao.GL_ACCOUNT_ID                                      AS GL_ACCOUNT_ID,
     a.ACCOUNT_NAME_ARABIC                                 AS ACCOUNT_NAME_ARABIC,
@@ -539,6 +551,14 @@ SELECT
     acl.DESCRIPTION_ARABIC                                AS ACCOUNT_AR,
     a.GL_SUB_ACCOUNT_COURSE_LABEL_ID                      AS SUBACCOUNT,
     gsa.DESCRIPTION_ARABIC                                AS SUBACCOUNT_AR,
+
+    -- Unique grouping key. The same sub-account label is reused under
+    -- different ACCOUNT parents, so grouping on SUBACCOUNT_AR alone
+    -- silently merges unrelated accounts.
+    CONCAT(
+        COALESCE(a.GL_ACCOUNT_COURSE_LABEL_ID, ''), '|',
+        COALESCE(a.GL_SUB_ACCOUNT_COURSE_LABEL_ID, '')
+    )                                                     AS SUBACCOUNT_KEY,
 
     -- Sort orders for each level (controls display order in Power BI visuals)
     gr.SORT_ORDER                                         AS REPORT_SORT,
@@ -563,6 +583,13 @@ SELECT
          THEN 1 ELSE 0
     END                                                   AS IS_OPERATING,
 
+    -- Hierarchy position: lets Power BI opt into leaf-only filtering per
+    -- visual instead of the view dropping non-leaf accounts globally
+    COALESCE(kids.CHILD_COUNT, 0)                         AS HAS_CHILDREN,
+    CASE WHEN COALESCE(kids.CHILD_COUNT, 0) = 0
+         THEN 1 ELSE 0
+    END                                                   AS IS_LEAF,
+
     a.LAST_UPDATED_STAMP                                  AS LAST_UPDATED_STAMP
 
 FROM GL_ACCOUNT_ORGANIZATION ao
@@ -579,18 +606,21 @@ LEFT JOIN GL_SUB_CLASS_2            gsc2 ON gsc2.GL_SUB_CLASS_2_ID        = a.GL
 LEFT JOIN GL_ACCOUNT_COURSE_LABEL   acl  ON acl.GL_ACCOUNT_COURSE_LABEL_ID = a.GL_ACCOUNT_COURSE_LABEL_ID
 LEFT JOIN GL_SUB_ACCOUNT_COURSE_LABEL gsa ON gsa.GL_SUB_ACCOUNT_COURSE_LABEL_ID = a.GL_SUB_ACCOUNT_COURSE_LABEL_ID
 
+-- Direct-child count per account, for HAS_CHILDREN / IS_LEAF
+LEFT JOIN (
+    SELECT PARENT_GL_ACCOUNT_ID, COUNT(*) AS CHILD_COUNT
+    FROM GL_ACCOUNT
+    WHERE PARENT_GL_ACCOUNT_ID IS NOT NULL
+    GROUP BY PARENT_GL_ACCOUNT_ID
+) kids ON kids.PARENT_GL_ACCOUNT_ID = a.GL_ACCOUNT_ID
+
 WHERE
     a.GL_REPORT_ID               IS NOT NULL
     AND a.GL_CLASS_COURSE_ID     IS NOT NULL
     AND a.GL_SUB_CLASS_ID        IS NOT NULL
     AND a.GL_SUB_CLASS_2_ID      IS NOT NULL
     AND a.GL_ACCOUNT_COURSE_LABEL_ID IS NOT NULL
-    AND a.GL_ACCOUNT_CLASS_ID NOT IN ('DEBIT', 'CREDIT', 'RESOURCE', 'NON_POSTING')
-    -- Leaf accounts only (no children)
-    AND NOT EXISTS (
-        SELECT 1 FROM GL_ACCOUNT child
-        WHERE child.PARENT_GL_ACCOUNT_ID = a.GL_ACCOUNT_ID
-    );
+    AND a.GL_ACCOUNT_CLASS_ID NOT IN ('DEBIT', 'CREDIT', 'RESOURCE', 'NON_POSTING');
 ```
 
 ---
