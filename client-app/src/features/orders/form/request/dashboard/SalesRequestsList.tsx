@@ -22,7 +22,7 @@ import SalesRequestMenu from "../menu/SalesRequestMenu";
 import {handleDatesArray} from "../../../../../app/util/utils";
 import InstallmentPriceCalculatorModal from "./InstallmentPriceCalculatorModal";
 import ModalContainer from "../../../../../app/common/modals/ModalContainer";
-import {SalesRequestsDateRangeExcel} from "../report/SalesRequestsDateRangeExcel";
+import {SalesRequestsAndApartmentsDateRangeExcel} from "../report/SalesRequestsAndApartmentsDateRangeExcel";
 
 function SalesRequestsList() {
     const navigate = useNavigate();
@@ -245,7 +245,7 @@ function SalesRequestsList() {
                                             </Button>
                                         </Grid>
                                         <Grid item xs={2}>
-                                            <SalesRequestsDateRangeExcel getTranslatedLabel={getTranslatedLabel} />
+                                            <SalesRequestsAndApartmentsDateRangeExcel getTranslatedLabel={getTranslatedLabel} />
                                         </Grid>
                                     </Grid>
 

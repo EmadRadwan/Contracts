@@ -38,7 +38,7 @@ public class ListSalesRequestsByDateRange
                 .Where(s => s.StatusTypeId == "APARTMENT_STATUS")
                 .ToDictionaryAsync(
                     keySelector: s => s.StatusId,
-                    elementSelector: s => s.Description ?? s.StatusId,
+                    elementSelector: s => language == "ar" ? (s.DescriptionArabic ?? s.Description) : s.Description,
                     cancellationToken: ct);
 
             var salesRequestStatusLookup = await _context.StatusItems

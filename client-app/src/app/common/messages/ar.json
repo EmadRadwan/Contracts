@@ -449,6 +449,9 @@
       "maintenanceDeposit": "دفعة الصيانة",
       "apartmentSpace": "مساحة الشقة (م²)",
       "gardenSpace": "مساحة الحديقة (م²)",
+      "floorNumber": "الطابق",
+      "apartmentStatus": "حالة الشقة",
+      "pricePerM2": "السعر / م²",
       "project": "المشروع",
       "isChequesDelivered": "الشيكات مسلمة",
       "comments": "التعليقات"
@@ -456,6 +459,11 @@
     "report": {
       "daterange": {
         "title": "طلبات المبيعات ({0} - {1})",
+        "excel": "تصدير حسب نطاق التاريخ"
+      },
+      "daterangeWithApartments": {
+        "title": "طلبات المبيعات والشقق المتاحة ({0} - {1})",
+        "legend": "الصفوف باللون الكهرماني = شقق ليس لها طلب مبيعات بعد (متاحة أو محجوزة)، غير مباعة.",
         "excel": "تصدير حسب نطاق التاريخ"
       }
     },

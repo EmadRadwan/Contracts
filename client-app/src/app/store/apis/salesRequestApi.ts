@@ -193,6 +193,20 @@ const salesRequestApi = createApi({
                 providesTags: ['SalesRequest'],
             }),
 
+            // Same as above, plus one synthesized row per APARTMENT product that has no
+            // SalesRequest at all (current available/reserved inventory), tagged isSold: false.
+            fetchSalesRequestsAndAvailableApartmentsByDateRange: builder.query<
+                any[],
+                { fromDate: string; toDate: string }
+            >({
+                query: ({ fromDate, toDate }) => ({
+                    url: `/salesRequests/by-date-range-with-available-apartments`,
+                    method: 'GET',
+                    params: { fromDate, toDate },
+                }),
+                providesTags: ['SalesRequest'],
+            }),
+
             // -----------------------------------------------------------------
             // CHEQUES – attach received-cheque details to not-yet-collected Payments
             // -----------------------------------------------------------------
@@ -230,6 +244,7 @@ export const {
     useAddReserveRequestMutation,
     useUpdateReserveRequestMutation, useGetSalesRequestInstallmentsQuery,
     useLazyFetchSalesRequestsByDateRangeQuery,
+    useLazyFetchSalesRequestsAndAvailableApartmentsByDateRangeQuery,
     useGetChequeablePaymentsQuery,
     useRecordSalesRequestChequesMutation,
 } = salesRequestApi;
