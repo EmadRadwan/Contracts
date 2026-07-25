@@ -5511,15 +5511,22 @@ public class GeneralLedgerService : IGeneralLedgerService
             }
 
             // Determine credit GL account
-            // Keyed off this specific payment's own ChequeNumber (set by RecordSalesRequestCheques
-            // when the cheque was physically received - see 124410 reclass posted there), not the
-            // sales-request-wide IsChequesDelivered flag. This way a cheque-registered installment
-            // that the customer later pays in cash instead (paymentMethodId switched to CASH,
-            // ChequeNumber cleared, in EditPaymentForm before receipt) correctly credits the
-            // customer's receivable account instead of Cheques Under Collection.
+            // Keyed off whether this payment actually has an outstanding 124410 reclass posted
+            // by RecordSalesRequestCheques.cs - NOT off payment.ChequeNumber being non-empty.
+            // ChequeNumber can be set directly on the plain Payment edit form (EditPaymentForm),
+            // bypassing "Record Received Cheques" entirely; in that case no money ever moved into
+            // 124410, so crediting it here would credit an account nothing ever debited, while
+            // leaving the customer's receivable balance wrongly untouched. Checking the actual
+            // net-outstanding 124410 balance for this PaymentId is the only reliable signal.
+            var outstandingChequeReclassAmount = await _context.AcctgTransEntries
+                .Where(e => e.AcctgTrans.PaymentId == payment.PaymentId &&
+                            e.AcctgTrans.AcctgTransTypeId == "APARTMENT_SALE_CHEQUE" &&
+                            e.GlAccountId == "124410")
+                .SumAsync(e => e.DebitCreditFlag == "D" ? e.Amount : -e.Amount);
+
             string creditGlAccountId;
 
-            if (!string.IsNullOrEmpty(payment.ChequeNumber))
+            if (outstandingChequeReclassAmount > 0)
             {
                 // Collecting a cheque that was already reclassified to Cheques Under Collection
                 creditGlAccountId = "124410";

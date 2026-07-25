@@ -25,6 +25,7 @@ import {RecordChequesDialog} from "./RecordChequesDialog";
 interface SalesRequestActionsMenuProps {
     salesRequestId: string | undefined;
     currentStatusId: string | undefined;
+    isChequesDelivered?: boolean | string | null;
     disabled: boolean;
     onSalesRequestUpdated?: (updated: SalesRequest) => void;
     onSalesRequestDeleted?: () => void;
@@ -35,6 +36,7 @@ interface SalesRequestActionsMenuProps {
 export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = ({
                                                                              salesRequestId,
                                                                              currentStatusId,
+                                                                             isChequesDelivered,
                                                                              disabled,
                                                                              onSalesRequestUpdated, onSalesRequestDeleted,
                                                                              fromPartyName, apartmentName
@@ -121,7 +123,11 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
 
     const isApproveDisabled = !salesRequestId || currentStatusId === "SALES_REQUEST_APPROVED";
     const isResetDisabled = !salesRequestId || currentStatusId !== "SALES_REQUEST_APPROVED";
-    const isRecordChequesDisabled = !salesRequestId || currentStatusId !== "SALES_REQUEST_APPROVED";
+    // Only meaningful when the sales request was declared upfront to involve cheques - if
+    // "Cheques Delivered" was left unchecked, the customer is expected to pay every installment
+    // directly (cash/bank transfer), so recording a cheque here shouldn't be possible at all.
+    const isRecordChequesDisabled =
+        !salesRequestId || currentStatusId !== "SALES_REQUEST_APPROVED" || isChequesDelivered !== true;
 
     return (
         <>

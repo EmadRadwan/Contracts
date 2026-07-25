@@ -86,6 +86,7 @@ export const SalesRequestHeader: React.FC<SalesRequestHeaderProps> = React.memo(
                             <SalesRequestActionsMenu
                                 salesRequestId={salesRequest?.salesRequestId}
                                 currentStatusId={salesRequest?.statusId}
+                                isChequesDelivered={salesRequest?.isChequesDelivered}
                                 disabled={disabledActions}
                                 onSalesRequestUpdated={onSalesRequestUpdated}
                                 onSalesRequestDeleted={onSalesRequestDeleted}
