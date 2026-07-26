@@ -331,8 +331,7 @@ Review EIDD
 Read Project
 
 refactor cheque feature
-payment 13464
-sales request 10841
+compare Ofbiz
 
   
   

@@ -43,9 +43,10 @@ const PayrollReport2: React.FC<PayrollReport2Props> = ({ open, onClose }) => {
 
         // === Headers ===
         const headers = [
-            "م", "الاسم", "المهنة", "الراتب الاساسي", "معدل الحضور %",
+            "م", "الاسم", "المهنة", "القسم", "الراتب الاساسي", "معدل الحضور %",
             "الاجر باليوم", "أيام الإضافي", "الاضافي", "الاجمالي",
-            "السلف", "أيام الغياب", "الغياب", "الخصومات", "صافي الراتب المستحق", "طريقة الصرف", "الملاحظات"
+            "السلف", "أيام الغياب", "الغياب", "الخصومات", "صافي الراتب المستحق", "طريقة الصرف",
+            "رقم الحساب", "اسم الحساب", "الملاحظات"
         ];
 
         ws.addRow(headers.map(h => utils.rtl(h)));
@@ -60,6 +61,7 @@ const PayrollReport2: React.FC<PayrollReport2Props> = ({ open, onClose }) => {
                 emp.serial,
                 utils.rtl(emp.employeeName),
                 utils.rtl(emp.jobTitle || ''),
+                utils.rtl(emp.department || ''),
                 utils.num(emp.baseSalary),
                 utils.num(emp.attendanceRate),
                 utils.dailyRate(emp.baseSalary),           // Rounded daily rate
@@ -72,6 +74,8 @@ const PayrollReport2: React.FC<PayrollReport2Props> = ({ open, onClose }) => {
                 utils.num(emp.totalDeductions),
                 utils.num(emp.netSalary),
                 utils.rtl(emp.paymentMethod || ''),
+                emp.glAccountId || '',
+                utils.rtl(emp.glAccountName || ''),
                 utils.rtl(emp.notes || '')
             ]);
         });
@@ -85,7 +89,7 @@ const PayrollReport2: React.FC<PayrollReport2Props> = ({ open, onClose }) => {
         const totalNet = data.reduce((s, r) => s + r.netSalary, 0);
 
         const totalRow = ws.addRow([
-            "الإجمالي", "", "", totalBase, "", "",
+            "الإجمالي", "", "", "", totalBase, "", "",
             data.reduce((s, r) => s + r.overtimeDays, 0),
             data.reduce((s, r) => s + r.overtimeValue, 0),
             totalGross,
@@ -94,6 +98,8 @@ const PayrollReport2: React.FC<PayrollReport2Props> = ({ open, onClose }) => {
             totalAbsence,
             totalDeductions,
             totalNet,
+            "",
+            "",
             "",
             ""
         ]);
@@ -149,9 +155,10 @@ const PayrollReport2: React.FC<PayrollReport2Props> = ({ open, onClose }) => {
 
         // Column Widths
         ws.columns = [
-            { width: 30 }, { width: 32 }, { width: 24 }, { width: 16 }, { width: 14 },
+            { width: 30 }, { width: 32 }, { width: 24 }, { width: 20 }, { width: 16 }, { width: 14 },
             { width: 14 }, { width: 12 }, { width: 14 }, { width: 16 },
-            { width: 14 }, { width: 12 }, { width: 14 }, { width: 16 }, { width: 18 }, { width: 18 }, { width: 28 }
+            { width: 14 }, { width: 12 }, { width: 14 }, { width: 16 }, { width: 18 }, { width: 18 },
+            { width: 14 }, { width: 24 }, { width: 28 }
         ];
 
         return await wb.xlsx.writeBuffer();

@@ -21,6 +21,9 @@ public class ListPayrollData2
         public string EmployeeId { get; set; }
         public string EmployeeName { get; set; }
         public string JobTitle { get; set; }               // المهنة
+        public string Department { get; set; }             // القسم
+        public string GlAccountId { get; set; }             // رقم الحساب (حساب المشروع إن وجد، أو مستحقات الراتب)
+        public string GlAccountName { get; set; }           // اسم الحساب
         public string WorkLocation { get; set; }           // مكان العمل
         public decimal BaseSalary { get; set; }
         public decimal AttendanceRate { get; set; }        // معدل الحضور %
@@ -66,6 +69,16 @@ public class ListPayrollData2
                 from pos in p.DefaultIfEmpty()
                 join posType in _context.EmplPositionTypes on pos.EmplPositionTypeId equals posType.EmplPositionTypeId into pt
                 from posType in pt.DefaultIfEmpty()
+                join dept in _context.Parties on emp.DepartmentPartyId equals dept.PartyId into d
+                from dept in d.DefaultIfEmpty()
+                // Per-employee accrued-salary sub-ledger (PartyGlAccount, ACCOUNTS_PAYABLE) — the same account
+                // GeneralLedgerService.CreateAcctgTransForPayrollInvoice credits as "Net Salary Payable"
+                // (the main salary figure), as opposed to the shared/default expense account.
+                join pga in _context.PartyGlAccounts.Where(x =>
+                        x.RoleTypeId == "EMPLOYEE" && x.GlAccountTypeId == "ACCOUNTS_PAYABLE")
+                    on new { OrgId = inv.PartyId, PartyId = emp.PartyId }
+                    equals new { OrgId = pga.OrganizationPartyId, PartyId = pga.PartyId } into pgaJoin
+                from pga in pgaJoin.DefaultIfEmpty()
 
                 select new
                 {
@@ -74,11 +87,22 @@ public class ListPayrollData2
                     EmployeeId = emp.PartyId,
                     EmployeeName = emp.Description,
                     JobTitle = posType != null ? posType.Description : "",
+                    Department = dept != null ? dept.Description : "",
+                    // Project override: when set on the employee, salary cost is allocated to that project's
+                    // account instead of the employee's own accrued Net-Salary-Payable sub-ledger (matches
+                    // the debit-leg precedence in GeneralLedgerService.CreateAcctgTransForPayrollInvoice).
+                    GlAccountId = emp.GlAccountIdAdvancedPayment ?? (pga != null ? pga.GlAccountId : null),
                     WorkLocation = emp.MainRole ?? "الشركة", // You can enhance this later
                     PreferredPayrollPaymentMethodId = emp.PreferredPayrollPaymentMethodId
                 }).AsNoTracking().ToListAsync(cancellationToken);
 
             var invoiceIds = invoices.Select(i => i.InvoiceId).ToList();
+
+            var glAccountIds = invoices.Select(i => i.GlAccountId).Where(id => id != null).Distinct().ToList();
+            var glAccountNames = await _context.GlAccounts
+                .Where(g => glAccountIds.Contains(g.GlAccountId))
+                .AsNoTracking()
+                .ToDictionaryAsync(g => g.GlAccountId, g => g.AccountNameArabic ?? g.AccountName ?? "", cancellationToken);
 
             var items = await _context.InvoiceItems
                 .Where(i => invoiceIds.Contains(i.InvoiceId))
@@ -123,6 +147,9 @@ public class ListPayrollData2
                     EmployeeId = inv.EmployeeId,
                     EmployeeName = inv.EmployeeName,
                     JobTitle = inv.JobTitle,
+                    Department = inv.Department,
+                    GlAccountId = inv.GlAccountId ?? "",
+                    GlAccountName = inv.GlAccountId != null ? glAccountNames.GetValueOrDefault(inv.GlAccountId, "") : "",
                     WorkLocation = inv.WorkLocation,
                     BaseSalary = baseSalary,
                     AttendanceRate = attendanceRate,
