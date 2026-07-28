@@ -26,7 +26,8 @@ public interface IGeneralLedgerService
     Task<string> CreateAcctgTransAndEntriesForIncomingPayment(string paymentId);
     Task<string> CreateAcctgTransAndEntriesForPaymentApplication(string paymentApplicationId);
     Task<string> CreateAcctgTransForWorkEffortIssuance(string workEffortId, string inventoryItemId);
-    Task<string> CreateAcctgTransForCertificateIssuance(string workEffortId, string inventoryItemId);
+    Task<string> CreateAcctgTransForCertificateIssuance(string workEffortId, string inventoryItemId,
+        string certificateItemId, decimal issuedQuantity);
     Task<string> QuickCreateAcctgTransAndEntries(CreateQuickAcctgTransAndEntriesParams parameters);
     Task<string> CreateAcctgTransForCustomerReturnInvoice(string invoiceId);
     Task<string> CreateAcctgTransAndEntriesForOutgoingPayment(string paymentId);
@@ -103,17 +104,31 @@ public class GeneralLedgerService : IGeneralLedgerService
 
     public async Task<string> CreateAcctgTransForShipmentReceipt(string receiptId)
     {
-        var shipmentReceiptEntry = _context.ChangeTracker
-            .Entries<ShipmentReceipt>()
-            .FirstOrDefault(e => e.State == EntityState.Added && e.Entity.ReceiptId == receiptId);
+        // Resolve from the change tracker first (the receipt is normally still unsaved at this
+        // point), then fall back to the database. Matching ONLY tracked entries in the Added state
+        // meant any flow that had already saved produced a null here and threw on the next line,
+        // which ShipmentService's catch-all then swallowed — persisting the receipt with no ledger
+        // entry at all. See CreateAcctgTransForShipmentReceiptForProject for the incident this cost.
+        var shipmentReceipt = _context.ChangeTracker
+                                  .Entries<ShipmentReceipt>()
+                                  .FirstOrDefault(e => e.Entity.ReceiptId == receiptId)?.Entity
+                              ?? await _context.ShipmentReceipts
+                                  .FirstOrDefaultAsync(sr => sr.ReceiptId == receiptId);
 
-        var shipmentReceipt = shipmentReceiptEntry?.Entity;
+        if (shipmentReceipt == null)
+            throw new InvalidOperationException(
+                $"ShipmentReceipt {receiptId} not found — cannot post its receipt accounting.");
 
-        var inventoryItemEntry = _context.ChangeTracker.Entries<InventoryItem>()
-            .FirstOrDefault(e =>
-                e.Entity.InventoryItemId == shipmentReceipt.InventoryItemId && e.State == EntityState.Added);
+        var inventoryItem = _context.ChangeTracker
+                                .Entries<InventoryItem>()
+                                .FirstOrDefault(e => e.Entity.InventoryItemId == shipmentReceipt.InventoryItemId)
+                                ?.Entity
+                            ?? await _context.InventoryItems
+                                .FirstOrDefaultAsync(ii => ii.InventoryItemId == shipmentReceipt.InventoryItemId);
 
-        var inventoryItem = inventoryItemEntry?.Entity;
+        if (inventoryItem == null)
+            throw new InvalidOperationException(
+                $"InventoryItem {shipmentReceipt.InventoryItemId} not found for ShipmentReceipt {receiptId}.");
 
         var acctgTransEntries = new List<AcctgTransEntry>();
 
@@ -225,17 +240,32 @@ public class GeneralLedgerService : IGeneralLedgerService
 
     public async Task<string> CreateAcctgTransForShipmentReceiptForProject(string receiptId)
     {
-        var shipmentReceiptEntry = _context.ChangeTracker
-            .Entries<ShipmentReceipt>()
-            .FirstOrDefault(e => e.State == EntityState.Added && e.Entity.ReceiptId == receiptId);
+        // Resolve from the change tracker first (the receipt is normally still unsaved at this
+        // point), then fall back to the database. Matching ONLY tracked entries in the Added state
+        // meant any flow that had already saved produced a null here and threw on the next line —
+        // and ShipmentService's catch-all swallowed it, persisting the receipt with no ledger entry.
+        // That is how shipments 10566-10568 (PO10887-10889, 2026-05-12) left GL 140000 short by
+        // 324,623.31 for eight weeks, with nothing but a log line to show for it.
+        var shipmentReceipt = _context.ChangeTracker
+                                  .Entries<ShipmentReceipt>()
+                                  .FirstOrDefault(e => e.Entity.ReceiptId == receiptId)?.Entity
+                              ?? await _context.ShipmentReceipts
+                                  .FirstOrDefaultAsync(sr => sr.ReceiptId == receiptId);
 
-        var shipmentReceipt = shipmentReceiptEntry?.Entity;
+        if (shipmentReceipt == null)
+            throw new InvalidOperationException(
+                $"ShipmentReceipt {receiptId} not found — cannot post its receipt accounting.");
 
-        var inventoryItemEntry = _context.ChangeTracker.Entries<InventoryItem>()
-            .FirstOrDefault(e =>
-                e.Entity.InventoryItemId == shipmentReceipt.InventoryItemId && e.State == EntityState.Added);
+        var inventoryItem = _context.ChangeTracker
+                                .Entries<InventoryItem>()
+                                .FirstOrDefault(e => e.Entity.InventoryItemId == shipmentReceipt.InventoryItemId)
+                                ?.Entity
+                            ?? await _context.InventoryItems
+                                .FirstOrDefaultAsync(ii => ii.InventoryItemId == shipmentReceipt.InventoryItemId);
 
-        var inventoryItem = inventoryItemEntry?.Entity;
+        if (inventoryItem == null)
+            throw new InvalidOperationException(
+                $"InventoryItem {shipmentReceipt.InventoryItemId} not found for ShipmentReceipt {receiptId}.");
 
         var acctgTransEntries = new List<AcctgTransEntry>();
 
@@ -298,8 +328,18 @@ public class GeneralLedgerService : IGeneralLedgerService
             .FirstOrDefaultAsync(s => s.ShipmentId == shipmentReceipt!.ShipmentId);
 
 
-        // Logic to calculate origAmount, create inventory item detail, and prepare entries
-        var origAmount = totalLandedCostForFullQty;
+        // Logic to calculate origAmount, create inventory item detail, and prepare entries.
+        // totalLandedCostForFullQty is only set on the order-item path above; when there is no order
+        // link, or the order item is missing/has no price, it is still 0 — and posting that booked a
+        // silent zero-value receipt. Fall back to the unit cost actually resolved for the accepted
+        // quantity, and refuse to post a receipt that cannot be valued at all.
+        var origAmount = totalLandedCostForFullQty > 0
+            ? totalLandedCostForFullQty
+            : unitCost * (shipmentReceipt.QuantityAccepted ?? 0m);
+
+        if (origAmount <= 0)
+            throw new InvalidOperationException(
+                $"Cannot value ShipmentReceipt {receiptId}: no order item price and no inventory unit cost.");
 
         var createInventoryItemDetailParam = new CreateInventoryItemDetailParam
         {
@@ -4983,7 +5023,8 @@ public class GeneralLedgerService : IGeneralLedgerService
         }
     }
 
-    public async Task<string> CreateAcctgTransForCertificateIssuance(string workEffortId, string inventoryItemId)
+    public async Task<string> CreateAcctgTransForCertificateIssuance(string workEffortId, string inventoryItemId,
+        string certificateItemId, decimal issuedQuantity)
     {
         try
         {
@@ -5008,22 +5049,30 @@ public class GeneralLedgerService : IGeneralLedgerService
             if (inventoryItem == null)
                 throw new Exception($"InventoryItem with ID {inventoryItemId} not found.");
 
-            // Fetch certificate item for the inventory item
+            // Fetch the exact certificate item the caller is issuing against.
+            // Identified by its own WorkEffortId — matching on ProductId + QuantityUomId cannot
+            // distinguish two lines that share both (common when several lines use the generic
+            // "misc" product), which made FirstOrDefault return the same line for every issuance.
             var certificateItem = await _context.WorkEfforts
-                .FirstOrDefaultAsync(w => w.WorkEffortParentId == workEffortId
-                                          && w.WorkEffortTypeId == "CERTIFICATE_ITEM"
-                                          && w.ProductId == inventoryItem.ProductId
-                                          && w.QuantityUomId == inventoryItem.UomId);
+                .FirstOrDefaultAsync(w => w.WorkEffortId == certificateItemId
+                                          && w.WorkEffortParentId == workEffortId
+                                          && w.WorkEffortTypeId == "CERTIFICATE_ITEM");
             if (certificateItem == null)
-                throw new Exception($"No valid certificate item found for WorkEffortId {workEffortId}.");
+                throw new Exception(
+                    $"Certificate item {certificateItemId} not found under WorkEffortId {workEffortId}.");
 
+            if (certificateItem.Rate == null)
+                throw new Exception($"Rate missing for certificate item {certificateItemId}.");
 
-            // Calculate amount (Quantity * UnitCost)
-            // REFACTOR: Uses certificate item quantity and InventoryItem UnitCost;
-            // replaces WorkEffortInventoryAssign dependency from production runs.
-            var origAmount = certificateItem.Quantity * (decimal?)certificateItem.Rate;
-            if (origAmount == null)
-                throw new Exception($"UnitCost missing for InventoryItem {inventoryItemId}.");
+            // Calculate amount (issued quantity * certificate line rate)
+            // The caller issues a line's quantity across as many InventoryItems as it takes, calling
+            // this method once per deduction. Cost the quantity actually deducted — using the whole
+            // line total here posted the full line once per deduction.
+            var glSettings = _acctgMiscService.GetGlArithmeticSettingsInline();
+            var origAmount = _acctgMiscService.CustomRound(
+                issuedQuantity * (decimal)certificateItem.Rate,
+                (int)glSettings.DecimalScale,
+                glSettings.RoundingMode);
 
             var stamp = DateTime.UtcNow;
             var newAcctgTransSequence = await _utilityService.GetNextSequence("AcctgTrans");
@@ -5093,6 +5142,18 @@ public class GeneralLedgerService : IGeneralLedgerService
             if (certificateItem.Gratuities.HasValue)
                 additionalExpenses += certificateItem.Gratuities.Value;
 
+            // These are line-level totals, but this method runs once per inventory deduction, so
+            // prorate them over the quantity being issued — otherwise a line split across several
+            // InventoryItems charges its full transport/gratuities once per split.
+            var lineQuantity = certificateItem.Quantity ?? 0m;
+            if (additionalExpenses > 0 && lineQuantity > 0 && issuedQuantity != lineQuantity)
+            {
+                additionalExpenses = _acctgMiscService.CustomRound(
+                    additionalExpenses * (issuedQuantity / lineQuantity),
+                    (int)glSettings.DecimalScale,
+                    glSettings.RoundingMode);
+            }
+
             string cashTransId = null;
 
             if (additionalExpenses > 0)
@@ -5106,7 +5167,9 @@ public class GeneralLedgerService : IGeneralLedgerService
                     AcctgTransEntryTypeId = "_NA_",
                     ReconcileStatusId = "AES_NOT_RECONCILED",
                     DebitCreditFlag = "D",
-                    GlAccountId = "124420", // 124420 – same project asset account
+                    // Same project asset account as the inventory debit above — was hardcoded to
+                    // "124420", which charged every project's transport/gratuities to one project.
+                    GlAccountId = projectWorkEffort.GlAccountId,
                     OrganizationPartyId = inventoryItem.OwnerPartyId,
                     ProductId = certificateItem.ProductId,
                     OrigAmount = additionalExpenses,

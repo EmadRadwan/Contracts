@@ -58,7 +58,6 @@ public class GetGlAccountTransactionDetails
 
                 var periodStart = customTimePeriod.FromDate.Value.Date; // e.g. 2026-01-01 00:00:00
                 var periodEnd = customTimePeriod.ThruDate.Value.Date; // inclusive end
-                var openingCutoff = periodStart.AddTicks(-1);
 
                 // 3. Build query for transactions
                 var query = from ate in _context.AcctgTransEntries
@@ -141,10 +140,17 @@ public class GetGlAccountTransactionDetails
 
                 // 4b. Hide corrected duplicate pairs (default) — a SHIPMENT_RECEIPT that
                 // RemediateSupplyCertificateDuplicateAp later found duplicating a PURCHASE_INVOICE's
-                // ACCOUNTS_PAYABLE credit, plus the INTERNAL_ACCTG_TRANS correction posted for it. The
-                // correction amount always equals the receipt's credit by construction, so hiding both
-                // never changes EndingBalance — only removes a pair that would otherwise repeat the
-                // same figure twice for no reason visible in this report.
+                // ACCOUNTS_PAYABLE credit, plus the INTERNAL_ACCTG_TRANS correction posted for it.
+                //
+                // A pair may only be collapsed on an account where it is SELF-CANCELLING — the hidden
+                // rows' debits must equal their credits on THIS account. That holds on the AP accounts
+                // the remediation was written for (receipt credits AP, correction debits it back), but
+                // NOT elsewhere: the receipt also debits INVENTORY (140000) while the correction
+                // credits UNINVOICED_SHIP_RCPT (214000), so on each of those accounts only one leg of
+                // the pair is present. Hiding it unopposed used to drop 3,458,216.00 off both accounts'
+                // EndingBalance — reporting GL 140000 at -3,458,216.00 when it is actually 0.00.
+                //
+                // So the pair is evaluated per work effort, and only dropped when it nets to zero here.
                 decimal hiddenDebitTotal = 0m;
                 decimal hiddenCreditTotal = 0m;
 
@@ -163,11 +169,18 @@ public class GetGlAccountTransactionDetails
                         .Select(c => c.WorkEffortId!)
                         .ToHashSet();
 
-                    var hidden = transactions.Where(t =>
-                        correctionAcctgTransIds.Contains(t.AcctgTransId) ||
-                        (t.AcctgTransTypeId == "SHIPMENT_RECEIPT" &&
-                         !string.IsNullOrEmpty(t.WorkEffortId) &&
-                         correctedWorkEffortIds.Contains(t.WorkEffortId))).ToList();
+                    var candidates = transactions.Where(t =>
+                        !string.IsNullOrEmpty(t.WorkEffortId) &&
+                        correctedWorkEffortIds.Contains(t.WorkEffortId) &&
+                        (correctionAcctgTransIds.Contains(t.AcctgTransId) ||
+                         t.AcctgTransTypeId == "SHIPMENT_RECEIPT"));
+
+                    var hidden = candidates
+                        .GroupBy(t => t.WorkEffortId!)
+                        .Where(g => g.Where(t => t.DebitCreditFlag == "D").Sum(t => t.Amount) ==
+                                    g.Where(t => t.DebitCreditFlag == "C").Sum(t => t.Amount))
+                        .SelectMany(g => g)
+                        .ToList();
 
                     hiddenDebitTotal = hidden.Where(t => t.DebitCreditFlag == "D").Sum(t => t.Amount);
                     hiddenCreditTotal = hidden.Where(t => t.DebitCreditFlag == "C").Sum(t => t.Amount);
@@ -175,9 +188,35 @@ public class GetGlAccountTransactionDetails
                     transactions = transactions.Except(hidden).ToList();
                 }
 
-                // 5. Calculate aggregates using consistent cutoffs
-                // Opening = everything BEFORE the period starts (≤ day before FromDate)
-                var openingDebits = await (
+                // 5. Calculate aggregates over exactly the window the rows above cover.
+                //
+                // The seed and the displayed rows must PARTITION the timeline — no overlap, no gap —
+                // and the totals must span exactly the same window as the rows. Three rules follow:
+                //
+                //   windowStart      = where the row list begins (moves back when the user asks to
+                //                      see pre-period rows)
+                //   BroughtForward   = signed sum of ALL activity strictly BEFORE windowStart,
+                //                      whatever its transaction type
+                //   Posted debits/credits = activity within [windowStart, periodEnd]
+                //
+                // BroughtForward used to be defined by transaction TYPE (only OPENING_BALANCE) rather
+                // than by DATE, which broke in two ways at once on any account holding a reset entry:
+                // the OPENING_BALANCE row is itself dated before periodStart, so it seeded the running
+                // balance AND appeared in the row list — counted twice — while genuine pre-period
+                // movement was shown as rows but excluded from the totals. On GL 110100 that put
+                // 22,955,032.00 between the header's EndingBalance and the last running-balance row.
+                //
+                // Defining it by date also retires the old hasOpeningBalanceEntry heuristic: an account
+                // with no reset entry simply carries the sum of its real prior movement, so it no longer
+                // needs the totals silently widened to lifetime-to-date to come out right.
+                //
+                // PAYMENT_APPL is excluded here exactly as it is from the row query above: these must
+                // always filter on the same set, or the totals stop agreeing with the rows the user can
+                // see and add up. Leaving it out overstated both totals on GL 210041 by 50,000 with no
+                // visible rows to explain the gap.
+                var windowStart = request.IncludePrePeriodTransactions ? (DateTime?)null : periodStart;
+
+                var broughtForwardDebits = await (
                     from ate in _context.AcctgTransEntries
                     join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
                     where ate.OrganizationPartyId == request.OrganizationPartyId
@@ -185,12 +224,12 @@ public class GetGlAccountTransactionDetails
                           && act.IsPosted == "Y"
                           && ate.DebitCreditFlag == "D"
                           && act.GlFiscalTypeId == "ACTUAL"
-                      && act.AcctgTransTypeId == "OPENING_BALANCE"
-                          && act.TransactionDate <= openingCutoff
+                          && act.AcctgTransTypeId != "PAYMENT_APPL"
+                          && windowStart != null && act.TransactionDate < windowStart
                     select ate.Amount
                 ).SumAsync(cancellationToken);
 
-                var openingCredits = await (
+                var broughtForwardCredits = await (
                     from ate in _context.AcctgTransEntries
                     join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
                     where ate.OrganizationPartyId == request.OrganizationPartyId
@@ -198,28 +237,10 @@ public class GetGlAccountTransactionDetails
                           && act.IsPosted == "Y"
                           && ate.DebitCreditFlag == "C"
                           && act.GlFiscalTypeId == "ACTUAL"
-                      && act.AcctgTransTypeId == "OPENING_BALANCE"
-                          && act.TransactionDate <= openingCutoff
+                          && act.AcctgTransTypeId != "PAYMENT_APPL"
+                          && windowStart != null && act.TransactionDate < windowStart
                     select ate.Amount
                 ).SumAsync(cancellationToken);
-
-                // Accounts that have never had a proper OPENING_BALANCE reset entry (e.g. customer
-                // receivable sub-accounts) are not meant to be period-bounded: their opening balance
-                // is always 0, so bounding period activity to >= periodStart would zero out real
-                // pre-period history and make the account look like it started fresh this period.
-                // For those, fall back to the lifetime-to-date total (bounded only by periodEnd),
-                // matching how they've always been used. Accounts with a real reset entry (banks,
-                // cash) get the strict [periodStart, periodEnd] bound.
-                bool hasOpeningBalanceEntry = await (
-                    from ate in _context.AcctgTransEntries
-                    join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
-                    where ate.OrganizationPartyId == request.OrganizationPartyId
-                          && ate.GlAccountId == request.GlAccountId
-                          && act.IsPosted == "Y"
-                          && act.GlFiscalTypeId == "ACTUAL"
-                          && act.AcctgTransTypeId == "OPENING_BALANCE"
-                    select ate.AcctgTransId
-                ).AnyAsync(cancellationToken);
 
                 var periodDebits = await (
                     from ate in _context.AcctgTransEntries
@@ -229,7 +250,8 @@ public class GetGlAccountTransactionDetails
                           && act.IsPosted == "Y"
                           && ate.DebitCreditFlag == "D"
                           && act.GlFiscalTypeId == "ACTUAL"
-                          && (!hasOpeningBalanceEntry || act.TransactionDate >= periodStart)
+                          && act.AcctgTransTypeId != "PAYMENT_APPL"
+                          && (windowStart == null || act.TransactionDate >= windowStart)
                           && act.TransactionDate <= periodEnd
                     select ate.Amount
                 ).SumAsync(cancellationToken);
@@ -242,7 +264,8 @@ public class GetGlAccountTransactionDetails
                           && act.IsPosted == "Y"
                           && ate.DebitCreditFlag == "C"
                           && act.GlFiscalTypeId == "ACTUAL"
-                          && (!hasOpeningBalanceEntry || act.TransactionDate >= periodStart)
+                          && act.AcctgTransTypeId != "PAYMENT_APPL"
+                          && (windowStart == null || act.TransactionDate >= windowStart)
                           && act.TransactionDate <= periodEnd
                     select ate.Amount
                 ).SumAsync(cancellationToken);
@@ -250,13 +273,39 @@ public class GetGlAccountTransactionDetails
                 // 6. Determine account side
                 bool isDebit = await _acctgMiscService.IsDebitAccount(request.GlAccountId);
 
-                // 7. Calculate balances
-                decimal openingBalance = (decimal)(isDebit
-                    ? openingDebits - openingCredits
-                    : openingCredits - openingDebits);
+                // 7. Calculate balances.
+                //
+                // Every figure this report hands back is rounded once, here, to the same DisplayScale
+                // with the same mode. Only RunningBalance used to be rounded, so an amount carrying
+                // more than two decimals — GL 124426 held 32,799.999 from a 4-decimal landed-cost unit
+                // price — left the last row reading 3,366,358.06 against an EndingBalance of
+                // 3,366,358.059. The ledger's own scale is 4 (GetGlArithmeticSettingsInline), which is
+                // posting precision, not display precision; this report presents money at 2.
+                //
+                // Amounts are rounded for display too — a row reading 32,799.999 beside a balance
+                // rounded to 32,800.00 is what made the original sheet look wrong — and the running
+                // balance accumulates from those same rounded amounts.
+                //
+                // Note this leaves sum(rounded amounts) able to differ from round(sum(amounts)) by a
+                // cent or two if many rows carry sub-cent tails, since PostedDebits/PostedCredits are
+                // still summed in SQL over the un-rounded values. Not reachable on current data (two
+                // entries DB-wide exceed two decimals, on one transaction). Deriving the totals from
+                // the rows instead would close it for good — the aggregate window and the row set are
+                // now identical — but that is a restructure, not a rounding fix.
+                const int DisplayScale = 2;
+                const MidpointRounding DisplayRounding = MidpointRounding.AwayFromZero;
 
-                decimal postedDebits = (decimal)periodDebits - hiddenDebitTotal;
-                decimal postedCredits = (decimal)periodCredits - hiddenCreditTotal;
+                decimal openingBalance = Math.Round((decimal)(isDebit
+                    ? broughtForwardDebits - broughtForwardCredits
+                    : broughtForwardCredits - broughtForwardDebits), DisplayScale, DisplayRounding);
+
+                foreach (var t in transactions)
+                    t.Amount = Math.Round(t.Amount, DisplayScale, DisplayRounding);
+
+                decimal postedDebits = Math.Round((decimal)periodDebits - hiddenDebitTotal,
+                    DisplayScale, DisplayRounding);
+                decimal postedCredits = Math.Round((decimal)periodCredits - hiddenCreditTotal,
+                    DisplayScale, DisplayRounding);
 
                 decimal endingBalance = isDebit
                     ? openingBalance + postedDebits - postedCredits
@@ -269,7 +318,7 @@ public class GetGlAccountTransactionDetails
                     decimal signed = t.DebitCreditFlag == "D" ? t.Amount : -t.Amount;
                     decimal impact = isDebit ? signed : -signed;
                     runningBalance += impact;
-                    t.RunningBalance = Math.Round(runningBalance, 2, MidpointRounding.AwayFromZero);
+                    t.RunningBalance = Math.Round(runningBalance, DisplayScale, DisplayRounding);
                 }
 
                 // 9. Return result

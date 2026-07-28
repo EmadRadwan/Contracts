@@ -216,11 +216,18 @@ public class ShipmentService : IShipmentService
         }
         catch (Exception ex)
         {
-            // Log the exception (assuming you have a logger available)
-            _logger.LogError(ex, "Error occurred while creating shipment receipt");
+            // Rethrow rather than returning a failed result. The ShipmentReceipt is already tracked
+            // as Added by this point, and the only caller discards this result entirely — so
+            // swallowing here persisted a receipt whose GL posting had failed, with no signal
+            // anywhere. Three receipts on 2026-05-12 were lost that way and GL 140000 ran 324,623.31
+            // short until someone reconciled it eight weeks later. ReceiveInventoryFromPurchaseOrder
+            // owns a transaction and rolls back on exception, so failing here keeps the receipt and
+            // its accounting atomic: either both land or neither does.
+            _logger.LogError(ex, "Error occurred while creating shipment receipt for OrderId {OrderId}, ShipmentId {ShipmentId}",
+                parameters.OrderId, parameters.ShipmentId);
 
-            // Return a result indicating failure
             result.ErrorMessage = $"An error occurred: {ex.Message}";
+            throw;
         }
 
         return result;

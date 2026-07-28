@@ -88,11 +88,25 @@ public class CreateProjectCertificate
                         "No valid party ID (Contractor or Supplier) provided");
                 }
 
-                var certificateCount = await _context.WorkEfforts
-                    .CountAsync(
-                        we => we.PartyIdContractor == partyId || we.PartyIdSupplier == partyId,
-                        cancellationToken);
-                newProjectCertificateSerial = string.Format("{0}-{1:D4}", partyId, certificateCount + 1);
+                // Number from the highest serial already issued to this party, not from a COUNT of
+                // the party's work efforts. A count silently repeats a number whenever the set it
+                // counts shrinks or drifts from the set that actually carries numbers — which is how
+                // SITE-0031/0041/0063/0070 and 205-0003 each ended up on two certificates, with
+                // matching gaps at SITE-0028/0039/0058/0068 and 205-0001.
+                var serialPrefix = partyId + "-";
+                var issuedSerials = await _context.WorkEfforts
+                    .Where(we => we.CertificateNumber != null &&
+                                 we.CertificateNumber.StartsWith(serialPrefix))
+                    .Select(we => we.CertificateNumber!)
+                    .ToListAsync(cancellationToken);
+
+                var highestSerial = issuedSerials
+                    .Select(number =>
+                        int.TryParse(number.Substring(serialPrefix.Length), out var serial) ? serial : 0)
+                    .DefaultIfEmpty(0)
+                    .Max();
+
+                newProjectCertificateSerial = string.Format("{0}-{1:D4}", partyId, highestSerial + 1);
 
 
                 var workEffort = new WorkEffort

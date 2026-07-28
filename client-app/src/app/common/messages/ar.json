@@ -2062,8 +2062,8 @@
             "isPosted": "مرحّل",
             "postedDate": "تاريخ الترحيل",
             "credit": "دائن",
-            "Debit": "مدين",
-            "Balance": "الرصيد",
+            "debit": "مدين",
+            "balance": "الرصيد",
             "description": "البيان"
           }
         },
@@ -2110,6 +2110,19 @@
             "fiscalType": "نوع السنة المالية *",
             "fromDate": "من التاريخ",
             "thruDate": "حتى التاريخ"
+          },
+          "transactions": {
+            "title": "تفاصيل الحركات لحساب",
+            "transactions": "الحركات",
+            "transId": "رقم القيد المحاسبي",
+            "transDate": "تاريخ الحركة",
+            "transType": "نوع القيد",
+            "debitCredit": "مدين/دائن",
+            "amount": "المبلغ",
+            "certificateNumber": "رقم المستخلص",
+            "partyName": "اسم الطرف",
+            "productName": "اسم الصنف",
+            "description": "البيان"
           }
         },
         "cash-flow": {
@@ -2168,6 +2181,19 @@
             "current-liabilities": "الالتزامات المتداولة",
             "total-equities": "إجمالي حقوق الملكية",
             "total-liabilities-equities": "إجمالي الالتزامات وحقوق الملكية"
+          },
+          "transactions": {
+            "title": "تفاصيل الحركات لحساب",
+            "transactions": "الحركات",
+            "transId": "رقم القيد المحاسبي",
+            "transDate": "تاريخ الحركة",
+            "transType": "نوع القيد",
+            "debitCredit": "مدين/دائن",
+            "amount": "المبلغ",
+            "certificateNumber": "رقم المستخلص",
+            "partyName": "اسم الطرف",
+            "productName": "اسم الصنف",
+            "description": "البيان"
           }
         }
       }

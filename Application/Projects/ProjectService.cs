@@ -157,7 +157,10 @@ public class ProjectService : BaseService, IProjectService
                     // ensures inventory consistency post-issuance, as in production runs.
                     await _inventoryService.BalanceInventoryItems(inventoryItem.InventoryItemId);
 
-                    await _generalLedgerService.CreateAcctgTransForCertificateIssuance(workEffortId, inventoryItem.InventoryItemId);
+                    // Pass the certificate line being issued and the quantity actually deducted —
+                    // the GL posting must cost this deduction, not re-derive the line by product.
+                    await _generalLedgerService.CreateAcctgTransForCertificateIssuance(
+                        workEffortId, inventoryItem.InventoryItemId, item.WorkEffortId, deductAmount);
 
                     quantityNotIssued -= deductAmount;
                 }
