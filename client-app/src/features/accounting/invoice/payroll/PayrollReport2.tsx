@@ -81,17 +81,22 @@ const PayrollReport2: React.FC<PayrollReport2Props> = ({ open, onClose }) => {
         });
 
         // === Main Total Row ===
-        const totalBase = data.reduce((s, r) => s + r.baseSalary, 0);
-        const totalGross = data.reduce((s, r) => s + r.grossTotal, 0);
-        const totalAdvances = data.reduce((s, r) => s + r.advances, 0);
-        const totalAbsence = data.reduce((s, r) => s + r.absenceValue, 0);
-        const totalDeductions = data.reduce((s, r) => s + r.totalDeductions, 0);
-        const totalNet = data.reduce((s, r) => s + r.netSalary, 0);
+        // Round each employee's figure to 2 decimals BEFORE summing so these totals match the
+        // generated PAYROL_PAYMENT amounts exactly. The payment sums each invoice's total rounded
+        // per-invoice (GetInvoiceTotal → 2 dp), so a raw sum here would diverge by fractions of a
+        // piaster (e.g. net 675,142.999 vs. the payment's 675,143.01).
+        const totalBase = data.reduce((s, r) => s + utils.num(r.baseSalary), 0);
+        const totalGross = data.reduce((s, r) => s + utils.num(r.grossTotal), 0);
+        const totalAdvances = data.reduce((s, r) => s + utils.num(r.advances), 0);
+        const totalAbsence = data.reduce((s, r) => s + utils.num(r.absenceValue), 0);
+        const totalDeductions = data.reduce((s, r) => s + utils.num(r.totalDeductions), 0);
+        const totalOvertime = data.reduce((s, r) => s + utils.num(r.overtimeValue), 0);
+        const totalNet = data.reduce((s, r) => s + utils.num(r.netSalary), 0);
 
         const totalRow = ws.addRow([
             "الإجمالي", "", "", "", totalBase, "", "",
             data.reduce((s, r) => s + r.overtimeDays, 0),
-            data.reduce((s, r) => s + r.overtimeValue, 0),
+            totalOvertime,
             totalGross,
             totalAdvances,
             data.reduce((s, r) => s + r.absenceDays, 0),
@@ -119,7 +124,7 @@ const PayrollReport2: React.FC<PayrollReport2Props> = ({ open, onClose }) => {
             ["اجمالي المرتبات", totalBase],
             ["سلفيات الموظفين", -totalAdvances],
             ["صافي الرواتب", totalNet],
-            ["الإضافي", data.reduce((s, r) => s + r.overtimeValue, 0)],
+            ["الإضافي", totalOvertime],
             ["اجمالي المرتبات مع الإضافي", totalGross],
             ["الغياب", -totalAbsence],
             ["اجمالي الخصومات", -totalDeductions],
@@ -127,31 +132,32 @@ const PayrollReport2: React.FC<PayrollReport2Props> = ({ open, onClose }) => {
 
         summary.forEach(([label, amount]) => {
             ws.getCell(`A${currentRow}`).value = utils.rtl(label as string);
-            ws.getCell(`B${currentRow}`).value = Math.round(amount as number);
+            ws.getCell(`B${currentRow}`).value = utils.num(amount as number);
             currentRow++;
         });
 
-        // Bank vs Cash
+        // Bank vs Cash — must reconcile to the two generated PAYROL_PAYMENT amounts (bank/cash).
+        // Sum per-employee 2-dp net (as above) so these equal the payment credits to the piaster.
         const bankTotal = data
             .filter(e => e.paymentMethod?.includes("تحويل") || e.paymentMethod?.includes("BANK"))
-            .reduce((s, r) => s + r.netSalary, 0);
+            .reduce((s, r) => s + utils.num(r.netSalary), 0);
 
         const cashTotal = totalNet - bankTotal;
 
         currentRow += 1;
         ws.getCell(`A${currentRow}`).value = utils.rtl("تحويل بنكي");
-        ws.getCell(`B${currentRow}`).value = Math.round(bankTotal);
+        ws.getCell(`B${currentRow}`).value = utils.num(bankTotal);
 
         currentRow++;
         ws.getCell(`A${currentRow}`).value = utils.rtl("يصرف نقدا");
-        ws.getCell(`B${currentRow}`).value = Math.round(cashTotal);
+        ws.getCell(`B${currentRow}`).value = utils.num(cashTotal);
 
         // Date & Final Net
         currentRow += 2;
         ws.getCell(`A${currentRow}`).value = utils.rtl("تاريخ كشف الرواتب");
         ws.getCell(`B${currentRow}`).value = dayjs().format('DD/MM/YYYY');
         ws.getCell(`D${currentRow}`).value = utils.rtl("صافي الرواتب");
-        ws.getCell(`E${currentRow}`).value = Math.round(totalNet);
+        ws.getCell(`E${currentRow}`).value = utils.num(totalNet);
 
         // Column Widths
         ws.columns = [

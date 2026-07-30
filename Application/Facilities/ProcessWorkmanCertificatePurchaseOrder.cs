@@ -1,3 +1,4 @@
+using Application.Accounting.Services;
 using Application.Order.Orders;
 using Domain;
 using MediatR;
@@ -28,13 +29,16 @@ namespace Application.Facilities
             private readonly ILogger<Handler> _logger;
             private readonly IMediator _mediator;
             private readonly IOrderHelperService _orderHelperService;
+            private readonly IInvoiceHelperService _invoiceHelperService;
 
-            public Handler(DataContext context, IMediator mediator, ILogger<Handler> logger, IOrderHelperService orderHelperService)
+            public Handler(DataContext context, IMediator mediator, ILogger<Handler> logger,
+                IOrderHelperService orderHelperService, IInvoiceHelperService invoiceHelperService)
             {
                 _context = context;
                 _mediator = mediator;
                 _logger = logger;
                 _orderHelperService = orderHelperService;
+                _invoiceHelperService = invoiceHelperService;
             }
 
             public async Task<Result<OrderStatusChangeResult>> Handle(Command request, CancellationToken cancellationToken)
@@ -100,6 +104,22 @@ namespace Application.Facilities
                         toItemStatus: "ITEM_COMPLETED",
                         digitalItemStatus: "ITEM_COMPLETED"
                     );
+
+                    // Ensure the purchase invoice exists, explicitly rather than as a side effect of the
+                    // status change above. OrderStatusChanges only invoices on a genuine transition INTO
+                    // ORDER_COMPLETED (ChangeOrderStatus short-circuits at the top when the order is already
+                    // in the target status). But a certificate's receipts can complete the order first —
+                    // UpdateOrderStatusFromReceipt sets ORDER_COMPLETED by direct assignment — so by the time
+                    // this runs the transition has already happened and the invoice hook is skipped, leaving
+                    // the goods received and paid but never invoiced (UNINVOICED_SHIP_RCPT and AP both left
+                    // uncleared; see certificate 182-0028). CreateInvoiceFromOrder is idempotent: it bills
+                    // only order items with no ORDER_ITEM_BILLING row yet and creates nothing when there is
+                    // nothing left to bill, so this is a no-op when the transition path already invoiced.
+                    var invoiceId = await _invoiceHelperService.CreateInvoiceFromOrder(orderId);
+                    if (!string.IsNullOrEmpty(invoiceId))
+                        _logger.LogInformation(
+                            "Ensured purchase invoice {InvoiceId} for OrderId {OrderId} / WorkEffort {WorkEffortId}",
+                            invoiceId, orderId, request.WorkEffortId);
 
                     // REFACTOR: Added logic to update WorkEfforts CURRENT_STATUS_ID to WEPR_APPROVED for projectCertificate
                     // where WorkEffortId matches the provided ID. This ties certificate approval to successful order processing,
