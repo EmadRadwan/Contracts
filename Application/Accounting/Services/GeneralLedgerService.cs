@@ -3787,25 +3787,32 @@ public class GeneralLedgerService : IGeneralLedgerService
                                            && prty.PreferredPayrollPaymentMethodId == preferredMethodId
                                      select new { Invoice = inv, Party = prty }).ToListAsync();
 
-            // 3. Create AcctgTrans Header (Hard-coded)
-            var acctgTransParams = new CreateAcctgTransParams
+            // 3. Total the candidate run so we can distinguish the ONE aggregate settlement
+            //    (the batch payment that pays the whole month's run for this method) from an
+            //    ad-hoc payment (a raise / bonus / individual settlement). Only the aggregate
+            //    may fan out to every employee invoice; anything else posts just what it pays.
+            //    NOTE: the previous version debited EVERY month+method invoice for any payment,
+            //    so each extra cash/bank payroll payment re-booked the whole run (triple-booking).
+            var invoiceTotals = new Dictionary<string, decimal>();
+            decimal runTotal = 0m;
+            foreach (var d in invoiceData)
             {
-                AcctgTransTypeId = "OUTGOING_PAYMENT",
-                GlFiscalTypeId = "ACTUAL",
-                PaymentId = payment.PaymentId,
-                TransactionDate = payment.EffectiveDate,
-                IsPosted = "Y",
-                PostedDate = stamp,
-                Description = payment.Comments,
-                PartyId = payment.PartyIdTo,
-                RoleTypeId = "BILL_FROM_VENDOR"
-            };
-            var acctgTransId = await _acctgTransService.CreateAcctgTrans(acctgTransParams);
+                var t = await _invoiceUtilityService.GetInvoiceTotal(d.Invoice.InvoiceId, true);
+                invoiceTotals[d.Invoice.InvoiceId] = t;
+                runTotal += t;
+            }
+            runTotal = _acctgMiscService.CustomRound(runTotal, (int)ledgerDecimals, roundingMode);
 
-            // 4. Create Credit Entry
-            var creditEntry = new AcctgTransEntry
+            // A payment settles the whole run ONLY if it isn't directed at a specific account
+            // (OverrideGlAccountId) and its amount matches the run exactly.
+            bool isAggregateRunSettlement =
+                string.IsNullOrEmpty(payment.OverrideGlAccountId) && runTotal == paymentAmount;
+
+            var entries = new List<AcctgTransEntry>();
+
+            // Line 001 — credit cash/bank for THIS payment's own amount (always correct).
+            entries.Add(new AcctgTransEntry
             {
-                AcctgTransId = acctgTransId,
                 AcctgTransEntrySeqId = "001",
                 GlAccountId = creditGlAccountId,
                 DebitCreditFlag = "C",
@@ -3818,67 +3825,120 @@ public class GeneralLedgerService : IGeneralLedgerService
                 Description = payment.Comments,
                 CreatedStamp = stamp,
                 LastUpdatedStamp = stamp
-            };
-            await _acctgTransService.CreateAcctgTransEntry(creditEntry);
+            });
 
-            // 5. Create Debit Entries for each employee's invoice
-            int seq = 2;
-            decimal debitTotal = 0m;
-            foreach (var data in invoiceData)
+            if (isAggregateRunSettlement)
             {
-                var invoice = data.Invoice;
-                var party = data.Party;
-                var invoiceTotal = await _invoiceUtilityService.GetInvoiceTotal(invoice.InvoiceId, true);
-                if (invoiceTotal == 0) continue;
-                debitTotal += invoiceTotal;
-
-                var accruedGlAccountId = party.GlAccountIdAdvancedPayment;
-
-                if (string.IsNullOrEmpty(accruedGlAccountId))
+                // ===== Mode 1: aggregate — debit each employee's payroll invoice (unchanged behavior) =====
+                int seq = 2;
+                foreach (var data in invoiceData)
                 {
-                    accruedGlAccountId = await _context.PartyGlAccounts
-                        .Where(pga => pga.PartyId == invoice.PartyIdFrom &&
+                    var invoiceTotal = invoiceTotals[data.Invoice.InvoiceId];
+                    if (invoiceTotal == 0) continue;
+
+                    // The payment ALWAYS clears the employee's accrued Net Salary Payable — the
+                    // ACCOUNTS_PAYABLE account the payroll invoice credited. It must NOT use
+                    // GlAccountIdAdvancedPayment: that is the EXPENSE account (e.g. project 124426 or
+                    // 601000) which the invoice already debited, so re-debiting it here would double-book
+                    // the salary cost and leave the payable uncleared. (Bank employees only posted
+                    // correctly before because they have no GlAccountIdAdvancedPayment and fell back to
+                    // this same accrued lookup.)
+                    var accruedGlAccountId = await _context.PartyGlAccounts
+                        .Where(pga => pga.PartyId == data.Invoice.PartyIdFrom &&
+                                      pga.RoleTypeId == "EMPLOYEE" &&
+                                      pga.GlAccountTypeId == "ACCOUNTS_PAYABLE")
+                        .Select(pga => pga.GlAccountId)
+                        .FirstOrDefaultAsync();
+
+                    if (string.IsNullOrEmpty(accruedGlAccountId))
+                    {
+                        _logger.LogWarning($"Accrued account not found for employee {data.Invoice.PartyIdFrom}. Skipping debit entry.");
+                        continue;
+                    }
+
+                    entries.Add(new AcctgTransEntry
+                    {
+                        AcctgTransEntrySeqId = (seq++).ToString("D3"),
+                        GlAccountId = accruedGlAccountId,
+                        GlAccountTypeId = "ACCOUNTS_PAYABLE",
+                        DebitCreditFlag = "D",
+                        AcctgTransEntryTypeId = "_NA_",
+                        Amount = invoiceTotal,
+                        OrganizationPartyId = organizationPartyId,
+                        PartyId = data.Invoice.PartyIdFrom,
+                        RoleTypeId = "EMPLOYEE",
+                        ReconcileStatusId = "AES_NOT_RECONCILED",
+                        Description = data.Invoice.Description ?? payment.Comments,
+                        CreatedStamp = stamp,
+                        LastUpdatedStamp = stamp
+                    });
+                }
+            }
+            else
+            {
+                // ===== Mode 2: directed / ad-hoc payment — post ONLY what this payment pays =====
+                // Debit account precedence: explicit OverrideGlAccountId, else the recipient's
+                // accrued payable. Never fans out to the whole run.
+                var debitGlAccountId = payment.OverrideGlAccountId;
+                if (string.IsNullOrEmpty(debitGlAccountId))
+                {
+                    debitGlAccountId = await _context.PartyGlAccounts
+                        .Where(pga => pga.PartyId == payment.PartyIdTo &&
+                                      pga.OrganizationPartyId == organizationPartyId &&
                                       pga.RoleTypeId == "EMPLOYEE" &&
                                       pga.GlAccountTypeId == "ACCOUNTS_PAYABLE")
                         .Select(pga => pga.GlAccountId)
                         .FirstOrDefaultAsync();
                 }
 
-                if (string.IsNullOrEmpty(accruedGlAccountId))
+                if (string.IsNullOrEmpty(debitGlAccountId))
                 {
-                    _logger.LogWarning($"Accrued account not found for employee {invoice.PartyIdFrom}. Skipping debit entry.");
-                    continue;
+                    throw new InvalidOperationException(
+                        $"Cannot post payroll payment {paymentId}: no OverrideGlAccountId and no accrued " +
+                        $"account for party {payment.PartyIdTo}.");
                 }
 
-                var debitEntry = new AcctgTransEntry
+                entries.Add(new AcctgTransEntry
                 {
-                    AcctgTransId = acctgTransId,
-                    AcctgTransEntrySeqId = seq.ToString("D3"),
-                    GlAccountId = accruedGlAccountId,
+                    AcctgTransEntrySeqId = "002",
+                    GlAccountId = debitGlAccountId,
                     GlAccountTypeId = "ACCOUNTS_PAYABLE",
                     DebitCreditFlag = "D",
                     AcctgTransEntryTypeId = "_NA_",
-                    Amount = invoiceTotal,
+                    Amount = paymentAmount,
                     OrganizationPartyId = organizationPartyId,
-                    PartyId = invoice.PartyIdFrom,
+                    PartyId = payment.PartyIdTo,
                     RoleTypeId = "EMPLOYEE",
                     ReconcileStatusId = "AES_NOT_RECONCILED",
-                    Description = invoice.Description ?? payment.Comments,
+                    Description = payment.Comments,
                     CreatedStamp = stamp,
                     LastUpdatedStamp = stamp
-                };
-                await _acctgTransService.CreateAcctgTransEntry(debitEntry);
-                seq++;
+                });
             }
 
-            if (debitTotal != paymentAmount)
+            // 4. Hard balance guard — never persist an unbalanced payroll transaction.
+            decimal debitTotal = entries.Where(e => e.DebitCreditFlag == "D").Sum(e => e.Amount ?? 0m);
+            decimal creditTotal = entries.Where(e => e.DebitCreditFlag == "C").Sum(e => e.Amount ?? 0m);
+            if (Math.Abs(debitTotal - creditTotal) >= 0.01m)
             {
-                _logger.LogError(
-                    $"Unbalanced payroll AcctgTrans {acctgTransId} for payment {paymentId}: " +
-                    $"credit (payment amount) = {paymentAmount}, sum of debit entries = {debitTotal}, " +
-                    $"difference = {paymentAmount - debitTotal}. Invoices used: month {month}/{year}, " +
-                    $"preferred payment method {preferredMethodId}.");
+                throw new InvalidOperationException(
+                    $"Refusing to post unbalanced payroll AcctgTrans for payment {paymentId}: " +
+                    $"debit {debitTotal} vs credit {creditTotal} " +
+                    $"(mode={(isAggregateRunSettlement ? "aggregate" : "adhoc")}, month {month}/{year}, method {preferredMethodId}).");
             }
+
+            // 5. Persist atomically via the shared helper (assigns AcctgTransId, sets IsPosted='Y').
+            var acctgTransId = await CreateAcctgTransAndEntries(new CreateAcctgTransAndEntriesParams
+            {
+                AcctgTransTypeId = "OUTGOING_PAYMENT",
+                GlFiscalTypeId = "ACTUAL",
+                PaymentId = payment.PaymentId,
+                TransactionDate = payment.EffectiveDate,
+                Description = payment.Comments,
+                PartyId = payment.PartyIdTo,
+                RoleTypeId = "BILL_FROM_VENDOR",
+                AcctgTransEntries = entries
+            });
 
             return acctgTransId;
         }
