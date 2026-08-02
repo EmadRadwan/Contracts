@@ -1,5 +1,6 @@
 using Application.Accounting.Payments;
 using Application.Core;
+using Application.Order.SalesRequests;
 using Application.Projects;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,9 @@ namespace Application.Accounting.Reports
             public DateTime? RevenuesStartDate { get; set; }
             public DateTime? RevenuesEndDate { get; set; }
             public bool RevenuesAllData { get; set; }
+            public DateTime? SalesStartDate { get; set; }
+            public DateTime? SalesEndDate { get; set; }
+            public bool SalesAllData { get; set; }
         }
 
         public class Handler : IRequestHandler<Query, ProjectReportDto>
@@ -34,6 +38,8 @@ namespace Application.Accounting.Reports
                 var revenues = await GetRevenues(request, cancellationToken);
                 var directPayments = await GetDirectPayments(request, cancellationToken);
                 var operatingExpenses = await GetOperatingExpenses(request, cancellationToken);
+                var payroll = await GetPayroll(request, cancellationToken);
+                var apartmentSales = await GetApartmentSales(request, cancellationToken);
 
                 // Filter out duplicates across expense sections
                 var expensePaymentIds = expenses
@@ -60,7 +66,9 @@ namespace Application.Accounting.Reports
                     Expenses = expenses,
                     Revenues = revenues,
                     DirectPayments = filteredDirectPayments,
-                    OperatingExpenses = filteredOperatingExpenses
+                    OperatingExpenses = filteredOperatingExpenses,
+                    Payroll = payroll,
+                    ApartmentSales = apartmentSales
                 };
             }
 
@@ -263,6 +271,17 @@ namespace Application.Accounting.Reports
                     // Calculate due status using consistent logic
                     r.DueStatusArabic = CalculateDueStatusArabic(r.DueDate, false, r.StatusId, r.StatusDescription);
 
+                    // Due-status buckets — one dedicated value per row so the report can offer a
+                    // filterable column for each. Only meaningful for uncollected payments.
+                    if (r.StatusId != "PMNT_RECEIVED" && r.DueDate.HasValue)
+                    {
+                        var daysToDue = (r.DueDate.Value.Date - today.Date).Days;
+                        if (daysToDue < 0) r.LateDue = "متأخر";
+                        else if (daysToDue == 0) r.DeservedToday = "مستحق اليوم";
+                        else if (daysToDue <= 7) r.DeservedWithinWeek = "مستحق خلال أسبوع";
+                        else if (daysToDue <= 30) r.DeservedWithinMonth = "مستحق خلال شهر";
+                    }
+
                     if (r.PaymentStatus == "Received")
                     {
                         r.OverdueBucket = "Received";
@@ -376,6 +395,9 @@ namespace Application.Accounting.Reports
                     from createdBy in createdByJoin.DefaultIfEmpty()
                     where pyt.StatusId == "PMNT_SENT"
                           && ptt.ParentTypeId == "DISBURSEMENT"
+                          // Payroll has its own section (GetPayroll, from PAYROL_INVOICE accruals);
+                          // exclude payroll payments so salary isn't double-counted here.
+                          && pyt.PaymentTypeId != "PAYROL_PAYMENT"
                     select new PaymentRecord
                     {
                         PaymentId = pyt.PaymentId,
@@ -458,6 +480,9 @@ namespace Application.Accounting.Reports
                     from cc in ccJoin.DefaultIfEmpty()
                     where pyt.OverrideGlAccountId != null
                           && (ptt.ParentTypeId == "DISBURSEMENT" || ptt.PaymentTypeId == "DISBURSEMENT")
+                          // Payroll has its own section (GetPayroll, from PAYROL_INVOICE accruals);
+                          // exclude payroll payments so salary isn't double-counted here.
+                          && pyt.PaymentTypeId != "PAYROL_PAYMENT"
                     select new PaymentRecord
                     {
                         PaymentId = pyt.PaymentId,
@@ -504,6 +529,235 @@ namespace Application.Accounting.Reports
                 }
 
                 return await query.ToListAsync(ct);
+            }
+
+            private async Task<List<PaymentRecord>> GetPayroll(Query request, CancellationToken ct)
+            {
+                // Company-wide labor cost straight from the GL: every DEBIT from a payroll
+                // transaction — the PAYROL_INVOICE accrual (the salary expense per employee), OR an
+                // ad-hoc PAYROL_PAYMENT booked directly to an expense account (a salary paid without
+                // an accrual). We EXCLUDE debits to employee accrued-payable accounts, because the
+                // aggregate payroll payment debits that payable to clear it — that's not expense and
+                // would double-count the accrual. Each debit line carries its employee
+                // (AcctgTransEntry.PartyId) and the charge account it hit.
+                var accruedGlAccountIds = (await _context.PartyGlAccounts.AsNoTracking()
+                        .Where(pga => pga.RoleTypeId == "EMPLOYEE" && pga.GlAccountTypeId == "ACCOUNTS_PAYABLE"
+                                      && pga.GlAccountId != null)
+                        .Select(pga => pga.GlAccountId)
+                        .Distinct()
+                        .ToListAsync(ct))
+                    .ToHashSet();
+
+                var query = from ate in _context.AcctgTransEntries.AsNoTracking()
+                    join at in _context.AcctgTrans.AsNoTracking() on ate.AcctgTransId equals at.AcctgTransId
+                    join pmt in _context.Payments.AsNoTracking() on at.PaymentId equals pmt.PaymentId into pmtJoin
+                    from pmt in pmtJoin.DefaultIfEmpty()
+                    join emp in _context.Parties.AsNoTracking() on ate.PartyId equals emp.PartyId into empJoin
+                    from emp in empJoin.DefaultIfEmpty()
+                    join gl in _context.GlAccounts.AsNoTracking() on ate.GlAccountId equals gl.GlAccountId into glJoin
+                    from gl in glJoin.DefaultIfEmpty()
+                    where ate.DebitCreditFlag == "D"
+                          && (at.AcctgTransTypeId == "PAYROL_INVOICE"
+                              // Ad-hoc per-employee payroll payments only. The batch's aggregate
+                              // payment goes to the shared staff party "276" and settles the whole
+                              // run / accrued payable — it is never a per-employee salary expense,
+                              // so it must not be added on top of the accruals.
+                              || (at.AcctgTransTypeId == "OUTGOING_PAYMENT"
+                                  && pmt.PaymentTypeId == "PAYROL_PAYMENT"
+                                  && pmt.PartyIdTo != "276"))
+                    select new { at, ate, emp, gl };
+
+                if (!request.ExpensesAllData)
+                {
+                    if (request.ExpensesStartDate.HasValue)
+                        query = query.Where(x => x.at.TransactionDate >= request.ExpensesStartDate.Value);
+                    if (request.ExpensesEndDate.HasValue)
+                        query = query.Where(x => x.at.TransactionDate <= request.ExpensesEndDate.Value);
+                }
+
+                var data = await query.ToListAsync(ct);
+
+                // Drop debits to employee accrued-payable accounts (aggregate-payment clearings).
+                data = data
+                    .Where(x => x.ate.GlAccountId == null || !accruedGlAccountIds.Contains(x.ate.GlAccountId))
+                    .ToList();
+
+                var results = data.Select(x => new PaymentRecord
+                {
+                    PaymentId = x.at.AcctgTransId + ":" + x.ate.AcctgTransEntrySeqId,
+                    PaymentTypeId = x.at.AcctgTransTypeId,
+                    PaymentTypeDescription = x.at.AcctgTransTypeId == "PAYROL_INVOICE" ? "رواتب (استحقاق)" : "رواتب (دفع)",
+                    PartyIdFrom = x.ate.PartyId,
+                    PartyIdFromName = x.emp != null ? x.emp.Description : (x.ate.PartyId ?? string.Empty),
+                    PartyIdTo = "Company",
+                    PartyIdToName = "Golden Land",
+                    StatusId = x.at.IsPosted == "Y" ? "POSTED" : "NOT_POSTED",
+                    StatusDescription = x.at.IsPosted == "Y" ? "تم الترحيل" : "غير مرحل",
+                    StatusDescriptionEnglish = x.at.IsPosted == "Y" ? "Posted" : "Not Posted",
+                    EffectiveDate = x.at.TransactionDate.HasValue
+                        ? DateOnly.FromDateTime(x.at.TransactionDate.Value)
+                        : null,
+                    CreatedStamp = x.at.CreatedStamp ?? DateTime.MinValue,
+                    Comments = x.ate.Description ?? x.at.Description,
+                    Amount = x.ate.Amount ?? 0m,
+                    ActualCurrencyAmount = x.ate.Amount ?? 0m,
+                    CurrencyUomId = x.ate.CurrencyUomId ?? "EGP",
+                    IsDisbursement = true,
+                    ProjectId = x.ate.GlAccountId,
+                    OverrideGlAccountId = x.ate.GlAccountId,
+                    ProjectName = x.gl != null ? (x.gl.AccountNameArabic ?? x.gl.AccountName) : x.ate.GlAccountId,
+                    DueStatusArabic = x.at.IsPosted == "Y" ? "تم الترحيل" : "غير مرحل"
+                }).ToList();
+
+                return results
+                    .OrderByDescending(x => x.EffectiveDate)
+                    .ThenByDescending(x => x.CreatedStamp)
+                    .ToList();
+            }
+
+            // Company-wide apartment sales. Mirrors ListSalesRequestsAndAvailableApartmentsByDateRange
+            // (which stays as its own report) with NO project filter: "sold" rows are approved sales
+            // requests created in the sales date window across all projects; "available" rows are all
+            // APARTMENT products with no sales request and not marked SOLD (current inventory, never
+            // date-filtered).
+            private async Task<List<SalesRequestOrApartmentRecord>> GetApartmentSales(Query request,
+                CancellationToken ct)
+            {
+                const string language = "ar";
+
+                var apartmentStatusLookup = await _context.StatusItems.AsNoTracking()
+                    .Where(s => s.StatusTypeId == "APARTMENT_STATUS")
+                    .ToDictionaryAsync(s => s.StatusId,
+                        s => language == "ar" ? (s.DescriptionArabic ?? s.Description) : s.Description, ct);
+
+                var salesRequestStatusLookup = await _context.StatusItems.AsNoTracking()
+                    .Where(s => s.StatusTypeId == "SALES_REQUEST_STATUS")
+                    .ToDictionaryAsync(s => s.StatusId,
+                        s => language == "ar" ? (s.DescriptionArabic ?? s.Description) : s.Description, ct);
+
+                var projectNameLookup = await _context.WorkEfforts.AsNoTracking()
+                    .Where(w => w.WorkEffortTypeId == "PROJECT")
+                    .ToDictionaryAsync(w => w.WorkEffortId, w => w.ProjectName ?? "", ct);
+
+                var floorMap = new Dictionary<string, string>
+                {
+                    { "0", "الطابق الأرضي" }, { "1", "الطابق الأول" }, { "2", "الطابق الثاني" },
+                    { "3", "الطابق الثالث" }, { "4", "الطابق الرابع" }, { "5", "الطابق الخامس" },
+                    { "6", "الطابق السادس" }
+                };
+
+                var notSoldLabel = language == "ar" ? "غير مباع" : "Not Sold";
+
+                // Sold rows — all approved sales requests, filtered by the sales date window.
+                var soldQuery = from sr in _context.SalesRequests.AsNoTracking()
+                    join prod in _context.Products.AsNoTracking() on sr.ProductId equals prod.ProductId
+                    join pt in _context.ProductTypes.AsNoTracking() on prod.ProductTypeId equals pt.ProductTypeId
+                    join customer in _context.Parties.AsNoTracking() on sr.FromPartyId equals customer.PartyId into custGroup
+                    from cust in custGroup.DefaultIfEmpty()
+                    join employee in _context.Parties.AsNoTracking() on sr.EmployeePartyId equals employee.PartyId into empGroup
+                    from emp in empGroup.DefaultIfEmpty()
+                    where sr.StatusId == "SALES_REQUEST_APPROVED"
+                    select new { sr, prod, pt, cust, emp };
+
+                if (!request.SalesAllData)
+                {
+                    if (request.SalesStartDate.HasValue)
+                        soldQuery = soldQuery.Where(x => x.sr.CreatedStamp >= request.SalesStartDate.Value);
+                    if (request.SalesEndDate.HasValue)
+                        soldQuery = soldQuery.Where(x => x.sr.CreatedStamp <= request.SalesEndDate.Value);
+                }
+
+                var soldRaw = await soldQuery.ToListAsync(ct);
+
+                var soldRecords = soldRaw.Select(x => new SalesRequestOrApartmentRecord
+                {
+                    IsSold = true,
+                    SalesRequestId = x.sr.SalesRequestId,
+                    ApartmentId = x.sr.ProductId,
+                    ApartmentName = x.prod.ProductName ?? "",
+                    ProductTypeDescription = language == "ar" ? (x.pt.DescriptionArabic ?? x.pt.Description) : x.pt.Description,
+                    FromPartyId = x.sr.FromPartyId,
+                    FromPartyName = x.cust != null ? x.cust.Description ?? "" : "",
+                    EmployeePartyId = x.sr.EmployeePartyId,
+                    EmployeeName = x.emp != null ? x.emp.Description ?? "" : "",
+                    BuildingNumber = x.prod.BuildingNumber ?? "",
+                    ProjectName = SalesRequestProjectionHelpers.GetProjectName(x.prod.ProjectId, projectNameLookup),
+                    FloorNumber = SalesRequestProjectionHelpers.GetFloorName(x.prod.FloorNumber, floorMap),
+                    ApartmentSpaceM2 = x.prod.ApartmentSpaceM2 ?? 0m,
+                    GardenSpaceM2 = x.prod.GardenSpaceM2,
+                    ApartmentStatusDescription = SalesRequestProjectionHelpers.GetApartmentStatusDescription(x.prod.ApartmentStatusId, apartmentStatusLookup),
+                    MaintenanceDeposit = x.sr.MaintenanceDeposit,
+                    IsChequesDelivered = x.sr.IsChequesDelivered,
+                    StatusId = x.sr.StatusId ?? "",
+                    StatusDescription = SalesRequestProjectionHelpers.GetSalesRequestStatusDescription(x.sr.StatusId, salesRequestStatusLookup),
+                    TotalPrice = x.sr.TotalPrice,
+                    AdvancePayment = x.sr.AdvancePayment,
+                    AdvancePercent = x.sr.AdvancePercent,
+                    MaintenancePercent = x.sr.MaintenancePercent,
+                    SaleDate = x.sr.SaleDate,
+                    Comments = x.sr.Comments,
+                    CreatedStamp = x.sr.CreatedStamp,
+                    LastUpdatedStamp = x.sr.LastUpdatedStamp,
+                    ApartmentPricePerM2 = x.sr.ApartmentPricePerM2,
+                    GardenPricePerM2 = x.sr.GardenPricePerM2,
+                    Discount = x.sr.Discount,
+                    NumberOfInstallments = x.sr.NumberOfInstallments,
+                    DateOfFirstInstallment = x.sr.DateOfFirstInstallment,
+                    MonthsBetweenInstallments = x.sr.MonthsBetweenInstallments
+                }).ToList();
+
+                // Available/reserved rows — all APARTMENT products with no sales request and not SOLD.
+                var availableRaw = await (from prod in _context.Products.AsNoTracking()
+                    join pt in _context.ProductTypes.AsNoTracking() on prod.ProductTypeId equals pt.ProductTypeId
+                    where prod.ProductTypeId == "APARTMENT"
+                          && !prod.SalesRequests.Any()
+                          && prod.ApartmentStatusId != "APARTMENT_SOLD"
+                    select new { prod, pt }).ToListAsync(ct);
+
+                var availableRecords = availableRaw.Select(x => new SalesRequestOrApartmentRecord
+                {
+                    IsSold = false,
+                    SalesRequestId = "",
+                    ApartmentId = x.prod.ProductId,
+                    ApartmentName = x.prod.ProductName ?? "",
+                    ProductTypeDescription = language == "ar" ? (x.pt.DescriptionArabic ?? x.pt.Description) : x.pt.Description,
+                    FromPartyId = "",
+                    FromPartyName = "",
+                    EmployeePartyId = "",
+                    EmployeeName = "",
+                    BuildingNumber = x.prod.BuildingNumber ?? "",
+                    ProjectName = SalesRequestProjectionHelpers.GetProjectName(x.prod.ProjectId, projectNameLookup),
+                    FloorNumber = SalesRequestProjectionHelpers.GetFloorName(x.prod.FloorNumber, floorMap),
+                    ApartmentSpaceM2 = x.prod.ApartmentSpaceM2 ?? 0m,
+                    GardenSpaceM2 = x.prod.GardenSpaceM2,
+                    ApartmentStatusDescription = SalesRequestProjectionHelpers.GetApartmentStatusDescription(x.prod.ApartmentStatusId, apartmentStatusLookup),
+                    MaintenanceDeposit = null,
+                    IsChequesDelivered = null,
+                    StatusId = "",
+                    StatusDescription = notSoldLabel,
+                    TotalPrice = null,
+                    AdvancePayment = null,
+                    AdvancePercent = null,
+                    MaintenancePercent = null,
+                    SaleDate = null,
+                    Comments = x.prod.Comments,
+                    CreatedStamp = x.prod.CreatedStamp,
+                    LastUpdatedStamp = x.prod.LastUpdatedStamp,
+                    ApartmentPricePerM2 = x.prod.ApartmentPricePerM2,
+                    GardenPricePerM2 = x.prod.GardenPricePerM2,
+                    Discount = null,
+                    NumberOfInstallments = null,
+                    DateOfFirstInstallment = null,
+                    MonthsBetweenInstallments = null
+                }).ToList();
+
+                return soldRecords
+                    .Concat(availableRecords)
+                    .OrderBy(x => x.ProjectName)
+                    .ThenBy(x => x.BuildingNumber)
+                    .ThenBy(x => x.FloorNumber)
+                    .ThenBy(x => x.ApartmentName)
+                    .ToList();
             }
         }
     }

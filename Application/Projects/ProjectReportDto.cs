@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Application.Accounting.Payments;
+using Application.Order.SalesRequests;
 
 namespace Application.Projects
 {
@@ -11,6 +12,8 @@ namespace Application.Projects
         public List<PaymentRecord> DirectPayments { get; set; } = new();
         public List<PaymentRecord> OperatingExpenses { get; set; } = new();
         public List<PaymentRecord> AccountingTransactions { get; set; } = new();
+        public List<PaymentRecord> Payroll { get; set; } = new();
+        public List<SalesRequestOrApartmentRecord> ApartmentSales { get; set; } = new();
     }
 
     public class ProjectExpenseRecord
@@ -76,6 +79,12 @@ namespace Application.Projects
         public string? Comments { get; set; }
         public string? ChequeNumber { get; set; }
         public string? DueStatusArabic { get; set; }
+        // Due-status buckets, each its own field so the report can render one filterable column per
+        // value. Only one is set per (uncollected) row; collected rows leave all four null.
+        public string? DeservedToday { get; set; }
+        public string? DeservedWithinWeek { get; set; }
+        public string? DeservedWithinMonth { get; set; }
+        public string? LateDue { get; set; }
         public int? Year { get; set; }
         public string? Quarter { get; set; }
     }

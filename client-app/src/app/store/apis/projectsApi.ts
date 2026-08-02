@@ -190,9 +190,12 @@ const projectsApi = createApi({
                 expensesStartDate?: string; 
                 expensesEndDate?: string; 
                 expensesAllData: boolean;
-                revenuesStartDate?: string; 
-                revenuesEndDate?: string; 
+                revenuesStartDate?: string;
+                revenuesEndDate?: string;
                 revenuesAllData: boolean;
+                salesStartDate?: string;
+                salesEndDate?: string;
+                salesAllData: boolean;
             }>({
                 query: (params) => ({
                     url: "/project/report",
@@ -206,6 +209,9 @@ const projectsApi = createApi({
                 revenuesStartDate?: string;
                 revenuesEndDate?: string;
                 revenuesAllData: boolean;
+                salesStartDate?: string;
+                salesEndDate?: string;
+                salesAllData: boolean;
             }>({
                 query: (params) => ({
                     url: "/project/companyReport",
@@ -326,6 +332,8 @@ export interface ProjectReportDto {
     directPayments: Payment[];
     operatingExpenses: Payment[];
     accountingTransactions: Payment[];
+    payroll: Payment[];
+    apartmentSales: any[];
 }
 
 export interface ProjectExpenseRecord {
@@ -387,6 +395,10 @@ export interface ProjectRevenueRecord {
     comments?: string;
     chequeNumber?: string;
     dueStatusArabic?: string;
+    deservedToday?: string;
+    deservedWithinWeek?: string;
+    deservedWithinMonth?: string;
+    lateDue?: string;
     year?: number;
     quarter?: string;
 }

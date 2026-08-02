@@ -262,7 +262,10 @@ public class ProjectController : BaseApiController
         [FromQuery] bool expensesAllData,
         [FromQuery] DateTime? revenuesStartDate,
         [FromQuery] DateTime? revenuesEndDate,
-        [FromQuery] bool revenuesAllData)
+        [FromQuery] bool revenuesAllData,
+        [FromQuery] DateTime? salesStartDate,
+        [FromQuery] DateTime? salesEndDate,
+        [FromQuery] bool salesAllData)
     {
         return HandleResult(Result<ProjectReportDto>.Success(await Mediator.Send(new GetProjectReport.Query
         {
@@ -272,7 +275,10 @@ public class ProjectController : BaseApiController
             ExpensesAllData = expensesAllData,
             RevenuesStartDate = revenuesStartDate,
             RevenuesEndDate = revenuesEndDate,
-            RevenuesAllData = revenuesAllData
+            RevenuesAllData = revenuesAllData,
+            SalesStartDate = salesStartDate,
+            SalesEndDate = salesEndDate,
+            SalesAllData = salesAllData
         })));
     }
 
@@ -283,7 +289,10 @@ public class ProjectController : BaseApiController
         [FromQuery] bool expensesAllData,
         [FromQuery] DateTime? revenuesStartDate,
         [FromQuery] DateTime? revenuesEndDate,
-        [FromQuery] bool revenuesAllData)
+        [FromQuery] bool revenuesAllData,
+        [FromQuery] DateTime? salesStartDate,
+        [FromQuery] DateTime? salesEndDate,
+        [FromQuery] bool salesAllData)
     {
         return HandleResult(Result<ProjectReportDto>.Success(await Mediator.Send(new Application.Accounting.Reports.GetCompanyReport.Query
         {
@@ -292,7 +301,10 @@ public class ProjectController : BaseApiController
             ExpensesAllData = expensesAllData,
             RevenuesStartDate = revenuesStartDate,
             RevenuesEndDate = revenuesEndDate,
-            RevenuesAllData = revenuesAllData
+            RevenuesAllData = revenuesAllData,
+            SalesStartDate = salesStartDate,
+            SalesEndDate = salesEndDate,
+            SalesAllData = salesAllData
         })));
     }
 

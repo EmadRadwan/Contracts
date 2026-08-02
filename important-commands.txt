@@ -336,6 +336,7 @@ analyze gl -> dim_gl_account power bi
 review gl -> mismatch in trial balance and certificates
 review 2nd -> New ERP enhancements for GoldenLand
 find invoice -> summarize sessions related to supply certificate invoices
+find project -> project report and start was dedicated to fixes for payroll payment type error in creating their acctg trans
 
   
   

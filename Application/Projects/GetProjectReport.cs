@@ -1,5 +1,6 @@
 using Application.Accounting.Payments;
 using Application.Core;
+using Application.Order.SalesRequests;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
@@ -17,6 +18,9 @@ namespace Application.Projects
             public DateTime? RevenuesStartDate { get; set; }
             public DateTime? RevenuesEndDate { get; set; }
             public bool RevenuesAllData { get; set; }
+            public DateTime? SalesStartDate { get; set; }
+            public DateTime? SalesEndDate { get; set; }
+            public bool SalesAllData { get; set; }
         }
 
         public class Handler : IRequestHandler<Query, ProjectReportDto>
@@ -35,6 +39,8 @@ namespace Application.Projects
                 var directPayments = await GetDirectPayments(request, cancellationToken);
                 var operatingExpenses = await GetOperatingExpenses(request, cancellationToken);
                 var accountingTransactions = await GetAccountingTransactions(request, cancellationToken);
+                var payroll = await GetProjectPayroll(request, cancellationToken);
+                var apartmentSales = await GetApartmentSales(request, cancellationToken);
 
                 // Filter out duplicates across expense sections
                 var expensePaymentIds = expenses
@@ -62,7 +68,9 @@ namespace Application.Projects
                     Revenues = revenues,
                     DirectPayments = filteredDirectPayments,
                     OperatingExpenses = filteredOperatingExpenses,
-                    AccountingTransactions = accountingTransactions
+                    AccountingTransactions = accountingTransactions,
+                    Payroll = payroll,
+                    ApartmentSales = apartmentSales
                 };
             }
 
@@ -312,6 +320,17 @@ namespace Application.Projects
                     // Calculate due status using consistent logic
                     r.DueStatusArabic = CalculateDueStatusArabic(r.DueDate, false, r.StatusId, r.StatusDescription);
 
+                    // Due-status buckets — one dedicated value per row so the report can offer a
+                    // filterable column for each. Only meaningful for uncollected payments.
+                    if (r.StatusId != "PMNT_RECEIVED" && r.DueDate.HasValue)
+                    {
+                        var daysToDue = (r.DueDate.Value.Date - today.Date).Days;
+                        if (daysToDue < 0) r.LateDue = "متأخر";
+                        else if (daysToDue == 0) r.DeservedToday = "مستحق اليوم";
+                        else if (daysToDue <= 7) r.DeservedWithinWeek = "مستحق خلال أسبوع";
+                        else if (daysToDue <= 30) r.DeservedWithinMonth = "مستحق خلال شهر";
+                    }
+
                     if (r.PaymentStatus == "Received")
                     {
                         r.OverdueBucket = "Received";
@@ -438,6 +457,9 @@ namespace Application.Projects
                               (glAccountId != null && pyt.OverrideGlAccountId == glAccountId))
                           //&& pyt.StatusId == "PMNT_SENT"
                           && ptt.ParentTypeId == "DISBURSEMENT"
+                          // Payroll has its own section (GetProjectPayroll, from PAYROL_INVOICE
+                          // accruals); exclude payroll payments here so salary isn't double-counted.
+                          && pyt.PaymentTypeId != "PAYROL_PAYMENT"
                     select new PaymentRecord
                     {
                         PaymentId = pyt.PaymentId,
@@ -669,6 +691,9 @@ namespace Application.Projects
                           && allGlAccountIds.Contains(pyt.OverrideGlAccountId)
                           //&& pyt.StatusId == "PMNT_SENT"
                           && (ptt.ParentTypeId == "DISBURSEMENT" || ptt.PaymentTypeId == "DISBURSEMENT")
+                          // Payroll has its own section (GetProjectPayroll, from PAYROL_INVOICE
+                          // accruals); exclude payroll payments here so salary isn't double-counted.
+                          && pyt.PaymentTypeId != "PAYROL_PAYMENT"
                     select new PaymentRecord
                     {
                         PaymentId = pyt.PaymentId,
@@ -718,6 +743,262 @@ namespace Application.Projects
                 
 
                 return results;
+            }
+
+            private async Task<List<PaymentRecord>> GetProjectPayroll(Query request, CancellationToken ct)
+            {
+                var project = await _context.WorkEfforts.AsNoTracking()
+                    .FirstOrDefaultAsync(w => w.WorkEffortId == request.ProjectId, ct);
+
+                if (project == null) return new List<PaymentRecord>();
+
+                // Project GL accounts: the main account + the operating-expense sub-tree
+                // (same set the accounting-transactions section uses).
+                var glAccountIds = new HashSet<string>();
+                if (!string.IsNullOrEmpty(project.GlAccountId))
+                    glAccountIds.Add(project.GlAccountId);
+
+                if (!string.IsNullOrEmpty(project.OperatingExpenseGlAccountId))
+                {
+                    var parentGlAccountId = project.OperatingExpenseGlAccountId;
+                    glAccountIds.Add(parentGlAccountId);
+
+                    var childAccounts = await _context.GlAccounts
+                        .AsNoTracking()
+                        .Select(g => new { g.GlAccountId, g.ParentGlAccountId })
+                        .ToListAsync(ct);
+
+                    void AddChildren(string parentId)
+                    {
+                        foreach (var child in childAccounts.Where(c => c.ParentGlAccountId == parentId))
+                        {
+                            if (glAccountIds.Add(child.GlAccountId))
+                                AddChildren(child.GlAccountId);
+                        }
+                    }
+
+                    AddChildren(parentGlAccountId);
+                }
+
+                if (glAccountIds.Count == 0) return new List<PaymentRecord>();
+
+                // Project labor cost straight from the GL: every DEBIT to a project GL account that
+                // comes from a payroll transaction — the PAYROL_INVOICE accrual, OR an ad-hoc
+                // PAYROL_PAYMENT booked directly to a project account (a salary paid without going
+                // through the accrual). Aggregate payroll payments debit the accrued payable (an
+                // employee ACCOUNTS_PAYABLE account, not a project account), so they are naturally
+                // excluded here and never double-count the accrual. This mirrors exactly what the
+                // project account's trial balance shows for payroll. Each debit line carries its
+                // employee on AcctgTransEntry.PartyId.
+                var query = from ate in _context.AcctgTransEntries.AsNoTracking()
+                    join at in _context.AcctgTrans.AsNoTracking() on ate.AcctgTransId equals at.AcctgTransId
+                    join pmt in _context.Payments.AsNoTracking() on at.PaymentId equals pmt.PaymentId into pmtJoin
+                    from pmt in pmtJoin.DefaultIfEmpty()
+                    join emp in _context.Parties.AsNoTracking() on ate.PartyId equals emp.PartyId into empJoin
+                    from emp in empJoin.DefaultIfEmpty()
+                    where ate.DebitCreditFlag == "D"
+                          && ate.GlAccountId != null
+                          && glAccountIds.Contains(ate.GlAccountId)
+                          && (at.AcctgTransTypeId == "PAYROL_INVOICE"
+                              // Ad-hoc per-employee payroll payments only. The batch's aggregate
+                              // payment goes to the shared staff party "276" and settles the whole
+                              // run / accrued payable — it is never a per-employee project expense,
+                              // so it must not be added on top of the accruals.
+                              || (at.AcctgTransTypeId == "OUTGOING_PAYMENT"
+                                  && pmt.PaymentTypeId == "PAYROL_PAYMENT"
+                                  && pmt.PartyIdTo != "276"))
+                    select new { at, ate, emp };
+
+                if (!request.ExpensesAllData)
+                {
+                    if (request.ExpensesStartDate.HasValue)
+                        query = query.Where(x => x.at.TransactionDate >= request.ExpensesStartDate.Value);
+                    if (request.ExpensesEndDate.HasValue)
+                        query = query.Where(x => x.at.TransactionDate <= request.ExpensesEndDate.Value);
+                }
+
+                var data = await query.ToListAsync(ct);
+
+                var results = data.Select(x => new PaymentRecord
+                {
+                    PaymentId = x.at.AcctgTransId + ":" + x.ate.AcctgTransEntrySeqId,
+                    PaymentTypeId = x.at.AcctgTransTypeId,
+                    PaymentTypeDescription = x.at.AcctgTransTypeId == "PAYROL_INVOICE"
+                        ? "رواتب المشروع (استحقاق)"
+                        : "رواتب المشروع (دفع)",
+                    PartyIdFrom = x.ate.PartyId,
+                    PartyIdFromName = x.emp != null ? x.emp.Description : (x.ate.PartyId ?? string.Empty),
+                    PartyIdTo = "Company",
+                    PartyIdToName = project.ProjectName,
+                    StatusId = x.at.IsPosted == "Y" ? "POSTED" : "NOT_POSTED",
+                    StatusDescription = x.at.IsPosted == "Y" ? "تم الترحيل" : "غير مرحل",
+                    StatusDescriptionEnglish = x.at.IsPosted == "Y" ? "Posted" : "Not Posted",
+                    EffectiveDate = x.at.TransactionDate.HasValue
+                        ? DateOnly.FromDateTime(x.at.TransactionDate.Value)
+                        : null,
+                    CreatedStamp = x.at.CreatedStamp ?? DateTime.MinValue,
+                    Comments = x.ate.Description ?? x.at.Description,
+                    Amount = x.ate.Amount ?? 0m,
+                    ActualCurrencyAmount = x.ate.Amount ?? 0m,
+                    CurrencyUomId = x.ate.CurrencyUomId ?? "EGP",
+                    IsDisbursement = true,
+                    ProjectId = request.ProjectId,
+                    OverrideGlAccountId = x.ate.GlAccountId,
+                    ProjectName = project.ProjectName,
+                    DueStatusArabic = x.at.IsPosted == "Y" ? "تم الترحيل" : "غير مرحل"
+                }).ToList();
+
+                return results
+                    .OrderByDescending(x => x.EffectiveDate)
+                    .ThenByDescending(x => x.CreatedStamp)
+                    .ToList();
+            }
+
+            // Apartment sales for THIS project only. Mirrors
+            // ListSalesRequestsAndAvailableApartmentsByDateRange (which stays as its own report):
+            // "sold" rows are approved sales requests created in the sales date window; "available"
+            // rows are APARTMENT products of the project with no sales request and not marked SOLD
+            // (current inventory, never date-filtered).
+            private async Task<List<SalesRequestOrApartmentRecord>> GetApartmentSales(Query request,
+                CancellationToken ct)
+            {
+                const string language = "ar";
+
+                var apartmentStatusLookup = await _context.StatusItems.AsNoTracking()
+                    .Where(s => s.StatusTypeId == "APARTMENT_STATUS")
+                    .ToDictionaryAsync(s => s.StatusId,
+                        s => language == "ar" ? (s.DescriptionArabic ?? s.Description) : s.Description, ct);
+
+                var salesRequestStatusLookup = await _context.StatusItems.AsNoTracking()
+                    .Where(s => s.StatusTypeId == "SALES_REQUEST_STATUS")
+                    .ToDictionaryAsync(s => s.StatusId,
+                        s => language == "ar" ? (s.DescriptionArabic ?? s.Description) : s.Description, ct);
+
+                var projectNameLookup = await _context.WorkEfforts.AsNoTracking()
+                    .Where(w => w.WorkEffortTypeId == "PROJECT")
+                    .ToDictionaryAsync(w => w.WorkEffortId, w => w.ProjectName ?? "", ct);
+
+                var floorMap = new Dictionary<string, string>
+                {
+                    { "0", "الطابق الأرضي" }, { "1", "الطابق الأول" }, { "2", "الطابق الثاني" },
+                    { "3", "الطابق الثالث" }, { "4", "الطابق الرابع" }, { "5", "الطابق الخامس" },
+                    { "6", "الطابق السادس" }
+                };
+
+                var notSoldLabel = language == "ar" ? "غير مباع" : "Not Sold";
+
+                // Sold rows — approved sales requests for this project, filtered by the sales date window.
+                var soldQuery = from sr in _context.SalesRequests.AsNoTracking()
+                    join prod in _context.Products.AsNoTracking() on sr.ProductId equals prod.ProductId
+                    join pt in _context.ProductTypes.AsNoTracking() on prod.ProductTypeId equals pt.ProductTypeId
+                    join customer in _context.Parties.AsNoTracking() on sr.FromPartyId equals customer.PartyId into custGroup
+                    from cust in custGroup.DefaultIfEmpty()
+                    join employee in _context.Parties.AsNoTracking() on sr.EmployeePartyId equals employee.PartyId into empGroup
+                    from emp in empGroup.DefaultIfEmpty()
+                    where sr.StatusId == "SALES_REQUEST_APPROVED"
+                          && prod.ProjectId == request.ProjectId
+                    select new { sr, prod, pt, cust, emp };
+
+                if (!request.SalesAllData)
+                {
+                    if (request.SalesStartDate.HasValue)
+                        soldQuery = soldQuery.Where(x => x.sr.CreatedStamp >= request.SalesStartDate.Value);
+                    if (request.SalesEndDate.HasValue)
+                        soldQuery = soldQuery.Where(x => x.sr.CreatedStamp <= request.SalesEndDate.Value);
+                }
+
+                var soldRaw = await soldQuery.ToListAsync(ct);
+
+                var soldRecords = soldRaw.Select(x => new SalesRequestOrApartmentRecord
+                {
+                    IsSold = true,
+                    SalesRequestId = x.sr.SalesRequestId,
+                    ApartmentId = x.sr.ProductId,
+                    ApartmentName = x.prod.ProductName ?? "",
+                    ProductTypeDescription = language == "ar" ? (x.pt.DescriptionArabic ?? x.pt.Description) : x.pt.Description,
+                    FromPartyId = x.sr.FromPartyId,
+                    FromPartyName = x.cust != null ? x.cust.Description ?? "" : "",
+                    EmployeePartyId = x.sr.EmployeePartyId,
+                    EmployeeName = x.emp != null ? x.emp.Description ?? "" : "",
+                    BuildingNumber = x.prod.BuildingNumber ?? "",
+                    ProjectName = SalesRequestProjectionHelpers.GetProjectName(x.prod.ProjectId, projectNameLookup),
+                    FloorNumber = SalesRequestProjectionHelpers.GetFloorName(x.prod.FloorNumber, floorMap),
+                    ApartmentSpaceM2 = x.prod.ApartmentSpaceM2 ?? 0m,
+                    GardenSpaceM2 = x.prod.GardenSpaceM2,
+                    ApartmentStatusDescription = SalesRequestProjectionHelpers.GetApartmentStatusDescription(x.prod.ApartmentStatusId, apartmentStatusLookup),
+                    MaintenanceDeposit = x.sr.MaintenanceDeposit,
+                    IsChequesDelivered = x.sr.IsChequesDelivered,
+                    StatusId = x.sr.StatusId ?? "",
+                    StatusDescription = SalesRequestProjectionHelpers.GetSalesRequestStatusDescription(x.sr.StatusId, salesRequestStatusLookup),
+                    TotalPrice = x.sr.TotalPrice,
+                    AdvancePayment = x.sr.AdvancePayment,
+                    AdvancePercent = x.sr.AdvancePercent,
+                    MaintenancePercent = x.sr.MaintenancePercent,
+                    SaleDate = x.sr.SaleDate,
+                    Comments = x.sr.Comments,
+                    CreatedStamp = x.sr.CreatedStamp,
+                    LastUpdatedStamp = x.sr.LastUpdatedStamp,
+                    ApartmentPricePerM2 = x.sr.ApartmentPricePerM2,
+                    GardenPricePerM2 = x.sr.GardenPricePerM2,
+                    Discount = x.sr.Discount,
+                    NumberOfInstallments = x.sr.NumberOfInstallments,
+                    DateOfFirstInstallment = x.sr.DateOfFirstInstallment,
+                    MonthsBetweenInstallments = x.sr.MonthsBetweenInstallments
+                }).ToList();
+
+                // Available/reserved rows — this project's APARTMENT products with no sales request
+                // and not already SOLD. Current inventory, not date-filtered.
+                var availableRaw = await (from prod in _context.Products.AsNoTracking()
+                    join pt in _context.ProductTypes.AsNoTracking() on prod.ProductTypeId equals pt.ProductTypeId
+                    where prod.ProductTypeId == "APARTMENT"
+                          && prod.ProjectId == request.ProjectId
+                          && !prod.SalesRequests.Any()
+                          && prod.ApartmentStatusId != "APARTMENT_SOLD"
+                    select new { prod, pt }).ToListAsync(ct);
+
+                var availableRecords = availableRaw.Select(x => new SalesRequestOrApartmentRecord
+                {
+                    IsSold = false,
+                    SalesRequestId = "",
+                    ApartmentId = x.prod.ProductId,
+                    ApartmentName = x.prod.ProductName ?? "",
+                    ProductTypeDescription = language == "ar" ? (x.pt.DescriptionArabic ?? x.pt.Description) : x.pt.Description,
+                    FromPartyId = "",
+                    FromPartyName = "",
+                    EmployeePartyId = "",
+                    EmployeeName = "",
+                    BuildingNumber = x.prod.BuildingNumber ?? "",
+                    ProjectName = SalesRequestProjectionHelpers.GetProjectName(x.prod.ProjectId, projectNameLookup),
+                    FloorNumber = SalesRequestProjectionHelpers.GetFloorName(x.prod.FloorNumber, floorMap),
+                    ApartmentSpaceM2 = x.prod.ApartmentSpaceM2 ?? 0m,
+                    GardenSpaceM2 = x.prod.GardenSpaceM2,
+                    ApartmentStatusDescription = SalesRequestProjectionHelpers.GetApartmentStatusDescription(x.prod.ApartmentStatusId, apartmentStatusLookup),
+                    MaintenanceDeposit = null,
+                    IsChequesDelivered = null,
+                    StatusId = "",
+                    StatusDescription = notSoldLabel,
+                    TotalPrice = null,
+                    AdvancePayment = null,
+                    AdvancePercent = null,
+                    MaintenancePercent = null,
+                    SaleDate = null,
+                    Comments = x.prod.Comments,
+                    CreatedStamp = x.prod.CreatedStamp,
+                    LastUpdatedStamp = x.prod.LastUpdatedStamp,
+                    ApartmentPricePerM2 = x.prod.ApartmentPricePerM2,
+                    GardenPricePerM2 = x.prod.GardenPricePerM2,
+                    Discount = null,
+                    NumberOfInstallments = null,
+                    DateOfFirstInstallment = null,
+                    MonthsBetweenInstallments = null
+                }).ToList();
+
+                return soldRecords
+                    .Concat(availableRecords)
+                    .OrderBy(x => x.BuildingNumber)
+                    .ThenBy(x => x.FloorNumber)
+                    .ThenBy(x => x.ApartmentName)
+                    .ToList();
             }
         }
     }

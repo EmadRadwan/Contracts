@@ -50,13 +50,17 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
                                                                           onClose
                                                                       }) => {
     const { getTranslatedLabel } = useTranslationHelper();
-    const [expensesStartDate, setExpensesStartDate] = useState<Dayjs | null>(dayjs().startOf('month'));
+    const [expensesStartDate, setExpensesStartDate] = useState<Dayjs | null>(dayjs().startOf('year'));
     const [expensesEndDate, setExpensesEndDate] = useState<Dayjs | null>(dayjs());
     const [expensesAllData, setExpensesAllData] = useState(false);
 
-    const [revenuesStartDate, setRevenuesStartDate] = useState<Dayjs | null>(dayjs().startOf('month'));
+    const [revenuesStartDate, setRevenuesStartDate] = useState<Dayjs | null>(dayjs().startOf('year'));
     const [revenuesEndDate, setRevenuesEndDate] = useState<Dayjs | null>(dayjs());
     const [revenuesAllData, setRevenuesAllData] = useState(false);
+
+    const [salesStartDate, setSalesStartDate] = useState<Dayjs | null>(dayjs().startOf('year'));
+    const [salesEndDate, setSalesEndDate] = useState<Dayjs | null>(dayjs());
+    const [salesAllData, setSalesAllData] = useState(false);
 
     const [trigger, { isFetching }] = useLazyFetchProjectReportQuery();
     const [isGenerating, setIsGenerating] = useState(false);
@@ -76,60 +80,167 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
 
         const expPeriod = expensesAllData ? 'All_Data' :
             `${expensesStartDate?.format('YYYY-MM-DD')}_to_${expensesEndDate?.format('YYYY-MM-DD')}`;
-        
         const revPeriod = revenuesAllData ? 'All_Data' :
             `${revenuesStartDate?.format('YYYY-MM-DD')}_to_${revenuesEndDate?.format('YYYY-MM-DD')}`;
+        const salPeriod = salesAllData ? 'All_Data' :
+            `${salesStartDate?.format('YYYY-MM-DD')}_to_${salesEndDate?.format('YYYY-MM-DD')}`;
 
-        // ====================== EXPENSES SHEET ======================
-        const wsExp = workbook.addWorksheet('المصاريف');
+        // ---------- helpers ----------
+        const num = (v: any) => Number(v) || 0;
+        const sum = (arr: any[] | undefined, sel: (x: any) => any) =>
+            (arr || []).reduce((s, x) => s + num(sel(x)), 0);
+        const expenseNet = (e: any) => e.netCertifiedAmount ??
+            ((e.grossAmount || 0) - (e.discountAmount || 0) - (e.deductionsAmount || 0) - (e.insuranceAmount || 0));
+
+        // Adds the logo (if any) + a coloured title row; returns the next free row index.
+        const addSheetHeader = (ws: ExcelJS.Worksheet, title: string, lastCol: number, fill: string) => {
+            let r = 1;
+            if (logoBuffer) {
+                const imageId = workbook.addImage({ buffer: logoBuffer, extension: 'jpeg' });
+                ws.addImage(imageId, { tl: { col: 0, row: 0 }, ext: { width: 140, height: 90 } });
+                ws.getRow(1).height = 70;
+                r = 6;
+            } else {
+                ws.getCell('A1').value = 'Golden Land';
+                ws.getCell('A1').font = { name: 'Amiri', size: 18, bold: true };
+                r = 3;
+            }
+            const t = ws.getCell(`A${r}`);
+            t.value = utils.rtlEmbed(title);
+            t.font = { name: 'Amiri', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+            t.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill } };
+            t.alignment = { horizontal: 'center', vertical: 'middle' };
+            ws.mergeCells(r, 1, r, lastCol);
+            ws.getRow(r).height = 45;
+            return r + 2;
+        };
+
+        // Generic "payment-style" block on its OWN sheet (own header/autofilter/total so the
+        // user can sort & filter each block independently). amountCol is 1-based.
+        const addPaymentSheet = (
+            sheetName: string, title: string, titleFill: string, headerFill: string, altFill: string,
+            headers: string[], items: any[], rowMapper: (x: any) => any[], amountCol: number, widths: number[]
+        ) => {
+            const ws = workbook.addWorksheet(sheetName);
+            ws.views = [{ rightToLeft: true }];
+            ws.pageSetup = { orientation: 'landscape', paperSize: 9 };
+            addSheetHeader(ws, title, headers.length, titleFill);
+
+            const headerRow = ws.addRow(headers.map(h => utils.rtlEmbed(h)));
+            headerRow.font = { name: 'Amiri', size: 11, bold: true };
+            headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: headerFill } };
+            headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+
+            const dataStart = headerRow.number + 1;
+            items.forEach((it, idx) => {
+                const row = ws.addRow(rowMapper(it));
+                const c = row.getCell(amountCol);
+                c.numFmt = '#,##0.00';
+                c.alignment = { horizontal: 'right' };
+                if (idx % 2 === 1) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: altFill } };
+            });
+            const dataEnd = ws.rowCount;
+
+            const amountLetter = ws.getColumn(amountCol).letter;
+            const totalArr: any[] = headers.map(() => '');
+            totalArr[amountCol - 2] = utils.rtlEmbed('الإجمالي');
+            totalArr[amountCol - 1] = { formula: `SUBTOTAL(109,${amountLetter}${dataStart}:${amountLetter}${dataEnd})` };
+            const totalRow = ws.addRow(totalArr);
+            totalRow.font = { name: 'Amiri', size: 12, bold: true };
+            totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: headerFill } };
+            totalRow.getCell(amountCol).numFmt = '#,##0.00';
+            totalRow.getCell(amountCol).alignment = { horizontal: 'right' };
+
+            ws.autoFilter = { from: { row: headerRow.number, column: 1 }, to: { row: dataEnd, column: headers.length } };
+            ws.columns.forEach((col, i) => (col.width = widths[i] || 15));
+            return ws;
+        };
+
+        // ---------- pre-computed section totals (for the summary sheet) ----------
+        const expTotal = sum(data.expenses, expenseNet);
+        const directTotal = sum(data.directPayments, p => p.amount);
+        const transTotal = sum(data.accountingTransactions, p => p.amount);
+        const payrollTotal = sum(data.payroll, p => p.amount);
+        const opTotal = sum(data.operatingExpenses, p => p.amount);
+        const grandExpenses = expTotal + directTotal + transTotal + payrollTotal + opTotal;
+        const revScheduled = sum(data.revenues, r => r.scheduledAmount);
+        const revCollected = sum(data.revenues, r => r.collectedAmount);
+        const revOutstanding = sum(data.revenues, r => r.outstandingAmount);
+        const soldRows = (data.apartmentSales || []).filter((s: any) => s.isSold);
+        const availRows = (data.apartmentSales || []).filter((s: any) => !s.isSold);
+        const soldTotal = sum(soldRows, s => s.totalPrice);
+        const soldCollectedAdvance = sum(soldRows, s => s.advancePayment);
+
+        // ====================== SUMMARY SHEET (first) ======================
+        const wsSum = workbook.addWorksheet('ملخص التقرير');
+        wsSum.views = [{ rightToLeft: true }];
+        addSheetHeader(wsSum, `${projectName} - الثروة الخضراء - ملخص التقرير`, 4, 'FF1E40AF');
+
+        const sumSection = (label: string, fill: string) => {
+            const row = wsSum.addRow([utils.rtlEmbed(label), '']);
+            wsSum.mergeCells(row.number, 1, row.number, 4);
+            row.font = { name: 'Amiri', size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
+            row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill } };
+            row.alignment = { horizontal: 'center', vertical: 'middle' };
+            row.height = 26;
+        };
+        const sumLine = (label: string, value: number, opts: { bold?: boolean; fill?: string; int?: boolean } = {}) => {
+            const row = wsSum.addRow([utils.rtlEmbed(label), value]);
+            row.font = { name: 'Amiri', size: 12, bold: !!opts.bold };
+            if (opts.fill) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: opts.fill } };
+            const v = row.getCell(2);
+            v.numFmt = opts.int ? '#,##0' : '#,##0.00';
+            v.alignment = { horizontal: 'right' };
+            v.font = { name: 'Amiri', size: 12, bold: !!opts.bold };
+        };
+
+        sumSection('المصاريف', 'FF1E40AF');
+        sumLine('المستخلصات', expTotal);
+        sumLine('الدفعات المباشرة', directTotal);
+        sumLine('قيود محاسبية', transTotal);
+        sumLine('رواتب المشروع', payrollTotal);
+        sumLine('المصاريف التشغيلية', opTotal);
+        sumLine('إجمالي مصاريف المشروع', grandExpenses, { bold: true, fill: 'FFBFDBFE' });
+        wsSum.addRow([]);
+
+        sumSection('الإيرادات', 'FF065F46');
+        sumLine('المجدول', revScheduled);
+        sumLine('المحصل', revCollected);
+        sumLine('المتبقي', revOutstanding);
+        wsSum.addRow([]);
+
+        sumSection('مبيعات الوحدات', 'FF0D9488');
+        sumLine('عدد الوحدات المباعة', soldRows.length, { int: true });
+        sumLine('إجمالي قيمة المبيعات', soldTotal);
+        sumLine('إجمالي المقدمات المحصلة', soldCollectedAdvance);
+        sumLine('عدد الوحدات المتاحة', availRows.length, { int: true });
+        wsSum.addRow([]);
+
+        sumSection('الصافي', 'FF7C3AED');
+        sumLine('صافي (المحصل من العملاء - مصاريف المشروع)', revCollected - grandExpenses, { bold: true, fill: 'FFEDE9FE' });
+        wsSum.getColumn(1).width = 46;
+        wsSum.getColumn(2).width = 24;
+        wsSum.getColumn(3).width = 4;
+        wsSum.getColumn(4).width = 4;
+
+        // ====================== CERTIFICATE EXPENSES SHEET ======================
+        const wsExp = workbook.addWorksheet('المصاريف - المستخلصات');
         wsExp.views = [{ rightToLeft: true }];
         wsExp.pageSetup = { orientation: 'landscape', paperSize: 9 };
+        addSheetHeader(wsExp, `${projectName} - الثروة الخضراء - المستخلصات (${expPeriod})`, 15, 'FF1E40AF');
 
-        let currentRow = 1;
-
-        // Logo
-        if (logoBuffer) {
-            const imageId = workbook.addImage({ buffer: logoBuffer, extension: 'jpeg' });
-            wsExp.addImage(imageId, { tl: { col: 0, row: 0 }, ext: { width: 140, height: 90 } });
-            wsExp.getRow(1).height = 70;
-            currentRow = 6;
-        } else {
-            wsExp.getCell('A1').value = 'Golden Land';
-            wsExp.getCell('A1').font = { name: 'Amiri', size: 18, bold: true };
-            currentRow = 3;
-        }
-
-        // Main Title
-        const titleCell = wsExp.getCell(`A${currentRow}`);
-        titleCell.value = utils.rtlEmbed(`${projectName} - الثروة الخضراء - المصاريف (${expPeriod})`);
-        titleCell.font = { name: 'Amiri', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
-        titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E40AF' } };
-        titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-        wsExp.mergeCells(`A${currentRow}:O${currentRow}`);
-        wsExp.getRow(currentRow).height = 45;
-
-        currentRow += 2;
-
-        // Headers
         const expHeaders = [
             'رقم الشهادة', 'رقم الدفعة', 'اسم الطرف', 'المنتج/الخدمة', 'التاريخ',
             'النوع', 'الوصف', 'وصف البند', 'الكمية', 'السعر', 'الإجمالي',
             'الخصم', 'الاستقطاعات', 'التأمين', 'صافي المعتمد'
         ];
-
         const headerRow = wsExp.addRow(expHeaders.map(h => utils.rtlEmbed(h)));
         headerRow.font = { name: 'Amiri', size: 11, bold: true };
         headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
         headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
 
-        // Data + Total calculation
         const dataStartRow = headerRow.number + 1;
-
         data.expenses.forEach((exp, idx) => {
-            const net = exp.netCertifiedAmount ??
-                ((exp.grossAmount || 0) - (exp.discountAmount || 0) -
-                    (exp.deductionsAmount || 0) - (exp.insuranceAmount || 0));
-
             const row = wsExp.addRow([
                 utils.safeString(exp.certificateNumber),
                 utils.safeString(exp.paymentId),
@@ -145,337 +256,129 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
                 exp.discountAmount || 0,
                 exp.deductionsAmount || 0,
                 exp.insuranceAmount || 0,
-                net
+                expenseNet(exp)
             ]);
-
-            // Format monetary columns (I to O) - adjusted index from 10-16 to 9-15
             for (let i = 9; i <= 15; i++) {
                 const cell = row.getCell(i);
                 cell.numFmt = '#,##0.00';
                 cell.alignment = { horizontal: 'right' };
             }
-
-            if (idx % 2 === 1) {
-                row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
-            }
+            if (idx % 2 === 1) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
         });
-
         const dataEndRow = wsExp.rowCount;
 
-        // Total Row for Expenses
         const totalRow = wsExp.addRow(['', '', '', '', '', '', '', 'الإجمالي الكلي', '', '', '', '', '', '', { formula: `SUBTOTAL(109,O${dataStartRow}:O${dataEndRow})` }]);
         totalRow.font = { name: 'Amiri', size: 12, bold: true };
         totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBFDBFE' } };
         totalRow.getCell(15).numFmt = '#,##0.00';
         totalRow.getCell(15).alignment = { horizontal: 'right' };
 
-        // We need to keep track of rows for grand total
-        const expenseTotalRowNumber = totalRow.number;
-
-        // Column widths
-        const expColWidths = [18, 16, 32, 28, 14, 25, 38, 45, 12, 16, 18, 16, 16, 16, 20];
-        wsExp.columns.forEach((col, i) => col.width = expColWidths[i] || 15);
-
-        // ====================== DIRECT PAYMENTS SECTION ======================
-        if (data.directPayments && data.directPayments.length > 0) {
-            currentRow = wsExp.rowCount + 3;
-
-            const directTitleCell = wsExp.getCell(`A${currentRow}`);
-            directTitleCell.value = utils.rtlEmbed('مصاريف مباشرة أخرى (دفعات)');
-            directTitleCell.font = { name: 'Amiri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
-            directTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF10B981' } };
-            directTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-            wsExp.mergeCells(`A${currentRow}:O${currentRow}`);
-            wsExp.getRow(currentRow).height = 30;
-
-            currentRow++;
-
-            const directHeaders = [
-                'رقم الدفعة', 'النوع', 'من طرف', 'إلى طرف', 'الحالة', 'التاريخ',
-                'المبلغ', 'رقم المرجع', 'طريقة الدفع', 'الشيك', 'تاريخ الشيك',
-                'مركز التكلفة', 'ملاحظات', '', ''
-            ];
-
-            const directHeaderRow = wsExp.addRow(directHeaders.map(h => utils.rtlEmbed(h)));
-            directHeaderRow.font = { name: 'Amiri', size: 11, bold: true };
-            directHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
-            directHeaderRow.alignment = { horizontal: 'center', vertical: 'middle' };
-
-            const directDataStartRow = directHeaderRow.number + 1;
-
-            data.directPayments.forEach((pyt: any, idx) => {
-                const row = wsExp.addRow([
-                    utils.safeString(pyt.paymentId),
-                    utils.safeString(pyt.paymentTypeDescription),
-                    utils.safeString(pyt.partyIdFromName),
-                    utils.safeString(pyt.partyIdToName),
-                    utils.safeString(pyt.dueStatusArabic || pyt.statusDescription),
-                    utils.formatDate(pyt.effectiveDate),
-                    pyt.amount || 0,
-                    utils.safeString(pyt.paymentRefNum || ''),
-                    utils.safeString(pyt.paymentMethodTypeDescription),
-                    utils.safeString(pyt.chequeNumber),
-                    utils.formatDate(pyt.chequeDate),
-                    utils.safeString(pyt.costCenterDescription),
-                    utils.safeString(pyt.comments),
-                    '',
-                    ''
-                ]);
-
-                row.getCell(7).numFmt = '#,##0.00';
-                row.getCell(7).alignment = { horizontal: 'right' };
-                row.getCell(8).alignment = { horizontal: 'right' };
-
-                if (idx % 2 === 1) {
-                    row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0FDF4' } };
-                }
-            });
-
-            const directDataEndRow = wsExp.rowCount;
-
-            const directTotalRow = wsExp.addRow(['', '', '', '', '', 'الإجمالي', { formula: `SUBTOTAL(109,G${directDataStartRow}:G${directDataEndRow})` }, '', '', '', '', '', '', '', '']);
-            directTotalRow.font = { name: 'Amiri', size: 12, bold: true };
-            directTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFA7F3D0' } };
-            directTotalRow.getCell(7).numFmt = '#,##0.00';
-            directTotalRow.getCell(7).alignment = { horizontal: 'right' };
-
-            var directTotalRowNumber = directTotalRow.number;
-        }
-
-        // ====================== ACCOUNTING TRANSACTIONS SECTION ======================
-        if (data.accountingTransactions && data.accountingTransactions.length > 0) {
-            currentRow = wsExp.rowCount + 3;
-
-            const transTitleCell = wsExp.getCell(`A${currentRow}`);
-            transTitleCell.value = utils.rtlEmbed('قيود محاسبية');
-            transTitleCell.font = { name: 'Amiri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
-            transTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6366F1' } }; // Indigo
-            transTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-            wsExp.mergeCells(`A${currentRow}:O${currentRow}`);
-            wsExp.getRow(currentRow).height = 30;
-
-            currentRow++;
-
-            const transHeaders = [
-                'رقم القيد', 'النوع', 'من طرف', 'إلى طرف', 'الحالة', 'التاريخ',
-                'المبلغ', 'رقم المرجع', '', '', '',
-                '', 'ملاحظات', '', ''
-            ];
-
-            const transHeaderRow = wsExp.addRow(transHeaders.map(h => utils.rtlEmbed(h)));
-            transHeaderRow.font = { name: 'Amiri', size: 11, bold: true };
-            transHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E7FF' } }; // Light Indigo
-            transHeaderRow.alignment = { horizontal: 'center', vertical: 'middle' };
-
-            const transDataStartRow = transHeaderRow.number + 1;
-
-            data.accountingTransactions.forEach((trans: any, idx) => {
-                const row = wsExp.addRow([
-                    utils.safeString(trans.paymentId),
-                    utils.safeString(trans.paymentTypeDescription),
-                    utils.safeString(trans.partyIdFromName),
-                    utils.safeString(trans.partyIdToName),
-                    utils.safeString(trans.dueStatusArabic || trans.statusDescription),
-                    utils.formatDate(trans.effectiveDate),
-                    trans.amount || 0,
-                    utils.safeString(trans.paymentRefNum || ''),
-                    '',
-                    '',
-                    '',
-                    '',
-                    utils.safeString(trans.comments),
-                    '',
-                    ''
-                ]);
-
-                row.getCell(7).numFmt = '#,##0.00';
-                row.getCell(7).alignment = { horizontal: 'right' };
-                row.getCell(8).alignment = { horizontal: 'right' };
-
-                if (idx % 2 === 1) {
-                    row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F3FF' } };
-                }
-            });
-
-            const transDataEndRow = wsExp.rowCount;
-
-            const transTotalRow = wsExp.addRow(['', '', '', '', '', 'الإجمالي', { formula: `SUBTOTAL(109,G${transDataStartRow}:G${transDataEndRow})` }, '', '', '', '', '', '', '', '']);
-            transTotalRow.font = { name: 'Amiri', size: 12, bold: true };
-            transTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC7D2FE' } };
-            transTotalRow.getCell(7).numFmt = '#,##0.00';
-            transTotalRow.getCell(7).alignment = { horizontal: 'right' };
-
-            var transTotalRowNumber = transTotalRow.number;
-        }
-
-        // ====================== GRAND TOTAL FOR EXPENSES ======================
-        wsExp.addRow([]); // Empty row for spacing
-        
-        let grandTotalFormulaParts = [];
-        if (expenseTotalRowNumber) grandTotalFormulaParts.push(`O${expenseTotalRowNumber}`);
-        if (typeof directTotalRowNumber !== 'undefined') grandTotalFormulaParts.push(`G${directTotalRowNumber}`);
-        if (typeof transTotalRowNumber !== 'undefined') grandTotalFormulaParts.push(`G${transTotalRowNumber}`);
-
-        const grandTotalRow = wsExp.addRow(['', '', '', '', '', 'إجمالي مصاريف المشروع', '', '', '', '', '', '', '', '', { formula: grandTotalFormulaParts.join('+') }]);
-        grandTotalRow.font = { name: 'Amiri', size: 14, bold: true };
-        grandTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF065F46' } }; // Dark green
-        grandTotalRow.font.color = { argb: 'FFFFFFFF' };
-        grandTotalRow.getCell(15).numFmt = '#,##0.00';
-        grandTotalRow.getCell(15).alignment = { horizontal: 'right' };
-        
-        wsExp.mergeCells(`A${grandTotalRow.number}:N${grandTotalRow.number}`);
-        grandTotalRow.getCell(1).alignment = { horizontal: 'center' };
-        grandTotalRow.getCell(15).alignment = { horizontal: 'right' };
-        grandTotalRow.height = 30;
-
-        // Apply a single AutoFilter for the entire Expenses sheet
-        // It starts from the first header row and covers until the last data row before Grand Total
-        wsExp.autoFilter = {
-            from: { row: headerRow.number, column: 1 },
-            to: { row: wsExp.rowCount - 1, column: 15 }
-        };
-
-        // Disable filter buttons for columns that are numeric in any of the sections
-        // Section 1: 9-15 are numeric
-        // Section 2: 7 is numeric
-        // Section 3: 7 is numeric
-        // Combined numeric: 7, 9, 10, 11, 12, 13, 14, 15
-        // @ts-ignore
+        wsExp.autoFilter = { from: { row: headerRow.number, column: 1 }, to: { row: dataEndRow, column: 15 } };
+        // @ts-ignore  disable filter buttons on numeric columns 9-15
         wsExp.autoFilter.columns = [
-            {}, {}, {}, {}, {}, {},           // 1-6
-            { showButton: false },            // 7 (Amount in Direct/Op)
-            {},                               // 8
-            { showButton: false },            // 9 (Qty in Main)
-            { showButton: false },            // 10 (Price in Main)
-            { showButton: false },            // 11 (Total in Main)
-            { showButton: false },            // 12 (Disc in Main)
-            { showButton: false },            // 13 (Ded in Main)
-            { showButton: false },            // 14 (Ins in Main)
-            { showButton: false }             // 15 (Net in Main)
+            {}, {}, {}, {}, {}, {}, {}, {},
+            { showButton: false }, { showButton: false }, { showButton: false },
+            { showButton: false }, { showButton: false }, { showButton: false }, { showButton: false }
         ];
+        const expColWidths = [18, 16, 32, 28, 14, 25, 38, 45, 12, 16, 18, 16, 16, 16, 20];
+        wsExp.columns.forEach((col, i) => (col.width = expColWidths[i] || 15));
+
+        // ====================== DIRECT PAYMENTS SHEET ======================
+        if (data.directPayments && data.directPayments.length > 0) {
+            addPaymentSheet(
+                'الدفعات المباشرة',
+                `${projectName} - الدفعات المباشرة (${expPeriod})`,
+                'FF10B981', 'FFD1FAE5', 'FFF0FDF4',
+                ['رقم الدفعة', 'النوع', 'من طرف', 'إلى طرف', 'الحالة', 'التاريخ', 'المبلغ', 'رقم المرجع',
+                    'طريقة الدفع', 'الشيك', 'تاريخ الشيك', 'مركز التكلفة', 'ملاحظات'],
+                data.directPayments,
+                (p: any) => [
+                    utils.safeString(p.paymentId), utils.safeString(p.paymentTypeDescription),
+                    utils.safeString(p.partyIdFromName), utils.safeString(p.partyIdToName),
+                    utils.safeString(p.dueStatusArabic || p.statusDescription), utils.formatDate(p.effectiveDate),
+                    p.amount || 0, utils.safeString(p.paymentRefNum || ''),
+                    utils.safeString(p.paymentMethodTypeDescription), utils.safeString(p.chequeNumber),
+                    utils.formatDate(p.chequeDate), utils.safeString(p.costCenterDescription), utils.safeString(p.comments)
+                ],
+                7, [18, 20, 32, 32, 18, 14, 18, 18, 20, 16, 16, 25, 45]
+            );
+        }
+
+        // ====================== ACCOUNTING TRANSACTIONS SHEET ======================
+        if (data.accountingTransactions && data.accountingTransactions.length > 0) {
+            addPaymentSheet(
+                'قيود محاسبية',
+                `${projectName} - قيود محاسبية (${expPeriod})`,
+                'FF6366F1', 'FFE0E7FF', 'FFF5F3FF',
+                ['رقم القيد', 'النوع', 'من طرف', 'إلى طرف', 'الحالة', 'التاريخ', 'المبلغ', 'رقم المرجع', 'ملاحظات'],
+                data.accountingTransactions,
+                (t: any) => [
+                    utils.safeString(t.paymentId), utils.safeString(t.paymentTypeDescription),
+                    utils.safeString(t.partyIdFromName), utils.safeString(t.partyIdToName),
+                    utils.safeString(t.dueStatusArabic || t.statusDescription), utils.formatDate(t.effectiveDate),
+                    t.amount || 0, utils.safeString(t.paymentRefNum || ''), utils.safeString(t.comments)
+                ],
+                7, [20, 22, 28, 28, 18, 14, 18, 18, 45]
+            );
+        }
+
+        // ====================== PROJECT PAYROLL SHEET ======================
+        if (data.payroll && data.payroll.length > 0) {
+            addPaymentSheet(
+                'رواتب المشروع',
+                `${projectName} - رواتب المشروع (${expPeriod})`,
+                'FF0D9488', 'FFCCFBF1', 'FFF0FDFA',
+                ['رقم القيد', 'النوع', 'الموظف', 'المشروع', 'الحالة', 'التاريخ', 'المبلغ', 'ملاحظات'],
+                data.payroll,
+                (p: any) => [
+                    utils.safeString(p.paymentId), utils.safeString(p.paymentTypeDescription),
+                    utils.safeString(p.partyIdFromName), utils.safeString(p.partyIdToName),
+                    utils.safeString(p.dueStatusArabic || p.statusDescription), utils.formatDate(p.effectiveDate),
+                    p.amount || 0, utils.safeString(p.comments)
+                ],
+                7, [22, 22, 28, 28, 18, 14, 18, 45]
+            );
+        }
 
         // ====================== OPERATING EXPENSES SHEET ======================
-        const wsOp = workbook.addWorksheet('المصاريف التشغيلية');
-        wsOp.views = [{ rightToLeft: true }];
-        wsOp.pageSetup = { orientation: 'landscape', paperSize: 9 };
-
-        let opRow = 1;
-        if (logoBuffer) {
-            const imageId = workbook.addImage({ buffer: logoBuffer, extension: 'jpeg' });
-            wsOp.addImage(imageId, { tl: { col: 0, row: 0 }, ext: { width: 140, height: 90 } });
-            wsOp.getRow(1).height = 70;
-            opRow = 6;
+        if (data.operatingExpenses && data.operatingExpenses.length > 0) {
+            addPaymentSheet(
+                'المصاريف التشغيلية',
+                `${projectName} - الثروة الخضراء - المصاريف التشغيلية (${expPeriod})`,
+                'FF6366F1', 'FFE0E7FF', 'FFF5F3FF',
+                ['رقم الدفعة', 'النوع', 'من طرف', 'إلى طرف', 'الحالة', 'التاريخ', 'المبلغ', 'رقم المرجع',
+                    'طريقة الدفع', 'الشيك', 'تاريخ الشيك', 'مركز التكلفة', 'ملاحظات'],
+                data.operatingExpenses,
+                (p: any) => [
+                    utils.safeString(p.paymentId), utils.safeString(p.paymentTypeDescription),
+                    utils.safeString(p.partyIdFromName), utils.safeString(p.partyIdToName),
+                    utils.safeString(p.dueStatusArabic || p.statusDescription), utils.formatDate(p.effectiveDate),
+                    p.amount || 0, utils.safeString(p.paymentRefNum || ''),
+                    utils.safeString(p.paymentMethodTypeDescription), utils.safeString(p.chequeNumber),
+                    utils.formatDate(p.chequeDate), utils.safeString(p.costCenterDescription), utils.safeString(p.comments)
+                ],
+                7, [18, 20, 32, 32, 18, 14, 18, 18, 20, 16, 16, 25, 45]
+            );
         }
-
-        const opTitleCell = wsOp.getCell(`A${opRow}`);
-        opTitleCell.value = utils.rtlEmbed(`${projectName} - الثروة الخضراء - المصاريف التشغيلية (${expPeriod})`);
-        opTitleCell.font = { name: 'Amiri', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
-        opTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6366F1' } };
-        opTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-        wsOp.mergeCells(`A${opRow}:M${opRow}`);
-        wsOp.getRow(opRow).height = 45;
-
-        opRow += 2;
-
-        const opHeaders = [
-            'رقم الدفعة', 'النوع', 'من طرف', 'إلى طرف', 'الحالة', 'التاريخ',
-            'المبلغ', 'رقم المرجع', 'طريقة الدفع', 'الشيك', 'تاريخ الشيك',
-            'مركز التكلفة', 'ملاحظات'
-        ];
-
-        const opHeaderRow = wsOp.addRow(opHeaders.map(h => utils.rtlEmbed(h)));
-        opHeaderRow.font = { name: 'Amiri', size: 11, bold: true };
-        opHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E7FF' } };
-        opHeaderRow.alignment = { horizontal: 'center', vertical: 'middle' };
-
-        const opDataStartRow = opHeaderRow.number + 1;
-
-        data.operatingExpenses.forEach((pyt, idx) => {
-            const row = wsOp.addRow([
-                utils.safeString(pyt.paymentId),
-                utils.safeString(pyt.paymentTypeDescription),
-                utils.safeString(pyt.partyIdFromName),
-                utils.safeString(pyt.partyIdToName),
-                utils.safeString(pyt.dueStatusArabic || pyt.statusDescription),
-                utils.formatDate(pyt.effectiveDate),
-                pyt.amount || 0,
-                utils.safeString(pyt.paymentRefNum || ''),
-                utils.safeString(pyt.paymentMethodTypeDescription),
-                utils.safeString(pyt.chequeNumber),
-                utils.formatDate(pyt.chequeDate),
-                utils.safeString(pyt.costCenterDescription),
-                utils.safeString(pyt.comments)
-            ]);
-
-            row.getCell(7).numFmt = '#,##0.00';
-            row.getCell(7).alignment = { horizontal: 'right' };
-
-            if (idx % 2 === 1) {
-                row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F3FF' } };
-            }
-        });
-
-        const opDataEndRow = wsOp.rowCount;
-        const opTotalRow = wsOp.addRow(['', '', '', '', '', 'الإجمالي', { formula: `SUBTOTAL(109,G${opDataStartRow}:G${opDataEndRow})` }, '', '', '', '', '', '']);
-        opTotalRow.font = { name: 'Amiri', size: 12, bold: true };
-        opTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC7D2FE' } };
-        opTotalRow.getCell(7).numFmt = '#,##0.00';
-
-        const opColWidths = [18, 20, 32, 32, 18, 14, 18, 18, 20, 16, 16, 25, 45];
-        wsOp.columns.forEach((col, i) => col.width = opColWidths[i] || 15);
 
         // ====================== REVENUES SHEET ======================
         const wsRev = workbook.addWorksheet('الإيرادات');
         wsRev.views = [{ rightToLeft: true }];
+        addSheetHeader(wsRev, `${projectName} - الثروة الخضراء - الإيرادات (${revPeriod})`, 18, 'FF1E40AF');
 
-        let revRow = 1;
-        if (logoBuffer) {
-            const imageId = workbook.addImage({ buffer: logoBuffer, extension: 'jpeg' });
-            wsRev.addImage(imageId, { tl: { col: 0, row: 0 }, ext: { width: 140, height: 90 } });
-            wsRev.getRow(1).height = 70;
-            revRow = 6;
-        }
-
-        const revTitleCell = wsRev.getCell(`A${revRow}`);
-        revTitleCell.value = utils.rtlEmbed(`${projectName} - الثروة الخضراء - الإيرادات (${revPeriod})`);
-        revTitleCell.font = { name: 'Amiri', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
-        revTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E40AF' } };
-        revTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-        wsRev.mergeCells(`A${revRow}:N${revRow}`);
-        wsRev.getRow(revRow).height = 45;
-
-        revRow += 2;
-
+        // The four due buckets each get a dedicated column so the user can filter on a single value.
         const revHeaders = [
             'رقم الدفعة', 'السنة', 'الربع', 'المبنى', 'الوحدة', 'العميل', 'الفئة', 'المجدول',
-            'المحصل', 'المتبقي', 'الحالة', 'شريحة التأخير', 'حالة الاستحقاق', 'تاريخ الاستحقاق'
+            'المحصل', 'المتبقي', 'الحالة', 'شريحة التأخير', 'حالة الاستحقاق', 'تاريخ الاستحقاق',
+            'مستحق اليوم', 'مستحق خلال أسبوع', 'مستحق خلال شهر', 'متأخر'
         ];
-
         const revHeaderRow = wsRev.addRow(revHeaders.map(h => utils.rtlEmbed(h)));
         revHeaderRow.font = { name: 'Amiri', size: 11, bold: true };
         revHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
-
-        // Set AutoFilter for Revenues
-        wsRev.autoFilter = {
-            from: { row: revHeaderRow.number, column: 1 },
-            to: { row: revHeaderRow.number, column: revHeaders.length }
-        };
-        // Disable filter for numeric columns (2-3: Year, Quarter; 8-10: Scheduled, Collected, Outstanding)
-        // @ts-ignore
-        wsRev.autoFilter.columns = [
-            {},                   // 1: Payment ID
-            { showButton: false }, // 2: Year
-            { showButton: false }, // 3: Quarter
-            {}, {}, {}, {},       // 4-7
-            { showButton: false }, // 8: Scheduled
-            { showButton: false }, // 9: Collected
-            { showButton: false }, // 10: Outstanding
-            {}, {}, {}, {}        // 11-14
-        ];
+        revHeaderRow.alignment = { horizontal: 'center', vertical: 'middle' };
 
         const revDataStartRow = revHeaderRow.number + 1;
-
-        data.revenues.forEach(rev => {
+        data.revenues.forEach((rev: any) => {
             const row = wsRev.addRow([
                 rev.paymentId,
                 rev.year,
@@ -490,38 +393,137 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
                 utils.safeString(rev.paymentStatus),
                 utils.safeString(rev.overdueBucket),
                 utils.safeString(rev.dueStatusArabic),
-                utils.formatDate(rev.dueDate)
+                utils.formatDate(rev.dueDate),
+                utils.safeString(rev.deservedToday),
+                utils.safeString(rev.deservedWithinWeek),
+                utils.safeString(rev.deservedWithinMonth),
+                utils.safeString(rev.lateDue)
             ]);
-
             [8, 9, 10].forEach(col => {
                 const cell = row.getCell(col);
                 cell.numFmt = '#,##0.00';
                 cell.alignment = { horizontal: 'right' };
             });
         });
-
         const revDataEndRow = wsRev.rowCount;
 
-        // Total Row for Revenues
         const revTotalRow = wsRev.addRow([
             '', '', '', '', '', '', 'الإجمالي',
             { formula: `SUBTOTAL(109,H${revDataStartRow}:H${revDataEndRow})` },
             { formula: `SUBTOTAL(109,I${revDataStartRow}:I${revDataEndRow})` },
             { formula: `SUBTOTAL(109,J${revDataStartRow}:J${revDataEndRow})` },
-            '', '', '', ''
+            '', '', '', '', '', '', '', ''
         ]);
         revTotalRow.font = { name: 'Amiri', size: 12, bold: true };
         revTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBFDBFE' } };
-        for (let i = 8; i <= 10; i++) {
-            revTotalRow.getCell(i).numFmt = '#,##0.00';
+        for (let i = 8; i <= 10; i++) revTotalRow.getCell(i).numFmt = '#,##0.00';
+
+        wsRev.autoFilter = { from: { row: revHeaderRow.number, column: 1 }, to: { row: revDataEndRow, column: revHeaders.length } };
+        // @ts-ignore  disable filter buttons on numeric columns (Year, Quarter, Scheduled/Collected/Outstanding)
+        wsRev.autoFilter.columns = [
+            {}, { showButton: false }, { showButton: false }, {}, {}, {}, {},
+            { showButton: false }, { showButton: false }, { showButton: false },
+            {}, {}, {}, {}, {}, {}, {}, {}
+        ];
+        const revWidths = [16, 10, 10, 14, 14, 32, 20, 18, 18, 18, 16, 24, 25, 16, 16, 18, 18, 12];
+        wsRev.columns.forEach((col, i) => (col.width = revWidths[i] || 15));
+
+        // ====================== APARTMENT SALES SHEET ======================
+        if (data.apartmentSales && data.apartmentSales.length > 0) {
+            const NOT_SOLD_FILL = 'FFFCE8B2';   // light amber = available/reserved, not sold
+            const NOT_SOLD_TEXT = 'FF8A6D00';
+
+            const wsSales = workbook.addWorksheet('مبيعات الوحدات');
+            wsSales.views = [{ rightToLeft: true }];
+
+            const salesTitleCell = wsSales.getCell('A1');
+            salesTitleCell.value = utils.rtlEmbed(`${projectName} - الثروة الخضراء - مبيعات الوحدات (${salPeriod})`);
+            salesTitleCell.font = { name: 'Amiri', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+            salesTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D9488' } }; // Teal
+            salesTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+            wsSales.mergeCells('A1:Q1');
+            wsSales.getRow(1).height = 30;
+
+            // Legend explaining the amber (not-sold) rows.
+            wsSales.getCell('A2').value = utils.rtlEmbed('الصفوف الكهرمانية = وحدات بدون طلب بيع (متاحة/محجوزة)، غير مباعة.');
+            wsSales.mergeCells('A2:Q2');
+            wsSales.getRow(2).font = { name: 'Amiri', size: 10, italic: true, color: { argb: NOT_SOLD_TEXT } };
+            wsSales.getRow(2).alignment = { horizontal: 'center', vertical: 'middle' };
+
+            const salesHeaders = [
+                'رقم الطلب', 'الوحدة', 'المبنى', 'الطابق', 'العميل', 'الموظف', 'الحالة', 'حالة الوحدة',
+                'تاريخ البيع', 'الإجمالي', 'المقدم', 'وديعة الصيانة', 'مساحة الوحدة', 'مساحة الحديقة',
+                'سعر المتر', 'المشروع', 'ملاحظات'
+            ];
+            const salesHeaderRow = wsSales.addRow(salesHeaders.map(h => utils.rtlEmbed(h)));
+            salesHeaderRow.font = { name: 'Amiri', size: 11, bold: true };
+            salesHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCCFBF1' } }; // Light Teal
+            salesHeaderRow.alignment = { horizontal: 'center', vertical: 'middle' };
+
+            const salesDataStartRow = salesHeaderRow.number + 1;
+
+            data.apartmentSales.forEach((sr: any) => {
+                const isSold = !!sr.isSold;
+                const row = wsSales.addRow([
+                    utils.safeString(sr.salesRequestId),
+                    utils.safeString(sr.apartmentName),
+                    utils.safeString(sr.buildingNumber),
+                    utils.safeString(sr.floorNumber),
+                    utils.safeString(sr.fromPartyName),
+                    utils.safeString(sr.employeeName),
+                    utils.safeString(sr.statusDescription),
+                    utils.safeString(sr.apartmentStatusDescription),
+                    isSold ? utils.formatDate(sr.saleDate) : '',
+                    isSold ? (sr.totalPrice ?? 0) : '',
+                    isSold ? (sr.advancePayment ?? 0) : '',
+                    isSold ? (sr.maintenanceDeposit ?? 0) : '',
+                    sr.apartmentSpaceM2 ?? 0,
+                    sr.gardenSpaceM2 ?? 0,
+                    sr.apartmentPricePerM2 ?? 0,
+                    utils.safeString(sr.projectName),
+                    utils.safeString(sr.comments),
+                ]);
+                row.font = { name: 'Amiri', size: 10 };
+                row.alignment = { horizontal: 'right', wrapText: true };
+                [10, 11, 12, 13, 14, 15].forEach(col => {
+                    row.getCell(col).numFmt = '#,##0.00';
+                    row.getCell(col).alignment = { horizontal: 'right' };
+                });
+
+                if (!isSold) {
+                    row.eachCell({ includeEmpty: true }, cell => {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NOT_SOLD_FILL } };
+                    });
+                    row.getCell(7).font = { name: 'Amiri', size: 10, bold: true, color: { argb: NOT_SOLD_TEXT } };
+                }
+            });
+
+            const salesDataEndRow = wsSales.rowCount;
+
+            const salesTotalRow = wsSales.addRow([
+                '', '', '', '', '', '', 'الإجمالي', '', '',
+                { formula: `SUBTOTAL(109,J${salesDataStartRow}:J${salesDataEndRow})` },
+                { formula: `SUBTOTAL(109,K${salesDataStartRow}:K${salesDataEndRow})` },
+                { formula: `SUBTOTAL(109,L${salesDataStartRow}:L${salesDataEndRow})` },
+                { formula: `SUBTOTAL(109,M${salesDataStartRow}:M${salesDataEndRow})` },
+                { formula: `SUBTOTAL(109,N${salesDataStartRow}:N${salesDataEndRow})` },
+                '', '', ''
+            ]);
+            salesTotalRow.font = { name: 'Amiri', size: 12, bold: true };
+            salesTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF99F6E4' } };
+            [10, 11, 12, 13, 14].forEach(col => salesTotalRow.getCell(col).numFmt = '#,##0.00');
+
+            wsSales.autoFilter = {
+                from: { row: salesHeaderRow.number, column: 1 },
+                to: { row: salesDataEndRow, column: 17 }
+            };
+
+            const salesWidths = [15, 22, 16, 16, 22, 22, 18, 16, 14, 15, 15, 16, 18, 18, 16, 22, 32];
+            wsSales.columns.forEach((col, i) => col.width = salesWidths[i] || 15);
         }
 
-        // Column widths for Revenue
-        const revWidths = [16, 10, 10, 14, 14, 32, 20, 18, 18, 18, 16, 24, 25, 16];
-        wsRev.columns.forEach((col, i) => col.width = revWidths[i] || 15);
-
         return await workbook.xlsx.writeBuffer();
-    }, [projectName, expensesAllData, expensesStartDate, expensesEndDate, revenuesAllData, revenuesStartDate, revenuesEndDate]);
+    }, [projectName, expensesAllData, expensesStartDate, expensesEndDate, revenuesAllData, revenuesStartDate, revenuesEndDate, salesAllData, salesStartDate, salesEndDate]);
 
     const handleDownload = useCallback(async () => {
         setIsGenerating(true);
@@ -533,7 +535,10 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
                 expensesAllData,
                 revenuesStartDate: revenuesAllData ? undefined : revenuesStartDate?.format('YYYY-MM-DD'),
                 revenuesEndDate: revenuesAllData ? undefined : revenuesEndDate?.format('YYYY-MM-DD'),
-                revenuesAllData
+                revenuesAllData,
+                salesStartDate: salesAllData ? undefined : salesStartDate?.format('YYYY-MM-DD'),
+                salesEndDate: salesAllData ? undefined : salesEndDate?.format('YYYY-MM-DD'),
+                salesAllData
             }).unwrap();
 
             const buffer = await generateExcel(result);
@@ -554,7 +559,7 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
         } finally {
             setIsGenerating(false);
         }
-    }, [trigger, generateExcel, projectId, projectName, expensesStartDate, expensesEndDate, expensesAllData, revenuesStartDate, revenuesEndDate, revenuesAllData, onClose]);
+    }, [trigger, generateExcel, projectId, projectName, expensesStartDate, expensesEndDate, expensesAllData, revenuesStartDate, revenuesEndDate, revenuesAllData, salesStartDate, salesEndDate, salesAllData, onClose]);
 
     const isLoading = isFetching || isGenerating;
 
@@ -622,6 +627,37 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
                             </LocalizationProvider>
                         </Box>
                     </Box>
+
+                    <Divider />
+
+                    <Box>
+                        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
+                            مبيعات الوحدات (Apartment Sales)
+                        </Typography>
+                        <FormControlLabel
+                            control={<Checkbox checked={salesAllData} onChange={(e) => setSalesAllData(e.target.checked)} />}
+                            label="كل البيانات"
+                        />
+                        <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                                <DesktopDatePicker
+                                    label="من تاريخ"
+                                    value={salesStartDate}
+                                    onChange={setSalesStartDate}
+                                    disabled={salesAllData}
+                                    slotProps={{ textField: { fullWidth: true } }}
+                                />
+                                <DesktopDatePicker
+                                    label="إلى تاريخ"
+                                    value={salesEndDate}
+                                    minDate={salesStartDate ?? undefined}
+                                    onChange={setSalesEndDate}
+                                    disabled={salesAllData}
+                                    slotProps={{ textField: { fullWidth: true } }}
+                                />
+                            </LocalizationProvider>
+                        </Box>
+                    </Box>
                 </Box>
             </DialogContent>
             <DialogActions>
@@ -629,7 +665,7 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
                 <Button
                     onClick={handleDownload}
                     variant="contained"
-                    disabled={isLoading || (!expensesAllData && (!expensesStartDate || !expensesEndDate)) || (!revenuesAllData && (!revenuesStartDate || !revenuesEndDate))}
+                    disabled={isLoading || (!expensesAllData && (!expensesStartDate || !expensesEndDate)) || (!revenuesAllData && (!revenuesStartDate || !revenuesEndDate)) || (!salesAllData && (!salesStartDate || !salesEndDate))}
                     startIcon={isLoading ? <CircularProgress size={20} /> : null}
                 >
                     {isLoading ? 'جاري الإنشاء...' : 'تحميل التقرير'}
