@@ -475,6 +475,25 @@ public class GeneralLedgerService : IGeneralLedgerService
                 return null;
             }
 
+            // 2b. Idempotency guard: a payment must never accumulate more than one posted
+            // INCOMING_PAYMENT AcctgTrans. Without this, any path that flips a payment back
+            // to PMNT_NOT_PAID without deleting its prior posting (the generic SetPaymentStatus
+            // transition does this — only the dedicated Reset action cleans up AcctgTrans) and
+            // then re-approves it will silently double-post the same amount to GL.
+            var existingAcctgTransId = await _context.AcctgTrans
+                .Where(t => t.PaymentId == paymentId &&
+                            t.AcctgTransTypeId == "INCOMING_PAYMENT" &&
+                            t.IsPosted == "Y")
+                .Select(t => t.AcctgTransId)
+                .FirstOrDefaultAsync();
+
+            if (existingAcctgTransId != null)
+            {
+                _logger.LogWarning(
+                    $"Payment {paymentId} already has posted AcctgTrans {existingAcctgTransId}. Skipping duplicate GL posting.");
+                return existingAcctgTransId;
+            }
+
             // 3. Prepare some reusable values
             var stamp = DateTime.UtcNow;
             var newAcctgTransSequence = await _utilityService.GetNextSequence("AcctgTrans");
@@ -3544,6 +3563,24 @@ public class GeneralLedgerService : IGeneralLedgerService
                 _logger.LogInformation(
                     $"Payment {paymentId} is not a disbursement. Skipping outgoing payment transaction.");
                 return null;
+            }
+
+            // Idempotency guard — see CreateAcctgTransAndEntriesForIncomingPayment for why this
+            // is required: the generic SetPaymentStatus transition back to PMNT_NOT_PAID doesn't
+            // clean up AcctgTrans, so a payment re-approved after that drift would otherwise be
+            // posted to GL twice.
+            var existingAcctgTransId = await _context.AcctgTrans
+                .Where(t => t.PaymentId == paymentId &&
+                            t.AcctgTransTypeId == "OUTGOING_PAYMENT" &&
+                            t.IsPosted == "Y")
+                .Select(t => t.AcctgTransId)
+                .FirstOrDefaultAsync();
+
+            if (existingAcctgTransId != null)
+            {
+                _logger.LogWarning(
+                    $"Payment {paymentId} already has posted AcctgTrans {existingAcctgTransId}. Skipping duplicate GL posting.");
+                return existingAcctgTransId;
             }
 
             // Set organizationPartyId, partyId, and roleTypeId

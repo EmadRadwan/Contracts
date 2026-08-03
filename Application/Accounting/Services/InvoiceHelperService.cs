@@ -1470,6 +1470,15 @@ public class InvoiceHelperService : IInvoiceHelperService
             // Proceed only if invoicePerShipment is "N"
             if (invoicePerShipment == "N")
             {
+                // Lock the order row for the rest of this transaction so two concurrent callers
+                // (e.g. a double-clicked "Approve Certificate") can't both see an empty
+                // OrderItemBillings result and each create a full invoice for the same items.
+                // Only effective when the caller holds an ambient transaction open across this
+                // call (e.g. ProcessWorkmanCertificatePurchaseOrder) — without one, MySQL releases
+                // the lock immediately and this degrades to the prior (unsafe) behavior.
+                await _context.Database.ExecuteSqlInterpolatedAsync(
+                    $"SELECT ORDER_ID FROM order_header WHERE ORDER_ID = {orderId} FOR UPDATE");
+
                 // Check if there are billing items for the order
                 var orderItemBilling = await _context.OrderItemBillings
                     .Where(oib => oib.OrderId == orderId)

@@ -294,6 +294,22 @@ public class PaymentHelperService : IPaymentHelperService
                 };
             }
 
+            // Un-approving a payment (RECEIVED/SENT -> NOT_PAID) must go through the dedicated
+            // Reset action, which deletes the posted AcctgTrans/PaymentApplications along with
+            // the status flip. This generic transition only flips the status column, so allowing
+            // it here left a payment re-approvable without its earlier GL posting ever being
+            // removed - re-approving then posted a second, duplicate AcctgTrans for the same
+            // payment (see payment I50121 / AcctgTrans 19071 & 19078).
+            if ((oldStatusId == "PMNT_RECEIVED" || oldStatusId == "PMNT_SENT") && statusId == "PMNT_NOT_PAID")
+            {
+                return new PaymentStatusChangeResult
+                {
+                    Success = false,
+                    ErrorCode = "USE_RESET_ACTION",
+                    ErrorMessage = "Use the Reset action to move a Received/Sent payment back to Not Paid; it also clears the posted accounting transaction."
+                };
+            }
+
             // Payment method mandatory check for PMNT_RECEIVED or PMNT_SENT
             if ((statusId == "PMNT_RECEIVED" || statusId == "PMNT_SENT") && payment.PaymentMethodId == null)
             {

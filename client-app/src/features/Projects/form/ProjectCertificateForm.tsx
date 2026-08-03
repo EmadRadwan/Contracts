@@ -718,7 +718,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                     workEffortId={selectedCertificate?.workEffortId}
                                     currentStatusId={selectedCertificate?.currentStatusId}
                                     handleStatusUpdate={handleStatusUpdate}
-                                    disabled={editMode < 2 || isSubmitting || isAddCertificateLoading || isUpdateCertificateLoading}
+                                    disabled={editMode < 2 || isSubmitting || isAddCertificateLoading || isUpdateCertificateLoading || isLoading}
                                 />
                             )}
                         </Box>

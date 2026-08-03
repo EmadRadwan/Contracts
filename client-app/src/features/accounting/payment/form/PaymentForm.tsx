@@ -331,6 +331,7 @@ export default function PaymentForm({
                             handleMenuSelect={handleMenuSelect}
                             getAvailableStatusTransitions={getAvailableStatusTransitions}
                             handleReset={handleReset}
+                            isProcessing={hookLoading}
                         />
                     </Grid>
                 </Grid>

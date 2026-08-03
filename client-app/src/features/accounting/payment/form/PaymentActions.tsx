@@ -12,6 +12,7 @@ interface PaymentActionsProps {
     handleMenuSelect: (e: { item: { data: string } }) => void;
     handleReset: () => void;
     getAvailableStatusTransitions?: (payment?: Payment) => any;
+    isProcessing?: boolean;
 }
 
 
@@ -21,7 +22,8 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                                                            getTranslatedLabel,
                                                            handleMenuSelect,
                                                            handleReset,
-                                                           getAvailableStatusTransitions: getAvailableStatusTransitionsFromProp
+                                                           getAvailableStatusTransitions: getAvailableStatusTransitionsFromProp,
+                                                           isProcessing = false
                                                        }) => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
@@ -96,7 +98,7 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                     color="primary"
                     onClick={handleClick}
                     sx={{ mt: 2, mr: 2 }}
-                    disabled={!payment} 
+                    disabled={!payment || isProcessing} 
                 >
                     {getTranslatedLabel("general.actions", "Actions")}
                 </Button>
@@ -127,7 +129,7 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                 color="primary"
                 onClick={handleClick}
                 sx={{ mt: 2, mr: 2 }}
-                disabled={!payment} 
+                disabled={!payment || isProcessing} 
             >
                 {getTranslatedLabel("general.actions", "Actions")}
             </Button>

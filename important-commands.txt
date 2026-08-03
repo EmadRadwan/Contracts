@@ -245,18 +245,18 @@ cd ~/mysql-backups/contracts-golden
     
     
     docker exec erp-mysql-contracts \
-      mysqldump -uroot -p"Tmbtc202500" \
-        --databases erp_contracts \
-        --ignore-table=erp_contracts.__EFMigrationsHistory \
-        --routines --triggers --events --single-transaction \
-      | sed -E 's/DEFINER=`[^`]+`@`[^`]+` ?//g; s/DEFINER=[^ ]* ?//g' \
-      > ~/mysql-backups/contracts-golden/erp_contracts_no_definer_$(date +%Y-%m-%d_%H-%M-%S).sql
+          mysqldump -uroot -p"Tmbtc202500" \
+            --databases erp_contracts \
+            --ignore-table=erp_contracts.__EFMigrationsHistory \
+            --routines --triggers --events --single-transaction \
+          | sed -E 's/DEFINER=`[^`]+`@`[^`]+` ?//g; s/DEFINER=[^ ]* ?//g' \
+          > ~/mysql-backups/contracts-golden/erp_contracts_no_definer_$(date +%Y-%m-%d_%H-%M-%S).sql
 
 gzip ~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-02-01_11-35-20.sql
-scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-08-01_15-05-53.sql ~/Desktop/
+scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-08-03_07-48-54.sql ~/Desktop/
 gunzip ~/Desktop/erp_contracts_no_definer_2026-02-01_11-35-20.sql.gz
 
-mysql -u root -p erp_contracts <  erp_contracts_no_definer_2026-08-01_15-05-53.sql
+mysql -u root -p erp_contracts <  erp_contracts_no_definer_2026-08-03_07-48-54.sql
 
 Portainer.io:
 http://129.146.22.240:9000
