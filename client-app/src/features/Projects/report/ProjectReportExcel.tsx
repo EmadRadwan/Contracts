@@ -229,59 +229,61 @@ export const ProjectReportExcel: React.FC<ProjectReportExcelProps> = ({
         wsExp.pageSetup = { orientation: 'landscape', paperSize: 9 };
         addSheetHeader(wsExp, `${projectName} - الثروة الخضراء - المستخلصات (${expPeriod})`, 15, 'FF1E40AF');
 
-        const expHeaders = [
-            'رقم الشهادة', 'رقم الدفعة', 'اسم الطرف', 'المنتج/الخدمة', 'التاريخ',
-            'النوع', 'الوصف', 'وصف البند', 'الكمية', 'السعر', 'الإجمالي',
-            'الخصم', 'الاستقطاعات', 'التأمين', 'صافي المعتمد'
+        // Column order per client request, matching the "الترتيب المطلوب" sheet they provided
+        // (Project_Report_نسيم..._20260101.xlsx): date/description/party/net up front, ids and
+        // amounts follow. Kept as one array so header row, data rows, widths and the net-column
+        // total/formula can never drift out of sync when the order changes again.
+        const expColumnDefs: { header: string; width: number; numeric?: boolean; get: (exp: any) => any }[] = [
+            { header: 'التاريخ', width: 14, get: exp => utils.formatDate(exp.expenseDate) },
+            { header: 'وصف البند', width: 45, get: exp => utils.safeString(exp.itemDescription) },
+            { header: 'اسم الطرف', width: 32, get: exp => utils.safeString(exp.partyName || exp.partyId) },
+            { header: 'صافي المعتمد', width: 20, numeric: true, get: exp => expenseNet(exp) },
+            { header: 'رقم الدفعة', width: 16, get: exp => utils.safeString(exp.paymentId) },
+            { header: 'رقم الشهادة', width: 18, get: exp => utils.safeString(exp.certificateNumber) },
+            { header: 'المنتج/الخدمة', width: 28, get: exp => utils.safeString(exp.productName || exp.productId) },
+            { header: 'النوع', width: 25, get: exp => utils.safeString(exp.certificateTypeArabic || exp.certificateType) },
+            { header: 'الوصف', width: 38, get: exp => utils.safeString(exp.certificateDescription) },
+            { header: 'الكمية', width: 12, numeric: true, get: exp => exp.quantity || 1 },
+            { header: 'السعر', width: 16, numeric: true, get: exp => exp.unitRate || 0 },
+            { header: 'الإجمالي', width: 18, numeric: true, get: exp => exp.grossAmount || 0 },
+            { header: 'الخصم', width: 16, numeric: true, get: exp => exp.discountAmount || 0 },
+            { header: 'الاستقطاعات', width: 16, numeric: true, get: exp => exp.deductionsAmount || 0 },
+            { header: 'التأمين', width: 16, numeric: true, get: exp => exp.insuranceAmount || 0 }
         ];
-        const headerRow = wsExp.addRow(expHeaders.map(h => utils.rtlEmbed(h)));
+        const netColIndex = expColumnDefs.findIndex(c => c.header === 'صافي المعتمد') + 1; // 1-based
+
+        const headerRow = wsExp.addRow(expColumnDefs.map(c => utils.rtlEmbed(c.header)));
         headerRow.font = { name: 'Amiri', size: 11, bold: true };
         headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
         headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
 
         const dataStartRow = headerRow.number + 1;
         data.expenses.forEach((exp, idx) => {
-            const row = wsExp.addRow([
-                utils.safeString(exp.certificateNumber),
-                utils.safeString(exp.paymentId),
-                utils.safeString(exp.partyName || exp.partyId),
-                utils.safeString(exp.productName || exp.productId),
-                utils.formatDate(exp.expenseDate),
-                utils.safeString(exp.certificateTypeArabic || exp.certificateType),
-                utils.safeString(exp.certificateDescription),
-                utils.safeString(exp.itemDescription),
-                exp.quantity || 1,
-                exp.unitRate || 0,
-                exp.grossAmount || 0,
-                exp.discountAmount || 0,
-                exp.deductionsAmount || 0,
-                exp.insuranceAmount || 0,
-                expenseNet(exp)
-            ]);
-            for (let i = 9; i <= 15; i++) {
-                const cell = row.getCell(i);
+            const row = wsExp.addRow(expColumnDefs.map(c => c.get(exp)));
+            expColumnDefs.forEach((c, i) => {
+                if (!c.numeric) return;
+                const cell = row.getCell(i + 1);
                 cell.numFmt = '#,##0.00';
                 cell.alignment = { horizontal: 'right' };
-            }
+            });
             if (idx % 2 === 1) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
         });
         const dataEndRow = wsExp.rowCount;
 
-        const totalRow = wsExp.addRow(['', '', '', '', '', '', '', 'الإجمالي الكلي', '', '', '', '', '', '', { formula: `SUBTOTAL(109,O${dataStartRow}:O${dataEndRow})` }]);
+        const netColLetter = wsExp.getColumn(netColIndex).letter;
+        const totalArr: any[] = expColumnDefs.map(() => '');
+        totalArr[netColIndex - 2] = utils.rtlEmbed('الإجمالي الكلي');
+        totalArr[netColIndex - 1] = { formula: `SUBTOTAL(109,${netColLetter}${dataStartRow}:${netColLetter}${dataEndRow})` };
+        const totalRow = wsExp.addRow(totalArr);
         totalRow.font = { name: 'Amiri', size: 12, bold: true };
         totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBFDBFE' } };
-        totalRow.getCell(15).numFmt = '#,##0.00';
-        totalRow.getCell(15).alignment = { horizontal: 'right' };
+        totalRow.getCell(netColIndex).numFmt = '#,##0.00';
+        totalRow.getCell(netColIndex).alignment = { horizontal: 'right' };
 
-        wsExp.autoFilter = { from: { row: headerRow.number, column: 1 }, to: { row: dataEndRow, column: 15 } };
-        // @ts-ignore  disable filter buttons on numeric columns 9-15
-        wsExp.autoFilter.columns = [
-            {}, {}, {}, {}, {}, {}, {}, {},
-            { showButton: false }, { showButton: false }, { showButton: false },
-            { showButton: false }, { showButton: false }, { showButton: false }, { showButton: false }
-        ];
-        const expColWidths = [18, 16, 32, 28, 14, 25, 38, 45, 12, 16, 18, 16, 16, 16, 20];
-        wsExp.columns.forEach((col, i) => (col.width = expColWidths[i] || 15));
+        wsExp.autoFilter = { from: { row: headerRow.number, column: 1 }, to: { row: dataEndRow, column: expColumnDefs.length } };
+        // @ts-ignore  disable filter buttons on numeric columns
+        wsExp.autoFilter.columns = expColumnDefs.map(c => (c.numeric ? { showButton: false } : {}));
+        wsExp.columns.forEach((col, i) => (col.width = expColumnDefs[i]?.width || 15));
 
         // ====================== DIRECT PAYMENTS SHEET ======================
         if (data.directPayments && data.directPayments.length > 0) {

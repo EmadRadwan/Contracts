@@ -71,6 +71,33 @@ namespace Application.Facilities
                             $"WorkEffort with ID {request.WorkEffortId} not found.");
                     }
 
+                    // Idempotency guard scoped to WORKMANSHIP_CONTRACTING_CERTIFICATE only: for that
+                    // category, "approve" is a one-time action on the frontend (one button click, no
+                    // partial-delivery re-invoicing), so re-entering this handler once the certificate
+                    // is already WEPR_APPROVED/WEPR_COMPLETE means a stale retry, not new work — skip
+                    // re-invoicing rather than relying solely on the FOR UPDATE lock's narrow race window.
+                    // Do NOT apply this to SUPPLY_PROCUREMENT_CERTIFICATE: ReceiveInventoryFromPurchaseOrder
+                    // calls this handler again for every subsequent partial receipt on an
+                    // already-WEPR_APPROVED certificate, and CreateInvoiceFromOrder's own "bill only
+                    // unbilled items" check is what makes those later calls correctly invoice just the
+                    // newly-received items — short-circuiting on status here would silently drop them.
+                    if (workEffort.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE" &&
+                        (workEffort.CurrentStatusId == "WEPR_APPROVED" || workEffort.CurrentStatusId == "WEPR_COMPLETE"))
+                    {
+                        // LogWarning (not LogInformation) so this is visible under the app's
+                        // Warning-level-minimum Serilog config — otherwise a fired guard leaves no
+                        // trace in logs/ at all.
+                        _logger.LogWarning(
+                            "Certificate {WorkEffortId} is already {StatusId} — skipping re-processing to avoid duplicate invoicing.",
+                            request.WorkEffortId, workEffort.CurrentStatusId);
+                        if (ownsTransaction) await transaction!.CommitAsync(cancellationToken);
+                        return Result<OrderStatusChangeResult>.Success(new OrderStatusChangeResult
+                        {
+                            OrderId = workEffort.RelatedOrderId,
+                            OrderStatusId = "ORDER_APPROVED"
+                        });
+                    }
+
                     var orderId = workEffort.RelatedOrderId; // Assumes WorkEffort has RelatedOrderId field
                     if (string.IsNullOrEmpty(orderId))
                     {

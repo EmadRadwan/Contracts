@@ -3,6 +3,7 @@ using Domain;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Persistence;
 
 namespace Application.Projects;
@@ -25,10 +26,12 @@ public class ResetProjectCertificate
     public class Handler : IRequestHandler<Command, Result<Unit>>
     {
         private readonly DataContext _context;
+        private readonly ILogger<Handler> _logger;
 
-        public Handler(DataContext context)
+        public Handler(DataContext context, ILogger<Handler> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public async Task<Result<Unit>> Handle(Command request, CancellationToken cancellationToken)
@@ -53,6 +56,13 @@ public class ResetProjectCertificate
 
                 var category = workEffort.CertificateCategory;
                 var relatedOrderId = workEffort.RelatedOrderId;
+
+                // Tracks every invoice id handed to CleanupInvoices below, across all branches, so we
+                // can verify after SaveChangesAsync that each one was actually removed. Without this,
+                // a silent partial failure inside CleanupInvoices (e.g. an untracked FK dependency)
+                // leaves an orphaned invoice — header/items/roles intact but its ORDER_ITEM_BILLING
+                // link gone — with no error raised. See certificate 233-0026 / INV1362 / INV1363.
+                var allCleanedInvoiceIds = new List<string>();
 
                 // 1. Revert WorkEffort status
                 workEffort.CurrentStatusId = "WEPR_CREATED";
@@ -218,6 +228,7 @@ public class ResetProjectCertificate
                                     if (invoiceIds.Any())
                                     {
                                         await CleanupInvoices(invoiceIds, cancellationToken);
+                                        allCleanedInvoiceIds.AddRange(invoiceIds);
                                     }
 
                                     var trans = await _context.AcctgTrans.Where(at => at.ReceiptId == receipt.ReceiptId)
@@ -269,6 +280,7 @@ public class ResetProjectCertificate
                         if (invoiceIds.Any())
                         {
                             await CleanupInvoices(invoiceIds, cancellationToken);
+                            allCleanedInvoiceIds.AddRange(invoiceIds);
                         }
                     }
 
@@ -419,12 +431,39 @@ public class ResetProjectCertificate
                 }
 
                 await _context.SaveChangesAsync(cancellationToken);
+
+                // Verify every invoice CleanupInvoices was asked to remove is actually gone before
+                // committing. If any survive, fail loudly and roll back everything (including the
+                // ORDER_ITEM_BILLING removal above) rather than silently leaving an orphaned invoice
+                // behind — this is the exact failure mode that produced certificate 233-0026's
+                // INV1362/INV1363 (billing link gone, invoice header/items/roles left intact).
+                if (allCleanedInvoiceIds.Count > 0)
+                {
+                    var survivingInvoiceIds = await _context.Invoices
+                        .AsNoTracking()
+                        .Where(i => allCleanedInvoiceIds.Contains(i.InvoiceId))
+                        .Select(i => i.InvoiceId)
+                        .ToListAsync(cancellationToken);
+
+                    if (survivingInvoiceIds.Count > 0)
+                    {
+                        throw new InvalidOperationException(
+                            $"CleanupInvoices failed to remove invoice(s): {string.Join(", ", survivingInvoiceIds)}. " +
+                            "Rolling back reset to avoid leaving an orphaned invoice.");
+                    }
+                }
+
                 await transaction.CommitAsync(cancellationToken);
 
                 return Result<Unit>.Success(Unit.Value);
             }
             catch (Exception ex)
             {
+                // Previously this exception was swallowed into the Result.Failure message with no
+                // Serilog entry at all — invisible in logs/ even though the app's minimum level is
+                // Warning. That's exactly how the 233-0026 orphan-invoice cleanup failure (INV1362/
+                // INV1363) went unnoticed. Log it explicitly so a future failure here is traceable.
+                _logger.LogError(ex, "Failed to reset certificate {WorkEffortId}", request.WorkEffortId);
                 await transaction.RollbackAsync(cancellationToken);
                 return Result<Unit>.Failure($"Failed to reset certificate: {ex.Message}");
             }

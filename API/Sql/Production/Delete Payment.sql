@@ -61,5 +61,5 @@ DELETE FROM PAYMENT
 WHERE PAYMENT_ID = @pmtId;
 
 -- Review the affected rows above, then:
--- COMMIT;
+COMMIT;
 -- ROLLBACK;
