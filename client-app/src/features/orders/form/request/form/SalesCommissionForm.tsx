@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { ComponentType, useEffect, useMemo, useState } from "react";
 import {
     Alert,
     Box,
@@ -42,29 +42,131 @@ import { FormComboBoxVirtualPartyExternalSalesManager } from "../../../../../app
 import QuickCreatePartyDialog, { PartyRole } from "../../../../../app/common/form/QuickCreatePartyDialog";
 import SalesRequestMenu from "../menu/SalesRequestMenu";
 import LoadingComponent from "../../../../../app/layout/LoadingComponent";
+import { SALE_TYPE_OPTIONS, COMMISSION_STATUS_RIBBON_COLORS } from "../../../../../app/models/orders/salesCommissionLabels";
 
 function formatEGP(value: number | null | undefined) {
     return Math.round(value ?? 0).toLocaleString("ar-SA");
 }
 
+// Collection ratio no longer blocks commission creation — a below-lower-threshold commission
+// is still created, just with a zero factor until collections catch up.
 function getThresholdStatus(ratio: number, saleTypeId: string | null) {
     const lower = saleTypeId === "COMM_SALE_INDIRECT" ? 0.075 : 0.05;
-    if (ratio < lower) return { status: "blocked" as const, factor: 0, lower };
+    if (ratio < lower) return { status: "zero" as const, factor: 0, lower };
     if (ratio < 0.10) return { status: "partial" as const, factor: 0.5, lower };
     return { status: "full" as const, factor: 1, lower };
 }
 
-const saleTypeOptions = [
-    { saleTypeId: "COMM_SALE_DIRECT", description: "بيع مباشر" },
-    { saleTypeId: "COMM_SALE_PERSONAL", description: "بيع شخصي" },
-    { saleTypeId: "COMM_SALE_INDIRECT", description: "بيع غير مباشر" },
-];
+// Builds a validator capping `fieldValue + otherFieldValue` at maxPct, used for the
+// sales rep 1/2 and manager 1/2 percent fields which share a combined project cap.
+function makePercentCapValidator(
+    maxPct: number | undefined,
+    getOtherValue: () => number,
+    label: string
+) {
+    if (maxPct === undefined) return undefined;
+    return (v: any) => {
+        const other = getOtherValue();
+        return (v ?? 0) + other > maxPct
+            ? `إجمالي نسبة ${label} يتجاوز الحد الأقصى ${maxPct.toFixed(4)}%`
+            : undefined;
+    };
+}
 
 interface Props {
     commission?: SalesCommission;
     salesRequestId?: string;
     editMode: 0 | 1 | 2;
     cancelEdit: () => void;
+}
+
+interface CommissionPartyRowProps {
+    partyFieldName: string;
+    percentFieldName: string;
+    partyLabel: string;
+    percentLabel: string;
+    partyComponent: ComponentType<any>;
+    percentValidator?: (value: any) => string | undefined;
+    disabled: boolean;
+    showQuickCreate: boolean;
+    quickCreateTooltip: string;
+    onQuickCreate: () => void;
+    amountLabel?: string;
+    amountValue?: number | null;
+    secondToggle?: {
+        checked: boolean;
+        onChange: (checked: boolean) => void;
+        label: string;
+    };
+}
+
+// Shared row shape for the internal party sections (sales rep 1/2, manager 1/2):
+// party combobox + optional quick-create icon + percent field, with an optional
+// read-only amount line and an optional "add second party" toggle.
+function CommissionPartyRow({
+    partyFieldName, percentFieldName, partyLabel, percentLabel, partyComponent,
+    percentValidator, disabled, showQuickCreate, quickCreateTooltip, onQuickCreate,
+    amountLabel, amountValue, secondToggle,
+}: CommissionPartyRowProps) {
+    return (
+        <Grid container spacing={2} alignItems="center" sx={{ mb: 1 }}>
+            <Grid item xs={12} md={4}>
+                <Grid container alignItems="center">
+                    <Grid item xs={11}>
+                        <Field
+                            id={partyFieldName}
+                            name={partyFieldName}
+                            label={partyLabel}
+                            component={partyComponent}
+                            disabled={disabled}
+                            validator={requiredValidator}
+                        />
+                    </Grid>
+                    <Grid item xs={1}>
+                        {showQuickCreate && (
+                            <Tooltip title={quickCreateTooltip}>
+                                <IconButton size="small" onClick={onQuickCreate}>
+                                    <AddCircleOutlineIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                    </Grid>
+                </Grid>
+            </Grid>
+            <Grid item xs={6} md={2}>
+                <Field
+                    id={percentFieldName}
+                    name={percentFieldName}
+                    label={percentLabel}
+                    component={FormNumericTextBox}
+                    min={0} max={100} format="n4"
+                    disabled={disabled}
+                    validator={percentValidator ? [percentValidator] : undefined}
+                />
+            </Grid>
+            {amountValue ? (
+                <Grid item xs={6} md={2}>
+                    <Typography variant="body2" sx={{ mt: 3 }}>
+                        {amountLabel}: {formatEGP(amountValue)}
+                    </Typography>
+                </Grid>
+            ) : null}
+            {secondToggle && !disabled && (
+                <Grid item xs={12} md={2}>
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={secondToggle.checked}
+                                onChange={(e) => secondToggle.onChange(e.target.checked)}
+                                size="small"
+                            />
+                        }
+                        label={secondToggle.label}
+                    />
+                </Grid>
+            )}
+        </Grid>
+    );
 }
 
 interface QuickCreateState {
@@ -290,11 +392,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
 
     const isApproved = activeCommission?.statusId === "COMMISSION_APPROVED";
 
-    const ribbonBg: Record<string, string> = {
-        COMMISSION_PENDING: "#ff9800",
-        COMMISSION_APPROVED: "#4caf50",
-        COMMISSION_PAID: "#1976d2",
-    };
+    const ribbonBg = COMMISSION_STATUS_RIBBON_COLORS;
     const ribbonLabels: Record<string, string> = {
         COMMISSION_PENDING: getTranslatedLabel("salesCommission.status.pending", "قيد الانتظار"),
         COMMISSION_APPROVED: getTranslatedLabel("salesCommission.status.approved", "معتمدة"),
@@ -373,38 +471,26 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                         const maxMgrPct = activeRate?.managerPercent;
                         const maxExtPct = activeRate?.externalCompanyPercent ?? undefined;
 
-                        const repValidator = maxRepPct !== undefined
-                            ? (v: any) => {
-                                const rep2 = hasTwoSalesReps ? (formRenderProps.valueGetter("salesRep2Percent") ?? 0) : 0;
-                                return (v ?? 0) + rep2 > maxRepPct
-                                    ? `إجمالي نسبة المندوبين يتجاوز الحد الأقصى ${maxRepPct.toFixed(4)}%`
-                                    : undefined;
-                            }
-                            : undefined;
-                        const rep2Validator = maxRepPct !== undefined
-                            ? (v: any) => {
-                                const rep1 = formRenderProps.valueGetter("salesRepPercent") ?? 0;
-                                return rep1 + (v ?? 0) > maxRepPct
-                                    ? `إجمالي نسبة المندوبين يتجاوز الحد الأقصى ${maxRepPct.toFixed(4)}%`
-                                    : undefined;
-                            }
-                            : undefined;
-                        const mgrValidator = maxMgrPct !== undefined
-                            ? (v: any) => {
-                                const mgr2 = hasTwoManagers ? (formRenderProps.valueGetter("manager2Percent") ?? 0) : 0;
-                                return (v ?? 0) + mgr2 > maxMgrPct
-                                    ? `إجمالي نسبة المديرين يتجاوز الحد الأقصى ${maxMgrPct.toFixed(4)}%`
-                                    : undefined;
-                            }
-                            : undefined;
-                        const mgr2Validator = maxMgrPct !== undefined
-                            ? (v: any) => {
-                                const mgr1 = formRenderProps.valueGetter("managerPercent") ?? 0;
-                                return mgr1 + (v ?? 0) > maxMgrPct
-                                    ? `إجمالي نسبة المديرين يتجاوز الحد الأقصى ${maxMgrPct.toFixed(4)}%`
-                                    : undefined;
-                            }
-                            : undefined;
+                        const repValidator = makePercentCapValidator(
+                            maxRepPct,
+                            () => hasTwoSalesReps ? (formRenderProps.valueGetter("salesRep2Percent") ?? 0) : 0,
+                            "المندوبين"
+                        );
+                        const rep2Validator = makePercentCapValidator(
+                            maxRepPct,
+                            () => formRenderProps.valueGetter("salesRepPercent") ?? 0,
+                            "المندوبين"
+                        );
+                        const mgrValidator = makePercentCapValidator(
+                            maxMgrPct,
+                            () => hasTwoManagers ? (formRenderProps.valueGetter("manager2Percent") ?? 0) : 0,
+                            "المديرين"
+                        );
+                        const mgr2Validator = makePercentCapValidator(
+                            maxMgrPct,
+                            () => formRenderProps.valueGetter("managerPercent") ?? 0,
+                            "المديرين"
+                        );
                         const extValidator = maxExtPct !== undefined
                             ? (v: any) => (v ?? 0) > maxExtPct ? `الحد الأقصى ${maxExtPct.toFixed(4)}%` : undefined
                             : undefined;
@@ -433,7 +519,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                 component={MemoizedFormDropDownList}
                                                 dataItemKey="saleTypeId"
                                                 textField="description"
-                                                data={saleTypeOptions}
+                                                data={SALE_TYPE_OPTIONS}
                                                 validator={requiredValidator}
                                                 disabled={isApproved}
                                                 onAfterChange={setSelectedSaleTypeId}
@@ -509,6 +595,18 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         {` ← ${formatEGP(salePrice * activeRate.externalCompanyPercent / 100 * factor)}`}
                                                     </Typography>
                                                 )}
+                                                {isIndirect && activeRate.externalSalesRepPercent != null && (
+                                                    <Typography variant="caption" sx={{ whiteSpace: "nowrap" }}>
+                                                        {`مندوب الوسيط: ${activeRate.externalSalesRepPercent}%`}
+                                                        {` ← ${formatEGP(salePrice * activeRate.externalSalesRepPercent / 100 * factor)}`}
+                                                    </Typography>
+                                                )}
+                                                {isIndirect && activeRate.externalManagerPercent != null && (
+                                                    <Typography variant="caption" sx={{ whiteSpace: "nowrap" }}>
+                                                        {`مدير الوسيط: ${activeRate.externalManagerPercent}%`}
+                                                        {` ← ${formatEGP(salePrice * activeRate.externalManagerPercent / 100 * factor)}`}
+                                                    </Typography>
+                                                )}
                                             </Box>
                                         </Alert>
                                     )}
@@ -517,15 +615,15 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                     {effectiveSrId && defaults && (
                                         <Alert
                                             severity={
-                                                threshold.status === "blocked" ? "error"
+                                                threshold.status === "zero" ? "error"
                                                 : threshold.status === "partial" ? "warning"
                                                 : "success"
                                             }
                                             sx={{ mb: 2 }}
                                         >
-                                            {threshold.status === "blocked" && (
+                                            {threshold.status === "zero" && (
                                                 <>
-                                                    {`لا يمكن إنشاء العمولة — نسبة التحصيل (${((defaults?.collectedRatio ?? 0) * 100).toFixed(2)}%) أقل من الحد الأدنى المطلوب (${(threshold.lower * 100).toFixed(1)}%)`}
+                                                    {`نسبة التحصيل الحالية (${((defaults?.collectedRatio ?? 0) * 100).toFixed(2)}%) أقل من الحد الأدنى المطلوب (${(threshold.lower * 100).toFixed(1)}%) — سيتم إنشاء العمولة بمبلغ صفري حتى استيفاء الحد الأدنى`}
                                                 </>
                                             )}
                                             {threshold.status === "partial" && (
@@ -547,201 +645,77 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                     </Typography>
 
                                     {/* Sales Rep 1 */}
-                                    <Grid container spacing={2} alignItems="center" sx={{ mb: 1 }}>
-                                        <Grid item xs={12} md={4}>
-                                            <Grid container alignItems="center">
-                                                <Grid item xs={11}>
-                                                    <Field
-                                                        id="salesRepParty"
-                                                        name="salesRepParty"
-                                                        label={getTranslatedLabel("salesCommission.form.salesRep1", "المندوب الأول")}
-                                                        component={FormComboBoxVirtualPartySalesRep}
-                                                        disabled={isApproved}
-                                                        validator={requiredValidator}
-                                                    />
-                                                </Grid>
-                                                <Grid item xs={1}>
-                                                    {!isApproved && isIndirect && (
-                                                        <Tooltip title="إنشاء مندوب جديد">
-                                                            <IconButton size="small" onClick={() => openQuickCreate("SALES_REP", "salesRepParty")}>
-                                                                <AddCircleOutlineIcon fontSize="small" />
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                    )}
-                                                </Grid>
-                                            </Grid>
-                                        </Grid>
-                                        <Grid item xs={6} md={2}>
-                                            <Field
-                                                id="salesRepPercent"
-                                                name="salesRepPercent"
-                                                label={getTranslatedLabel("salesCommission.form.salesRep1Percent", "نسبة المندوب الأول %")}
-                                                component={FormNumericTextBox}
-                                                min={0} max={100} format="n4"
-                                                disabled={isApproved}
-                                                validator={repValidator ? [repValidator] : undefined}
-                                            />
-                                        </Grid>
-                                        {activeCommission?.salesRepAmount && (
-                                            <Grid item xs={6} md={2}>
-                                                <Typography variant="body2" sx={{ mt: 3 }}>
-                                                    {getTranslatedLabel("salesCommission.form.salesRep1Amount", "مبلغ المندوب الأول")}: {formatEGP(activeCommission.salesRepAmount)}
-                                                </Typography>
-                                            </Grid>
-                                        )}
-                                        <Grid item xs={12} md={2}>
-                                            {!isApproved && (
-                                                <FormControlLabel
-                                                    control={
-                                                        <Checkbox
-                                                            checked={hasTwoSalesReps}
-                                                            onChange={(e) => setHasTwoSalesReps(e.target.checked)}
-                                                            size="small"
-                                                        />
-                                                    }
-                                                    label="مندوب ثاني"
-                                                />
-                                            )}
-                                        </Grid>
-                                    </Grid>
+                                    <CommissionPartyRow
+                                        partyFieldName="salesRepParty"
+                                        percentFieldName="salesRepPercent"
+                                        partyLabel={getTranslatedLabel("salesCommission.form.salesRep1", "المندوب الأول")}
+                                        percentLabel={getTranslatedLabel("salesCommission.form.salesRep1Percent", "نسبة المندوب الأول %")}
+                                        partyComponent={FormComboBoxVirtualPartySalesRep}
+                                        percentValidator={repValidator}
+                                        disabled={isApproved}
+                                        showQuickCreate={!isApproved && isIndirect}
+                                        quickCreateTooltip="إنشاء مندوب جديد"
+                                        onQuickCreate={() => openQuickCreate("SALES_REP", "salesRepParty")}
+                                        amountLabel={getTranslatedLabel("salesCommission.form.salesRep1Amount", "مبلغ المندوب الأول")}
+                                        amountValue={activeCommission?.salesRepAmount}
+                                        secondToggle={{
+                                            checked: hasTwoSalesReps,
+                                            onChange: setHasTwoSalesReps,
+                                            label: "مندوب ثاني",
+                                        }}
+                                    />
 
                                     {/* Sales Rep 2 */}
                                     {hasTwoSalesReps && (
-                                        <Grid container spacing={2} alignItems="center" sx={{ mb: 1 }}>
-                                            <Grid item xs={12} md={4}>
-                                                <Grid container alignItems="center">
-                                                    <Grid item xs={11}>
-                                                        <Field
-                                                            id="salesRep2Party"
-                                                            name="salesRep2Party"
-                                                            label={getTranslatedLabel("salesCommission.form.salesRep2", "المندوب الثاني")}
-                                                            component={FormComboBoxVirtualPartySalesRep}
-                                                            disabled={isApproved}
-                                                            validator={requiredValidator}
-                                                        />
-                                                    </Grid>
-                                                    <Grid item xs={1}>
-                                                        {!isApproved && isIndirect && (
-                                                            <Tooltip title="إنشاء مندوب جديد">
-                                                                <IconButton size="small" onClick={() => openQuickCreate("SALES_REP", "salesRep2Party")}>
-                                                                    <AddCircleOutlineIcon fontSize="small" />
-                                                                </IconButton>
-                                                            </Tooltip>
-                                                        )}
-                                                    </Grid>
-                                                </Grid>
-                                            </Grid>
-                                            <Grid item xs={6} md={2}>
-                                                <Field
-                                                    id="salesRep2Percent"
-                                                    name="salesRep2Percent"
-                                                    label={getTranslatedLabel("salesCommission.form.salesRep2Percent", "نسبة المندوب الثاني %")}
-                                                    component={FormNumericTextBox}
-                                                    min={0} max={100} format="n4"
-                                                    disabled={isApproved}
-                                                    validator={rep2Validator ? [rep2Validator] : undefined}
-                                                />
-                                            </Grid>
-                                        </Grid>
+                                        <CommissionPartyRow
+                                            partyFieldName="salesRep2Party"
+                                            percentFieldName="salesRep2Percent"
+                                            partyLabel={getTranslatedLabel("salesCommission.form.salesRep2", "المندوب الثاني")}
+                                            percentLabel={getTranslatedLabel("salesCommission.form.salesRep2Percent", "نسبة المندوب الثاني %")}
+                                            partyComponent={FormComboBoxVirtualPartySalesRep}
+                                            percentValidator={rep2Validator}
+                                            disabled={isApproved}
+                                            showQuickCreate={!isApproved && isIndirect}
+                                            quickCreateTooltip="إنشاء مندوب جديد"
+                                            onQuickCreate={() => openQuickCreate("SALES_REP", "salesRep2Party")}
+                                        />
                                     )}
 
                                     {/* Manager 1 */}
-                                    <Grid container spacing={2} alignItems="center" sx={{ mb: 1 }}>
-                                        <Grid item xs={12} md={4}>
-                                            <Grid container alignItems="center">
-                                                <Grid item xs={11}>
-                                                    <Field
-                                                        id="managerParty"
-                                                        name="managerParty"
-                                                        label={getTranslatedLabel("salesCommission.form.manager1", "المدير الأول")}
-                                                        component={FormComboBoxVirtualPartySalesManager}
-                                                        disabled={isApproved}
-                                                        validator={requiredValidator}
-                                                    />
-                                                </Grid>
-                                                <Grid item xs={1}>
-                                                    {!isApproved && isIndirect && (
-                                                        <Tooltip title="إنشاء مدير جديد">
-                                                            <IconButton size="small" onClick={() => openQuickCreate("SALES_MANAGER", "managerParty")}>
-                                                                <AddCircleOutlineIcon fontSize="small" />
-                                                            </IconButton>
-                                                        </Tooltip>
-                                                    )}
-                                                </Grid>
-                                            </Grid>
-                                        </Grid>
-                                        <Grid item xs={6} md={2}>
-                                            <Field
-                                                id="managerPercent"
-                                                name="managerPercent"
-                                                label={getTranslatedLabel("salesCommission.form.manager1Percent", "نسبة المدير الأول %")}
-                                                component={FormNumericTextBox}
-                                                min={0} max={100} format="n4"
-                                                disabled={isApproved}
-                                                validator={mgrValidator ? [mgrValidator] : undefined}
-                                            />
-                                        </Grid>
-                                        {activeCommission?.managerAmount && (
-                                            <Grid item xs={6} md={2}>
-                                                <Typography variant="body2" sx={{ mt: 3 }}>
-                                                    {getTranslatedLabel("salesCommission.form.manager1Amount", "مبلغ المدير الأول")}: {formatEGP(activeCommission.managerAmount)}
-                                                </Typography>
-                                            </Grid>
-                                        )}
-                                        <Grid item xs={12} md={2}>
-                                            {!isApproved && (
-                                                <FormControlLabel
-                                                    control={
-                                                        <Checkbox
-                                                            checked={hasTwoManagers}
-                                                            onChange={(e) => setHasTwoManagers(e.target.checked)}
-                                                            size="small"
-                                                        />
-                                                    }
-                                                    label="مدير ثاني"
-                                                />
-                                            )}
-                                        </Grid>
-                                    </Grid>
+                                    <CommissionPartyRow
+                                        partyFieldName="managerParty"
+                                        percentFieldName="managerPercent"
+                                        partyLabel={getTranslatedLabel("salesCommission.form.manager1", "المدير الأول")}
+                                        percentLabel={getTranslatedLabel("salesCommission.form.manager1Percent", "نسبة المدير الأول %")}
+                                        partyComponent={FormComboBoxVirtualPartySalesManager}
+                                        percentValidator={mgrValidator}
+                                        disabled={isApproved}
+                                        showQuickCreate={!isApproved && isIndirect}
+                                        quickCreateTooltip="إنشاء مدير جديد"
+                                        onQuickCreate={() => openQuickCreate("SALES_MANAGER", "managerParty")}
+                                        amountLabel={getTranslatedLabel("salesCommission.form.manager1Amount", "مبلغ المدير الأول")}
+                                        amountValue={activeCommission?.managerAmount}
+                                        secondToggle={{
+                                            checked: hasTwoManagers,
+                                            onChange: setHasTwoManagers,
+                                            label: "مدير ثاني",
+                                        }}
+                                    />
 
                                     {/* Manager 2 */}
                                     {hasTwoManagers && (
-                                        <Grid container spacing={2} alignItems="center" sx={{ mb: 1 }}>
-                                            <Grid item xs={12} md={4}>
-                                                <Grid container alignItems="center">
-                                                    <Grid item xs={11}>
-                                                        <Field
-                                                            id="manager2Party"
-                                                            name="manager2Party"
-                                                            label={getTranslatedLabel("salesCommission.form.manager2", "المدير الثاني")}
-                                                            component={FormComboBoxVirtualPartySalesManager}
-                                                            disabled={isApproved}
-                                                            validator={requiredValidator}
-                                                        />
-                                                    </Grid>
-                                                    <Grid item xs={1}>
-                                                        {!isApproved && isIndirect && (
-                                                            <Tooltip title="إنشاء مدير جديد">
-                                                                <IconButton size="small" onClick={() => openQuickCreate("SALES_MANAGER", "manager2Party")}>
-                                                                    <AddCircleOutlineIcon fontSize="small" />
-                                                                </IconButton>
-                                                            </Tooltip>
-                                                        )}
-                                                    </Grid>
-                                                </Grid>
-                                            </Grid>
-                                            <Grid item xs={6} md={2}>
-                                                <Field
-                                                    id="manager2Percent"
-                                                    name="manager2Percent"
-                                                    label={getTranslatedLabel("salesCommission.form.manager2Percent", "نسبة المدير الثاني %")}
-                                                    component={FormNumericTextBox}
-                                                    min={0} max={100} format="n4"
-                                                    disabled={isApproved}
-                                                    validator={mgr2Validator ? [mgr2Validator] : undefined}
-                                                />
-                                            </Grid>
-                                        </Grid>
+                                        <CommissionPartyRow
+                                            partyFieldName="manager2Party"
+                                            percentFieldName="manager2Percent"
+                                            partyLabel={getTranslatedLabel("salesCommission.form.manager2", "المدير الثاني")}
+                                            percentLabel={getTranslatedLabel("salesCommission.form.manager2Percent", "نسبة المدير الثاني %")}
+                                            partyComponent={FormComboBoxVirtualPartySalesManager}
+                                            percentValidator={mgr2Validator}
+                                            disabled={isApproved}
+                                            showQuickCreate={!isApproved && isIndirect}
+                                            quickCreateTooltip="إنشاء مدير جديد"
+                                            onQuickCreate={() => openQuickCreate("SALES_MANAGER", "manager2Party")}
+                                        />
                                     )}
 
                                     {/* External Section — INDIRECT only */}
@@ -1013,7 +987,6 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         disabled={
                                                             !formRenderProps.allowSubmit ||
                                                             buttonFlag ||
-                                                            threshold.status === "blocked" ||
                                                             (!!effectiveSrId && !!defaults && !!currentSaleTypeId && !activeRate)
                                                         }
                                                     >

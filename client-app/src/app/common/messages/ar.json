@@ -2761,8 +2761,23 @@
       "approve": "اعتماد",
       "processing": "جاري المعالجة...",
       "createSuccess": "تم إنشاء العمولة بنجاح",
+      "updateSuccess": "تم تحديث العمولة بنجاح",
       "approveSuccess": "تم اعتماد العمولة بنجاح",
-      "error": "فشل في حفظ العمولة"
+      "error": "فشل في حفظ العمولة",
+      "collectedRatio": "نسبة التحصيل",
+      "configuredRates": "الحدود المقررة للمشروع:",
+      "thresholdFull": "نسبة التحصيل كافية — يُسمح بالعمولة الكاملة (100%)",
+      "externalSalesRepNationalId": "الرقم القومي (مندوب الوسيط)",
+      "externalSalesRepNet": "صافي مندوب الوسيط",
+      "externalManagerNationalId": "الرقم القومي (مدير الوسيط)",
+      "externalManagerNet": "صافي مدير الوسيط",
+      "hasExternalSalesRepWhtExemption": "إعفاء ض.استقطاع",
+      "hasExternalManagerWhtExemption": "إعفاء ض.استقطاع"
+    },
+    "status": {
+      "pending": "قيد الانتظار",
+      "approved": "معتمدة",
+      "paid": "مدفوعة"
     }
   }
 }

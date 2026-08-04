@@ -56,12 +56,16 @@ public class ApproveSalesCommission
                 commission.LastUpdatedStamp = DateTime.UtcNow;
                 await _context.SaveChangesAsync(cancellationToken);
 
-                // One outgoing payment per party that has a payable amount
-                var payments = new List<(string partyId, decimal amount, string role)>
-                {
-                    (commission.SalesRepPartyId!, commission.SalesRepNetAmount ?? commission.SalesRepAmount ?? 0, "مندوب"),
-                    (commission.ManagerPartyId!, commission.ManagerNetAmount ?? commission.ManagerAmount ?? 0, "مدير"),
-                };
+                // One outgoing payment per party that has a payable amount — a commission created
+                // below the lower collection threshold has a zero factor, so its amounts may be 0
+                // and no payment should be created for that party yet.
+                var payments = new List<(string partyId, decimal amount, string role)>();
+
+                if (!string.IsNullOrEmpty(commission.SalesRepPartyId) && (commission.SalesRepNetAmount ?? commission.SalesRepAmount) > 0)
+                    payments.Add((commission.SalesRepPartyId, commission.SalesRepNetAmount ?? commission.SalesRepAmount ?? 0, "مندوب"));
+
+                if (!string.IsNullOrEmpty(commission.ManagerPartyId) && (commission.ManagerNetAmount ?? commission.ManagerAmount) > 0)
+                    payments.Add((commission.ManagerPartyId, commission.ManagerNetAmount ?? commission.ManagerAmount ?? 0, "مدير"));
 
                 if (!string.IsNullOrEmpty(commission.SalesRep2PartyId) && (commission.SalesRep2NetAmount ?? commission.SalesRep2Amount) > 0)
                     payments.Add((commission.SalesRep2PartyId, commission.SalesRep2NetAmount ?? commission.SalesRep2Amount ?? 0, "مندوب ثانٍ"));

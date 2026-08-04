@@ -315,27 +315,10 @@ namespace Application.Projects
                                     });
                                 }
 
-                                if (item.Deductions.GetValueOrDefault() > 0)
-                                {
-                                    orderItems.Add(new OrderItemDto2
-                                    {
-                                        OrderItemSeqId = (++seq).ToString("D4"),
-                                        ProductId = item.ProductId,
-                                        ProductName = $"خصم - {item.ProductName}",
-                                        Quantity = 1m,
-                                        UnitPrice = item.Deductions.Value,
-                                        SubTotal = item.Deductions.Value,
-                                        UomId = item.UomId,
-                                        FacilityId = certificate.FacilityId,
-                                        ItemDescription = string.IsNullOrEmpty(item.DeductionDescription)
-                                            ? "خصومات متنوعة"
-                                            : item.DeductionDescription,
-                                        OrderItemTypeId = "PROJECT_DEDUCTION",
-                                        StatusId = "ITEM_CREATED",
-                                        CreatedStamp = stamp,
-                                        LastUpdatedStamp = stamp
-                                    });
-                                }
+                                // NOTE: Deductions are already subtracted once above, inside `deserved` —
+                                // do NOT also add a separate PROJECT_DEDUCTION order item here. See the
+                                // matching note in CreateProjectCertificate.cs (certificate 82-0006 /
+                                // INV1376 double-deduction incident).
                             }
                             else // SUPPLY_PROCUREMENT_CERTIFICATE
                             {

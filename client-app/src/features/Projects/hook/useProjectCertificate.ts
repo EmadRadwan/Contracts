@@ -10,7 +10,7 @@ import {
     useUpdateProjectCertificateMutation,
     useResetProjectCertificateMutation
 } from "../../../app/store/apis/projectsApi";
-import {setProcessedCertificateItems} from "../slice/certificateItemsUiSlice";
+import {setUiCertificateItemsFromApi} from "../slice/certificateItemsUiSlice";
 import {setCertificateFormEditMode, setSelectedCertificate} from "../slice/certificateUiSlice";
 import {useAppDispatch, useAppSelector} from "../../../app/store/configureStore";
 import {useSelector} from "react-redux";
@@ -220,7 +220,13 @@ const useProjectCertificate = ({
                     })
                 );
                 dispatch(setCertificateFormEditMode(2));
-                dispatch(setProcessedCertificateItems(createdCertificate.certificateItems || []));
+                // Replace local item state wholesale with the server's authoritative list rather
+                // than upserting: setProcessedCertificateItems only adds/updates by workEffortId
+                // and never prunes entries, so newly-added items (no workEffortId yet locally)
+                // never get reconciled with the real id the server just assigned. Left in place,
+                // the next save resubmits those stale entries as "new" again, duplicating them
+                // indefinitely -- see certificate 110-0007 (7 items -> 40 after 3 saves).
+                dispatch(setUiCertificateItemsFromApi(createdCertificate.certificateItems || []));
                 formRef2.current = !formRef2.current;
                 toast.success("Certificate and items created successfully");
                 return {workEffortId: createdCertificate.workEffortId};
@@ -291,7 +297,8 @@ const useProjectCertificate = ({
                         certificateCategory: updatedCertificate.certificateCategory,
                     })
                 );
-                dispatch(setProcessedCertificateItems(updatedCertificate.certificateItems || []));
+                // See the matching note in createCertificate above -- full replace, not upsert.
+                dispatch(setUiCertificateItemsFromApi(updatedCertificate.certificateItems || []));
                 dispatch(setCertificateFormEditMode(2));
                 formRef2.current = !formRef2.current;
                 toast.success("Certificate and items updated successfully");

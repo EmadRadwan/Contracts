@@ -53,20 +53,9 @@ public class UpdateSalesCommission
             var projectId = commission.ProjectId ?? sr.p.ProjectId;
             var salePrice = sr.s.TotalPrice ?? 0m;
 
-            if (string.IsNullOrEmpty(dto.SalesRepPartyId))
-                return Result<SalesCommissionDto>.Failure("يجب تحديد المندوب");
-
-            if (string.IsNullOrEmpty(dto.ManagerPartyId))
-                return Result<SalesCommissionDto>.Failure("يجب تحديد المدير");
-
-            if (dto.SalesRep2Percent.HasValue && string.IsNullOrEmpty(dto.SalesRep2PartyId))
-                return Result<SalesCommissionDto>.Failure("يجب تحديد المندوب الثاني عند إدخال نسبته");
-
-            if (dto.Manager2Percent.HasValue && string.IsNullOrEmpty(dto.Manager2PartyId))
-                return Result<SalesCommissionDto>.Failure("يجب تحديد المدير الثاني عند إدخال نسبته");
-
-            if (isIndirect && string.IsNullOrEmpty(dto.ExternalCompanyPartyId))
-                return Result<SalesCommissionDto>.Failure("يجب تحديد شركة الوسيط للبيع غير المباشر");
+            var partyError = SalesCommissionCalculator.ValidateRequiredParties(dto, isIndirect);
+            if (partyError != null)
+                return Result<SalesCommissionDto>.Failure(partyError);
 
             // Validate submitted percentages against the configured project rate
             var configuredRate = projectId != null
@@ -74,23 +63,9 @@ public class UpdateSalesCommission
                     .FirstOrDefaultAsync(x => x.ProjectId == projectId && x.SaleTypeId == dto.SaleTypeId, cancellationToken)
                 : null;
 
-            if (configuredRate != null)
-            {
-                var totalRepPct = dto.SalesRepPercent + (dto.SalesRep2Percent ?? 0);
-                if (totalRepPct > configuredRate.SalesRepPercent)
-                    return Result<SalesCommissionDto>.Failure(
-                        $"إجمالي نسبة المندوب ({totalRepPct:0.##}%) يتجاوز الحد المقرر للمشروع ({configuredRate.SalesRepPercent:0.##}%)");
-
-                var totalMgrPct = dto.ManagerPercent + (dto.Manager2Percent ?? 0);
-                if (totalMgrPct > configuredRate.ManagerPercent)
-                    return Result<SalesCommissionDto>.Failure(
-                        $"إجمالي نسبة المدير ({totalMgrPct:0.##}%) يتجاوز الحد المقرر للمشروع ({configuredRate.ManagerPercent:0.##}%)");
-
-                if (isIndirect && configuredRate.ExternalCompanyPercent.HasValue && dto.ExternalCompanyPercent.HasValue
-                    && dto.ExternalCompanyPercent.Value > configuredRate.ExternalCompanyPercent.Value)
-                    return Result<SalesCommissionDto>.Failure(
-                        $"نسبة عمولة الوسيط ({dto.ExternalCompanyPercent:0.##}%) تتجاوز الحد المقرر للمشروع ({configuredRate.ExternalCompanyPercent:0.##}%)");
-            }
+            var rateError = SalesCommissionCalculator.ValidateAgainstConfiguredRate(dto, configuredRate, isIndirect);
+            if (rateError != null)
+                return Result<SalesCommissionDto>.Failure(rateError);
 
             var collectedAmount = await _context.Payments
                 .Where(p => p.SalesRequestId == commission.SalesRequestId
@@ -100,63 +75,13 @@ public class UpdateSalesCommission
                          && p.StatusId == "PMNT_RECEIVED")
                 .SumAsync(p => (decimal?)p.Amount, cancellationToken) ?? 0m;
 
+            // Collection ratio no longer blocks the update; it only scales the commission factor
+            // (0% below the lower threshold, 50% below the upper, 100% at/above it).
             var ratio = salePrice > 0 ? collectedAmount / salePrice : 0m;
-            var lowerThreshold = isIndirect ? 0.075m : 0.05m;
-            const decimal upperThreshold = 0.10m;
+            var lowerThreshold = SalesCommissionCalculator.GetLowerThreshold(isIndirect);
+            var commissionFactor = SalesCommissionCalculator.ComputeFactor(ratio, lowerThreshold);
 
-            if (ratio < lowerThreshold)
-            {
-                var pct = (lowerThreshold * 100).ToString("0.#");
-                return Result<SalesCommissionDto>.Failure(
-                    $"المبلغ المحصل يجب أن يصل إلى {pct}% من سعر البيع قبل تعديل العمولة");
-            }
-
-            var commissionFactor = ratio >= upperThreshold ? 1m : 0.5m;
-
-            decimal salesRepAmount = salePrice * (dto.SalesRepPercent / 100m) * commissionFactor;
-            decimal managerAmount = salePrice * (dto.ManagerPercent / 100m) * commissionFactor;
-            decimal? salesRep2Amount = dto.SalesRep2Percent.HasValue
-                ? salePrice * (dto.SalesRep2Percent.Value / 100m) * commissionFactor : null;
-            decimal? manager2Amount = dto.Manager2Percent.HasValue
-                ? salePrice * (dto.Manager2Percent.Value / 100m) * commissionFactor : null;
-
-            decimal? extCompanyGross = null, extCompanyNet = null;
-            decimal? extSalesRepAmount = null, extSalesRepNetAmount = null;
-            decimal? extManagerAmount = null, extManagerNetAmount = null;
-
-            if (isIndirect && dto.ExternalCompanyPercent.HasValue)
-            {
-                extCompanyGross = salePrice * (dto.ExternalCompanyPercent.Value / 100m) * commissionFactor;
-
-                if (!dto.HasVatExemption)
-                {
-                    var vatRate = dto.VatPercent > 0 ? dto.VatPercent : 14m;
-                    var baseAmount = extCompanyGross.Value * 100m / (100m + vatRate);
-
-                    extCompanyNet = (!dto.HasWithholdingTaxExemption && dto.WithholdingTaxPercent > 0)
-                        ? extCompanyGross.Value - baseAmount * (dto.WithholdingTaxPercent / 100m)
-                        : extCompanyGross.Value;
-                }
-                else
-                {
-                    extCompanyNet = extCompanyGross;
-                }
-
-                if (dto.ExternalSalesRepPercent.HasValue)
-                {
-                    extSalesRepAmount = salePrice * (dto.ExternalSalesRepPercent.Value / 100m) * commissionFactor;
-                    extSalesRepNetAmount = (!dto.HasExternalSalesRepWithholdingTaxExemption && dto.WithholdingTaxPercent > 0)
-                        ? extSalesRepAmount.Value - extSalesRepAmount.Value * (dto.WithholdingTaxPercent / 100m)
-                        : extSalesRepAmount;
-                }
-                if (dto.ExternalManagerPercent.HasValue)
-                {
-                    extManagerAmount = salePrice * (dto.ExternalManagerPercent.Value / 100m) * commissionFactor;
-                    extManagerNetAmount = (!dto.HasExternalManagerWithholdingTaxExemption && dto.WithholdingTaxPercent > 0)
-                        ? extManagerAmount.Value - extManagerAmount.Value * (dto.WithholdingTaxPercent / 100m)
-                        : extManagerAmount;
-                }
-            }
+            var amounts = SalesCommissionCalculator.CalculateAmounts(dto, salePrice, commissionFactor, isIndirect);
 
             var stamp = DateTime.UtcNow;
             try
@@ -166,34 +91,34 @@ public class UpdateSalesCommission
                 commission.CollectedAmount = collectedAmount;
                 commission.SalesRepPartyId = dto.SalesRepPartyId;
                 commission.SalesRepPercent = dto.SalesRepPercent;
-                commission.SalesRepAmount = salesRepAmount;
-                commission.SalesRepNetAmount = salesRepAmount;
+                commission.SalesRepAmount = amounts.SalesRepAmount;
+                commission.SalesRepNetAmount = amounts.SalesRepAmount;
                 commission.ManagerPartyId = dto.ManagerPartyId;
                 commission.ManagerPercent = dto.ManagerPercent;
-                commission.ManagerAmount = managerAmount;
-                commission.ManagerNetAmount = managerAmount;
+                commission.ManagerAmount = amounts.ManagerAmount;
+                commission.ManagerNetAmount = amounts.ManagerAmount;
                 commission.SalesRep2PartyId = dto.SalesRep2PartyId;
                 commission.SalesRep2Percent = dto.SalesRep2Percent;
-                commission.SalesRep2Amount = salesRep2Amount;
-                commission.SalesRep2NetAmount = salesRep2Amount;
+                commission.SalesRep2Amount = amounts.SalesRep2Amount;
+                commission.SalesRep2NetAmount = amounts.SalesRep2Amount;
                 commission.Manager2PartyId = dto.Manager2PartyId;
                 commission.Manager2Percent = dto.Manager2Percent;
-                commission.Manager2Amount = manager2Amount;
-                commission.Manager2NetAmount = manager2Amount;
+                commission.Manager2Amount = amounts.Manager2Amount;
+                commission.Manager2NetAmount = amounts.Manager2Amount;
                 commission.ExternalCompanyPartyId = isIndirect ? dto.ExternalCompanyPartyId : null;
                 commission.ExternalCompanyPercent = isIndirect ? dto.ExternalCompanyPercent : null;
-                commission.ExternalCompanyGrossAmount = isIndirect ? extCompanyGross : null;
-                commission.ExternalCompanyNetAmount = isIndirect ? extCompanyNet : null;
+                commission.ExternalCompanyGrossAmount = isIndirect ? amounts.ExternalCompanyGrossAmount : null;
+                commission.ExternalCompanyNetAmount = isIndirect ? amounts.ExternalCompanyNetAmount : null;
                 commission.ExternalSalesRepPartyId = isIndirect ? dto.ExternalSalesRepPartyId : null;
                 commission.ExternalSalesRepPercent = isIndirect ? dto.ExternalSalesRepPercent : null;
-                commission.ExternalSalesRepAmount = isIndirect ? extSalesRepAmount : null;
-                commission.ExternalSalesRepNetAmount = isIndirect ? extSalesRepNetAmount : null;
+                commission.ExternalSalesRepAmount = isIndirect ? amounts.ExternalSalesRepAmount : null;
+                commission.ExternalSalesRepNetAmount = isIndirect ? amounts.ExternalSalesRepNetAmount : null;
                 commission.HasExternalSalesRepWithholdingTaxExemption = isIndirect && dto.HasExternalSalesRepWithholdingTaxExemption;
                 commission.ExternalSalesRepNationalId = isIndirect ? dto.ExternalSalesRepNationalId : null;
                 commission.ExternalManagerPartyId = isIndirect ? dto.ExternalManagerPartyId : null;
                 commission.ExternalManagerPercent = isIndirect ? dto.ExternalManagerPercent : null;
-                commission.ExternalManagerAmount = isIndirect ? extManagerAmount : null;
-                commission.ExternalManagerNetAmount = isIndirect ? extManagerNetAmount : null;
+                commission.ExternalManagerAmount = isIndirect ? amounts.ExternalManagerAmount : null;
+                commission.ExternalManagerNetAmount = isIndirect ? amounts.ExternalManagerNetAmount : null;
                 commission.HasExternalManagerWithholdingTaxExemption = isIndirect && dto.HasExternalManagerWithholdingTaxExemption;
                 commission.ExternalManagerNationalId = isIndirect ? dto.ExternalManagerNationalId : null;
                 commission.HasVatExemption = dto.HasVatExemption;

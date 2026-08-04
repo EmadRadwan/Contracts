@@ -20,18 +20,7 @@ import LoadingComponent from "../../../../../app/layout/LoadingComponent";
 import SalesRequestMenu from "../menu/SalesRequestMenu";
 import SalesCommissionForm from "../form/SalesCommissionForm";
 import SalesCommissionsDateRangeExcel from "../report/SalesCommissionsDateRangeExcel";
-
-const SALE_TYPE_LABELS: Record<string, string> = {
-    COMM_SALE_DIRECT: "بيع مباشر",
-    COMM_SALE_PERSONAL: "بيع شخصي",
-    COMM_SALE_INDIRECT: "بيع غير مباشر",
-};
-
-const STATUS_COLORS: Record<string, "warning" | "success" | "info"> = {
-    COMMISSION_PENDING: "warning",
-    COMMISSION_APPROVED: "success",
-    COMMISSION_PAID: "info",
-};
+import { SALE_TYPE_LABELS, COMMISSION_STATUS_CHIP_COLORS } from "../../../../../app/models/orders/salesCommissionLabels";
 
 export default function SalesCommissionsList() {
     const location = useLocation();
@@ -105,7 +94,7 @@ export default function SalesCommissionsList() {
     const StatusCell = (props: any) => {
         const navigationAttributes = useTableKeyboardNavigation(props.id);
         const statusId = props.dataItem.statusId;
-        const color = STATUS_COLORS[statusId] ?? "default";
+        const color = COMMISSION_STATUS_CHIP_COLORS[statusId] ?? "default";
         const statusLabels: Record<string, string> = {
             COMMISSION_PENDING: getTranslatedLabel("salesCommission.list.statusPending", "قيد الانتظار"),
             COMMISSION_APPROVED: getTranslatedLabel("salesCommission.list.statusApproved", "معتمدة"),

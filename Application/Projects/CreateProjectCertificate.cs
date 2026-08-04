@@ -261,28 +261,13 @@ public class CreateProjectCertificate
                                 seq++;
                             }
 
-                            if (item.Deductions.GetValueOrDefault() > 0)
-                            {
-                                orderItems.Add(new OrderItemDto2
-                                {
-                                    OrderItemSeqId = seq.ToString("D4"),
-                                    ProductId = item.ProductId,
-                                    ProductName = $"خصم - {item.ProductName}",
-                                    Quantity = 1m,
-                                    UnitPrice = item.Deductions.Value,
-                                    SubTotal = item.Deductions.Value,
-                                    UomId = item.UomId,
-                                    FacilityId = certificate.FacilityId,
-                                    ItemDescription = string.IsNullOrEmpty(item.DeductionDescription)
-                                        ? "خصومات متنوعة"
-                                        : item.DeductionDescription,
-                                    OrderItemTypeId = "PROJECT_DEDUCTION", // ← NEW TYPE
-                                    StatusId = "ITEM_CREATED",
-                                    CreatedStamp = stamp,
-                                    LastUpdatedStamp = stamp
-                                });
-                                seq++;
-                            }
+                            // NOTE: Deductions are already subtracted once above, inside `deserved` — do
+                            // NOT also add a separate PROJECT_DEDUCTION order item here. Doing so
+                            // double-applies the deduction (deserved is already net-of-deductions, so a
+                            // second full-value deduction line drags the actual invoice well below the
+                            // certificate's own displayed net). See certificate 82-0006 / INV1376: deserved
+                            // correctly computed to 20,000 (115,020 achievement-based gross - 95,020
+                            // deduction), then a second 95,020 deduction line took the invoice to -75,020.
                         }
                         else // SUPPLY_PROCUREMENT_CERTIFICATE
                         {
