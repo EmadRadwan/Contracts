@@ -253,10 +253,10 @@ cd ~/mysql-backups/contracts-golden
           > ~/mysql-backups/contracts-golden/erp_contracts_no_definer_$(date +%Y-%m-%d_%H-%M-%S).sql
 
 gzip ~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-02-01_11-35-20.sql
-scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-08-03_07-48-54.sql ~/Desktop/
+scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-08-04_08-44-49.sql ~/Desktop/
 gunzip ~/Desktop/erp_contracts_no_definer_2026-02-01_11-35-20.sql.gz
 
-mysql -u root -p erp_contracts <  erp_contracts_no_definer_2026-08-03_07-48-54.sql
+mysql -u root -p erp_contracts <  erp_contracts_no_definer_2026-08-04_08-44-49.sql
 
 Portainer.io:
 http://129.146.22.240:9000
@@ -337,6 +337,7 @@ review gl -> mismatch in trial balance and certificates
 review 2nd -> New ERP enhancements for GoldenLand
 find invoice -> summarize sessions related to supply certificate invoices
 find project -> project report and start was dedicated to fixes for payroll payment type error in creating their acctg trans
+refactor sales commission
 
   
   

@@ -64,6 +64,7 @@ public static class ApplicationServiceExtensions
         services.AddValidatorsFromAssemblyContaining<CreateProduct>();
 
         services.AddMediatR(typeof(List.Handler).Assembly);
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
         services.AddAutoMapper(typeof(MappingProfiles).Assembly);
 
         services.AddMvc().AddJsonOptions(options =>

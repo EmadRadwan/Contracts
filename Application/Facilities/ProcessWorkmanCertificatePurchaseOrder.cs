@@ -132,6 +132,15 @@ namespace Application.Facilities
                         digitalItemStatus: "ITEM_COMPLETED"
                     );
 
+                    // Flush before the "ensure invoice" call below. OrderStatusChanges can itself invoice
+                    // (via ChangeOrderStatus -> CreateInvoiceFromOrder) as a side effect of the transition,
+                    // but only adds the Invoice/ORDER_ITEM_BILLING to the change tracker -- it never calls
+                    // SaveChangesAsync. CreateInvoiceFromOrder's "already billed?" check queries
+                    // OrderItemBillings straight from the database, so without this flush it can't see that
+                    // uncommitted row and (wrongly) concludes nothing is billed yet, creating a second
+                    // invoice for the same order item. See certificate 546-0003 / INV1368 + INV1369.
+                    await _context.SaveChangesAsync(cancellationToken);
+
                     // Ensure the purchase invoice exists, explicitly rather than as a side effect of the
                     // status change above. OrderStatusChanges only invoices on a genuine transition INTO
                     // ORDER_COMPLETED (ChangeOrderStatus short-circuits at the top when the order is already

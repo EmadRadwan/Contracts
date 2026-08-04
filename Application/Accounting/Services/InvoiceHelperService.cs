@@ -1477,7 +1477,7 @@ public class InvoiceHelperService : IInvoiceHelperService
                 // call (e.g. ProcessWorkmanCertificatePurchaseOrder) — without one, MySQL releases
                 // the lock immediately and this degrades to the prior (unsafe) behavior.
                 await _context.Database.ExecuteSqlInterpolatedAsync(
-                    $"SELECT ORDER_ID FROM order_header WHERE ORDER_ID = {orderId} FOR UPDATE");
+                    $"SELECT ORDER_ID FROM ORDER_HEADER WHERE ORDER_ID = {orderId} FOR UPDATE");
 
                 // Check if there are billing items for the order
                 var orderItemBilling = await _context.OrderItemBillings

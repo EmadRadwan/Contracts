@@ -1,9 +1,13 @@
-public class Result<T>
+using Application.Core;
+
+public class Result<T> : IResult
 {
     public bool IsSuccess { get; set; }
     public T Value { get; set; }
     public string Error { get; set; }
     public int? Count { get; set; } // Make Count nullable
+
+    string? IResult.ErrorMessage => Error;
 
     public static Result<T> Success(T value, int? count = null)
     {

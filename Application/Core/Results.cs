@@ -1,6 +1,6 @@
 namespace Application.Core
 {
-    public class Results<T>
+    public class Results<T> : IResult
     {
         public bool IsSuccess { get; set; }
         public T Value { get; set; }
