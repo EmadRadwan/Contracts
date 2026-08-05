@@ -39,6 +39,18 @@ public class GetSalesCommissionBySalesRequest
             string? NameOf(string? partyId) =>
                 partyId != null && partyNames.TryGetValue(partyId, out var name) ? name : null;
 
+            var apartmentName = await _context.SalesRequests
+                .Where(x => x.SalesRequestId == sc.SalesRequestId)
+                .Join(_context.Products, s => s.ProductId, p => p.ProductId, (s, p) => p.ProductName)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            var projectName = sc.ProjectId != null
+                ? await _context.WorkEfforts
+                    .Where(w => w.WorkEffortId == sc.ProjectId)
+                    .Select(w => w.ProjectName)
+                    .FirstOrDefaultAsync(cancellationToken)
+                : null;
+
             var dto = new SalesCommissionDto
             {
                 SalesCommissionId = sc.SalesCommissionId,
@@ -47,6 +59,8 @@ public class GetSalesCommissionBySalesRequest
                 StatusId = sc.StatusId,
                 CommissionDate = sc.CommissionDate,
                 ProjectId = sc.ProjectId,
+                ProjectName = projectName,
+                ApartmentName = apartmentName,
                 SalePrice = sc.SalePrice,
                 CollectedAmount = sc.CollectedAmount,
                 SalesRepPartyId = sc.SalesRepPartyId,

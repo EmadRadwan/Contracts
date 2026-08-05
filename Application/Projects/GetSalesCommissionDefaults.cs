@@ -19,6 +19,8 @@ public class GetSalesCommissionDefaults
     public class CommissionDefaults
     {
         public string? ProjectId { get; set; }
+        public string? ProjectName { get; set; }
+        public string? ApartmentName { get; set; }
         public decimal SalePrice { get; set; }
         public decimal CollectedAmount { get; set; }
         public decimal CollectedRatio { get; set; }
@@ -56,7 +58,15 @@ public class GetSalesCommissionDefaults
                 return Result<CommissionDefaults>.Failure("Sales request not found");
 
             var projectId = sr.p.ProjectId;
+            var apartmentName = sr.p.ProductName;
             var salePrice = sr.s.TotalPrice ?? 0;
+
+            var projectName = projectId != null
+                ? await _context.WorkEfforts
+                    .Where(w => w.WorkEffortId == projectId)
+                    .Select(w => w.ProjectName)
+                    .FirstOrDefaultAsync(cancellationToken)
+                : null;
 
             var collectedAmount = await _context.Payments
                 .Where(p => p.SalesRequestId == request.SalesRequestId
@@ -95,6 +105,8 @@ public class GetSalesCommissionDefaults
             return Result<CommissionDefaults>.Success(new CommissionDefaults
             {
                 ProjectId = projectId,
+                ProjectName = projectName,
+                ApartmentName = apartmentName,
                 SalePrice = salePrice,
                 CollectedAmount = collectedAmount,
                 CollectedRatio = collectedRatio,

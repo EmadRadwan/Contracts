@@ -11,8 +11,9 @@ public static class SalesCommissionCalculator
     public static decimal GetLowerThreshold(bool isIndirect) => isIndirect ? 0.075m : 0.05m;
 
     // 0% below the lower threshold, 50% between the lower and upper threshold, 100% at/above the upper threshold.
-    // Creation/update is never blocked by collection ratio — a below-lower-threshold commission is still
-    // created, just with zero payable amounts until collections catch up.
+    // This only scales the amount shown on a still-pending commission — creation/update is never blocked
+    // by collection ratio, and approval always pays the full percentage-based amount regardless of it
+    // (see CalculateFullAmounts / ApproveSalesCommission).
     public static decimal ComputeFactor(decimal collectedRatio, decimal lowerThreshold)
     {
         if (collectedRatio < lowerThreshold)
@@ -84,34 +85,63 @@ public static class SalesCommissionCalculator
     }
 
     // isIndirect gates the external-broker fields — irrelevant fields stay null for DIRECT/PERSONAL sales
-    public static Amounts CalculateAmounts(SalesCommissionDto dto, decimal salePrice, decimal commissionFactor, bool isIndirect)
+    public static Amounts CalculateAmounts(SalesCommissionDto dto, decimal salePrice, decimal commissionFactor, bool isIndirect) =>
+        CalculateAmountsCore(
+            dto.SalesRepPercent, dto.ManagerPercent,
+            dto.SalesRep2Percent, dto.Manager2Percent,
+            dto.ExternalCompanyPercent, dto.ExternalSalesRepPercent, dto.ExternalManagerPercent,
+            dto.HasVatExemption, dto.VatPercent,
+            dto.HasWithholdingTaxExemption, dto.WithholdingTaxPercent,
+            dto.HasExternalSalesRepWithholdingTaxExemption, dto.HasExternalManagerWithholdingTaxExemption,
+            salePrice, commissionFactor, isIndirect);
+
+    // Full, collection-independent amounts for an already-persisted commission — used on approval,
+    // where each party is paid their full percentage-based amount regardless of collection ratio.
+    public static Amounts CalculateFullAmounts(Domain.SalesCommission commission, bool isIndirect) =>
+        CalculateAmountsCore(
+            commission.SalesRepPercent, commission.ManagerPercent,
+            commission.SalesRep2Percent, commission.Manager2Percent,
+            commission.ExternalCompanyPercent, commission.ExternalSalesRepPercent, commission.ExternalManagerPercent,
+            commission.HasVatExemption, commission.VatPercent,
+            commission.HasWithholdingTaxExemption, commission.WithholdingTaxPercent,
+            commission.HasExternalSalesRepWithholdingTaxExemption, commission.HasExternalManagerWithholdingTaxExemption,
+            commission.SalePrice, 1m, isIndirect);
+
+    private static Amounts CalculateAmountsCore(
+        decimal salesRepPercent, decimal managerPercent,
+        decimal? salesRep2Percent, decimal? manager2Percent,
+        decimal? externalCompanyPercent, decimal? externalSalesRepPercent, decimal? externalManagerPercent,
+        bool hasVatExemption, decimal vatPercent,
+        bool hasWithholdingTaxExemption, decimal withholdingTaxPercent,
+        bool hasExternalSalesRepWithholdingTaxExemption, bool hasExternalManagerWithholdingTaxExemption,
+        decimal salePrice, decimal commissionFactor, bool isIndirect)
     {
         var result = new Amounts
         {
-            SalesRepAmount = salePrice * (dto.SalesRepPercent / 100m) * commissionFactor,
-            ManagerAmount = salePrice * (dto.ManagerPercent / 100m) * commissionFactor,
-            SalesRep2Amount = dto.SalesRep2Percent.HasValue
-                ? salePrice * (dto.SalesRep2Percent.Value / 100m) * commissionFactor
+            SalesRepAmount = salePrice * (salesRepPercent / 100m) * commissionFactor,
+            ManagerAmount = salePrice * (managerPercent / 100m) * commissionFactor,
+            SalesRep2Amount = salesRep2Percent.HasValue
+                ? salePrice * (salesRep2Percent.Value / 100m) * commissionFactor
                 : null,
-            Manager2Amount = dto.Manager2Percent.HasValue
-                ? salePrice * (dto.Manager2Percent.Value / 100m) * commissionFactor
+            Manager2Amount = manager2Percent.HasValue
+                ? salePrice * (manager2Percent.Value / 100m) * commissionFactor
                 : null,
         };
 
-        if (!isIndirect || !dto.ExternalCompanyPercent.HasValue)
+        if (!isIndirect || !externalCompanyPercent.HasValue)
             return result;
 
-        var extCompanyGross = salePrice * (dto.ExternalCompanyPercent.Value / 100m) * commissionFactor;
+        var extCompanyGross = salePrice * (externalCompanyPercent.Value / 100m) * commissionFactor;
         result.ExternalCompanyGrossAmount = extCompanyGross;
 
-        if (!dto.HasVatExemption)
+        if (!hasVatExemption)
         {
             // VAT is embedded in the gross amount: base = gross × 100/(100+VAT), then WHT is deducted from the base
-            var vatRate = dto.VatPercent > 0 ? dto.VatPercent : 14m;
+            var vatRate = vatPercent > 0 ? vatPercent : 14m;
             var baseAmount = extCompanyGross * 100m / (100m + vatRate);
 
-            result.ExternalCompanyNetAmount = (!dto.HasWithholdingTaxExemption && dto.WithholdingTaxPercent > 0)
-                ? extCompanyGross - baseAmount * (dto.WithholdingTaxPercent / 100m)
+            result.ExternalCompanyNetAmount = (!hasWithholdingTaxExemption && withholdingTaxPercent > 0)
+                ? extCompanyGross - baseAmount * (withholdingTaxPercent / 100m)
                 : extCompanyGross;
         }
         else
@@ -119,21 +149,21 @@ public static class SalesCommissionCalculator
             result.ExternalCompanyNetAmount = extCompanyGross;
         }
 
-        if (dto.ExternalSalesRepPercent.HasValue)
+        if (externalSalesRepPercent.HasValue)
         {
-            var extSalesRepAmount = salePrice * (dto.ExternalSalesRepPercent.Value / 100m) * commissionFactor;
+            var extSalesRepAmount = salePrice * (externalSalesRepPercent.Value / 100m) * commissionFactor;
             result.ExternalSalesRepAmount = extSalesRepAmount;
-            result.ExternalSalesRepNetAmount = (!dto.HasExternalSalesRepWithholdingTaxExemption && dto.WithholdingTaxPercent > 0)
-                ? extSalesRepAmount - extSalesRepAmount * (dto.WithholdingTaxPercent / 100m)
+            result.ExternalSalesRepNetAmount = (!hasExternalSalesRepWithholdingTaxExemption && withholdingTaxPercent > 0)
+                ? extSalesRepAmount - extSalesRepAmount * (withholdingTaxPercent / 100m)
                 : extSalesRepAmount;
         }
 
-        if (dto.ExternalManagerPercent.HasValue)
+        if (externalManagerPercent.HasValue)
         {
-            var extManagerAmount = salePrice * (dto.ExternalManagerPercent.Value / 100m) * commissionFactor;
+            var extManagerAmount = salePrice * (externalManagerPercent.Value / 100m) * commissionFactor;
             result.ExternalManagerAmount = extManagerAmount;
-            result.ExternalManagerNetAmount = (!dto.HasExternalManagerWithholdingTaxExemption && dto.WithholdingTaxPercent > 0)
-                ? extManagerAmount - extManagerAmount * (dto.WithholdingTaxPercent / 100m)
+            result.ExternalManagerNetAmount = (!hasExternalManagerWithholdingTaxExemption && withholdingTaxPercent > 0)
+                ? extManagerAmount - extManagerAmount * (withholdingTaxPercent / 100m)
                 : extManagerAmount;
         }
 

@@ -52,37 +52,82 @@ public class ApproveSalesCommission
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
+                // Approval pays each party their full percentage-based amount — the collection ratio
+                // that scaled the amounts at create/update time no longer applies once approved.
+                var isIndirect = commission.SaleTypeId == "COMM_SALE_INDIRECT";
+                var fullAmounts = SalesCommissionCalculator.CalculateFullAmounts(commission, isIndirect);
+
+                commission.SalesRepAmount = fullAmounts.SalesRepAmount;
+                commission.SalesRepNetAmount = fullAmounts.SalesRepAmount;
+                commission.ManagerAmount = fullAmounts.ManagerAmount;
+                commission.ManagerNetAmount = fullAmounts.ManagerAmount;
+                commission.SalesRep2Amount = fullAmounts.SalesRep2Amount;
+                commission.SalesRep2NetAmount = fullAmounts.SalesRep2Amount;
+                commission.Manager2Amount = fullAmounts.Manager2Amount;
+                commission.Manager2NetAmount = fullAmounts.Manager2Amount;
+                commission.ExternalCompanyGrossAmount = fullAmounts.ExternalCompanyGrossAmount;
+                commission.ExternalCompanyNetAmount = fullAmounts.ExternalCompanyNetAmount;
+                commission.ExternalSalesRepAmount = fullAmounts.ExternalSalesRepAmount;
+                commission.ExternalSalesRepNetAmount = fullAmounts.ExternalSalesRepNetAmount;
+                commission.ExternalManagerAmount = fullAmounts.ExternalManagerAmount;
+                commission.ExternalManagerNetAmount = fullAmounts.ExternalManagerNetAmount;
+
                 commission.StatusId = "COMMISSION_APPROVED";
                 commission.LastUpdatedStamp = DateTime.UtcNow;
                 await _context.SaveChangesAsync(cancellationToken);
 
-                // One outgoing payment per party that has a payable amount — a commission created
-                // below the lower collection threshold has a zero factor, so its amounts may be 0
-                // and no payment should be created for that party yet.
-                var payments = new List<(string partyId, decimal amount, string role)>();
+                // Party names + project/apartment context for the payment comment
+                var partyIds = new[]
+                {
+                    commission.SalesRepPartyId, commission.ManagerPartyId, commission.SalesRep2PartyId, commission.Manager2PartyId,
+                    commission.ExternalCompanyPartyId, commission.ExternalSalesRepPartyId, commission.ExternalManagerPartyId
+                }.Where(id => id != null).Distinct().ToList();
+
+                var partyNames = await _context.Parties
+                    .Where(p => partyIds.Contains(p.PartyId))
+                    .ToDictionaryAsync(p => p.PartyId, p => p.Description, cancellationToken);
+
+                string NameOf(string? partyId) =>
+                    (partyId != null && partyNames.TryGetValue(partyId, out var name) ? name : null) ?? "-";
+
+                var apartmentName = await _context.SalesRequests
+                    .Where(x => x.SalesRequestId == commission.SalesRequestId)
+                    .Join(_context.Products, s => s.ProductId, p => p.ProductId, (s, p) => p.ProductName)
+                    .FirstOrDefaultAsync(cancellationToken) ?? "-";
+
+                var projectName = (commission.ProjectId != null
+                    ? await _context.WorkEfforts
+                        .Where(w => w.WorkEffortId == commission.ProjectId)
+                        .Select(w => w.ProjectName)
+                        .FirstOrDefaultAsync(cancellationToken)
+                    : null) ?? "-";
+
+                // One outgoing payment per party that has a payable amount (e.g. an optional party
+                // left at 0%/unassigned gets no payment).
+                var payments = new List<(string partyId, decimal amount, string role, decimal percent)>();
 
                 if (!string.IsNullOrEmpty(commission.SalesRepPartyId) && (commission.SalesRepNetAmount ?? commission.SalesRepAmount) > 0)
-                    payments.Add((commission.SalesRepPartyId, commission.SalesRepNetAmount ?? commission.SalesRepAmount ?? 0, "مندوب"));
+                    payments.Add((commission.SalesRepPartyId, commission.SalesRepNetAmount ?? commission.SalesRepAmount ?? 0, "مندوب", commission.SalesRepPercent));
 
                 if (!string.IsNullOrEmpty(commission.ManagerPartyId) && (commission.ManagerNetAmount ?? commission.ManagerAmount) > 0)
-                    payments.Add((commission.ManagerPartyId, commission.ManagerNetAmount ?? commission.ManagerAmount ?? 0, "مدير"));
+                    payments.Add((commission.ManagerPartyId, commission.ManagerNetAmount ?? commission.ManagerAmount ?? 0, "مدير", commission.ManagerPercent));
 
                 if (!string.IsNullOrEmpty(commission.SalesRep2PartyId) && (commission.SalesRep2NetAmount ?? commission.SalesRep2Amount) > 0)
-                    payments.Add((commission.SalesRep2PartyId, commission.SalesRep2NetAmount ?? commission.SalesRep2Amount ?? 0, "مندوب ثانٍ"));
+                    payments.Add((commission.SalesRep2PartyId, commission.SalesRep2NetAmount ?? commission.SalesRep2Amount ?? 0, "مندوب ثانٍ", commission.SalesRep2Percent ?? 0));
 
                 if (!string.IsNullOrEmpty(commission.Manager2PartyId) && (commission.Manager2NetAmount ?? commission.Manager2Amount) > 0)
-                    payments.Add((commission.Manager2PartyId, commission.Manager2NetAmount ?? commission.Manager2Amount ?? 0, "مدير ثانٍ"));
+                    payments.Add((commission.Manager2PartyId, commission.Manager2NetAmount ?? commission.Manager2Amount ?? 0, "مدير ثانٍ", commission.Manager2Percent ?? 0));
 
                 if (!string.IsNullOrEmpty(commission.ExternalCompanyPartyId) && (commission.ExternalCompanyNetAmount ?? commission.ExternalCompanyGrossAmount) > 0)
-                    payments.Add((commission.ExternalCompanyPartyId, commission.ExternalCompanyNetAmount ?? commission.ExternalCompanyGrossAmount ?? 0, "شركة وسيط"));
+                    payments.Add((commission.ExternalCompanyPartyId, commission.ExternalCompanyNetAmount ?? commission.ExternalCompanyGrossAmount ?? 0, "شركة وسيط", commission.ExternalCompanyPercent ?? 0));
 
                 if (!string.IsNullOrEmpty(commission.ExternalSalesRepPartyId) && (commission.ExternalSalesRepNetAmount ?? commission.ExternalSalesRepAmount) > 0)
-                    payments.Add((commission.ExternalSalesRepPartyId, commission.ExternalSalesRepNetAmount ?? commission.ExternalSalesRepAmount ?? 0, "مندوب وسيط"));
+                    payments.Add((commission.ExternalSalesRepPartyId, commission.ExternalSalesRepNetAmount ?? commission.ExternalSalesRepAmount ?? 0, "مندوب وسيط", commission.ExternalSalesRepPercent ?? 0));
 
                 if (!string.IsNullOrEmpty(commission.ExternalManagerPartyId) && (commission.ExternalManagerNetAmount ?? commission.ExternalManagerAmount) > 0)
-                    payments.Add((commission.ExternalManagerPartyId, commission.ExternalManagerNetAmount ?? commission.ExternalManagerAmount ?? 0, "مدير وسيط"));
+                    payments.Add((commission.ExternalManagerPartyId, commission.ExternalManagerNetAmount ?? commission.ExternalManagerAmount ?? 0, "مدير وسيط", commission.ExternalManagerPercent ?? 0));
 
-                foreach (var (partyId, amount, role) in payments)
+                foreach (var (partyId, amount, role, percent) in payments)
                 {
                     var param = new CreatePaymentParam
                     {
@@ -94,7 +139,7 @@ public class ApproveSalesCommission
                         EffectiveDate = effectiveDate,
                         SalesRequestId = commission.SalesRequestId,
                         ProjectId = commission.ProjectId,
-                        Comments = $"عمولة {role} — طلب بيع {commission.SalesRequestId} — عمولة {commission.SalesCommissionId}",
+                        Comments = $"عمولة {role} — {NameOf(partyId)} ({percent:0.####}%) — مشروع {projectName} — شقة {apartmentName} — طلب بيع {commission.SalesRequestId} — عمولة {commission.SalesCommissionId}",
                     };
 
                     var payment = await _paymentHelperService.CreatePayment(param);

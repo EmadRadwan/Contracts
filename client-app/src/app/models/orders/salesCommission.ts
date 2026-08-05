@@ -77,6 +77,8 @@ export interface CommissionRateDefaults {
 
 export interface CommissionDefaults {
     projectId?: string;
+    projectName?: string;
+    apartmentName?: string;
     salePrice: number;
     collectedAmount: number;
     collectedRatio: number;

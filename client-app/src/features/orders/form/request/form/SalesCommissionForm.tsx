@@ -48,8 +48,9 @@ function formatEGP(value: number | null | undefined) {
     return Math.round(value ?? 0).toLocaleString("ar-SA");
 }
 
-// Collection ratio no longer blocks commission creation — a below-lower-threshold commission
-// is still created, just with a zero factor until collections catch up.
+// Collection ratio no longer blocks commission creation, and no longer affects what gets paid —
+// approval always pays each party's full percentage-based amount. This factor only drives the
+// "المستحق الآن" preview on a still-pending commission.
 function getThresholdStatus(ratio: number, saleTypeId: string | null) {
     const lower = saleTypeId === "COMM_SALE_INDIRECT" ? 0.075 : 0.05;
     if (ratio < lower) return { status: "zero" as const, factor: 0, lower };
@@ -73,6 +74,31 @@ function makePercentCapValidator(
     };
 }
 
+// External broker net calc — mirrors SalesCommissionCalculator.CalculateAmountsCore's external
+// company VAT/WHT math on the backend. VAT is embedded in the gross amount; WHT is deducted from
+// the VAT-exclusive base unless exempt.
+function calcExternalCompanyAmounts(
+    salePrice: number, percent: number, factor: number,
+    hasVatExemption: boolean, vatPercent: number,
+    hasWithholdingTaxExemption: boolean, withholdingTaxPercent: number
+) {
+    const gross = salePrice * percent / 100 * factor;
+    if (hasVatExemption) return { gross, net: gross };
+    const vatRate = vatPercent > 0 ? vatPercent : 14;
+    const baseAmount = gross * 100 / (100 + vatRate);
+    const net = (!hasWithholdingTaxExemption && withholdingTaxPercent > 0)
+        ? gross - baseAmount * (withholdingTaxPercent / 100)
+        : gross;
+    return { gross, net };
+}
+
+// External broker's rep/manager net calc — WHT-only, mirrors the backend's ExternalSalesRep/ExternalManager math.
+function calcWhtOnlyAmounts(salePrice: number, percent: number, factor: number, hasExemption: boolean, withholdingTaxPercent: number) {
+    const gross = salePrice * percent / 100 * factor;
+    const net = (!hasExemption && withholdingTaxPercent > 0) ? gross - gross * (withholdingTaxPercent / 100) : gross;
+    return { gross, net };
+}
+
 interface Props {
     commission?: SalesCommission;
     salesRequestId?: string;
@@ -91,8 +117,11 @@ interface CommissionPartyRowProps {
     showQuickCreate: boolean;
     quickCreateTooltip: string;
     onQuickCreate: () => void;
-    amountLabel?: string;
-    amountValue?: number | null;
+    amountRoleLabel: string;
+    percent: number;
+    salePrice: number;
+    factor: number;
+    finalAmount?: number | null;
     secondToggle?: {
         checked: boolean;
         onChange: (checked: boolean) => void;
@@ -101,13 +130,19 @@ interface CommissionPartyRowProps {
 }
 
 // Shared row shape for the internal party sections (sales rep 1/2, manager 1/2):
-// party combobox + optional quick-create icon + percent field, with an optional
-// read-only amount line and an optional "add second party" toggle.
+// party combobox + optional quick-create icon + percent field, an optional "add second
+// party" toggle, and an info line showing percent, full (factor-independent) value, and
+// the amount currently deserved based on collection — collection no longer blocks
+// creation, so this is always shown live, not just after the commission is saved.
+// Once approved, `finalAmount` (the persisted, already-paid amount) is shown instead.
 function CommissionPartyRow({
     partyFieldName, percentFieldName, partyLabel, percentLabel, partyComponent,
     percentValidator, disabled, showQuickCreate, quickCreateTooltip, onQuickCreate,
-    amountLabel, amountValue, secondToggle,
+    amountRoleLabel, percent, salePrice, factor, finalAmount, secondToggle,
 }: CommissionPartyRowProps) {
+    const fullAmount = salePrice * percent / 100;
+    const nowAmount = fullAmount * factor;
+
     return (
         <Grid container spacing={2} alignItems="center" sx={{ mb: 1 }}>
             <Grid item xs={12} md={4}>
@@ -144,10 +179,16 @@ function CommissionPartyRow({
                     validator={percentValidator ? [percentValidator] : undefined}
                 />
             </Grid>
-            {amountValue ? (
-                <Grid item xs={6} md={2}>
+            {disabled && finalAmount ? (
+                <Grid item xs={12} md={4}>
                     <Typography variant="body2" sx={{ mt: 3 }}>
-                        {amountLabel}: {formatEGP(amountValue)}
+                        {amountRoleLabel}: {formatEGP(finalAmount)}
+                    </Typography>
+                </Grid>
+            ) : percent > 0 ? (
+                <Grid item xs={12} md={4}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
+                        {`${amountRoleLabel}: ${percent}% ← القيمة الكاملة: ${formatEGP(fullAmount)} ← المستحق الآن: ${formatEGP(nowAmount)}`}
                     </Typography>
                 </Grid>
             ) : null}
@@ -165,6 +206,43 @@ function CommissionPartyRow({
                     />
                 </Grid>
             )}
+        </Grid>
+    );
+}
+
+interface ExternalAmountInfoProps {
+    label: string;
+    percent: number;
+    salePrice: number;
+    factor: number;
+    calcAmounts: (salePrice: number, percent: number, factor: number) => { gross: number; net: number };
+    finalGross?: number | null;
+    finalNet?: number | null;
+    disabled: boolean;
+}
+
+// Info line for the external broker rows (company/sales rep/manager): shows percent, full net
+// value, and the net value currently deserved based on collection. Once approved, shows the
+// persisted final gross/net instead.
+function ExternalAmountInfo({ label, percent, salePrice, factor, calcAmounts, finalGross, finalNet, disabled }: ExternalAmountInfoProps) {
+    if (disabled && finalGross) {
+        return (
+            <Grid item xs={12} md={5}>
+                <Typography variant="body2" sx={{ mt: 3 }}>
+                    {label} — إجمالي: {formatEGP(finalGross)}
+                    {finalNet != null && <>{" / "}صافي: {formatEGP(finalNet)}</>}
+                </Typography>
+            </Grid>
+        );
+    }
+    if (percent <= 0) return null;
+    const full = calcAmounts(salePrice, percent, 1);
+    const now = calcAmounts(salePrice, percent, factor);
+    return (
+        <Grid item xs={12} md={5}>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
+                {`${label}: ${percent}% ← صافي القيمة الكاملة: ${formatEGP(full.net)} ← المستحق الآن: ${formatEGP(now.net)}`}
+            </Typography>
         </Grid>
     );
 }
@@ -256,13 +334,17 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
 
     const initialValues = useMemo(() => {
         const srId = effectiveSrId;
+        // Prefer the commission's own snapshot; fall back to the defaults lookup, which is
+        // always fetched as soon as an SR is known — covers the case of a brand-new commission
+        // navigated in with a pre-set salesRequestId (no activeCommission exists yet).
+        const apartmentName = activeCommission?.apartmentName ?? defaults?.apartmentName ?? "";
+        const projectName = activeCommission?.projectName ?? defaults?.projectName ?? "";
         const srIdItem = srId ? {
             salesRequestId: srId,
             customerName: "",
-            apartmentName: activeCommission?.apartmentName ?? "",
-            projectName: activeCommission?.projectName ?? "",
-            label: [activeCommission?.apartmentName, activeCommission?.projectName]
-                .filter(Boolean).join(" - ") || srId,
+            apartmentName,
+            projectName,
+            label: [apartmentName, projectName].filter(Boolean).join(" - ") || srId,
         } : null;
         if (activeCommission) {
             return {
@@ -623,12 +705,12 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                         >
                                             {threshold.status === "zero" && (
                                                 <>
-                                                    {`نسبة التحصيل الحالية (${((defaults?.collectedRatio ?? 0) * 100).toFixed(2)}%) أقل من الحد الأدنى المطلوب (${(threshold.lower * 100).toFixed(1)}%) — سيتم إنشاء العمولة بمبلغ صفري حتى استيفاء الحد الأدنى`}
+                                                    {`نسبة التحصيل الحالية (${((defaults?.collectedRatio ?? 0) * 100).toFixed(2)}%) أقل من الحد الأدنى المطلوب (${(threshold.lower * 100).toFixed(1)}%)`}
                                                 </>
                                             )}
                                             {threshold.status === "partial" && (
                                                 <>
-                                                    {`يُسمح بنصف العمولة فقط (50%) — نسبة التحصيل الحالية ${((defaults?.collectedRatio ?? 0) * 100).toFixed(2)}% (بين ${(threshold.lower * 100).toFixed(1)}% و10%)`}
+                                                    {`نسبة التحصيل الحالية ${((defaults?.collectedRatio ?? 0) * 100).toFixed(2)}% (بين ${(threshold.lower * 100).toFixed(1)}% و10%)`}
                                                 </>
                                             )}
                                             {threshold.status === "full" && (
@@ -656,8 +738,11 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                         showQuickCreate={!isApproved && isIndirect}
                                         quickCreateTooltip="إنشاء مندوب جديد"
                                         onQuickCreate={() => openQuickCreate("SALES_REP", "salesRepParty")}
-                                        amountLabel={getTranslatedLabel("salesCommission.form.salesRep1Amount", "مبلغ المندوب الأول")}
-                                        amountValue={activeCommission?.salesRepAmount}
+                                        amountRoleLabel={getTranslatedLabel("salesCommission.form.salesRep1Amount", "مبلغ المندوب الأول")}
+                                        percent={formRenderProps.valueGetter("salesRepPercent") ?? 0}
+                                        salePrice={salePrice}
+                                        factor={factor}
+                                        finalAmount={activeCommission?.salesRepAmount}
                                         secondToggle={{
                                             checked: hasTwoSalesReps,
                                             onChange: setHasTwoSalesReps,
@@ -678,6 +763,11 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                             showQuickCreate={!isApproved && isIndirect}
                                             quickCreateTooltip="إنشاء مندوب جديد"
                                             onQuickCreate={() => openQuickCreate("SALES_REP", "salesRep2Party")}
+                                            amountRoleLabel={getTranslatedLabel("salesCommission.form.salesRep2Amount", "مبلغ المندوب الثاني")}
+                                            percent={formRenderProps.valueGetter("salesRep2Percent") ?? 0}
+                                            salePrice={salePrice}
+                                            factor={factor}
+                                            finalAmount={activeCommission?.salesRep2Amount}
                                         />
                                     )}
 
@@ -693,8 +783,11 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                         showQuickCreate={!isApproved && isIndirect}
                                         quickCreateTooltip="إنشاء مدير جديد"
                                         onQuickCreate={() => openQuickCreate("SALES_MANAGER", "managerParty")}
-                                        amountLabel={getTranslatedLabel("salesCommission.form.manager1Amount", "مبلغ المدير الأول")}
-                                        amountValue={activeCommission?.managerAmount}
+                                        amountRoleLabel={getTranslatedLabel("salesCommission.form.manager1Amount", "مبلغ المدير الأول")}
+                                        percent={formRenderProps.valueGetter("managerPercent") ?? 0}
+                                        salePrice={salePrice}
+                                        factor={factor}
+                                        finalAmount={activeCommission?.managerAmount}
                                         secondToggle={{
                                             checked: hasTwoManagers,
                                             onChange: setHasTwoManagers,
@@ -715,6 +808,11 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                             showQuickCreate={!isApproved && isIndirect}
                                             quickCreateTooltip="إنشاء مدير جديد"
                                             onQuickCreate={() => openQuickCreate("SALES_MANAGER", "manager2Party")}
+                                            amountRoleLabel={getTranslatedLabel("salesCommission.form.manager2Amount", "مبلغ المدير الثاني")}
+                                            percent={formRenderProps.valueGetter("manager2Percent") ?? 0}
+                                            salePrice={salePrice}
+                                            factor={factor}
+                                            finalAmount={activeCommission?.manager2Amount}
                                         />
                                     )}
 
@@ -811,15 +909,20 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         validator={extValidator ? [extValidator] : undefined}
                                                     />
                                                 </Grid>
-                                                {activeCommission?.externalCompanyGrossAmount && (
-                                                    <Grid item xs={6} md={3}>
-                                                        <Typography variant="body2" sx={{ mt: 3 }}>
-                                                            {getTranslatedLabel("salesCommission.form.externalCompanyGross", "إجمالي الوسيط")}: {formatEGP(activeCommission.externalCompanyGrossAmount)}
-                                                            {" / "}
-                                                            {getTranslatedLabel("salesCommission.form.externalCompanyNet", "صافي الوسيط")}: {formatEGP(activeCommission.externalCompanyNetAmount)}
-                                                        </Typography>
-                                                    </Grid>
-                                                )}
+                                                <ExternalAmountInfo
+                                                    label={getTranslatedLabel("salesCommission.form.externalCompanyNet", "صافي الوسيط")}
+                                                    percent={formRenderProps.valueGetter("externalCompanyPercent") ?? 0}
+                                                    salePrice={salePrice}
+                                                    factor={factor}
+                                                    calcAmounts={(sp, pct, f) => calcExternalCompanyAmounts(
+                                                        sp, pct, f,
+                                                        hasVatExemption, formRenderProps.valueGetter("vatPercent") ?? 14,
+                                                        hasWithholdingTaxExemption, formRenderProps.valueGetter("withholdingTaxPercent") ?? 5
+                                                    )}
+                                                    finalGross={activeCommission?.externalCompanyGrossAmount}
+                                                    finalNet={activeCommission?.externalCompanyNetAmount}
+                                                    disabled={isApproved}
+                                                />
                                             </Grid>
 
                                             {/* External Sales Rep */}
@@ -879,16 +982,19 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         disabled={isApproved}
                                                     />
                                                 </Grid>
-                                                {activeCommission?.externalSalesRepAmount && (
-                                                    <Grid item xs={6} md={3}>
-                                                        <Typography variant="body2" sx={{ mt: 3 }}>
-                                                            {getTranslatedLabel("salesCommission.form.externalSalesRepAmount", "مبلغ مندوب الوسيط")}: {formatEGP(activeCommission.externalSalesRepAmount)}
-                                                            {activeCommission.externalSalesRepNetAmount != null && (
-                                                                <>{" / "}{getTranslatedLabel("salesCommission.form.externalSalesRepNet", "صافي مندوب الوسيط")}: {formatEGP(activeCommission.externalSalesRepNetAmount)}</>
-                                                            )}
-                                                        </Typography>
-                                                    </Grid>
-                                                )}
+                                                <ExternalAmountInfo
+                                                    label={getTranslatedLabel("salesCommission.form.externalSalesRepNet", "صافي مندوب الوسيط")}
+                                                    percent={formRenderProps.valueGetter("externalSalesRepPercent") ?? 0}
+                                                    salePrice={salePrice}
+                                                    factor={factor}
+                                                    calcAmounts={(sp, pct, f) => calcWhtOnlyAmounts(
+                                                        sp, pct, f,
+                                                        hasExternalSalesRepWhtExemption, formRenderProps.valueGetter("withholdingTaxPercent") ?? 5
+                                                    )}
+                                                    finalGross={activeCommission?.externalSalesRepAmount}
+                                                    finalNet={activeCommission?.externalSalesRepNetAmount}
+                                                    disabled={isApproved}
+                                                />
                                             </Grid>
 
                                             {/* External Manager */}
@@ -948,16 +1054,19 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         disabled={isApproved}
                                                     />
                                                 </Grid>
-                                                {activeCommission?.externalManagerAmount && (
-                                                    <Grid item xs={6} md={3}>
-                                                        <Typography variant="body2" sx={{ mt: 3 }}>
-                                                            {getTranslatedLabel("salesCommission.form.externalManagerAmount", "مبلغ مدير الوسيط")}: {formatEGP(activeCommission.externalManagerAmount)}
-                                                            {activeCommission.externalManagerNetAmount != null && (
-                                                                <>{" / "}{getTranslatedLabel("salesCommission.form.externalManagerNet", "صافي مدير الوسيط")}: {formatEGP(activeCommission.externalManagerNetAmount)}</>
-                                                            )}
-                                                        </Typography>
-                                                    </Grid>
-                                                )}
+                                                <ExternalAmountInfo
+                                                    label={getTranslatedLabel("salesCommission.form.externalManagerNet", "صافي مدير الوسيط")}
+                                                    percent={formRenderProps.valueGetter("externalManagerPercent") ?? 0}
+                                                    salePrice={salePrice}
+                                                    factor={factor}
+                                                    calcAmounts={(sp, pct, f) => calcWhtOnlyAmounts(
+                                                        sp, pct, f,
+                                                        hasExternalManagerWhtExemption, formRenderProps.valueGetter("withholdingTaxPercent") ?? 5
+                                                    )}
+                                                    finalGross={activeCommission?.externalManagerAmount}
+                                                    finalNet={activeCommission?.externalManagerNetAmount}
+                                                    disabled={isApproved}
+                                                />
                                             </Grid>
                                         </>
                                     )}
