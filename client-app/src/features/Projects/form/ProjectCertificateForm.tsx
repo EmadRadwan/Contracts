@@ -222,7 +222,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
     const [showCertificatesModal, setShowCertificatesModal] = useState(false);
     const [showPDF, setShowPDF] = useState(false);
     const currentFacilityId = useAppSelector((state: RootState) =>
-        state.certificateUi.selectedCertificate.currentFacilityId
+        state.certificateUi.currentFacilityId
         ?? state.certificateUi.selectedCertificate.facilityId
     );
     const [deliverToSite, setDeliverToSite] = useState(true);
@@ -375,6 +375,12 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                 ? project.facilityId
                 : undefined;
 
+            // A custom onChange passed directly to <Field> replaces Kendo's own field-update
+            // wiring rather than running alongside it, so without this call the form's
+            // projectId value never actually changes -- the combobox just snaps back to the
+            // old selection on next render, and the submitted payload keeps the old project.
+            // See certificate 110-0009: user picked a new project, save appeared to do nothing.
+            formRenderProps.onChange("projectId", { value: project });
             formRenderProps.onChange("facilityId", { value: newFacilityId });
             dispatch(setCurrentFacilityId(newFacilityId)); // ← Important!
         },
@@ -666,17 +672,24 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
     
     
     const handleContractorChange = useCallback(
-        (event: any) => {
+        (event: any, formRenderProps: any) => {
             const contractor = event.value;
             setContractorId(contractor?.fromPartyId);
+            // A custom onChange passed directly to <Field> replaces Kendo's own field-update
+            // wiring rather than running alongside it, so without this call the form's
+            // partyIdContractor value never actually changes -- the combobox just snaps back
+            // to the old selection on next render. See the matching note on handleProjectChange.
+            formRenderProps.onChange("partyIdContractor", { value: contractor });
         },
         []
     );
 
     const handleSupplierChange = useCallback(
-        (event: any) => {
+        (event: any, formRenderProps: any) => {
             const supplier = event.value;
             setSupplierId(supplier?.fromPartyId);
+            // See the note on handleContractorChange above.
+            formRenderProps.onChange("partyIdSupplier", { value: supplier });
         },
         []
     );
@@ -780,7 +793,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                             textField="fromPartyName"
                                                             validator={requiredValidator}
                                                             disabled={editMode > 3}
-                                                            onChange={handleSupplierChange}
+                                                            onChange={(event: any) => handleSupplierChange(event, formRenderProps)}
                                                         />
                                                     </Grid>
                                                 )}
@@ -796,7 +809,7 @@ export default function ProjectCertificateForm({editMode, cancelEdit}: ProjectCe
                                                             textField="fromPartyName"
                                                             validator={requiredValidator}
                                                             disabled={editMode > 3}
-                                                            onChange={handleContractorChange}
+                                                            onChange={(event: any) => handleContractorChange(event, formRenderProps)}
                                                         />
                                                     </Grid>
                                                 )}

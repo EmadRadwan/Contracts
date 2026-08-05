@@ -264,6 +264,32 @@ public class ResetProjectCertificate
                         }
 
                         _context.ShipmentReceipts.RemoveRange(receipts);
+
+                        // Catch-all: the loop above only clears billing tied to a ShipmentReceipt row
+                        // (via ORDER_ITEM_BILLING.SHIPMENT_RECEIPT_ID). An order item billed into an
+                        // invoice through any other path -- no receipt ever recorded for it -- was
+                        // completely invisible to it, so Reset would revert the certificate/order
+                        // status but leave the order fully billed and its invoice fully intact. See
+                        // certificate 110-0008 / PO11078 / INV1379: all 8 items and a discount
+                        // adjustment stayed billed after reset, then blocked the next Update's
+                        // PO-recreation cascade with an ORDER_ADJUSTMENT_BILLING FK error.
+                        if (!string.IsNullOrEmpty(relatedOrderId))
+                        {
+                            var remainingBillings = await _context.OrderItemBillings
+                                .Where(oib => oib.OrderId == relatedOrderId)
+                                .ToListAsync(cancellationToken);
+
+                            var remainingInvoiceIds = remainingBillings.Select(oib => oib.InvoiceId)
+                                .Distinct().ToList();
+
+                            _context.OrderItemBillings.RemoveRange(remainingBillings);
+
+                            if (remainingInvoiceIds.Any())
+                            {
+                                await CleanupInvoices(remainingInvoiceIds, cancellationToken);
+                                allCleanedInvoiceIds.AddRange(remainingInvoiceIds);
+                            }
+                        }
                     }
 
                     // For WORKMANSHIP_CONTRACTING_CERTIFICATE, there might be invoices directly linked to the order

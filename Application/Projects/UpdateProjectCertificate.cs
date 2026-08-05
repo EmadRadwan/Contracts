@@ -207,6 +207,17 @@ namespace Application.Projects
                                 .ExecuteDeleteAsync(cancellationToken);
                             await _context.OrderItems.Where(x => x.OrderId == oldOrderId)
                                 .ExecuteDeleteAsync(cancellationToken);
+                            // ORDER_ADJUSTMENT_BILLING has no ORDER_ID column of its own -- it's only
+                            // reachable via ORDER_ADJUSTMENT_ID -- so it's invisible to every other
+                            // delete above and must be cleared before OrderAdjustments or the FK
+                            // (ORDER_ADJBLNG_OA) blocks the delete. Surfaced by certificate 110-0008:
+                            // Reset only clears adjustment billings tied to receipt-derived invoice ids,
+                            // so an adjustment billed through any other path survives Reset and then
+                            // breaks the next Update's PO-recreation cascade.
+                            await _context.OrderAdjustmentBillings
+                                .Where(oab => _context.OrderAdjustments
+                                    .Any(oa => oa.OrderAdjustmentId == oab.OrderAdjustmentId && oa.OrderId == oldOrderId))
+                                .ExecuteDeleteAsync(cancellationToken);
                             await _context.OrderAdjustments.Where(x => x.OrderId == oldOrderId)
                                 .ExecuteDeleteAsync(cancellationToken);
                             await _context.OrderStatuses.Where(x => x.OrderId == oldOrderId)

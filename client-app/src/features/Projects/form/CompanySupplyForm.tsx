@@ -42,7 +42,7 @@ const CompanySupplyForm = ({
     const { valueGetter, onChange } = formRenderProps;
     const { finalTotal } = calculateTotals(valueGetter);
     const currentFacilityId = useAppSelector((state: RootState) =>
-        state.certificateUi.selectedCertificate.currentFacilityId
+        state.certificateUi.currentFacilityId
         ?? state.certificateUi.selectedCertificate.facilityId
     );
     const productId = valueGetter("productId")?.ProductId || valueGetter("productId");

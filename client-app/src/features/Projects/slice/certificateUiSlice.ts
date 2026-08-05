@@ -19,13 +19,20 @@ interface SelectedCertificate {
   relatedOrderId: string;
   facilityId?: string ;
   facilityName?: string;
-  currentFacilityId?: string;
 
 }
 interface CertificateUiState {
   currentCertificateType: string;
   certificateFormEditMode: number;
   selectedCertificate: SelectedCertificate | { [key: string]: any };
+  // Deliberately NOT nested inside selectedCertificate: this tracks the facility currently
+  // picked in the open form (changes on every project selection while editing), whereas
+  // selectedCertificate is treated as the pristine server-data baseline that
+  // ProjectCertificateForm's initialFormValues/resetForm effect resets the form to. Nesting
+  // this here previously meant every project pick replaced the selectedCertificate object
+  // reference too, which re-triggered that reset effect and snapped the just-picked project
+  // straight back to the old one. See certificate 110-0009.
+  currentFacilityId?: string;
 }
 
 export const certificateUiInitialState: CertificateUiState = {
@@ -46,8 +53,8 @@ export const certificateUiInitialState: CertificateUiState = {
     relatedOrderId: "",
     facilityId: undefined,
     facilityName: "",
-    currentFacilityId: undefined,
   },
+  currentFacilityId: undefined,
 };
 
 export const certificateUiSlice = createSlice({
@@ -92,9 +99,10 @@ export const certificateUiSlice = createSlice({
         facilityId: undefined,
         facilityName: "",
       };
+      state.currentFacilityId = undefined;
     },
     setCurrentFacilityId: (state, action: PayloadAction<string | undefined>) => {
-      state.selectedCertificate.currentFacilityId = action.payload;
+      state.currentFacilityId = action.payload;
     },
   },
 });
