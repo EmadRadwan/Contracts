@@ -38,7 +38,8 @@ interface TransactionRow {
 interface GlAccountTransactionsDateRangeExcelProps {
     accountCode: string;
     accountName: string;
-    openingBalance: number; // Opening balance of the whole period
+    openingBalance: number; // Opening balance of the whole period, signed from the account's natural side
+    isDebit: boolean;       // Account's natural side \u2014 balances grow with debits when true, credits when false
     rows: TransactionRow[]; // All transactions of the whole period
     getTranslatedLabel: (key: string, defaultValue: string) => string;
 }
@@ -46,6 +47,9 @@ interface GlAccountTransactionsDateRangeExcelProps {
 const utils = {
     safeString: (v: any) => (v == null || typeof v === 'object') ? 'N/A' : String(v),
     rtlEmbed: (t: string) => /\p{Script=Arabic}/u.test(t) ? `\u202B${t}` : t,
+    // Written cells hold the raw JS number; summing hundreds of 2-dp amounts leaves float tails
+    // (e.g. 12602390.450000003) that the #,##0.00 format hides but any consumer of the raw value sees.
+    round2: (n: number) => Math.round(n * 100) / 100,
 };
 
 // See GlAccountTransactionsExcel.tsx for why this exists: a non-OK fetch response used to fail
@@ -70,6 +74,7 @@ export const GlAccountTransactionsDateRangeExcel: React.FC<GlAccountTransactions
                                                                                                             accountCode,
                                                                                                             accountName,
                                                                                                             openingBalance: originalOpeningBalance,
+                                                                                                            isDebit,
                                                                                                             rows: allRows,
                                                                                                             getTranslatedLabel,
                                                                                                         }) => {
@@ -94,13 +99,21 @@ export const GlAccountTransactionsDateRangeExcel: React.FC<GlAccountTransactions
 
         const preDebit = rowsBefore.reduce((sum, r) => sum + (r.debitCreditFlag === 'D' ? r.amount : 0), 0);
         const preCredit = rowsBefore.reduce((sum, r) => sum + (r.debitCreditFlag === 'C' ? r.amount : 0), 0);
-        
-        const currentOpeningBalance = originalOpeningBalance + preDebit - preCredit;
-        
-        const postedDebits = filteredRows.reduce((sum, r) => sum + (r.debitCreditFlag === 'D' ? r.amount : 0), 0);
-        const postedCredits = filteredRows.reduce((sum, r) => sum + (r.debitCreditFlag === 'C' ? r.amount : 0), 0);
-        
-        const currentEndingBalance = currentOpeningBalance + postedDebits - postedCredits;
+
+        // originalOpeningBalance is signed from the account's natural side (backend: isDebit ? D−C : C−D),
+        // so pre-range activity and the ending balance must roll up from that same side — adding D−C to a
+        // credit account's balance would move it backwards.
+        const currentOpeningBalance = utils.round2(
+            originalOpeningBalance + (isDebit ? preDebit - preCredit : preCredit - preDebit));
+
+        const postedDebits = utils.round2(
+            filteredRows.reduce((sum, r) => sum + (r.debitCreditFlag === 'D' ? r.amount : 0), 0));
+        const postedCredits = utils.round2(
+            filteredRows.reduce((sum, r) => sum + (r.debitCreditFlag === 'C' ? r.amount : 0), 0));
+
+        const currentEndingBalance = utils.round2(currentOpeningBalance + (isDebit
+            ? postedDebits - postedCredits
+            : postedCredits - postedDebits));
 
         const workbook = new ExcelJS.Workbook();
         workbook.created = new Date();
@@ -193,11 +206,8 @@ export const GlAccountTransactionsDateRangeExcel: React.FC<GlAccountTransactions
         filteredRows.forEach(r => {
             const debit = r.debitCreditFlag === 'D' ? r.amount : 0;
             const credit = r.debitCreditFlag === 'C' ? r.amount : 0;
-            
-            // Note: date range running balance calculation logic
-            // We assume the same perspective as currentOpeningBalance
-            // which in the existing code was originalOpeningBalance + preDebit - preCredit
-            runningBalance += (debit - credit);
+
+            runningBalance = utils.round2(runningBalance + (isDebit ? debit - credit : credit - debit));
 
             const row = ws.addRow([
                 utils.safeString(r.acctgTransId),
@@ -234,7 +244,7 @@ export const GlAccountTransactionsDateRangeExcel: React.FC<GlAccountTransactions
         totRow.getCell(14).numFmt = '#,##0.00';
 
         return await workbook.xlsx.writeBuffer();
-    }, [accountCode, accountName, originalOpeningBalance, allRows, getTranslatedLabel, startDate, endDate]);
+    }, [accountCode, accountName, originalOpeningBalance, isDebit, allRows, getTranslatedLabel, startDate, endDate]);
 
     const handleDownload = useCallback(async () => {
         setIsGenerating(true);

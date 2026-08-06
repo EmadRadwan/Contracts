@@ -151,24 +151,21 @@ public class ListPayments
             if (request.ToDate.HasValue)
                 query = query.Where(p => p.EffectiveDate <= request.ToDate.Value);
 
-            // 1. Intercept OData $filter to remove "dueStatusArabic" or handle effectiveDate before ApplyTo
-            // This is needed because dueStatusArabic is a computed field and effectiveDate might have translation issues
+            // 1. Intercept OData $filter for computed fields that have no SQL mapping.
+            // dueStatusArabic is computed in-memory after materialization (see below), so it is NOT
+            // present in the projection above — pushing a filter on it into the EF query builds an
+            // expression that ApplyTo accepts but ToListAsync cannot translate, throwing
+            // "The LINQ expression ... DueStatusArabic.Contains(...) could not be translated" (a 500).
+            // In that case we skip the EF-side filter entirely; the base OData controller re-applies
+            // the full $filter in-memory on the materialized list (where DueStatusArabic is populated),
+            // so no filter clause is lost — the EF-side apply is only a row-count optimization.
             var filterString = request.Options?.Filter?.RawValue;
             var containsDueStatusArabic = filterString != null && filterString.Contains("dueStatusArabic");
-            var containsEffectiveDate = filterString != null && filterString.Contains("effectiveDate");
 
-            // Create a new ODataQueryOptions without problematic filters if they exist
             var options = request.Options;
-            if (containsDueStatusArabic || containsEffectiveDate)
-            {
-                // We will handle filtering for these fields manually after materialization
-                // To avoid the 500 error, we try to apply a modified filter if possible, 
-                // but ODataQueryOptions is mostly read-only for its clauses.
-                // The safest way to avoid the 500 error is to catch it during ApplyTo.
-            }
 
-            // Apply OData $filter except for problematic fields if they fail
-            if (options?.Filter != null)
+            // Apply OData $filter to the EF query only when it references no computed/unmapped field.
+            if (options?.Filter != null && !containsDueStatusArabic)
             {
                 try
                 {
@@ -179,10 +176,9 @@ public class ListPayments
                 }
                 catch (Exception)
                 {
-                    // Fallback: If it failed (likely due to type mismatch in effectiveDate or dueStatusArabic),
-                    // we'll have to handle filtering in-memory entirely for the failing parts.
-                    // We continue with the query as-is (with other filters applied if they didn't fail, 
-                    // but usually the whole ApplyTo fails).
+                    // Fallback: if EF filter translation fails (e.g. a DateOnly/DateTime mismatch on
+                    // effectiveDate), continue unfiltered — the in-memory post-processing below and the
+                    // base controller's in-memory re-apply still enforce the filter.
                 }
             }
 

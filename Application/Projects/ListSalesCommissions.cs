@@ -21,8 +21,26 @@ public class ListSalesCommissions
 
         public Task<IQueryable<SalesCommissionRecord>> Handle(Query request, CancellationToken cancellationToken)
         {
+            // Filter by date on the base entity BEFORE projecting. Filtering on the projected
+            // SalesCommissionRecord.CommissionDate instead would wrap the whole projection —
+            // including the correlated CollectedAmount subquery — in a derived table, which EF Core
+            // fails to translate (surfaces only on the Excel export path, which always sends a date
+            // range; the paginated grid never sends one).
+            var commissions = _context.SalesCommissions.AsQueryable();
+
+            if (request.FromDate.HasValue)
+            {
+                var from = request.FromDate.Value.ToDateTime(TimeOnly.MinValue);
+                commissions = commissions.Where(sc => sc.CommissionDate >= from);
+            }
+            if (request.ToDate.HasValue)
+            {
+                var to = request.ToDate.Value.ToDateTime(TimeOnly.MaxValue);
+                commissions = commissions.Where(sc => sc.CommissionDate <= to);
+            }
+
             var query = (
-                from sc in _context.SalesCommissions
+                from sc in commissions
                 join sr in _context.SalesRequests on sc.SalesRequestId equals sr.SalesRequestId
                 join p in _context.Products on sr.ProductId equals p.ProductId
                 join we in _context.WorkEfforts on sc.ProjectId equals we.WorkEffortId into weGroup
@@ -107,17 +125,6 @@ public class ListSalesCommissions
                     LastUpdatedStamp = sc.LastUpdatedStamp
                 }
             ).AsQueryable();
-
-            if (request.FromDate.HasValue)
-            {
-                var from = request.FromDate.Value.ToDateTime(TimeOnly.MinValue);
-                query = query.Where(sc => sc.CommissionDate >= from);
-            }
-            if (request.ToDate.HasValue)
-            {
-                var to = request.ToDate.Value.ToDateTime(TimeOnly.MaxValue);
-                query = query.Where(sc => sc.CommissionDate <= to);
-            }
 
             return Task.FromResult(query);
         }

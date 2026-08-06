@@ -328,6 +328,7 @@ public class GetGlAccountTransactionDetails
                     PostedDebits = postedDebits,
                     PostedCredits = postedCredits,
                     EndingBalance = endingBalance,
+                    IsDebit = isDebit,
                     GlAccountId = request.GlAccountId,
                     AccountCode = glAccount.AccountCode,
                     AccountName = glAccount.AccountNameArabic,

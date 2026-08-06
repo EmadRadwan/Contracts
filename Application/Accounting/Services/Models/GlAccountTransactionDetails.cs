@@ -10,5 +10,6 @@ public class GlAccountTransactionDetails
     public string AccountCode { get; set; }
     public string AccountName { get; set; }
     public string GlAccountClassId { get; set; }
+    public bool IsDebit { get; set; }
     public List<TransactionEntryDto> Transactions { get; set; }
 }

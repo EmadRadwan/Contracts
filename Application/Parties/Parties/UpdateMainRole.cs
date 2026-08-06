@@ -33,8 +33,10 @@ namespace Application.Parties.Parties
                 if (party == null)
                     return Result<Unit>.Failure("Party not found");
 
-                // Optional: Validate allowed roles
-                var allowedRoles = new[] { "CUSTOMER", "SUPPLIER", "EMPLOYEE", "CONTRACTOR", "PREVIOUS_EMPLOYEE" };
+                // Allowed main roles — must stay in sync with the "Change Main Role" dropdown
+                // in client-app PartiesList.tsx. SALES_REP and BROKER are offered there and were
+                // previously rejected here as "Invalid main role".
+                var allowedRoles = new[] { "CUSTOMER", "SUPPLIER", "EMPLOYEE", "CONTRACTOR", "SALES_REP", "BROKER", "PREVIOUS_EMPLOYEE" };
                 if (!allowedRoles.Contains(request.MainRole))
                     return Result<Unit>.Failure("Invalid main role");
 

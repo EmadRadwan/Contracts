@@ -191,6 +191,7 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                         accountCode={data?.accountCode ?? ''}
                                         accountName={data?.accountName ?? ''}
                                         openingBalance={data?.openingBalance ?? 0}
+                                        isDebit={data?.isDebit ?? true}
                                         rows={excelRows}
                                         getTranslatedLabel={getTranslatedLabel}
                                     />

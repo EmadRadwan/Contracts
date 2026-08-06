@@ -34,6 +34,7 @@ export interface GlAccountTransactionDetails {
     accountCode: string;
     accountName: string;
     glAccountClassId?: string;
+    isDebit: boolean;
     transactions: TransactionEntryDto[];
 }
 

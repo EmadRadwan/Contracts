@@ -145,13 +145,21 @@ public class ListPaymentsWithDueStatus
                 }
             ).AsQueryable();
 
-            // 1. Intercept OData $filter to handle fields that might cause issues with EF Core (DateOnly vs DateTimeOffset or computed fields)
+            // 1. Intercept OData $filter/$orderby for computed fields that have no SQL mapping.
+            // dueStatusArabic is computed in-memory after materialization (see below), so pushing a
+            // filter or sort on it into the EF query builds an expression that ToListAsync cannot
+            // translate ("... DueStatusArabic ... could not be translated"), producing a 500. The base
+            // OData controller re-applies the full $filter/$orderby in-memory on the materialized list
+            // (where DueStatusArabic is populated), so skipping the EF-side apply loses nothing.
             var filterString = request.Options?.Filter?.RawValue;
-            
-            // Apply OData $filter
-            if (request.Options?.Filter != null)
+            var orderByString = request.Options?.OrderBy?.RawValue;
+            var filterUsesComputed = filterString != null && filterString.Contains("dueStatusArabic");
+            var orderByUsesComputed = orderByString != null && orderByString.Contains("dueStatusArabic");
+
+            // Apply OData $filter to the EF query only when it references no computed/unmapped field.
+            if (request.Options?.Filter != null && !filterUsesComputed)
             {
-                try 
+                try
                 {
                     query = request.Options.Filter.ApplyTo(query, new ODataQuerySettings()) as IQueryable<PaymentRecord>;
                 }
@@ -162,7 +170,7 @@ public class ListPaymentsWithDueStatus
                 }
             }
 
-            if (request.Options?.OrderBy != null)
+            if (request.Options?.OrderBy != null && !orderByUsesComputed)
                 query = request.Options.OrderBy.ApplyTo(query, new ODataQuerySettings()) as IQueryable<PaymentRecord>;
 
             // Materialize the query

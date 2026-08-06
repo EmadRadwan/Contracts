@@ -42,6 +42,17 @@ public class ResetSalesCommission
                                 && p.PaymentTypeId == "COMMISSION_PAYMENT")
                     .ToListAsync(ct);
 
+                // Guard: reset hard-deletes these payments (and their FinAccountTrans / AcctgTrans).
+                // That is only safe while a payment is still unpaid or was cancelled/voided. Once a
+                // commission payment has actually been disbursed (PMNT_SENT / PMNT_CONFIRMED) or
+                // received, deleting it would erase real financial history instead of reversing it,
+                // so block the reset and require the payment to be voided/cancelled first.
+                var deletableStatuses = new[] { "PMNT_NOT_PAID", "PMNT_CANCELLED", "PMNT_VOID", "PMNT_VOIDED" };
+                var blockingPayment = payments.FirstOrDefault(p => !deletableStatuses.Contains(p.StatusId));
+                if (blockingPayment != null)
+                    return Result<Unit>.Failure(
+                        $"لا يمكن إعادة تعيين العمولة — دفعة العمولة {blockingPayment.PaymentId} تم صرفها بالفعل (الحالة {blockingPayment.StatusId}). يجب إلغاء/إبطال الدفعة أولاً.");
+
                 if (payments.Any())
                 {
                     var paymentIds = payments.Select(p => p.PaymentId).ToList();

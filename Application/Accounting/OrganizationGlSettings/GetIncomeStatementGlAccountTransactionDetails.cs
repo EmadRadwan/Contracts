@@ -152,6 +152,7 @@ namespace Application.Accounting.OrganizationGlSettings
                         PostedDebits = periodDebits,
                         PostedCredits = periodCredits,
                         EndingBalance = endingBalance,
+                        IsDebit = isDebitAccount,
                         Transactions = transactions
                     });
                 }
