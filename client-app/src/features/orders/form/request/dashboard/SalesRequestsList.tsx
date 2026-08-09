@@ -6,9 +6,14 @@ import {
     GRID_COL_INDEX_ATTRIBUTE,
     GridColumn as Column,
     GridDataStateChangeEvent,
+    GridFilterCellProps,
     GridToolbar,
 } from "@progress/kendo-react-grid";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
+import { DatePicker, DatePickerChangeEvent } from "@progress/kendo-react-dateinputs";
+import { DropDownList, DropDownListChangeEvent } from "@progress/kendo-react-dropdowns";
+import { Button as KendoButton } from "@progress/kendo-react-buttons";
+import { filterIcon, filterClearIcon } from "@progress/kendo-svg-icons";
 import { Grid, Paper } from "@mui/material";
 
 import Button from "@mui/material/Button";
@@ -202,6 +207,85 @@ function SalesRequestsList() {
         );
     };
 
+    // REFACTOR: Kendo's built-in date FilterCell has no explicit format/locale configured
+    // app-wide, so it falls back to a US-style (M/d/y) date input that also misparses
+    // dd/MM/yyyy input, silently sending the wrong date to the OData filter.
+    // This custom cell mirrors Kendo's default GridFilterCell markup/behavior (operator
+    // dropdown + clear button) but pins format/formatPlaceholder to dd/MM/yyyy.
+    const SaleDateFilterCell = (props: GridFilterCellProps) => {
+        const hasValue = props.value !== null && props.value !== undefined && props.value !== "";
+        const defaultOperator = props.operators[0]?.operator as string;
+
+        const handleDateChange = (event: DatePickerChangeEvent) => {
+            const value = event.value;
+            let operator = props.operator as string;
+            if (!operator || operator === "isnull" || operator === "isnotnull") {
+                operator = defaultOperator;
+            }
+            if (value === null && operator === defaultOperator) {
+                operator = "";
+            }
+            props.onChange({ value, operator, syntheticEvent: event.syntheticEvent as React.SyntheticEvent });
+        };
+
+        const handleOperatorChange = (event: DropDownListChangeEvent) => {
+            if (!event.target.state?.opened) {
+                return;
+            }
+            const item = event.target.value as { text: string; operator: string };
+            let value = props.value;
+            if (item.operator === "isnull" || item.operator === "isnotnull") {
+                value = null;
+            } else if (props.value === null) {
+                value = undefined;
+            }
+            props.onChange({ value, operator: item.operator, syntheticEvent: event.syntheticEvent as React.SyntheticEvent });
+        };
+
+        const clear = (event: React.SyntheticEvent) => {
+            event.preventDefault();
+            props.onChange({ value: null, operator: "", syntheticEvent: event });
+        };
+
+        const selectedOperator = props.operators.find((op) => op.operator === props.operator) || null;
+
+        return (
+            <div className="k-filtercell">
+                <div className="k-filtercell-wrapper">
+                    <DatePicker
+                        value={props.value ?? null}
+                        format="dd/MM/yyyy"
+                        formatPlaceholder={{ year: "yyyy", month: "mm", day: "dd" }}
+                        onChange={handleDateChange}
+                        title={props.title}
+                        ariaLabel={props.ariaLabel}
+                    />
+                    <div className="k-filtercell-operator">
+                        <DropDownList
+                            data={props.operators}
+                            textField="text"
+                            value={selectedOperator}
+                            onChange={handleOperatorChange}
+                            iconClassName="k-i-filter k-icon"
+                            svgIcon={filterIcon}
+                            className="k-dropdown-operator"
+                            popupSettings={{ width: "" }}
+                        />
+                        &nbsp;
+                        <KendoButton
+                            icon="filter-clear"
+                            svgIcon={filterClearIcon}
+                            type="button"
+                            title={getTranslatedLabel("general.clear", "Clear")}
+                            onClick={clear}
+                            disabled={!(hasValue || props.operator)}
+                        />
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <>
             <SalesRequestMenu
@@ -283,6 +367,7 @@ function SalesRequestsList() {
                                     title={getTranslatedLabel("salesRequest.list.saleDate", "Sale Date")}
                                     format="{0:dd/MM/yyyy}"
                                     filter="date"
+                                    filterCell={SaleDateFilterCell}
                                     width={140}
                                 />
                                 <Column

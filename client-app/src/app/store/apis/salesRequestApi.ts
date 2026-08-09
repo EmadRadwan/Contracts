@@ -50,7 +50,16 @@ const salesRequestApi = createApi({
             // -----------------------------------------------------------------
             fetchSalesRequests: builder.query<ListResponse<SalesRequest>, State>({
                 query: (dataState) => {
-                    const odata = toODataString(dataState);
+                    // Kendo's OData serializer always emits a full UTC datetime literal
+                    // (e.g. "2026-08-09T00:00:00.000Z") for date-type filters, which OData
+                    // binds as Edm.DateTimeOffset. saleDate is DateOnly? (Edm.Date) on the
+                    // backend, so EF Core throws "binary operator Equal is not defined for
+                    // DateOnly and DateTimeOffset". Strip the time/offset to produce a valid
+                    // Edm.Date literal instead.
+                    const odata = toODataString(dataState).replace(
+                        /(saleDate\s+(?:eq|ne|gt|ge|lt|le)\s+)(\d{4}-\d{2}-\d{2})T[\d:.]+Z/g,
+                        "$1$2"
+                    );
                     // Backend expects $count=true for total
                     const url = `/odata/salesRequestRecords?$count=true&${odata}`;
                     return { url, method: "GET" };
