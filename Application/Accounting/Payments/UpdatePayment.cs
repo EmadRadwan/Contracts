@@ -97,7 +97,7 @@ public class UpdatePayment
 
                 DateOnly effectiveDate = dto.IsCollectionDate == true
                     ? dto.EffectiveDate ?? original.EffectiveDate ?? DateOnly.FromDateTime(DateTime.UtcNow)
-                    : dto.ChequeDate ?? dto.EffectiveDate ?? original.EffectiveDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+                    : dto.EffectiveDate ?? dto.ChequeDate ?? original.EffectiveDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
 
                 // Get payment type once
                 var paymentType = await _context.PaymentTypes

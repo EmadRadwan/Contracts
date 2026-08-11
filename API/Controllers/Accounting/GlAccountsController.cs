@@ -82,5 +82,15 @@ namespace API.Controllers.Accounting
         {
             return HandleResult(await Mediator.Send(new GetGlAccountCourseLabels.Query { Params = param }));
         }
+
+        /// <summary>
+        /// Sixth reporting level (SUBACCOUNT). Pass glAccountCourseLabelId to narrow the list to the
+        /// sub-account labels already in use under that account label.
+        /// </summary>
+        [HttpGet("getGlSubAccountCourseLabels")]
+        public async Task<IActionResult> GetGlSubAccountCourseLabels([FromQuery] GlSubAccountCourseLabelParams param)
+        {
+            return HandleResult(await Mediator.Send(new GetGlSubAccountCourseLabels.Query { Params = param }));
+        }
     }
 }

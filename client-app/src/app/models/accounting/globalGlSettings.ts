@@ -40,6 +40,8 @@ export interface GlAccount {
     glSubClass2Description?: string
     glAccountCourseLabelId?: string
     glAccountCourseLabelDescription?: string
+    glSubAccountCourseLabelId?: string
+    glSubAccountCourseLabelDescription?: string
     parentAccountName: string
     parentGlAccountId?: string
     productId?: string

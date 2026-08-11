@@ -1732,6 +1732,8 @@
         "glSubClass": "التصنيف الفرعي الأول",
         "glSubClass2": "التصنيف الوظيفي - الفلتر الإداري",
         "glAccountCourseLabel": "مسمى الحساب للتقارير",
+        "glSubAccountCourseLabel": "مسمى الحساب الفرعي للتقارير",
+        "glSubAccountCourseLabelHint": "المستوى السادس — يُستخدم للتنقل التفصيلي في تقارير Power BI",
         "description": "الوصف",
         "createAccount": "إنشاء الحساب",
         "updateAccount": "تحديث الحساب",

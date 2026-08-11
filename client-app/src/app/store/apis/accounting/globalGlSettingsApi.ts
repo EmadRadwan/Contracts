@@ -100,6 +100,15 @@ const globalGlSettingsApi = createApi({
                     params,
                 }),
             }),
+            // Sixth reporting level (SUBACCOUNT). Pass glAccountCourseLabelId to narrow the list to
+            // the sub-account labels already used under that account label; the response's
+            // filteredByAccountLabel flag says whether the narrowing actually applied.
+            fetchGlSubAccountCourseLabels: builder.query<GlSubAccountCourseLabelsEnvelope, GlSubAccountCourseLabelParams>({
+                query: (params) => ({
+                    url: '/glAccounts/getGlSubAccountCourseLabels',
+                    params,
+                }),
+            }),
             createGlAccount: builder.mutation<CreateGlAccountResponse, CreateGlAccountRequest>({
                 query: (request) => ({
                     url: '/glAccounts',
@@ -132,6 +141,7 @@ export const {
     useFetchGlSubClassesQuery,
     useFetchGlSubClasses2Query,
     useFetchGlAccountCourseLabelsQuery,
+    useFetchGlSubAccountCourseLabelsQuery,
     useCreateGlAccountMutation,
     useUpdateGlAccountMutation,
 } = globalGlSettingsApi;
@@ -291,5 +301,25 @@ export interface GlAccountCourseLabelParams {
     skip?: number;
     pageSize?: number;
     searchTerm?: string;
+}
+
+export interface GlSubAccountCourseLabelDto {
+    glSubAccountCourseLabelId: string;
+    description: string;
+}
+
+export interface GlSubAccountCourseLabelsEnvelope {
+    glSubAccountCourseLabels: GlSubAccountCourseLabelDto[];
+    totalCount: number;
+    /** True when the list was narrowed to labels observed under the requested account label. */
+    filteredByAccountLabel: boolean;
+}
+
+export interface GlSubAccountCourseLabelParams {
+    skip?: number;
+    pageSize?: number;
+    searchTerm?: string;
+    /** Optional level-5 label to cascade from. */
+    glAccountCourseLabelId?: string;
 }
 

@@ -64,6 +64,7 @@ public class CreateGlAccount
                     GlSubClassId = dto.GlSubClassId,
                     GlSubClass2Id = dto.GlSubClass2Id,
                     GlAccountCourseLabelId = dto.GlAccountCourseLabelId,
+                    GlSubAccountCourseLabelId = dto.GlSubAccountCourseLabelId,
                     CreatedStamp = now,
                     LastUpdatedStamp = now
                 };
@@ -103,6 +104,7 @@ public class CreateGlAccount
                     GlSubClassId = glAccount.GlSubClassId,
                     GlSubClass2Id = glAccount.GlSubClass2Id,
                     GlAccountCourseLabelId = glAccount.GlAccountCourseLabelId,
+                    GlSubAccountCourseLabelId = glAccount.GlSubAccountCourseLabelId,
                 };
 
                 return Results<CreateGlAccountResponse>.Success(response);
@@ -276,6 +278,14 @@ public class CreateGlAccountRequest
     public string? GlSubClassId { get; init; }
     public string? GlSubClass2Id { get; init; }
     public string? GlAccountCourseLabelId { get; init; }
+
+    /// <summary>
+    /// The sixth and most granular reporting level (SUBACCOUNT). Optional: Dim_gl_account admits an
+    /// account without it, so leaving it null still produces a fully reportable account. But it is the
+    /// level Power BI drills to, so an account without it lands in a blank sub-account group and drops
+    /// out of any visual grouped on SUBACCOUNT_AR. Set it whenever a sensible label exists.
+    /// </summary>
+    public string? GlSubAccountCourseLabelId { get; init; }
 }
 
 public class CreateGlAccountResponse
@@ -296,4 +306,5 @@ public class CreateGlAccountResponse
     public string? GlSubClassId { get; set; }
     public string? GlSubClass2Id { get; set; }
     public string? GlAccountCourseLabelId { get; set; }
+    public string? GlSubAccountCourseLabelId { get; set; }
 }

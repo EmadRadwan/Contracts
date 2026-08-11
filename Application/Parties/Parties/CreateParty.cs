@@ -1,3 +1,4 @@
+using Application.Accounting.Services;
 using Application.Core;
 using Application.Interfaces;
 using Domain;
@@ -381,6 +382,10 @@ public class CreateParty
                 CreatedTxStamp = stamp,
                 LastUpdatedTxStamp = stamp
             };
+            // Stamp the six reporting levels so the account is visible to Dim_gl_account
+            // (and therefore to Power BI). Derived from ParentGlAccountId — see
+            // GlAccountClassificationDefaults for why this is centralised.
+            GlAccountClassificationDefaults.Apply(glAccount);
             _context.GlAccounts.Add(glAccount);
 
             _context.GlAccountOrganizations.Add(new GlAccountOrganization

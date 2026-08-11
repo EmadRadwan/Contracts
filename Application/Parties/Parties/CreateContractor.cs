@@ -1,5 +1,6 @@
-using Application.Interfaces;
+using Application.Accounting.Services;
 using Application.Core;
+using Application.Interfaces;
 using Domain;
 using FluentValidation;
 using MediatR;
@@ -314,6 +315,10 @@ public class CreateContractor
                 LastUpdatedStamp = stamp,
                 LastUpdatedTxStamp = stamp
             };
+            // Stamp the six reporting levels so the account is visible to Dim_gl_account
+            // (and therefore to Power BI). Derived from ParentGlAccountId — see
+            // GlAccountClassificationDefaults for why this is centralised.
+            GlAccountClassificationDefaults.Apply(newApAccount);
             _context.GlAccounts.Add(newApAccount);
 
             // 2. GlAccountOrganization

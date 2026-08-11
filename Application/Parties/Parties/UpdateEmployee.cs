@@ -1,3 +1,4 @@
+using Application.Accounting.Services;
 using Application.Core;
 using Application.Interfaces;
 using Domain;
@@ -503,6 +504,10 @@ public class UpdateEmployee
                     LastUpdatedStamp = stamp,
                     LastUpdatedTxStamp = stamp
                 };
+                // Stamp the six reporting levels so the account is visible to Dim_gl_account
+                // (and therefore to Power BI). Derived from ParentGlAccountId — see
+                // GlAccountClassificationDefaults for why this is centralised.
+                GlAccountClassificationDefaults.Apply(loanAccount);
                 _context.GlAccounts.Add(loanAccount);
 
                 var loanOrg = new GlAccountOrganization
@@ -578,6 +583,10 @@ public class UpdateEmployee
                     LastUpdatedStamp = stamp,
                     LastUpdatedTxStamp = stamp
                 };
+                // Stamp the six reporting levels so the account is visible to Dim_gl_account
+                // (and therefore to Power BI). Derived from ParentGlAccountId — see
+                // GlAccountClassificationDefaults for why this is centralised.
+                GlAccountClassificationDefaults.Apply(accruedAccount);
                 _context.GlAccounts.Add(accruedAccount);
 
                 var accruedOrg = new GlAccountOrganization

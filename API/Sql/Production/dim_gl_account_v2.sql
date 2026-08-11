@@ -21,29 +21,21 @@ SELECT
     -- ── Normal balance & sign ────────────────────────────────────────────────
     acl.SIGN_MULTIPLIER,
 
-    -- ── GL_REPORT (top of hierarchy) ─────────────────────────────────────────
-    a.GL_REPORT_ID                                  AS REPORT,
+    -- ── Classification hierarchy — Arabic set, broad → narrow ────────────────
     gr.DESCRIPTION_ARABIC                           AS REPORT_AR,
-
-    -- ── GL_CLASS_COURSE ──────────────────────────────────────────────────────
-    a.GL_CLASS_COURSE_ID                            AS CLASS,
     gcc.DESCRIPTION_ARABIC                          AS CLASS_AR,
-
-    -- ── GL_SUB_CLASS ─────────────────────────────────────────────────────────
-    a.GL_SUB_CLASS_ID                               AS SUBCLASS,
     gsc.DESCRIPTION_ARABIC                          AS SUBCLASS_AR,
-
-    -- ── GL_SUB_CLASS_2 ───────────────────────────────────────────────────────
-    a.GL_SUB_CLASS_2_ID                             AS SUBCLASS2,
     gsc2.DESCRIPTION_ARABIC                         AS SUBCLASS2_AR,
-
-    -- ── GL_ACCOUNT_COURSE_LABEL (leaf of hierarchy) ──────────────────────────
-    a.GL_ACCOUNT_COURSE_LABEL_ID                    AS ACCOUNT,
     acl.DESCRIPTION_ARABIC                          AS ACCOUNT_AR,
-
-    -- ── GL_SUB_ACCOUNT_COURSE_LABEL (new — ratio & drill-down level) ─────────
-    a.GL_SUB_ACCOUNT_COURSE_LABEL_ID                AS SUBACCOUNT,
     gsa.DESCRIPTION_ARABIC                          AS SUBACCOUNT_AR,
+
+    -- ── Classification hierarchy — English/ID set, broad → narrow ────────────
+    a.GL_REPORT_ID                                  AS REPORT,
+    a.GL_CLASS_COURSE_ID                            AS CLASS,
+    a.GL_SUB_CLASS_ID                               AS SUBCLASS,
+    a.GL_SUB_CLASS_2_ID                             AS SUBCLASS2,
+    a.GL_ACCOUNT_COURSE_LABEL_ID                    AS ACCOUNT,
+    a.GL_SUB_ACCOUNT_COURSE_LABEL_ID                AS SUBACCOUNT,
 
     -- ── Unique grouping key (v2.1) ────────────────────────────────────────────
     -- The same SUBACCOUNT label is reused under different ACCOUNT parents

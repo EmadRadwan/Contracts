@@ -27,7 +27,7 @@ import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHel
 import { FormDropDownList } from "../../../../../app/common/form/MemoizedFormDropDownList2";
 import { useAppSelector } from "../../../../../app/store/configureStore";
 import { useAssignGlAccountToOrganizationMutation } from "../../../../../app/store/apis";
-import { useFetchTopLevelGlobalGlAccountsQuery, useCreateGlAccountMutation, useUpdateGlAccountMutation, useFetchGlReportsQuery, useFetchGlClassCoursesQuery, useFetchGlSubClassesQuery, useFetchGlSubClasses2Query, useFetchGlAccountCourseLabelsQuery } from "../../../../../app/store/apis/accounting/globalGlSettingsApi";
+import { useFetchTopLevelGlobalGlAccountsQuery, useCreateGlAccountMutation, useUpdateGlAccountMutation, useFetchGlReportsQuery, useFetchGlClassCoursesQuery, useFetchGlSubClassesQuery, useFetchGlSubClasses2Query, useFetchGlAccountCourseLabelsQuery, useFetchGlSubAccountCourseLabelsQuery } from "../../../../../app/store/apis/accounting/globalGlSettingsApi";
 import { FormDropDownTreeGlAccountWithChildren } from "../../../../../app/common/form/FormDropDownTreeGlAccountWithChildren";
 import { FormComboBoxVirtualGlAccountTypes } from "../../../../../app/common/form/FormComboBoxVirtualGlAccountTypes";
 import { FormComboBoxVirtualGlAccountClasses } from "../../../../../app/common/form/FormComboBoxVirtualGlAccountClasses";
@@ -35,6 +35,40 @@ import { MemoizedFormComboBox2 } from "../../../../../app/common/form/FormComboB
 import GlSettingsMenu from "../../menu/GlSettingsMenu";
 import AccountingMenu from "../../../invoice/menu/AccountingMenu";
 import { useLazyCheckGlAccountAssignedQuery, useRemoveGlAccountFromOrganizationMutation } from "../../../../../app/store/apis/accounting/organizationGlChartOfAccountsApi";
+
+/**
+ * Sixth reporting level (SUBACCOUNT), cascaded off the selected Account Course Label.
+ *
+ * Kept as its own component so the lookup query can legitimately re-run whenever the parent
+ * selection changes — the parent value only exists inside the Form's render prop, which is not a
+ * place hooks can be called. Passing it in as a prop keeps the hook at a component top level.
+ *
+ * The level is optional: an account without it is still fully visible in Power BI, it just cannot be
+ * drilled to sub-account depth. When the chosen account label has no existing pairings the API
+ * returns the full catalogue rather than an empty list, so new combinations remain possible.
+ */
+const SubAccountCourseLabelField = ({
+    glAccountCourseLabelId,
+    label,
+}: {
+    glAccountCourseLabelId?: string | null;
+    label: string;
+}) => {
+    const { data } = useFetchGlSubAccountCourseLabelsQuery(
+        glAccountCourseLabelId ? { glAccountCourseLabelId } : {}
+    );
+
+    return (
+        <Field
+            name="glSubAccountCourseLabelId"
+            label={label}
+            component={MemoizedFormComboBox2}
+            data={data?.glSubAccountCourseLabels || []}
+            dataItemKey="glSubAccountCourseLabelId"
+            textField="description"
+        />
+    );
+};
 
 interface Props {
     account?: GlAccount;
@@ -196,6 +230,7 @@ const AccountForm: React.FC<Props> = ({
             glSubClassId: account?.glSubClassId ?? null,
             glSubClass2Id: account?.glSubClass2Id ?? null,
             glAccountCourseLabelId: account?.glAccountCourseLabelId ?? null,
+            glSubAccountCourseLabelId: account?.glSubAccountCourseLabelId ?? null,
             parentGlAccountId: account?.parentGlAccountId
                 ? {
                     glAccountId: account.parentGlAccountId,
@@ -260,6 +295,7 @@ const AccountForm: React.FC<Props> = ({
                     glSubClassId: data.glSubClassId,
                     glSubClass2Id: data.glSubClass2Id,
                     glAccountCourseLabelId: data.glAccountCourseLabelId,
+                    glSubAccountCourseLabelId: data.glSubAccountCourseLabelId,
                 };
 
                 const result = await createGlAccount(createPayload).unwrap();
@@ -298,6 +334,7 @@ const AccountForm: React.FC<Props> = ({
                     glSubClassId: data.glSubClassId,
                     glSubClass2Id: data.glSubClass2Id,
                     glAccountCourseLabelId: data.glAccountCourseLabelId,
+                    glSubAccountCourseLabelId: data.glSubAccountCourseLabelId,
                 };
 
                 const result = await updateGlAccount(updatePayload).unwrap();
@@ -530,6 +567,12 @@ const AccountForm: React.FC<Props> = ({
                                                     data={glAccountCourseLabelsData?.glAccountCourseLabels || []}
                                                     dataItemKey="glAccountCourseLabelId"
                                                     textField="description"
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} sm={4}>
+                                                <SubAccountCourseLabelField
+                                                    glAccountCourseLabelId={formRenderProps.valueGetter("glAccountCourseLabelId")}
+                                                    label={getTranslatedLabel("accounting.glAccount.form.glSubAccountCourseLabel", "Sub Account Course Label")}
                                                 />
                                             </Grid>
                                         </Grid>

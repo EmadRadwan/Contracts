@@ -129,13 +129,16 @@ public class ApproveSalesCommission
 
                 foreach (var (partyId, amount, role, percent) in payments)
                 {
+                    // Commission payments are paid as whole amounts — round to 0 decimals.
+                    var roundedAmount = Math.Round(amount, 0, MidpointRounding.AwayFromZero);
+
                     var param = new CreatePaymentParam
                     {
                         PaymentTypeId = "COMMISSION_PAYMENT",
                         StatusId = "PMNT_NOT_PAID",
                         PartyIdFrom = companyPartyId,
                         PartyIdTo = partyId,
-                        Amount = amount,
+                        Amount = roundedAmount,
                         EffectiveDate = effectiveDate,
                         SalesRequestId = commission.SalesRequestId,
                         ProjectId = commission.ProjectId,

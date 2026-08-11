@@ -1,3 +1,4 @@
+using Application.Accounting.Services;
 using Application.Interfaces;
 using AutoMapper;
 using Domain;
@@ -315,6 +316,10 @@ public class UpdateCustomer
                     LastUpdatedStamp = stamp,
                     LastUpdatedTxStamp = stamp
                 };
+                // Stamp the six reporting levels so the account is visible to Dim_gl_account
+                // (and therefore to Power BI). Derived from ParentGlAccountId — see
+                // GlAccountClassificationDefaults for why this is centralised.
+                GlAccountClassificationDefaults.Apply(newGlAccount);
                 _context.GlAccounts.Add(newGlAccount);
 
                 // 2. GlAccountOrganization
