@@ -328,6 +328,9 @@ public class GetGlAccountTransactionDetails
                     PostedDebits = postedDebits,
                     PostedCredits = postedCredits,
                     EndingBalance = endingBalance,
+                    // REFACTOR (2026-08-14): pass the account side (already computed at step 6
+                    // above) through to the response so the frontend Excel export can do its own
+                    // debit/credit math correctly instead of assuming every account is debit-natured.
                     IsDebit = isDebit,
                     GlAccountId = request.GlAccountId,
                     AccountCode = glAccount.AccountCode,

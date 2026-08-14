@@ -75,6 +75,21 @@ FROM PAYMENT pyt
 WHERE (ptt.PARENT_TYPE_ID = 'DISBURSEMENT'
     OR ptt.PAYMENT_TYPE_ID = 'DISBURSEMENT') AND dp.GlAccountType <> 'PROJECT_MAIN'
   AND pyt.OVERRIDE_GL_ACCOUNT_ID IS NOT NULL
+  -- Project labour cost belongs to Fact_Project_Payroll, which claims every payroll
+  -- charge to a project account — including ad-hoc PAYROL_PAYMENTs made outside the
+  -- monthly accrual. Without this line that view and this one would both count the
+  -- same row, and [Total Spent] would sum them. GetProjectReport.cs applies the same
+  -- exclusion (lines 462 and 696), so this brings the view back in step with the C#.
+  --
+  -- !! DEPLOY THIS TOGETHER WITH Fact_Project_Payroll — neither half is safe alone:
+  --      payroll view + no exclusion  -> the payment is counted TWICE
+  --      exclusion + no payroll view  -> the payment is lost entirely
+  --    This view holds the one live case: payment 14757, 10,000, an advance on
+  --    February salary charged straight to 600029 رواتب نسيم (OPERATING_CHILD).
+  --    After this release that row is counted once, in Fact_Project_Payroll, where it
+  --    carries IsAccrual = 0 and can be told apart from the monthly accrual.
+  --    Operating-expense total falls by 10,000; project cost is unchanged overall.
+  AND pyt.PAYMENT_TYPE_ID <> 'PAYROL_PAYMENT'
   -- Exclude payments already counted in the expenses or direct-payments sections
   AND NOT EXISTS (
       SELECT 1 FROM Fact_Project_Expenses fpe

@@ -296,12 +296,35 @@ public class AcctgReportsService : IAcctgReportsService
             DateTime fromDate = customTimePeriod.FromDate ?? throw new InvalidOperationException("FromDate is null");
             DateTime thruDate = customTimePeriod.ThruDate ?? throw new InvalidOperationException("ThruDate is null");
 
-            var openingCutoff = fromDate.Date.AddTicks(-1); // e.g., 2025-09-30
             var periodStart = fromDate.Date; // e.g., 2025-10-01
             var periodEnd = thruDate.Date;
 
-            // REFACTOR: Include opening balance up to openingCutoff
-            // Purpose: Capture 2025-09-30 entry when period starts 2025-10-01
+            // REFACTOR (2026-08-14): opening balance is now "everything posted before periodStart",
+            // not "only the rows explicitly typed OPENING_BALANCE".
+            //
+            // In plain terms: every account accumulates a running balance from ALL its transactions
+            // over time — payments, journal entries, invoices, everything. The "opening balance" for
+            // a report is just that running balance frozen at the moment the reporting period starts.
+            // It is NOT a special category of transaction; it's a snapshot of ordinary transactions.
+            //
+            // The old query below only looked at transactions specifically tagged
+            // AcctgTransTypeId == "OPENING_BALANCE" (a manual "carry-forward" entry someone posts by
+            // hand). Most accounts never get one of those — their balance simply builds up from real
+            // activity. So for those accounts the old query saw zero pre-period rows, computed an
+            // opening balance of 0.00, and (because the summary list also hides any account whose
+            // opening/ending/debits/credits are all zero) the account silently vanished from the
+            // Trial Balance grid — even though it genuinely owed/held money.
+            //
+            // Where an OPENING_BALANCE row DID exist (bank account 110100), the old query used ONLY
+            // that one row and ignored the other 41 real pre-period payments/journal entries sitting
+            // right next to it — understating the opening (and therefore ending) balance by
+            // 11,836,074.00 versus the correct figure.
+            //
+            // The fix: drop the "== OPENING_BALANCE" type filter and instead sum every posted, ACTUAL
+            // entry dated before periodStart, exactly like GetGlAccountTransactionDetails.cs (the
+            // account drill-down report) and GeneralLedgerService.ComputeGlAccountBalanceForTimePeriod
+            // (the GL Account History snapshot) already do. All three "compute the balance as of a
+            // date" methods now agree.
             decimal totalDebitsToOpeningDate = await (
                 from ate in _context.AcctgTransEntries
                 join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
@@ -310,8 +333,7 @@ public class AcctgReportsService : IAcctgReportsService
                       && act.IsPosted == "Y"
                       && ate.DebitCreditFlag == "D"
                       && act.GlFiscalTypeId == "ACTUAL"
-                      && act.AcctgTransTypeId == "OPENING_BALANCE"
-                      && act.TransactionDate <= openingCutoff
+                      && act.TransactionDate < periodStart
                 select (decimal?)ate.Amount).SumAsync() ?? 0m;
 
             decimal totalCreditsToOpeningDate = await (
@@ -322,8 +344,7 @@ public class AcctgReportsService : IAcctgReportsService
                       && act.IsPosted == "Y"
                       && ate.DebitCreditFlag == "C"
                       && act.GlFiscalTypeId == "ACTUAL"
-                      && act.AcctgTransTypeId == "OPENING_BALANCE"
-                      && act.TransactionDate <= openingCutoff
+                      && act.TransactionDate < periodStart
                 select (decimal?)ate.Amount).SumAsync() ?? 0m;
 
             // REFACTOR: Include full period: >= start && <= end

@@ -187,6 +187,11 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                         getTranslatedLabel={getTranslatedLabel}
                                         isFetching={isFetching}
                                     />
+                                    {/* REFACTOR (2026-08-14): isDebit is forwarded from the API response so the
+                                        date-range export can do its balance math correctly instead of assuming
+                                        every account is debit-natured. Falls back to true (debit) only if the
+                                        field is ever missing, matching the export's old hardcoded assumption so
+                                        nothing regresses if the backend response is stale. */}
                                     <GlAccountTransactionsDateRangeExcel
                                         accountCode={data?.accountCode ?? ''}
                                         accountName={data?.accountName ?? ''}

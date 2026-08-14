@@ -35,6 +35,27 @@ interface TransactionRow {
     paymentRefNum?: string;
 }
 
+// REFACTOR (2026-08-14): two fixes bundled into this component.
+//
+// 1) Credit-account balance direction. Every GL account has a "natural side": debit-natured
+//    accounts (assets, expenses \u2014 e.g. a bank account) grow when debited and shrink when
+//    credited; credit-natured accounts (liabilities, equity, revenue \u2014 e.g. accounts payable)
+//    do the OPPOSITE \u2014 they grow when credited and shrink when debited. The balance math below
+//    used to always compute "debit minus credit", which is only correct for debit-natured
+//    accounts. On a credit-natured account it silently moved the balance the wrong direction:
+//    e.g. an AP account with a 100,000 opening balance and a 20,000 payment made (a debit,
+//    which should REDUCE what's owed to 80,000) would have been reported as 120,000 \u2014 the
+//    payment added instead of subtracted. Bank account 110100 happens to be debit-natured, so
+//    this bug was invisible there; it would only show up on liability/equity/revenue accounts.
+//    Fix: every place that combines a debit and a credit amount now checks `isDebit` (passed in
+//    from the backend, which already knows the account's side) and flips the subtraction order
+//    for credit-natured accounts.
+//
+// 2) Rounding. Cell values were raw, unrounded JS floats \u2014 summing many 2-decimal amounts drifts
+//    into visible tails like 12602390.450000003. The #,##0.00 Excel number format hid it on
+//    screen, but the underlying cell value (and anything reading the file programmatically)
+//    still carried the tail. `round2` below is applied everywhere a balance is written into a
+//    cell so the stored value is clean, not just its display.
 interface GlAccountTransactionsDateRangeExcelProps {
     accountCode: string;
     accountName: string;
@@ -47,8 +68,8 @@ interface GlAccountTransactionsDateRangeExcelProps {
 const utils = {
     safeString: (v: any) => (v == null || typeof v === 'object') ? 'N/A' : String(v),
     rtlEmbed: (t: string) => /\p{Script=Arabic}/u.test(t) ? `\u202B${t}` : t,
-    // Written cells hold the raw JS number; summing hundreds of 2-dp amounts leaves float tails
-    // (e.g. 12602390.450000003) that the #,##0.00 format hides but any consumer of the raw value sees.
+    // Rounds to 2 decimal places (whole cents). Use this on every balance figure written to a
+    // cell \u2014 see the file-level comment above for why raw sums aren't safe to write directly.
     round2: (n: number) => Math.round(n * 100) / 100,
 };
 
@@ -100,9 +121,9 @@ export const GlAccountTransactionsDateRangeExcel: React.FC<GlAccountTransactions
         const preDebit = rowsBefore.reduce((sum, r) => sum + (r.debitCreditFlag === 'D' ? r.amount : 0), 0);
         const preCredit = rowsBefore.reduce((sum, r) => sum + (r.debitCreditFlag === 'C' ? r.amount : 0), 0);
 
-        // originalOpeningBalance is signed from the account's natural side (backend: isDebit ? D−C : C−D),
-        // so pre-range activity and the ending balance must roll up from that same side — adding D−C to a
-        // credit account's balance would move it backwards.
+        // Roll pre-range activity into the opening balance from the account's own natural side —
+        // see the "Credit-account balance direction" note at the top of this file. originalOpeningBalance
+        // itself is already signed that way by the backend (isDebit ? D−C : C−D), so this has to match.
         const currentOpeningBalance = utils.round2(
             originalOpeningBalance + (isDebit ? preDebit - preCredit : preCredit - preDebit));
 
@@ -111,6 +132,7 @@ export const GlAccountTransactionsDateRangeExcel: React.FC<GlAccountTransactions
         const postedCredits = utils.round2(
             filteredRows.reduce((sum, r) => sum + (r.debitCreditFlag === 'C' ? r.amount : 0), 0));
 
+        // Same natural-side rule applied to the ending balance.
         const currentEndingBalance = utils.round2(currentOpeningBalance + (isDebit
             ? postedDebits - postedCredits
             : postedCredits - postedDebits));
@@ -207,6 +229,8 @@ export const GlAccountTransactionsDateRangeExcel: React.FC<GlAccountTransactions
             const debit = r.debitCreditFlag === 'D' ? r.amount : 0;
             const credit = r.debitCreditFlag === 'C' ? r.amount : 0;
 
+            // Third and last spot with the same natural-side rule (see top-of-file comment): the
+            // per-row "Balance" column must step in the same direction as the opening/ending totals.
             runningBalance = utils.round2(runningBalance + (isDebit ? debit - credit : credit - debit));
 
             const row = ws.addRow([

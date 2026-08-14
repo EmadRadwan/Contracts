@@ -34,6 +34,9 @@ export interface GlAccountTransactionDetails {
     accountCode: string;
     accountName: string;
     glAccountClassId?: string;
+    // REFACTOR (2026-08-14): true = balance grows with debits (assets/expenses, e.g. a bank
+    // account), false = balance grows with credits (liabilities/equity/revenue). Needed by
+    // GlAccountTransactionsDateRangeExcel so it stops assuming every account is debit-natured.
     isDebit: boolean;
     transactions: TransactionEntryDto[];
 }

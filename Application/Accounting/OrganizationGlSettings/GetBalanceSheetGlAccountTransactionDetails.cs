@@ -138,6 +138,10 @@ namespace Application.Accounting.OrganizationGlSettings
                         PostedDebits = periodDebits,
                         PostedCredits = periodCredits,
                         EndingBalance = endingBalance,
+                        // REFACTOR (2026-08-14): expose the account side already computed above
+                        // (isDebitAccount) so the frontend date-range Excel export can roll opening/
+                        // running balances up correctly for credit-natured accounts too — see
+                        // GlAccountTransactionsDateRangeExcel.tsx for the consumer of this field.
                         IsDebit = isDebitAccount,
                         Transactions = transactions
                     });
