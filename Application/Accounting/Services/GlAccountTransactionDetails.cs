@@ -199,22 +199,49 @@ public class GetGlAccountTransactionDetails
                 //                      whatever its transaction type
                 //   Posted debits/credits = activity within [windowStart, periodEnd]
                 //
-                // BroughtForward used to be defined by transaction TYPE (only OPENING_BALANCE) rather
-                // than by DATE, which broke in two ways at once on any account holding a reset entry:
-                // the OPENING_BALANCE row is itself dated before periodStart, so it seeded the running
-                // balance AND appeared in the row list — counted twice — while genuine pre-period
-                // movement was shown as rows but excluded from the totals. On GL 110100 that put
-                // 22,955,032.00 between the header's EndingBalance and the last running-balance row.
+                // BroughtForward: prefer an explicit OPENING_BALANCE snapshot (created via
+                // CreateInitialBalanceTrans.cs — a deliberate "record the balance as of go-live" entry,
+                // not an ordinary transaction) when one is dated before windowStart, since a snapshot
+                // already summarizes everything before it. Only fall back to summing full history when
+                // no such snapshot exists for this account.
                 //
-                // Defining it by date also retires the old hasOpeningBalanceEntry heuristic: an account
-                // with no reset entry simply carries the sum of its real prior movement, so it no longer
-                // needs the totals silently widened to lifetime-to-date to come out right.
+                // REFACTOR (2026-08-14, revised): this walks back an earlier version of this fix that
+                // always summed full history regardless of any OPENING_BALANCE row, on the theory that
+                // "the reset row is just another transaction". That was proven wrong against a real
+                // bank statement: GL 110100's OPENING_BALANCE entry is dated 2025-12-30, and every one
+                // of the 41 older payment/journal rows on that account is dated BEFORE it, never after
+                // — meaning the snapshot's whole purpose is to already reflect their net effect. Summing
+                // both double-counted 11,836,074.00 (reported opening ~22.96M vs. a real CIB balance of
+                // ~11.12M, confirmed by trial-balancing this year's activity against the actual
+                // statement). The narrower bug this comment used to describe — the OPENING_BALANCE row
+                // getting seeded into BroughtForward AND displayed as a row, double-counting itself —
+                // doesn't reoccur here: that can only happen when windowStart is null (include-all
+                // mode), and BroughtForward is forced to 0 in that mode below regardless of this
+                // account-history preference, exactly as before.
+                //
+                // For accounts with NO OPENING_BALANCE row at all, summing full pre-window history is
+                // still correct and necessary — without it those accounts compute a 0.00 opening
+                // balance and (since the caller hides any account whose opening/ending/debits/credits
+                // are all zero) vanish from the Trial Balance grid entirely, even when they genuinely
+                // carry a balance. 20 such accounts were found (~22.9M combined) — see project memory.
                 //
                 // PAYMENT_APPL is excluded here exactly as it is from the row query above: these must
                 // always filter on the same set, or the totals stop agreeing with the rows the user can
                 // see and add up. Leaving it out overstated both totals on GL 210041 by 50,000 with no
                 // visible rows to explain the gap.
                 var windowStart = request.IncludePrePeriodTransactions ? (DateTime?)null : periodStart;
+
+                bool hasOpeningBalanceEntry = windowStart != null && await (
+                    from ate in _context.AcctgTransEntries
+                    join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
+                    where ate.OrganizationPartyId == request.OrganizationPartyId
+                          && ate.GlAccountId == request.GlAccountId
+                          && act.IsPosted == "Y"
+                          && act.GlFiscalTypeId == "ACTUAL"
+                          && act.AcctgTransTypeId == "OPENING_BALANCE"
+                          && act.TransactionDate < windowStart
+                    select ate.AcctgTransId
+                ).AnyAsync(cancellationToken);
 
                 var broughtForwardDebits = await (
                     from ate in _context.AcctgTransEntries
@@ -226,6 +253,7 @@ public class GetGlAccountTransactionDetails
                           && act.GlFiscalTypeId == "ACTUAL"
                           && act.AcctgTransTypeId != "PAYMENT_APPL"
                           && windowStart != null && act.TransactionDate < windowStart
+                          && (!hasOpeningBalanceEntry || act.AcctgTransTypeId == "OPENING_BALANCE")
                     select ate.Amount
                 ).SumAsync(cancellationToken);
 
@@ -239,6 +267,7 @@ public class GetGlAccountTransactionDetails
                           && act.GlFiscalTypeId == "ACTUAL"
                           && act.AcctgTransTypeId != "PAYMENT_APPL"
                           && windowStart != null && act.TransactionDate < windowStart
+                          && (!hasOpeningBalanceEntry || act.AcctgTransTypeId == "OPENING_BALANCE")
                     select ate.Amount
                 ).SumAsync(cancellationToken);
 

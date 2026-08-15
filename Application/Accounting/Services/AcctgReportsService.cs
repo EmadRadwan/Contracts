@@ -299,53 +299,59 @@ public class AcctgReportsService : IAcctgReportsService
             var periodStart = fromDate.Date; // e.g., 2025-10-01
             var periodEnd = thruDate.Date;
 
-            // REFACTOR (2026-08-14): opening balance is now "everything posted before periodStart",
-            // not "only the rows explicitly typed OPENING_BALANCE".
+            // REFACTOR (2026-08-14, revised): opening balance = "the OPENING_BALANCE entry if one
+            // exists for this account, otherwise everything posted before periodStart."
             //
-            // In plain terms: every account accumulates a running balance from ALL its transactions
-            // over time — payments, journal entries, invoices, everything. The "opening balance" for
-            // a report is just that running balance frozen at the moment the reporting period starts.
-            // It is NOT a special category of transaction; it's a snapshot of ordinary transactions.
+            // This walks back an earlier version of this fix that turned out to be wrong. That
+            // version always summed every posted entry dated before periodStart, reasoning that
+            // OPENING_BALANCE was "just another transaction". It was proven wrong against a real
+            // bank statement: for GL 110100, AcctgTransTypeId == "OPENING_BALANCE" (created via
+            // CreateInitialBalanceTrans.cs — a dedicated "record the balance as of go-live" command,
+            // not an ordinary transaction) is a go-live snapshot dated 2025-12-30, and every one of
+            // the 41 older payment/journal rows on that account is dated BEFORE that snapshot, never
+            // after. That snapshot's whole purpose is to already reflect the net effect of that older
+            // history — summing both double-counts it. Doing so overstated GL 110100's balance by
+            // 11,836,074.00 (reported ~12.04M vs. a real bank balance of ~210K).
             //
-            // The old query below only looked at transactions specifically tagged
-            // AcctgTransTypeId == "OPENING_BALANCE" (a manual "carry-forward" entry someone posts by
-            // hand). Most accounts never get one of those — their balance simply builds up from real
-            // activity. So for those accounts the old query saw zero pre-period rows, computed an
-            // opening balance of 0.00, and (because the summary list also hides any account whose
-            // opening/ending/debits/credits are all zero) the account silently vanished from the
-            // Trial Balance grid — even though it genuinely owed/held money.
+            // But the ORIGINAL code (type-filtered only, no fallback) had its own real bug: accounts
+            // that never received an OPENING_BALANCE snapshot at all got an opening balance of 0.00
+            // and — because the caller also hides any account whose opening/ending/debits/credits are
+            // all zero — vanished from the Trial Balance grid entirely, even ones genuinely carrying a
+            // balance (20 such accounts found, ~22.9M combined, see project memory for the list).
             //
-            // Where an OPENING_BALANCE row DID exist (bank account 110100), the old query used ONLY
-            // that one row and ignored the other 41 real pre-period payments/journal entries sitting
-            // right next to it — understating the opening (and therefore ending) balance by
-            // 11,836,074.00 versus the correct figure.
-            //
-            // The fix: drop the "== OPENING_BALANCE" type filter and instead sum every posted, ACTUAL
-            // entry dated before periodStart, exactly like GetGlAccountTransactionDetails.cs (the
-            // account drill-down report) and GeneralLedgerService.ComputeGlAccountBalanceForTimePeriod
-            // (the GL Account History snapshot) already do. All three "compute the balance as of a
-            // date" methods now agree.
-            decimal totalDebitsToOpeningDate = await (
+            // So: prefer the snapshot when one exists (it's authoritative and already-summarized);
+            // only fall back to summing full history when there's no snapshot to trust. This same
+            // pattern already lives in GetBalanceSheetGlAccountTransactionDetails.cs's
+            // CalculateOpeningBalance (its "Priority 2"), which never had this bug — this brings the
+            // trial-balance and drill-down calculations in line with it.
+            bool hasOpeningBalanceEntry = await (
                 from ate in _context.AcctgTransEntries
                 join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
                 where ate.OrganizationPartyId == organizationPartyId
                       && ate.GlAccountId == glAccountId
                       && act.IsPosted == "Y"
-                      && ate.DebitCreditFlag == "D"
                       && act.GlFiscalTypeId == "ACTUAL"
+                      && act.AcctgTransTypeId == "OPENING_BALANCE"
                       && act.TransactionDate < periodStart
-                select (decimal?)ate.Amount).SumAsync() ?? 0m;
+                select ate.AcctgTransId).AnyAsync();
 
-            decimal totalCreditsToOpeningDate = await (
+            IQueryable<AcctgTransEntry> PreOpeningEntries(string debitCreditFlag) =>
                 from ate in _context.AcctgTransEntries
                 join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
                 where ate.OrganizationPartyId == organizationPartyId
                       && ate.GlAccountId == glAccountId
                       && act.IsPosted == "Y"
-                      && ate.DebitCreditFlag == "C"
+                      && ate.DebitCreditFlag == debitCreditFlag
                       && act.GlFiscalTypeId == "ACTUAL"
                       && act.TransactionDate < periodStart
-                select (decimal?)ate.Amount).SumAsync() ?? 0m;
+                      && (!hasOpeningBalanceEntry || act.AcctgTransTypeId == "OPENING_BALANCE")
+                select ate;
+
+            decimal totalDebitsToOpeningDate = await PreOpeningEntries("D")
+                .Select(ate => (decimal?)ate.Amount).SumAsync() ?? 0m;
+
+            decimal totalCreditsToOpeningDate = await PreOpeningEntries("C")
+                .Select(ate => (decimal?)ate.Amount).SumAsync() ?? 0m;
 
             // REFACTOR: Include full period: >= start && <= end
             // Purpose: Include transactions on the last day of the period

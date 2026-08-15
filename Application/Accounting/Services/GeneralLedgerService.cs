@@ -4872,6 +4872,34 @@ public class GeneralLedgerService : IGeneralLedgerService
             var fromDate = customTimePeriod.FromDate.Value;
             var thruDate = customTimePeriod.ThruDate.Value;
 
+            // REFACTOR (2026-08-14): all four sums below now prefer an explicit OPENING_BALANCE
+            // snapshot (created via CreateInitialBalanceTrans.cs — a deliberate "record the balance
+            // as of go-live" entry) over summing raw history, for exactly the same reason as
+            // AcctgReportsService.ComputeGlAccountBalanceForTimePeriod and GetGlAccountTransactionDetails.cs
+            // (see either for the full writeup): a snapshot already reflects the net effect of
+            // everything dated before it, so also summing that older detail double-counts it. Proven
+            // against a real bank statement on GL 110100 — its OPENING_BALANCE snapshot is dated
+            // 2025-12-30 and every one of the 41 older rows on that account predates it, never follows.
+            //
+            // This method computes cumulative-to-date totals ("as of fromDate" and "as of thruDate")
+            // rather than in-period deltas, and PostedDebits/PostedCredits are the difference between
+            // them — so the SAME preference has to apply to both the opening-date and ending-date
+            // queries, or the subtraction stops cancelling out the pre-fromDate history correctly and
+            // reintroduces the double count into PostedDebits/PostedCredits instead. Anything dated on
+            // or after fromDate always counts normally either way; only the pre-fromDate portion is
+            // preference-gated.
+            bool hasOpeningBalanceEntry = await (
+                from ate in _context.AcctgTransEntries
+                join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
+                where ate.OrganizationPartyId == organizationPartyId
+                      && ate.GlAccountId == glAccountId
+                      && act.IsPosted == "Y"
+                      && act.GlFiscalTypeId == "ACTUAL"
+                      && act.AcctgTransTypeId == "OPENING_BALANCE"
+                      && act.TransactionDate < fromDate
+                select ate.AcctgTransId
+            ).AnyAsync();
+
             // 2) "totalDebitsToOpeningDate": sum of all debit posted amounts with transactionDate < fromDate
             decimal totalDebitsToOpeningDate = 0m;
             {
@@ -4886,7 +4914,8 @@ public class GeneralLedgerService : IGeneralLedgerService
                         act.GlFiscalTypeId == "ACTUAL" &&
                         ate.DebitCreditFlag == "D" && // debit
                         act.TransactionDate < fromDate && // < fromDate
-                        act.AcctgTransTypeId != "PERIOD_CLOSING"
+                        act.AcctgTransTypeId != "PERIOD_CLOSING" &&
+                        (!hasOpeningBalanceEntry || act.AcctgTransTypeId == "OPENING_BALANCE")
                     select ate.Amount;
 
                 if (await query.AnyAsync())
@@ -4908,7 +4937,8 @@ public class GeneralLedgerService : IGeneralLedgerService
                         act.GlFiscalTypeId == "ACTUAL" &&
                         ate.DebitCreditFlag == "D" && // debit
                         act.TransactionDate < thruDate &&
-                        act.AcctgTransTypeId != "PERIOD_CLOSING"
+                        act.AcctgTransTypeId != "PERIOD_CLOSING" &&
+                        (act.TransactionDate >= fromDate || !hasOpeningBalanceEntry || act.AcctgTransTypeId == "OPENING_BALANCE")
                     select ate.Amount;
 
                 if (await query.AnyAsync())
@@ -4930,7 +4960,8 @@ public class GeneralLedgerService : IGeneralLedgerService
                         act.GlFiscalTypeId == "ACTUAL" &&
                         ate.DebitCreditFlag == "C" && // credit
                         act.TransactionDate < fromDate &&
-                        act.AcctgTransTypeId != "PERIOD_CLOSING"
+                        act.AcctgTransTypeId != "PERIOD_CLOSING" &&
+                        (!hasOpeningBalanceEntry || act.AcctgTransTypeId == "OPENING_BALANCE")
                     select ate.Amount;
 
                 if (await query.AnyAsync())
@@ -4952,7 +4983,8 @@ public class GeneralLedgerService : IGeneralLedgerService
                         act.GlFiscalTypeId == "ACTUAL" &&
                         ate.DebitCreditFlag == "C" &&
                         act.TransactionDate < thruDate &&
-                        act.AcctgTransTypeId != "PERIOD_CLOSING"
+                        act.AcctgTransTypeId != "PERIOD_CLOSING" &&
+                        (act.TransactionDate >= fromDate || !hasOpeningBalanceEntry || act.AcctgTransTypeId == "OPENING_BALANCE")
                     select ate.Amount;
 
                 if (await query.AnyAsync())
