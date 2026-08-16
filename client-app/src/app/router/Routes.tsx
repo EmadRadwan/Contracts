@@ -272,12 +272,6 @@ export const routes: RouteObject[] = [
                                             {index: true, element: <InvoicesList/>},
                                             {path: "new", element: <NewInvoice/>},
                                             {
-                                                element: <RequireRole allowedRoles="Accounting_Payroll_Run_View"/>,
-                                                children: [
-                                                    {path: "payroll-run", element: <PayrollRun/>},
-                                                ]
-                                            },
-                                            {
                                                 path: ":invoiceId",
                                                 element: <InvoiceWrapper/>,
                                                 children: [
@@ -289,6 +283,14 @@ export const routes: RouteObject[] = [
                                         ],
                                     },
                                 ],
+                            },
+                            {
+                                // Payroll Run lives under /invoices for URL continuity, but does not
+                                // require Accounting_Invoices_View — only the payroll-specific role.
+                                element: <RequireRole allowedRoles="Accounting_Payroll_Run_View"/>,
+                                children: [
+                                    {path: "invoices/payroll-run", element: <PayrollRun/>},
+                                ]
                             },
                             {
                                 element: <RequireRole allowedRoles="Accounting_Payments_View" />,

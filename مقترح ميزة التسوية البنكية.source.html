@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>مقترح ميزة التسوية البنكية</title>
+<style>
+  @page {
+    size: A4; margin: 18mm 18mm 16mm 18mm;
+    @top-center {
+      content: "جولدن لاند · نظام إدارة العقود · مقترح ميزة جديدة";
+      font-family: "Geeza Pro", "Al Nile", "Segoe UI", Tahoma, Arial, sans-serif;
+      font-size: 8pt; color: #a8b0b8;
+    }
+    @bottom-center {
+      content: "صفحة " counter(page) " من " counter(pages);
+      font-family: "Geeza Pro", "Al Nile", "Segoe UI", Tahoma, Arial, sans-serif;
+      font-size: 8.5pt; color: #9aa3ad;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: "Geeza Pro", "Al Nile", "Segoe UI", Tahoma, Arial, sans-serif;
+    color: #33404d; font-size: 11pt; line-height: 1.85; margin: 0;
+    direction: rtl; text-align: right;
+  }
+  .en { direction: ltr; unicode-bidi: isolate; font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; }
+  .mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: .88em; direction: ltr; unicode-bidi: isolate; }
+
+  h1 {
+    font-size: 24pt; font-weight: 800; color: #13293d; margin: 0 0 2mm;
+    padding-bottom: 3mm; border-bottom: 2.2px solid #d9942a;
+    page-break-after: avoid; break-after: avoid; line-height: 1.3;
+  }
+  .subtitle { font-size: 13pt; color: #6b7480; margin: 0 0 8mm; font-weight: 500; line-height: 1.6; }
+  h2 {
+    font-size: 15.5pt; font-weight: 700; color: #13293d; margin: 10mm 0 4mm;
+    page-break-after: avoid; break-after: avoid;
+    display: flex; align-items: center; gap: 3mm; flex-direction: row-reverse; justify-content: flex-end;
+  }
+  h2 .num { display:inline-flex; align-items:center; justify-content:center;
+    width: 7.5mm; height: 7.5mm; border-radius: 50%; background: #13293d; color: #fff;
+    font-size: 10pt; font-weight: 800; flex: none; }
+  h3 { font-size: 12.5pt; font-weight: 700; color: #1a5f8a; margin: 7mm 0 3mm;
+       page-break-after: avoid; break-after: avoid; }
+  p { margin: 0 0 3.5mm; }
+  b, strong { color: #13293d; }
+
+  .intro { background: #f2f6fa; border-radius: 5px; padding: 5mm 6mm; margin: 0 0 6mm; font-size: 10.5pt; }
+  .intro p:last-child { margin-bottom: 0; }
+
+  .wis { background: #fdf6e6; border-right: 3px solid #d9942a; border-radius: 3px;
+         padding: 4mm 5mm; margin: 0 0 5mm; font-size: 10.5pt;
+         page-break-inside: avoid; break-inside: avoid; }
+  .wis .lbl { font-weight: 700; color: #9a6512; }
+
+  .bad { background: #fdf0ee; border-right: 3px solid #b8442f; border-radius: 3px;
+         padding: 4mm 5mm; margin: 0 0 4mm; font-size: 10.3pt;
+         page-break-inside: avoid; break-inside: avoid; }
+  .bad .lbl { font-weight: 700; color: #b8442f; }
+
+  .good { background: #eef8f1; border-right: 3px solid #1f7a4d; border-radius: 3px;
+         padding: 4mm 5mm; margin: 0 0 4mm; font-size: 10.3pt;
+         page-break-inside: avoid; break-inside: avoid; }
+  .good .lbl { font-weight: 700; color: #1f7a4d; }
+
+  ul { padding-right: 5.5mm; padding-left: 0; margin: 0 0 3.5mm; }
+  li { margin-bottom: 2.2mm; }
+
+  .benefit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin: 4mm 0 6mm; }
+  .benefit { background: #f8fafc; border: 1px solid #e3e8ee; border-radius: 6px; padding: 4mm 4.5mm;
+    page-break-inside: avoid; break-inside: avoid; }
+  .benefit-icon { font-size: 16pt; margin-bottom: 1.5mm; }
+  .benefit-t { font-weight: 700; color: #13293d; font-size: 10.8pt; margin-bottom: 1.5mm; }
+  .benefit p { font-size: 9.6pt; color: #45525f; margin: 0; }
+
+  table { width: 100%; border-collapse: collapse; margin: 3mm 0 5mm; font-size: 10pt;
+          page-break-inside: avoid; break-inside: avoid; }
+  thead { background: #13293d; color: #fff; }
+  th { padding: 2.4mm 3mm; text-align: right; font-weight: 700; font-size: 9.3pt; }
+  td { padding: 2.3mm 3mm; border-bottom: 1px solid #e3e8ee; vertical-align: top; }
+  tbody tr:nth-child(even) { background: #f7f9fb; }
+
+  .pagebreak { page-break-before: always; break-before: always; }
+  .cover-meta { font-size: 10pt; color: #6b7480; margin-bottom: 2mm; }
+
+  /* ---- Mockup screen chrome ---- */
+  .mockup-wrap { margin: 5mm 0 7mm; page-break-inside: avoid; break-inside: avoid; }
+  .mockup-label { font-size: 9pt; color: #6b7480; font-style: italic; margin-bottom: 2mm; text-align: center; }
+  .mockup { border: 1px solid #d3dae2; border-radius: 8px; overflow: hidden;
+    box-shadow: 0 2px 10px rgba(19,41,61,.12); direction: ltr; }
+  .browser-bar { background: #e8ecf1; padding: 2.2mm 3mm; display: flex; align-items: center; gap: 2mm;
+    border-bottom: 1px solid #d3dae2; }
+  .dot { width: 2.6mm; height: 2.6mm; border-radius: 50%; }
+  .dot.r { background: #ed6a5e; } .dot.y { background: #f4bf4f; } .dot.g { background: #61c454; }
+  .url-bar { flex: 1; background: #fff; border-radius: 4px; padding: 1.3mm 3mm; font-size: 8pt;
+    color: #6b7480; margin-right: 2mm; font-family: "SF Mono", Menlo, monospace; text-align: left; }
+  .screen { background: #fff; padding: 5mm 6mm; direction: rtl; text-align: right;
+    font-family: "Geeza Pro", "Al Nile", "Segoe UI", Tahoma, Arial, sans-serif; }
+  .screen-title { font-size: 12pt; font-weight: 700; color: #13293d; margin-bottom: 3.5mm;
+    display: flex; justify-content: space-between; align-items: center; }
+  .screen-title .en-tag { font-size: 8pt; color: #98a2ac; font-weight: 400; }
+  .btn { display: inline-block; background: #13293d; color: #fff; border-radius: 4px;
+    padding: 1.8mm 4mm; font-size: 8.6pt; font-weight: 600; }
+  .btn.outline { background: #fff; color: #13293d; border: 1px solid #c3ccd4; }
+  .btn.amber { background: #d9942a; }
+
+  .balance-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 3mm; margin-bottom: 4mm; }
+  .bcard { border-radius: 6px; padding: 3mm 3.5mm; text-align: center; }
+  .bcard.book { background: #eef2f7; }
+  .bcard.stmt { background: #eef2f7; }
+  .bcard.diff-ok { background: #eef8f1; }
+  .bcard.diff-bad { background: #fdf0ee; }
+  .bcard-lbl { font-size: 8pt; color: #6b7480; margin-bottom: 1mm; }
+  .bcard-val { font-size: 12pt; font-weight: 800; color: #13293d; direction: ltr; }
+  .bcard.diff-ok .bcard-val { color: #1f7a4d; }
+  .bcard.diff-bad .bcard-val { color: #b8442f; }
+
+  .mtable { width: 100%; border-collapse: collapse; font-size: 8.6pt; }
+  .mtable th { background: #f0f3f7; color: #45525f; padding: 1.8mm 2.4mm; text-align: right;
+    font-weight: 700; border-bottom: 1.5px solid #d3dae2; font-size: 8.1pt; }
+  .mtable td { padding: 1.8mm 2.4mm; border-bottom: 1px solid #eef1f4; }
+  .status-pill { font-size: 7.3pt; font-weight: 700; padding: .6mm 2.2mm; border-radius: 8px; color:#fff; white-space:nowrap; }
+  .status-pill.matched { background: #1f7a4d; }
+  .status-pill.pending { background: #d9942a; }
+  .status-pill.old { background: #b8442f; }
+  .checkbox { display:inline-block; width:3.2mm; height:3.2mm; border-radius:2px; border:1.3px solid #98a2ac; vertical-align:middle; }
+  .checkbox.checked { background:#1f7a4d; border-color:#1f7a4d; }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
+  .split-col-t { font-size: 8.6pt; font-weight: 700; color: #13293d; margin-bottom: 2mm;
+    padding-bottom: 1.5mm; border-bottom: 1.5px solid #e3e8ee; }
+  .match-row { display:flex; justify-content:space-between; align-items:center; font-size:8.3pt;
+    padding: 1.6mm 0; border-bottom: 1px dashed #e8ecf1; }
+  .progress-bar { background:#e8ecf1; border-radius: 6px; height: 3.2mm; overflow:hidden; margin: 3mm 0; }
+  .progress-fill { background: linear-gradient(90deg,#1f7a4d,#2fa066); height:100%; width:83%; }
+
+  .roadmap-step { display: flex; gap: 4mm; margin-bottom: 4.5mm; align-items: flex-start; flex-direction: row-reverse; }
+  .roadmap-num { flex: none; width: 8.5mm; height: 8.5mm; border-radius: 50%; background: #d9942a;
+    color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 10pt; }
+  .roadmap-body b { color: #13293d; }
+  .divider { height: 1px; background: #e3e8ee; margin: 8mm 0; border: none; }
+
+  .signoff { border: 1.5px solid #d3dae2; border-radius: 6px; padding: 6mm; margin-top: 8mm;
+    page-break-inside: avoid; break-inside: avoid; }
+  .signoff-row { display: flex; justify-content: space-between; margin-top: 10mm; }
+  .signoff-line { width: 45%; border-top: 1px solid #98a2ac; padding-top: 2mm; font-size: 9pt; color: #6b7480; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>مقترح ميزة: التسوية البنكية</h1>
+<p class="subtitle">كيف نضمن أن أرصدة النظام تطابق دائماً كشوف الحسابات البنكية الفعلية — بشكل تلقائي، وليس عن طريق المراجعة اليدوية كل مرة</p>
+<p class="cover-meta">أُعدّ هذا المقترح لعرضه على الإدارة للموافقة على تطوير الميزة · أغسطس 2026</p>
+
+<div class="intro">
+<p><b>الخلاصة في سطرين:</b> النظام الحالي لا يملك أي وسيلة لمعرفة ما إذا كانت أرصدة الحسابات البنكية المسجلة فيه تطابق فعلياً ما هو مسجل لدى البنك، إلا بالمقارنة اليدوية البطيئة كل مرة تظهر فيها شكوى. هذا المقترح يقدّم ميزة "التسوية البنكية" — وهي أداة أساسية موجودة في كل نظام ERP كبير على مستوى العالم (مثل SAP وOracle وMicrosoft Dynamics 365) — لتحويل هذه العملية من مهمة يدوية مرهقة إلى شاشة واضحة يستطيع أي مستخدم فتحها والتأكد بنفسه خلال دقائق.</p>
+</div>
+
+<h2><span class="num">١</span>المشكلة الحالية</h2>
+
+<p>في الأسابيع الأخيرة، احتاج التأكد من صحة رصيد حساب بنكي واحد فقط (البنك التجاري الدولي) عدة أيام من التحقيق اليدوي المتعمق — رغم أن معظم الأرقام في النظام كانت في النهاية صحيحة. السبب لم يكن خطأً واحداً بسيطاً، بل غياب أي أداة داخل النظام تجيب مباشرة عن سؤال بسيط: <b>"هل الرصيد المعروض في الشاشة هو نفسه الرصيد الحقيقي في البنك الآن؟"</b></p>
+
+<div class="bad">
+<span class="lbl">ما يحدث حالياً عند وجود شك في رصيد حساب بنكي:</span>
+<ul style="margin-top:2mm; margin-bottom:0">
+<li>يقوم أحد المستخدمين بأخذ لقطة شاشة من تطبيق البنك ويرسلها لطلب التحقق</li>
+<li>يتم البحث يدوياً في قاعدة البيانات عن كل حركة تخص هذا الحساب، معاملة بمعاملة</li>
+<li>تتم مطابقة كل رقم بالعين مع كشف الحساب، بلا أي أداة تساعد على تسريع المطابقة</li>
+<li>تستغرق العملية بالكامل ساعات — وأحياناً أياماً — من وقت فريق تقني متخصص</li>
+</ul>
+</div>
+
+<p>وهذه ليست مشكلة عابرة تخص حساباً واحداً. أي حساب بنكي في الشركة — ومعها كل حساب سيُفتح مستقبلاً — معرّض لنفس النوع من الأسئلة، ولا توجد اليوم طريقة أسرع من إعادة نفس هذا التحقيق اليدوي في كل مرة.</p>
+
+<h3>لماذا هذا مهم أكثر مما يبدو</h3>
+<ul>
+<li><b>مخاطرة عدم اكتشاف الأخطاء مبكراً:</b> أي خطأ بسيط في تاريخ أو مبلغ حركة بنكية يمكن أن يمر دون أن يلاحظه أحد لأشهر، حتى تتراكم الفجوة وتصبح صعبة التتبع.</li>
+<li><b>الوقت المهدر:</b> كل عملية تحقق يدوية تستهلك ساعات من وقت فريق تقني متخصص، بدلاً من أن تكون مهمة روتينية يقوم بها المحاسب بنفسه في دقائق.</li>
+<li><b>الثقة في القرارات المالية:</b> اتخاذ قرارات التحويل والصرف يعتمد على معرفة السيولة الفعلية المتاحة بدقة — وأي شك في صحة الأرصدة يهدد جودة هذه القرارات.</li>
+<li><b>الاستعداد للمراجعة الخارجية (التدقيق):</b> أي مراجع حسابات خارجي سيطلب تسويات بنكية موثقة لكل حساب كجزء أساسي من عمله — وهذا اليوم غير متاح كتقرير جاهز من النظام.</li>
+<li><b>الحماية من الاحتيال:</b> التسوية البنكية المنتظمة هي خط الدفاع الأول عالمياً لاكتشاف أي حركة غير مصرح بها على حسابات الشركة.</li>
+</ul>
+
+<div class="pagebreak"></div>
+
+<h2><span class="num">٢</span>ما هي التسوية البنكية؟</h2>
+
+<p>التسوية البنكية عملية بسيطة في جوهرها: مطابقة كل حركة مسجلة في دفاتر الشركة مع كل حركة مقابلة لها في كشف حساب البنك، للتأكد من أن أي فرق بين الرصيدين (رصيد الدفاتر ورصيد كشف البنك) في لحظة معينة له تفسير واضح ومبرر — وليس خطأً أو حركة مفقودة.</p>
+
+<p>الفروق المبررة عادة تكون من نوعين فقط:</p>
+<ul>
+<li><b>شيكات أو تحويلات صادرة لم تُصرف بعد</b> — الشركة سجّلتها كخارجة من حسابها، لكن البنك لم يعالجها بعد.</li>
+<li><b>ودائع في الطريق</b> — مبالغ واردة سُجّلت في النظام لكن البنك لم يعرضها في الكشف بعد.</li>
+</ul>
+
+<div class="good">
+<span class="lbl">لماذا هي معيار الأنظمة الكبرى عالمياً وليست رفاهية:</span>
+<p style="margin:2mm 0 0">لا يوجد نظام ERP كبير واحد على مستوى العالم — من الأنظمة التي تعتمدها كبرى الشركات والمؤسسات المالية الدولية — يخلو من وحدة "التسوية البنكية". هي جزء أساسي من الرقابة الداخلية على النقدية في أي شركة كبيرة، ومطلوبة عادة كإجراء شهري ثابت في أي شركة تخضع لمراجعة حسابات خارجية.</p>
+</div>
+
+<h2><span class="num">٣</span>الحل المقترح</h2>
+
+<p>ميزة تسوية بنكية متكاملة داخل النظام، تتيح لأي مستخدم — دون الحاجة لأي معرفة تقنية أو الرجوع للفريق التقني — أن يفتح شاشة واحدة لكل حساب بنكي ويرى فوراً:</p>
+
+<ul>
+<li>الرصيد الدفتري (المسجل في النظام) والرصيد المؤكد من كشف البنك، جنباً إلى جنب</li>
+<li>الفرق بينهما، إن وجد، مع تفصيل كل بند يُفسّره</li>
+<li>قائمة الحركات التي لم تُطابق بعد، مرتبة وجاهزة للمراجعة</li>
+<li>إمكانية رفع كشف الحساب البنكي مباشرة (Excel أو PDF) ومطابقته تلقائياً مع حركات النظام بالمبلغ والتاريخ والمرجع</li>
+</ul>
+
+<div class="pagebreak"></div>
+
+<h2><span class="num">٤</span>لقطات الشاشة المقترحة</h2>
+<p class="small" style="color:#6b7480; font-size:9.5pt">توضيحات تصميمية مبدئية لشكل الميزة المقترحة — وليست شاشات فعلية من النظام — بهدف توصيل الفكرة بوضوح قبل البدء في التطوير الفعلي.</p>
+
+<div class="mockup-wrap">
+<div class="mockup-label">الشاشة الأولى — لوحة التسوية الرئيسية لكل حساب بنكي</div>
+<div class="mockup">
+  <div class="browser-bar">
+    <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+    <span class="url-bar">localhost:3000/bankReconciliation/110100</span>
+  </div>
+  <div class="screen">
+    <div class="screen-title">التسوية البنكية — البنك التجاري الدولي (110100)
+      <span class="btn amber">رفع كشف حساب جديد</span>
+    </div>
+    <div class="balance-cards">
+      <div class="bcard book"><div class="bcard-lbl">الرصيد الدفتري (النظام)</div><div class="bcard-val">206,518.45</div></div>
+      <div class="bcard stmt"><div class="bcard-lbl">رصيد كشف الحساب البنكي</div><div class="bcard-val">210,971.36</div></div>
+      <div class="bcard diff-bad"><div class="bcard-lbl">الفرق غير المُفسَّر</div><div class="bcard-val">4,452.91</div></div>
+    </div>
+    <div class="split">
+      <div>
+        <div class="split-col-t">حركات في الدفاتر لم تُصرف من البنك بعد (3)</div>
+        <div class="match-row"><span>شيك رقم 100008784-O17520 — 3,200.00</span><span class="status-pill pending">معلّق</span></div>
+        <div class="match-row"><span>تحويل عهدة — O17530 — 1,050.00</span><span class="status-pill pending">معلّق</span></div>
+        <div class="match-row"><span>رسوم بنكية 12/08 — 202.91</span><span class="status-pill old">معلّق &gt; 30 يوم</span></div>
+      </div>
+      <div>
+        <div class="split-col-t">حركات في كشف البنك غير موجودة بالنظام (0)</div>
+        <div class="match-row" style="color:#98a2ac; justify-content:center; padding:6mm 0">لا توجد حركات — جميع حركات الكشف مطابقة ✓</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="mockup-wrap">
+<div class="mockup-label">الشاشة الثانية — رفع كشف الحساب والمطابقة التلقائية</div>
+<div class="mockup">
+  <div class="browser-bar">
+    <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+    <span class="url-bar">localhost:3000/bankReconciliation/110100/import</span>
+  </div>
+  <div class="screen">
+    <div class="screen-title">مطابقة كشف الحساب — أغسطس 2026
+      <span class="en-tag">CIB_Statement_Aug2026.xlsx</span>
+    </div>
+    <p style="font-size:9pt; margin-bottom:2mm">تمت مطابقة 587 من 705 حركة تلقائياً بالمبلغ والتاريخ ورقم المرجع</p>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+    <table class="mtable">
+      <thead><tr><th><span class="checkbox checked"></span></th><th>حركة كشف البنك</th><th>حركة النظام المطابقة</th><th>المبلغ</th><th>الحالة</th></tr></thead>
+      <tbody>
+        <tr><td><span class="checkbox checked"></span></td><td>FT26225ZW8TY — CK212028</td><td>#20202 — تحصيل دفعة شقة</td><td class="mono">164,580.00</td><td><span class="status-pill matched">مطابقة تلقائية</span></td></tr>
+        <tr><td><span class="checkbox checked"></span></td><td>FT26225GRWS3 — CK212028</td><td>#20195 — رسوم تحصيل شيك</td><td class="mono">20.00</td><td><span class="status-pill matched">مطابقة تلقائية</span></td></tr>
+        <tr><td><span class="checkbox checked"></span></td><td>FT26225HHH2N — أحمد ماهر مختار</td><td>#20179 — عهدة مستديمة</td><td class="mono">177,140.00</td><td><span class="status-pill matched">مطابقة تلقائية</span></td></tr>
+        <tr><td><span class="checkbox"></span></td><td>FT26226QW21X — بدون مرجع</td><td style="color:#98a2ac">— لم يُعثر على تطابق —</td><td class="mono">3,200.00</td><td><span class="status-pill pending">مطابقة يدوية</span></td></tr>
+      </tbody>
+    </table>
+    <p style="text-align:center; margin-top:3mm"><span class="btn outline">مطابقة يدوية للبنود المتبقية</span> &nbsp; <span class="btn">اعتماد وحفظ التسوية</span></p>
+  </div>
+</div>
+</div>
+
+<div class="pagebreak"></div>
+
+<div class="mockup-wrap">
+<div class="mockup-label">الشاشة الثالثة — تقرير البنود المعلّقة عبر جميع الحسابات البنكية</div>
+<div class="mockup">
+  <div class="browser-bar">
+    <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+    <span class="url-bar">localhost:3000/bankReconciliation/outstandingItems</span>
+  </div>
+  <div class="screen">
+    <div class="screen-title">البنود المعلّقة — كل الحسابات البنكية</div>
+    <table class="mtable">
+      <thead><tr><th>الحساب البنكي</th><th>المرجع</th><th>التاريخ</th><th>المبلغ</th><th>عدد الأيام المعلّقة</th><th>الحالة</th></tr></thead>
+      <tbody>
+        <tr><td>البنك التجاري الدولي</td><td>O17520</td><td>10/08/2026</td><td class="mono">3,200.00</td><td>5</td><td><span class="status-pill pending">طبيعي</span></td></tr>
+        <tr><td>بنك أبوظبي الإسلامي</td><td>O17451</td><td>03/08/2026</td><td class="mono">760,000.00</td><td>12</td><td><span class="status-pill pending">طبيعي</span></td></tr>
+        <tr><td>البنك التجاري الدولي</td><td>رسوم 12/08</td><td>12/07/2026</td><td class="mono">202.91</td><td>34</td><td><span class="status-pill old">يحتاج مراجعة</span></td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:8.6pt; color:#98a2ac; margin-top:2mm">* يتم تمييز أي بند معلّق لأكثر من 30 يوماً تلقائياً لتنبيه المستخدم لمراجعته — فقد يكون خطأً وليس فرقاً طبيعياً</p>
+  </div>
+</div>
+</div>
+
+<div class="pagebreak"></div>
+
+<h2><span class="num">٥</span>الفوائد الرئيسية</h2>
+
+<div class="benefit-grid">
+  <div class="benefit">
+    <div class="benefit-icon">✓</div>
+    <div class="benefit-t">ثقة كاملة في الأرقام</div>
+    <p>معرفة الرصيد الحقيقي المتاح في أي لحظة، بدلاً من الاعتماد على رقم قد يحتاج تحققاً يدوياً.</p>
+  </div>
+  <div class="benefit">
+    <div class="benefit-icon">⏱</div>
+    <div class="benefit-t">توفير الوقت</div>
+    <p>تقليل عملية قد تستغرق أياماً من وقت فريق تقني متخصص إلى مهمة روتينية تُنجز في دقائق.</p>
+  </div>
+  <div class="benefit">
+    <div class="benefit-icon">⚠</div>
+    <div class="benefit-t">اكتشاف الأخطاء مبكراً</div>
+    <p>أي خطأ في تاريخ أو مبلغ حركة يظهر فوراً، بدلاً من أن يتراكم لأشهر ويصبح صعب التتبع.</p>
+  </div>
+  <div class="benefit">
+    <div class="benefit-icon">🛡</div>
+    <div class="benefit-t">حماية من الاحتيال</div>
+    <p>أي حركة غير مبررة على أي حساب بنكي تظهر بوضوح كبند معلّق يحتاج تفسيراً.</p>
+  </div>
+  <div class="benefit">
+    <div class="benefit-icon">📋</div>
+    <div class="benefit-t">جاهزية للمراجعة الخارجية</div>
+    <p>تقارير تسوية موثقة وجاهزة لكل حساب، بدلاً من إعدادها يدوياً عند كل طلب من المراجع.</p>
+  </div>
+  <div class="benefit">
+    <div class="benefit-icon">💡</div>
+    <div class="benefit-t">قرارات مالية أفضل</div>
+    <p>معرفة السيولة الفعلية بدقة تدعم قرارات التحويل والصرف اليومية بثقة أكبر.</p>
+  </div>
+</div>
+
+<h2><span class="num">٦</span>خطة التنفيذ المقترحة</h2>
+
+<div class="roadmap-step">
+  <div class="roadmap-num">١</div>
+  <div class="roadmap-body"><b>المرحلة الأولى — التسوية اليدوية الأساسية.</b> شاشة تعرض الرصيد الدفتري وقائمة الحركات، مع إمكانية تعليم كل حركة يدوياً كـ"مطابقة" أو "معلّقة". أسرع مرحلة للتنفيذ، وتوفر القيمة الأساسية فوراً.</div>
+</div>
+<div class="roadmap-step">
+  <div class="roadmap-num">٢</div>
+  <div class="roadmap-body"><b>المرحلة الثانية — رفع كشف الحساب والمطابقة التلقائية.</b> إمكانية رفع كشف الحساب البنكي (Excel/PDF) ومطابقته تلقائياً بالمبلغ والتاريخ ورقم المرجع، مع مراجعة يدوية سريعة للبنود التي لم تُطابق تلقائياً فقط.</div>
+</div>
+<div class="roadmap-step">
+  <div class="roadmap-num">٣</div>
+  <div class="roadmap-body"><b>المرحلة الثالثة — التنبيهات الاستباقية.</b> تنبيه تلقائي عند وجود بنود معلّقة لفترة طويلة بشكل غير طبيعي، أو حركات مكررة، أو فروق تتجاوز حداً معيناً — قبل أن تتحول لمشكلة تحتاج تحقيقاً معمقاً.</div>
+</div>
+
+<hr class="divider">
+
+<h2><span class="num">٧</span>الخلاصة</h2>
+
+<p>هذه الميزة ليست إضافة اختيارية — هي أداة رقابة أساسية موجودة في كل نظام ERP كبير تعتمده الشركات الكبرى والمؤسسات المالية عالمياً، وغيابها اليوم هو السبب المباشر وراء تحوّل أي شك بسيط في رصيد حساب بنكي إلى تحقيق يستغرق أياماً. تطويرها على مراحل، بدءاً بشاشة تسوية يدوية بسيطة، يوفر قيمة فورية بأقل مجهود تطوير ممكن، مع إمكانية التوسع تدريجياً نحو مطابقة تلقائية كاملة.</p>
+
+<p><b>نطلب الموافقة على البدء بالمرحلة الأولى</b> كخطوة أولى منخفضة المخاطر وسريعة التنفيذ، لتقييم القيمة المضافة قبل الاستثمار في المراحل الأكثر تقدماً.</p>
+
+<div class="signoff">
+  <p style="margin:0; font-weight:700; color:#13293d">الموافقة على المضي قدماً في تطوير الميزة</p>
+  <div class="signoff-row">
+    <div class="signoff-line">الاسم والتوقيع</div>
+    <div class="signoff-line">التاريخ</div>
+  </div>
+</div>
+
+</body>
+</html>

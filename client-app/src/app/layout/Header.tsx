@@ -13,7 +13,6 @@ import LanguageChooser from "./LanguageChooser";
 import { setHeaderSelectedMenu } from "../slice/appUiSlice";
 import { StoreMallDirectory } from "@mui/icons-material";
 import { useTranslationHelper } from "../hooks/useTranslationHelper";
-import withFloatingLabel from "../components/FloatingLabel";
 import {Can} from "../../features/account/Can";
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
@@ -87,11 +86,6 @@ export default function Header() {
             location.pathname + 'Dashboard' === selectedpath) ? "bold" : "normal"
     });
 
-    const FloatingLabelText = withFloatingLabel(({ children }: { children: string }) => (
-        <ListItemText primary={children} sx={{ margin: 0 }} />
-    ));
-
-
     return (
         <AppBar position="static">
             <Toolbar
@@ -124,13 +118,10 @@ export default function Header() {
                                         <ListItemIcon sx={{ minWidth: "unset", marginX: "8px", fontSize: 28 }}>
                                             {icon}
                                         </ListItemIcon>
-                                        <FloatingLabelText
-                                            label={title}
-                                            translationKey={`general.header.${key}`}
-                                            placement="bottom"
-                                        >
-                                            {getTranslatedLabel(`general.header.${key}`, title).toUpperCase()}
-                                        </FloatingLabelText>
+                                        <ListItemText
+                                            primary={getTranslatedLabel(`general.header.${key}`, title).toUpperCase()}
+                                            sx={{ margin: 0 }}
+                                        />
                                     </ListItem>
                                 </Can>
                             ) : null;

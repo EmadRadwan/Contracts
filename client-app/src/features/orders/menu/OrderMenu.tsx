@@ -7,7 +7,6 @@ import { useAppDispatch } from "../../../app/store/configureStore";
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import LocalMallIcon from '@mui/icons-material/LocalMall';
 import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
-import withFloatingLabelFlexible from '../../../app/components/FloatingLabel';
 import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
 
 interface OrderMenuProps {
@@ -27,12 +26,6 @@ export default function OrderMenu({ selectedMenuItem }: OrderMenuProps) {
     const theme = useTheme();
     const normalizedSelectedMenuItem = normalizePath(selectedMenuItem || '');
     const { getTranslatedLabel } = useTranslationHelper();
-
-    const FloatingLabelText = withFloatingLabelFlexible(({ children }: { children: string }) => (
-        <Typography variant="body1" sx={{ marginLeft: '4px' }}>
-            {children}
-        </Typography>
-      ));
 
     const navStyles = (path: string) => {
         const normalizedPath = normalizePath(path);
@@ -81,9 +74,9 @@ export default function OrderMenu({ selectedMenuItem }: OrderMenuProps) {
                             onClick={(event) => handleClick(event, title)}
                         >
                             {icon}
-                            <FloatingLabelText label={title} translationKey={`order.menu.${key}`}>
+                            <Typography variant="body1" sx={{ marginLeft: '4px' }}>
                                 {getTranslatedLabel(`order.menu.${key}`, title).toUpperCase()}
-                            </FloatingLabelText>
+                            </Typography>
                         </ListItem>
                     ))}
                 </List>

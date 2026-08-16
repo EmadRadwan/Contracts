@@ -35,6 +35,7 @@ GRANT SELECT ON Fact_Project_OperatingExpenses TO 'powerbi_user'@'%';
 GRANT SELECT ON Fact_Project_OperatingExpenses_2 TO 'powerbi_user'@'%';
 GRANT SELECT ON Fact_Project_DirectPayments TO 'powerbi_user'@'%';
 GRANT SELECT ON Fact_Project_DirectPayments_2 TO 'powerbi_user'@'%';
+GRANT SELECT ON Fact_Project_Payroll TO 'powerbi_user'@'%'; -- added 2026-08-16 alongside the semantic model's Fact_Project_Payroll table; run this line alone once the view exists rather than re-running the whole script, which DROPs and recreates the user
 GRANT SELECT ON Fact_Project_Revenues TO 'powerbi_user'@'%';
 GRANT SELECT ON Fact_Apartment_Payments TO 'powerbi_user'@'%';
 GRANT SELECT ON Fact_Apartment_Installment_Payment_Link TO 'powerbi_user'@'%';

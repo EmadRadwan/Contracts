@@ -14,7 +14,6 @@ import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import PaidIcon from '@mui/icons-material/Paid';
 import BalanceIcon from '@mui/icons-material/Balance';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import withFloatingLabelFlexible from '../../../../app/components/FloatingLabel';
 import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper';
 import React, { useState } from "react";
 import {Can} from "../../../account/Can";
@@ -43,12 +42,6 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
     const theme = useTheme();
     const normalizedSelectedMenuItem = normalizePath(selectedMenuItem || '');
     const { getTranslatedLabel } = useTranslationHelper();
-    
-    const FloatingLabelText = withFloatingLabelFlexible(({ children }: { children: string }) => (
-        <Typography variant="body2" sx={{ marginLeft: '1px' }}>
-            {children}
-        </Typography>
-    ));
 
     // REFACTOR: Extracted common nav item styles into a reusable function for consistency and easier maintenance.
     const getNavItemStyles = (isSelected: boolean) => ({
@@ -182,9 +175,9 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
                                     <ListItem key={group.groupKey} disablePadding>
                                         <IconButton onClick={handleMenuOpen} sx={getNavItemStyles(isGroupSelected)}>
                                             {group.icon}
-                                            <FloatingLabelText label={group.title} translationKey={`accounting.menu.${group.groupKey}`}>
+                                            <Typography variant="body2" sx={{ marginLeft: '1px' }}>
                                                 {getTranslatedLabel(`accounting.menu.${group.groupKey}`, group.title).toUpperCase()}
-                                            </FloatingLabelText>
+                                            </Typography>
                                             <ArrowDropDownIcon fontSize="small" />
                                         </IconButton>
                                         <Menu
@@ -254,9 +247,9 @@ export default function AccountingMenu({ selectedMenuItem, onMenuSelect }: Accou
                                         disablePadding
                                     >
                                         {item.icon}
-                                        <FloatingLabelText label={item.title} translationKey={`accounting.menu.${item.key}`}>
+                                        <Typography variant="body2" sx={{ marginLeft: '1px' }}>
                                             {getTranslatedLabel(`accounting.menu.${item.key}`, item.title).toUpperCase()}
-                                        </FloatingLabelText>
+                                        </Typography>
                                     </ListItem>
                                 );
                             })()}
