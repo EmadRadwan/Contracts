@@ -10,7 +10,8 @@ public class ProjectDto
     public string? CurrentStatusId { get; set; }
     public string? GlAccountId { get; set; }
     public string? OperatingExpenseGlAccountId { get; set; }
-    
+    public bool? IsCompanyProject { get; set; }
+
     public DateTime? EstimatedStartDate { get; set; }
     public DateTime? EstimatedCompletionDate { get; set; }
 }

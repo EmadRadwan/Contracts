@@ -52,6 +52,7 @@ export interface WorkEffort {
     accommodationMapId?: string;
     accommodationSpotId?: string;
     revisionNumber?: number;
+    isCompanyProject?: boolean;
     addQuantityRejected?: number;
     addQuantityProduced?: number;
     addSetupTime?: number;

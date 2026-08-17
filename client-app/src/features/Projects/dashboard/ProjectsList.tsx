@@ -251,6 +251,18 @@ export default function ProjectsList() {
                         width={350}
                     />
                     <Column
+                        field="isCompanyProject"
+                        title={getTranslatedLabel("project.projects.list.isCompanyProject", "Company Project")}
+                        cell={(props: any) => (
+                            <td className={props.className} style={props.style} colSpan={props.colSpan} role={"gridcell"} aria-colindex={props.ariaColumnIndex} aria-selected={props.isSelected}>
+                                {props.dataItem.isCompanyProject
+                                    ? getTranslatedLabel("project.projects.list.companyProject", "Company Project")
+                                    : getTranslatedLabel("project.projects.list.workForOthers", "Work Done for Others")}
+                            </td>
+                        )}
+                        width={180}
+                    />
+                    <Column
                         field="estimatedStartDate"
                         title={getTranslatedLabel("project.projects.list.startDate", "Start Date")}
                         format="{0:MM/dd/yyyy}"

@@ -2645,6 +2645,9 @@
         "status": "الحالة",
         "startDate": "تاريخ البدء",
         "completionDate": "تاريخ الانتهاء",
+        "isCompanyProject": "مشروع الشركة",
+        "companyProject": "مشروع الشركة",
+        "workForOthers": "عمل لحساب الغير",
         "loading": "جاري تحميل المشاريع..."
       },
       "form": {
@@ -2654,6 +2657,7 @@
         "startDate": "تاريخ البدء",
         "completionDate": "تاريخ الانتهاء",
         "status": "الحالة",
+        "isCompanyProject": "مشروع الشركة (غير محدد = عمل لحساب الغير)",
         "submit": "حفظ",
         "cancel": "إلغاء",
         "processing": "جاري معالجة المشروع...",

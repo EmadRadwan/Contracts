@@ -146,6 +146,7 @@ public class WorkEffort
     public DateTime? ChequeDate { get; set; }
     public string? GlAccountId { get; set; }
     public string? OperatingExpenseGlAccountId { get; set; }    // ← NEW
+    public bool? IsCompanyProject { get; set; }                 // ← NEW: true = company project, false = work done for others
     
 
 

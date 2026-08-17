@@ -62890,6 +62890,9 @@ entity.HasIndex(e => e.OperatingExpenseGlAccountId, "WK_EFFRT_OP_EXP_GL");
     .IsUnicode(false)
     .HasColumnName("OPERATING_EXPENSE_GL_ACCOUNT_ID");
 
+                    entity.Property(e => e.IsCompanyProject)
+    .HasColumnName("IS_COMPANY_PROJECT");
+
                 entity.Property(e => e.ActualCompletionDate)
                     .HasColumnType("datetime")
                     .HasColumnName("ACTUAL_COMPLETION_DATE");

@@ -55,6 +55,7 @@ public class UpdateProject
                 project.ProjectName = request.ProjectDto.ProjectName ?? project.ProjectName;
                 project.GlAccountId = request.ProjectDto.GlAccountId ?? project.GlAccountId;
                 project.OperatingExpenseGlAccountId = request.ProjectDto.OperatingExpenseGlAccountId ?? project.OperatingExpenseGlAccountId;
+                project.IsCompanyProject = request.ProjectDto.IsCompanyProject ?? project.IsCompanyProject;
                 project.CurrentStatusId = request.ProjectDto.CurrentStatusId ?? project.CurrentStatusId;
                 project.EstimatedStartDate = request.ProjectDto.EstimatedStartDate ?? project.EstimatedStartDate;
                 project.EstimatedCompletionDate = request.ProjectDto.EstimatedCompletionDate ?? project.EstimatedCompletionDate;

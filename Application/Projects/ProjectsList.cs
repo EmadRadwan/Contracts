@@ -56,6 +56,7 @@ public class ProjectsList
 
                     GlAccountId = we.GlAccountId,
                     OperatingExpenseGlAccountId = we.OperatingExpenseGlAccountId,
+                    IsCompanyProject = we.IsCompanyProject,
                     FacilityId = we.FacilityId,
 
                     GlAccountName = ga != null 

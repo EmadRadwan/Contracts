@@ -67,4 +67,5 @@ public class WorkEffortRecord
     public string? OperatingExpenseGlAccountId { get; set; }
     public string? GlAccountName { get; set; }
     public string? OperatingExpenseGlAccountName { get; set; }
+    public bool? IsCompanyProject { get; set; }
 }

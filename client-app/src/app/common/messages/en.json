@@ -1106,6 +1106,9 @@
         "startDate": "Start Date",
         "completionDate": "Completion Date",
         "glAccount": "GL Account",
+        "isCompanyProject": "Company Project",
+        "companyProject": "Company Project",
+        "workForOthers": "Work Done for Others",
         "loading": "Loading Projects..."
       },
       "form": {
@@ -1115,6 +1118,7 @@
         "startDate": "Start Date",
         "completionDate": "Completion Date",
         "status": "Status",
+        "isCompanyProject": "Company Project (unchecked = Work Done for Others)",
         "submit": "Submit",
         "cancel": "Cancel",
         "processing": "Processing Project...",

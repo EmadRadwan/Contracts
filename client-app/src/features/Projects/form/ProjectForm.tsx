@@ -4,6 +4,7 @@ import { Field, Form, FormElement } from "@progress/kendo-react-form";
 import { MemoizedFormDropDownList } from "../../../app/common/form/MemoizedFormDropDownList";
 import FormInput from "../../../app/common/form/FormInput";
 import FormDatePicker from "../../../app/common/form/FormDatePicker";
+import { MemoizedFormCheckBox } from "../../../app/common/form/FormCheckBox";
 import { v4 as uuid } from "uuid";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
@@ -46,6 +47,7 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                 currentStatusId: "",
                 glAccountId: null,
                 operatingExpenseGlAccountId: null,
+                isCompanyProject: false,
             };
         }
 
@@ -57,6 +59,7 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
             currentStatusId: project.currentStatusId || "",
             glAccountId: project.glAccountId,                    // raw ID is enough
             operatingExpenseGlAccountId: project.operatingExpenseGlAccountId, // raw ID is enough
+            isCompanyProject: project.isCompanyProject ?? false,
         };
     }, [editMode, project]);   // ← removed glAccounts dependency
 
@@ -208,6 +211,16 @@ export default function ProjectForm({ project, cancelEdit, editMode }: Props) {
                                                 { currentStatusId: "WEPR_COMPLETE", Description: "Completed" },
                                             ]}
                                             validator={requiredValidator}
+                                        />
+                                    </Grid>
+                                </Grid>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={4} sx={{ maxWidth: '300px' }}>
+                                        <Field
+                                            id={"isCompanyProject"}
+                                            name={"isCompanyProject"}
+                                            label={getTranslatedLabel("project.projects.form.isCompanyProject", "Company Project (unchecked = Work Done for Others)")}
+                                            component={MemoizedFormCheckBox}
                                         />
                                     </Grid>
                                 </Grid>
