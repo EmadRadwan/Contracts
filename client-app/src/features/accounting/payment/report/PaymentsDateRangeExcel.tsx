@@ -21,6 +21,7 @@ import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
+import { toast } from 'react-toastify';
 import { useLazyFetchPaymentsByDateRangeQuery, useLazyFetchPaymentsForExportQuery } from "../../../../app/store/apis";
 import {
     CompositeFilterDescriptor,
@@ -328,7 +329,10 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
 
     const handleDownload = useCallback(async () => {
         if (!startDate || !endDate) {
-            alert('Please select both dates.');
+            toast.warning(getTranslatedLabel(
+                'accounting.payments.report.daterange.selectDates',
+                'الرجاء تحديد تاريخ البداية وتاريخ النهاية.'
+            ));
             return;
         }
         setIsGenerating(true);
@@ -357,6 +361,16 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
                 }).unwrap();
             }
 
+            // No rows in the selected period: tell the user instead of closing silently
+            if (!result || result.data.length === 0) {
+                toast.info(getTranslatedLabel(
+                    'accounting.payments.report.daterange.noRecords',
+                    'لا توجد دفعات في الفترة المحددة.'
+                ).replace('{0}', startDate.format('DD/MM/YYYY'))
+                 .replace('{1}', endDate.format('DD/MM/YYYY')));
+                return;
+            }
+
             // Build filter info text for Excel
             const filterParts: string[] = [
                 `الفترة: ${startDate.format("DD/MM/YYYY")} - ${endDate.format("DD/MM/YYYY")}`,
@@ -378,11 +392,14 @@ export const PaymentsDateRangeExcel: React.FC<PaymentsDateRangeExcelProps> = ({
             setOpen(false);
         } catch (err) {
             console.error('Excel generation failed:', err);
-            alert('Failed to generate report. Please try again.');
+            toast.error(getTranslatedLabel(
+                'accounting.payments.report.daterange.generateFailed',
+                'فشل إنشاء التقرير. الرجاء المحاولة مرة أخرى.'
+            ));
         } finally {
             setIsGenerating(false);
         }
-    }, [trigger, exportTrigger, generateExcel, paymentType, startDate, endDate, subtotalBy, respectFilters, dataState]);
+    }, [trigger, exportTrigger, generateExcel, getTranslatedLabel, paymentType, startDate, endDate, subtotalBy, respectFilters, dataState]);
 
     const isLoading = isFetching || isExportFetching || isGenerating;
 

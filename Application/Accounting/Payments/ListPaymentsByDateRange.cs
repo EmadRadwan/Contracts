@@ -29,8 +29,8 @@ public class ListPaymentsByDateRange
         {
             var isOutgoing = request.PaymentType?.ToLower() == "outgoing";
 
-            var fromDateTime = request.FromDate.ToDateTime(new TimeOnly(0, 0));
-            var toDateTime = request.ToDate.ToDateTime(new TimeOnly(0, 0)).AddDays(1);
+            var fromDate = request.FromDate;
+            var toDate = request.ToDate;
 
 
             var query = from pyt in _context.Payments
@@ -76,9 +76,13 @@ public class ListPaymentsByDateRange
                     on pyt.OverrideGlAccountId equals gl.GlAccountId into glJoin
                 from gl in glJoin.DefaultIfEmpty()
                 where
+                    // Filter on the business payment date (EffectiveDate), not the audit stamps —
+                    // matches the OData path in ListPayments so both branches of the date-range
+                    // export dialog agree. CreatedStamp belongs to ListPaymentsToday, not here.
                     (
-                        (pyt.CreatedStamp >= fromDateTime && pyt.CreatedStamp < toDateTime) ||
-                        (pyt.LastUpdatedStamp >= fromDateTime && pyt.LastUpdatedStamp < toDateTime)
+                        pyt.EffectiveDate != null &&
+                        pyt.EffectiveDate >= fromDate &&
+                        pyt.EffectiveDate <= toDate
                     )
                     && (isOutgoing
                         ? ptt.ParentTypeId == "DISBURSEMENT"
