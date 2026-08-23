@@ -1,0 +1,695 @@
+<title>ERPv2 Modernization Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+
+<style>
+  :root {
+    --paper:      #f4f6f8;
+    --surface:    #ffffff;
+    --surface-2:  #eef1f5;
+    --ink:        #141c27;
+    --ink-mid:    #3f4d61;
+    --ink-soft:   #6b7889;
+    --rule:       #d8dee7;
+    --rule-firm:  #b6c0cd;
+    --accent:     #23528c;
+    --accent-soft:#e3ecf6;
+    --ok:         #2c6b4a;
+    --ok-soft:    #dfeee5;
+    --warn:       #96650d;
+    --warn-soft:  #f6ecd7;
+    --stop:       #a63a2b;
+    --stop-soft:  #f6e3df;
+
+    --measure: 68ch;
+    --f-display: "Newsreader", Georgia, "Times New Roman", serif;
+    --f-body: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #10151c;
+      --surface:    #161d26;
+      --surface-2:  #1d262f;
+      --ink:        #e6ebf1;
+      --ink-mid:    #b0bcca;
+      --ink-soft:   #8593a3;
+      --rule:       #2a343f;
+      --rule-firm:  #3d4a58;
+      --accent:     #7fb0e2;
+      --accent-soft:#1b2a3b;
+      --ok:         #79c79b;
+      --ok-soft:    #16281f;
+      --warn:       #d9ac53;
+      --warn-soft:  #2a2214;
+      --stop:       #e59185;
+      --stop-soft:  #2d1a17;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:      #10151c;
+    --surface:    #161d26;
+    --surface-2:  #1d262f;
+    --ink:        #e6ebf1;
+    --ink-mid:    #b0bcca;
+    --ink-soft:   #8593a3;
+    --rule:       #2a343f;
+    --rule-firm:  #3d4a58;
+    --accent:     #7fb0e2;
+    --accent-soft:#1b2a3b;
+    --ok:         #79c79b;
+    --ok-soft:    #16281f;
+    --warn:       #d9ac53;
+    --warn-soft:  #2a2214;
+    --stop:       #e59185;
+    --stop-soft:  #2d1a17;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--f-body);
+    font-size: 16px;
+    line-height: 1.62;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 24px 96px;
+  }
+  @media (min-width: 1000px) {
+    .shell { grid-template-columns: 208px minmax(0, 1fr); gap: 56px; padding: 0 40px 120px; }
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--rule-firm);
+    padding: 64px 0 28px;
+    margin-bottom: 48px;
+  }
+  .eyebrow {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 18px;
+  }
+  h1 {
+    font-family: var(--f-display);
+    font-weight: 500;
+    font-size: clamp(2.4rem, 6vw, 3.9rem);
+    line-height: 1.04;
+    letter-spacing: -0.02em;
+    margin: 0 0 16px;
+    text-wrap: balance;
+  }
+  .standfirst {
+    font-family: var(--f-display);
+    font-size: clamp(1.05rem, 2.2vw, 1.28rem);
+    line-height: 1.5;
+    color: var(--ink-mid);
+    max-width: 60ch;
+    margin: 0 0 32px;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 32px;
+    font-family: var(--f-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .meta b { color: var(--ink-mid); font-weight: 500; }
+
+  /* ---------- nav rail ---------- */
+  nav.rail { display: none; }
+  @media (min-width: 1000px) {
+    nav.rail {
+      display: block;
+      position: sticky;
+      top: 40px;
+      align-self: start;
+      max-height: calc(100vh - 80px);
+      overflow-y: auto;
+    }
+    nav.rail ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+    nav.rail a {
+      display: grid;
+      grid-template-columns: 22px 1fr;
+      gap: 8px;
+      padding: 5px 8px 5px 0;
+      font-size: 13px;
+      line-height: 1.35;
+      color: var(--ink-soft);
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      padding-left: 12px;
+    }
+    nav.rail a:hover { color: var(--accent); border-left-color: var(--accent); }
+    nav.rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    nav.rail .n { font-family: var(--f-mono); font-size: 11px; color: var(--rule-firm); }
+  }
+
+  main { min-width: 0; display: flex; flex-direction: column; gap: 64px; }
+
+  /* ---------- sections ---------- */
+  section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 24px; }
+
+  h2 {
+    font-family: var(--f-display);
+    font-weight: 500;
+    font-size: clamp(1.6rem, 3.4vw, 2.05rem);
+    line-height: 1.15;
+    letter-spacing: -0.012em;
+    margin: 0;
+    padding-bottom: 12px;
+    border-bottom: 3px double var(--rule-firm);
+    text-wrap: balance;
+  }
+  h2 .n {
+    font-family: var(--f-mono);
+    font-size: 0.62em;
+    font-weight: 500;
+    color: var(--accent);
+    margin-right: 0.7em;
+    letter-spacing: 0.04em;
+  }
+  h3 {
+    font-family: var(--f-body);
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: -0.005em;
+    margin: 0;
+  }
+  p { margin: 0; max-width: var(--measure); }
+  main > section > p, main > section > ul { max-width: var(--measure); }
+  a { color: var(--accent); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+  code {
+    font-family: var(--f-mono);
+    font-size: 0.855em;
+    background: var(--surface-2);
+    padding: 0.1em 0.36em;
+    border-radius: 3px;
+    word-break: break-word;
+  }
+  strong { font-weight: 600; }
+  ul { margin: 0; padding-left: 1.15em; display: flex; flex-direction: column; gap: 8px; }
+  li { padding-left: 2px; }
+  li::marker { color: var(--rule-firm); }
+
+  /* ---------- callouts ---------- */
+  .note {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    padding: 18px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: var(--measure);
+  }
+  .note.finding { border-left-color: var(--warn); background: var(--warn-soft); }
+  .note.loss { border-left-color: var(--stop); background: var(--stop-soft); }
+  .note .lbl {
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .note p { max-width: none; }
+
+  blockquote {
+    margin: 0;
+    padding: 4px 0 4px 22px;
+    border-left: 2px solid var(--rule-firm);
+    font-family: var(--f-display);
+    font-size: 1.15rem;
+    line-height: 1.5;
+    color: var(--ink);
+    max-width: 58ch;
+  }
+  blockquote cite {
+    display: block;
+    margin-top: 10px;
+    font-family: var(--f-mono);
+    font-size: 11.5px;
+    font-style: normal;
+    letter-spacing: 0.05em;
+    color: var(--ink-soft);
+  }
+
+  /* ---------- tables ---------- */
+  .scroller { overflow-x: auto; border: 1px solid var(--rule); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 620px; }
+  caption {
+    caption-side: top;
+    text-align: left;
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+  th, td { text-align: left; padding: 11px 16px; vertical-align: top; border-bottom: 1px solid var(--rule); }
+  thead th {
+    font-family: var(--f-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    border-bottom: 2px solid var(--rule-firm);
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.note-cell { color: var(--ink-mid); font-size: 13.5px; }
+  .now { font-weight: 600; }
+
+  .chip {
+    display: inline-block;
+    font-family: var(--f-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .chip.ok   { background: var(--ok-soft);   color: var(--ok); }
+  .chip.warn { background: var(--warn-soft); color: var(--warn); }
+  .chip.stop { background: var(--stop-soft); color: var(--stop); }
+  .chip.flat { background: var(--surface-2); color: var(--ink-soft); }
+
+  /* ---------- track cards ---------- */
+  .tracks { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .track { background: var(--surface); padding: 22px 24px; display: grid; grid-template-columns: 1fr; gap: 10px; }
+  @media (min-width: 700px) { .track { grid-template-columns: 132px minmax(0, 1fr); gap: 24px; } }
+  .track .key { display: flex; flex-direction: column; gap: 4px; }
+  .track .letter {
+    font-family: var(--f-display);
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--accent);
+  }
+  .track .status { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .track h3 { margin-bottom: 2px; }
+  .track p { font-size: 14.5px; color: var(--ink-mid); max-width: 62ch; }
+
+  /* ---------- ordered priority list ---------- */
+  ol.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; counter-reset: step; }
+  ol.steps li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 14px;
+    max-width: calc(var(--measure) + 44px);
+    padding: 0;
+  }
+  ol.steps li::before {
+    content: counter(step);
+    font-family: var(--f-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-soft);
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border-radius: 2px;
+  }
+  ol.q { padding-left: 1.15em; display: flex; flex-direction: column; gap: 10px; max-width: var(--measure); }
+  ol.q li::marker { font-family: var(--f-mono); font-size: 13px; color: var(--accent); }
+
+  .rejected { display: flex; flex-direction: column; gap: 8px; max-width: var(--measure); }
+  .rejected div { display: grid; grid-template-columns: 18px 1fr; gap: 10px; font-size: 14.5px; color: var(--ink-mid); }
+  .rejected .x { font-family: var(--f-mono); color: var(--stop); }
+
+  pre {
+    font-family: var(--f-mono);
+    font-size: 12.5px;
+    line-height: 1.7;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    padding: 16px 18px;
+    margin: 0;
+    overflow-x: auto;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  .stat { background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+  .stat .v { font-family: var(--f-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .stat .k { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+
+  footer {
+    grid-column: 1 / -1;
+    margin-top: 72px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule-firm);
+    font-family: var(--f-mono);
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 28px;
+  }
+</style>
+
+<div class="shell">
+
+  <header class="masthead">
+    <p class="eyebrow">Internal engineering brief · Contracts ERP</p>
+    <h1>ERPv2 — Modernization Brief</h1>
+    <p class="standfirst">Consolidated context from three prior sessions on modernizing this OFBiz-derived ERP: the frontend track plan, the backend architecture verdict, and the feature-coverage audit — with every count re-verified against the codebase.</p>
+    <div class="meta">
+      <span><b>Compiled</b> 2026-08-23</span>
+      <span><b>Source</b> <code>ERPv2/ERPv2-Brief.md</code></span>
+      <span><b>Status</b> self-contained — needs no other session context</span>
+    </div>
+  </header>
+
+  <nav class="rail" aria-label="Section index">
+    <ol>
+      <li><a href="#s0"><span class="n">00</span><span>Provenance</span></a></li>
+      <li><a href="#s1"><span class="n">01</span><span>The stated goal</span></a></li>
+      <li><a href="#s2"><span class="n">02</span><span>Five-track plan</span></a></li>
+      <li><a href="#s3"><span class="n">03</span><span>Verified state</span></a></li>
+      <li><a href="#s4"><span class="n">04</span><span>Backend review</span></a></li>
+      <li><a href="#s5"><span class="n">05</span><span>Feature coverage</span></a></li>
+      <li><a href="#s6"><span class="n">06</span><span>Ground rules</span></a></li>
+      <li><a href="#s7"><span class="n">07</span><span>Open decisions</span></a></li>
+      <li><a href="#s8"><span class="n">08</span><span>Opening prompt</span></a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <div class="note">
+      <span class="lbl">How to use this</span>
+      <p>Open a new session in <code>/Users/emadradwan/Documents/ERP/Contracts</code> and point it at this brief. Everything here is either quoted from the original sessions or re-verified against the codebase on 2026-08-23 — each section says which.</p>
+    </div>
+
+    <section id="s0">
+      <h2><span class="n">00</span>Provenance</h2>
+      <p>Three prior sessions produced the material summarized here.</p>
+
+      <div class="scroller">
+        <table>
+          <caption>Source sessions</caption>
+          <thead>
+            <tr><th>Session</th><th>Date</th><th>Subject</th><th>Transcript</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="num">1a7ede26</td>
+              <td class="num">2026-07-17/18</td>
+              <td>Frontend audit + five-track UI/UX modernization plan, driven by a planned HIS integration</td>
+              <td><span class="chip stop">Deleted</span></td>
+            </tr>
+            <tr>
+              <td class="num">232af1de</td>
+              <td class="num">2026-07-25/26</td>
+              <td>Feature-coverage audit v1 — this ERP vs. OFBiz vs. Odoo</td>
+              <td><span class="chip ok">On disk · 405 KB</span></td>
+            </tr>
+            <tr>
+              <td class="num">45499d39</td>
+              <td class="num">2026-08-06</td>
+              <td>Backend architecture review — the DDD question, god-services, the test story</td>
+              <td><span class="chip ok">On disk · 324 KB</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note loss">
+        <span class="lbl">The primary transcript is gone</span>
+        <p>Session <code>1a7ede26</code> has been rotated off disk. What survives is the memory note <code>project_ui_ux_modernization_plan.md</code>, reconstructed from the transcript on 2026-08-06 shortly before it was lost. Its original deliverables — a HIS-integration readiness audit with a gap matrix and phased roadmap — lived in scratchpad directories that no longer exist. <strong>Section 02 below is the surviving record of that work.</strong></p>
+      </div>
+
+      <p>To reopen the two that still exist:</p>
+      <pre><code>claude --resume 232af1de-8441-417e-ac5f-23b015c1731b
+claude --resume 45499d39-3292-4360-9fdb-98770f69ea1d</code></pre>
+    </section>
+
+    <section id="s1">
+      <h2><span class="n">01</span>The stated goal</h2>
+      <blockquote>we have a plan to have this ERP integrate with one of the HIS systems… we need a plan to modernize the UI to use best practices in UI/UX and data integrations
+        <cite>Session 1a7ede26 · 2026-07-17</cite></blockquote>
+      <blockquote>another big project aiming to apply best practices of UI/UX, React frontend and ASP.NET backend
+        <cite>Session 232af1de · 2026-07-25</cite></blockquote>
+      <p><strong>HIS integration is one driver, not the only one.</strong> The repo is meant to become the basis for a larger project built to current best practices on both ends of the stack. That framing is why the plan below is consolidate-and-strangle rather than rewrite — see section 04.</p>
+    </section>
+
+    <section id="s2">
+      <h2><span class="n">02</span>The five-track plan</h2>
+      <p>Authored 2026-07-17 in the now-deleted session. Track letters are labels, not a sequence — the sequencing note follows the cards.</p>
+
+      <div class="tracks">
+        <article class="track">
+          <div class="key"><span class="letter">A</span><span class="status">Partly actionable today</span></div>
+          <div>
+            <h3>Consolidate, don't replace</h3>
+            <p>Enforce the Kendo/MUI split CLAUDE.md already states rather than changing it — both are genuinely load-bearing, and picking a winner would be a rewrite. Instead, write down which kit owns which job: Kendo for grids, form fields, dropdowns; MUI for layout, typography, dialogs, buttons — so new screens stop guessing. Then remove the strays: delete Mantine, retire Semantic UI and jQuery, finish Formik → react-hook-form, pick one of lodash/underscore.</p>
+          </div>
+        </article>
+        <article class="track">
+          <div class="key"><span class="letter">B</span><span class="status">Ongoing, by attrition</span></div>
+          <div>
+            <h3>One data layer, enforced going forward</h3>
+            <p>RTK Query exclusively for new features. Migrate MobX and <code>agent.ts</code> call sites feature-by-feature as those features get touched for other reasons — explicitly no dedicated big-bang migration.</p>
+          </div>
+        </article>
+        <article class="track">
+          <div class="key"><span class="letter">C</span><span class="status">Not started</span></div>
+          <div>
+            <h3>Wire up real-time on a low-stakes feature first</h3>
+            <p>Build one hub end-to-end — order-status or approval-queue updates: hub → RTK Query cache invalidation over the socket → UI updates with no manual refresh — <em>before</em> any HIS event stream needs that same pattern under deadline pressure.</p>
+          </div>
+        </article>
+        <article class="track">
+          <div class="key"><span class="letter">D</span><span class="status">Not started</span></div>
+          <div>
+            <h3>A design-token and component layer, not a rewrite</h3>
+            <p>Menu-Exit, Actions-Menu, and the Status Ribbon are well-specified in CLAUDE.md but exist only as documentation plus a few reference implementations. Promote them to real shared components with one implementation each, plus a small design-token set — spacing scale, one date-picker, one confirmation-dialog pattern — layered on the retained Kendo+MUI pair. A lightweight Storybook for just these shared pieces.</p>
+          </div>
+        </article>
+        <article class="track">
+          <div class="key"><span class="letter">E</span><span class="status">Not started</span></div>
+          <div>
+            <h3>Give BI/EPM somewhere to render</h3>
+            <p>No charting library exists in the project at all. Add <code>@progress/kendo-react-charts</code> — it leverages the existing Kendo license and grid investment rather than introducing a sixth UI dependency. Needed for FIN-BUD / EPM-CPM work regardless of HIS timing.</p>
+          </div>
+        </article>
+      </div>
+
+      <div class="note">
+        <span class="lbl">Sequencing as originally proposed</span>
+        <p>Tracks A and B are foundation-clearing work meant to start immediately and in parallel with backend work, not gated on any HIS decision. Phase 0 (~4–6 weeks) was: delete Mantine, scope the Semantic UI / jQuery retirement, publish the Kendo-vs-MUI ownership rule, build the first real SignalR hub, and stand up Storybook for the three shared components.</p>
+      </div>
+    </section>
+
+    <section id="s3">
+      <h2><span class="n">03</span>Verified current state</h2>
+      <p>The July numbers have moved. These are counts taken on 2026-08-23 against <code>client-app/src</code> — 922 <code>.ts</code>/<code>.tsx</code> files in total.</p>
+
+      <div class="scroller">
+        <table>
+          <caption>Frontend inventory · 2026-07-17 → 2026-08-23</caption>
+          <thead>
+            <tr><th>Item</th><th>Jul 17</th><th>Aug 23</th><th>Note</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>KendoReact</td><td class="num">429 files</td><td class="num now">474 files</td><td class="note-cell">Load-bearing, growing</td></tr>
+            <tr><td>MUI</td><td class="num">463 files</td><td class="num now">464 files</td><td class="note-cell">Load-bearing</td></tr>
+            <tr><td>Semantic UI</td><td class="num">14 files</td><td class="num now">15 files</td><td class="note-cell">Still in <code>package.json</code></td></tr>
+            <tr><td>Mantine</td><td class="num">0 usages</td><td class="num now">0 usages</td><td class="note-cell">Since <em>upgraded</em> to <code>^9.0.2</code> while still unused</td></tr>
+            <tr><td>jQuery</td><td class="num">present</td><td class="num now">0 imports</td><td class="note-cell">Still in <code>package.json</code> + <code>@types/jquery</code> — safe to drop</td></tr>
+            <tr><td>Formik</td><td class="num">1 file</td><td class="num now">1 file</td><td class="note-cell"><code>app/common/form/MyTextInput.tsx</code></td></tr>
+            <tr><td>react-hook-form</td><td class="num">6 files</td><td class="num now">7 files</td><td class="note-cell">—</td></tr>
+            <tr><td>MobX</td><td class="num">—</td><td class="num now">9 files</td><td class="note-cell">5 stores + 4 components</td></tr>
+            <tr><td>RTK / RTK Query</td><td class="num">—</td><td class="num now">145 files</td><td class="note-cell">96 of them call <code>createApi</code> — the clear majority</td></tr>
+            <tr><td><code>agent.ts</code> (Axios)</td><td class="num">—</td><td class="num now">~78 files</td><td class="note-cell">The real Track B backlog</td></tr>
+            <tr><td>lodash / underscore</td><td class="num">both installed</td><td class="num now">3 / 0 files</td><td class="note-cell">Drop underscore outright</td></tr>
+            <tr><td>Charting library</td><td class="num">none</td><td class="num now">none</td><td class="note-cell"><span class="chip warn">Track E untouched</span></td></tr>
+            <tr><td><code>aria-*</code> coverage</td><td class="num">93 / 597</td><td class="num now">93 / 922</td><td class="note-cell">~16% → ~10% — coverage fell because the codebase grew, not because coverage shrank</td></tr>
+            <tr><td>SignalR</td><td class="num">registered, no consumer</td><td class="num now">unchanged</td><td class="note-cell"><code>AddSignalR()</code> at <code>API/Extensions/ApplicationServiceExtensions.cs:127</code>; zero <code>MapHub</code> calls anywhere <span class="chip warn">Track C untouched</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>The exact Track A work list</h3>
+      <p><strong>Semantic UI — 15 files.</strong> Five are error/utility pages, six are Menu components, the rest form inputs:</p>
+      <pre><code>index.tsx
+app/common/form/MyTextInput.tsx
+features/errors/{TestError,ValidationErrors,NotFound,ServerError}.tsx
+features/accounting/fixedAssets/CreateFixedAssetMenu.tsx
+features/accounting/globalGlSetting/chartOfAccounts/form/ChartOfAccountsSearchForm.tsx
+features/accounting/invoice/menu/InvoiceMenu.tsx
+features/parties/form/PartyContactForm.tsx
+features/parties/dashboard/{PartyMenu,CreatePartyMenu}.tsx
+features/orders/menu/{CreateCustomerRequestMenu,CreateOrderMenu,CreateQuoteMenu}.tsx</code></pre>
+
+      <div class="note finding">
+        <span class="lbl">Key finding — Tracks A and D collapse into one task</span>
+        <p>The five <code>*Menu.tsx</code> files above are exactly the Menu-Exit / Actions-Menu pattern that Track D wants rebuilt as shared components. Three of the four MobX <em>components</em> are on this same list, and the lone Formik file is on it too. The same handful of legacy screens carries all three debts at once — <strong>retiring Semantic UI and building the shared Menu layer are the same job.</strong> Done separately, these screens get converted twice.</p>
+      </div>
+
+      <p><strong>MobX — 9 files:</strong> <code>app/stores/{commonBusinessStore,modalStore,geoStore,commonAppStore,userStore}.ts</code>, plus <code>ProductListMenu.tsx</code>, <code>PartyMenu.tsx</code>, <code>CreatePartyMenu.tsx</code>, <code>ServerError.tsx</code>.</p>
+      <p><strong>Formik — 1 file:</strong> <code>MyTextInput.tsx</code>, which is also Semantic UI. One file closes out that migration.</p>
+      <p><strong>lodash — 3 files:</strong> <code>PurchaseOrderForm.tsx</code>, <code>SalesOrderForm.tsx</code>, <code>useSalesRequestCalculations.ts</code>. <code>underscore</code> has zero usages.</p>
+
+      <div class="note">
+        <span class="lbl">Zero-risk deletions available today</span>
+        <p><code>@mantine/core</code> · <code>@mantine/dates</code> · <code>@mantine/hooks</code> · <code>jquery</code> · <code>@types/jquery</code> · <code>underscore</code> · <code>@types/underscore</code> — none of them are imported anywhere in <code>src</code>.</p>
+      </div>
+    </section>
+
+    <section id="s4">
+      <h2><span class="n">04</span>Backend architecture review</h2>
+      <p>Asked on 2026-08-06 as: <em>"deep, honest advice on the backend architecture I'm currently using and how it compares to best practices… I hear about DDD and other design patterns."</em> Context given at the time: a single developer, a paying client, and a steady stream of bug tickets.</p>
+
+      <h3>What's genuinely good — keep it</h3>
+      <p>The CQRS/MediatR skeleton. Thin handlers (<code>CreateSalesOrder.cs</code> is 91 lines), <code>Result&lt;T&gt;</code> instead of exceptions-as-control-flow, per-handler transaction scoping, FluentValidation wired via <code>AddValidatorsFromAssemblyContaining</code>. <strong>This is not the bug source.</strong></p>
+
+      <h3>The anemic domain model is fine</h3>
+      <p>All 892 <code>Domain/</code> entities are pure data bags — a deliberate 1:1 mirror of the OFBiz schema, and a legitimate choice for a port. The problem isn't that it's anemic; it's <em>where the logic that would live on those entities ended up instead.</em></p>
+
+      <h3>The god-service problem — the actual bug source</h3>
+      <div class="scroller">
+        <table>
+          <caption>Largest services · re-verified 2026-08-23</caption>
+          <thead><tr><th>File</th><th>Lines</th></tr></thead>
+          <tbody>
+            <tr><td><code>Application/Accounting/Services/GeneralLedgerService.cs</code></td><td class="num">6,481</td></tr>
+            <tr><td><code>Application/Manufacturing/ProductionRunService.cs</code></td><td class="num">4,398</td></tr>
+            <tr><td><code>Application/Accounting/Services/AcctgReportsService.cs</code></td><td class="num">3,337</td></tr>
+            <tr><td><code>Application/Accounting/Services/InvoiceHelperService.cs</code></td><td class="num">2,282</td></tr>
+            <tr><td><code>Application/Order/Orders/OrderHelperService.cs</code></td><td class="num">2,190</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>These are modules pretending to be classes. Changing one method in a 6,000-line file, with no test around it, to fix a client-reported bug is exactly the shape of change that breaks something else three screens away — which matches the reported symptom.</p>
+
+      <h3>Circular dependencies</h3>
+      <p><strong>Eight files in <code>Application/</code> use <code>Lazy&lt;T&gt;</code> injection</strong> to resolve circular service dependencies — <code>GeneralLedgerService</code>, <code>PaymentHelperService</code>, <code>InvoiceUtilityService</code>, <code>CostService</code>, <code>InventoryService</code> and others. That's DI fighting a layering violation: bidirectional calls with no clear dependency direction. Each is a place where a change in A silently breaks B.</p>
+
+      <h3>Testing is effectively zero — not "one test"</h3>
+      <p><code>BusinessTest/Order/Orders/CreateSalesOrderTests.cs</code> is still the only test file in the solution. It builds <code>DataContext</code> against a real local MySQL with hardcoded credentials, and passes <code>null</code> for four of <code>OrderService</code>'s constructor dependencies — so any path touching those throws <code>NullReferenceException</code> unrelated to the behavior under test. It gives false confidence.</p>
+
+      <div class="note finding">
+        <span class="lbl">The DDD verdict — recommended against, wholesale</span>
+        <p>Full textbook DDD (aggregate roots enforcing invariants, bounded contexts, domain events) or a Clean/Onion rewrite is months of high-regression-risk work with 892 foreign-schema entities, one developer, and live client tickets. It would make the bug bombardment worse before it got better.</p>
+        <p>Worth stealing cheaply, though: <strong>value objects for <code>Money</code> / <code>Quantity</code> / currency pairs</strong> — killing wrong-currency and unit-mismatch bugs at compile time instead of at 2am when a GL imbalance surfaces, as a pure Application-layer addition with no schema change. And <strong>a thin behavior layer on two or three bug-prone areas only</strong> — order status transitions and GL posting rules — so "this transition is valid only from these states" lives in one place instead of being reimplemented ad hoc across <code>OrderService</code> / <code>OrderHelperService</code>.</p>
+      </div>
+
+      <h3>Priority order as recommended</h3>
+      <ol class="steps">
+        <li><div><strong>Fix the test story before refactoring anything.</strong> Real isolated tests — EF Core InMemory or SQLite in-memory, fully mocked collaborators, no nulls, no real MySQL — around GL posting, order status transitions, and payment application first. Highest blast radius.</div></li>
+        <li><div><strong>Characterization-test-before-fixing, as a habit, not a project.</strong> On the next bug in <code>GeneralLedgerService</code> or <code>OrderHelperService</code>: pin the surrounding correct behavior in a test <em>before</em> the fix, then leave the test in. The suite grows for free alongside work that's happening anyway.</div></li>
+        <li><div><strong>Add a MediatR <code>ValidationBehaviour</code>.</strong> Today <code>LoggingBehavior</code> is the only pipeline behavior, so validation fires only through the MVC auto-validation filter on HTTP-bound requests. Centralizing it validates every command identically regardless of entry point.</div></li>
+        <li><div><strong>Strangle the god-services opportunistically</strong> — the same rule as the MobX → Redux migration in CLAUDE.md. When you're already in one of these files for a bug, extract just the methods you touched into a smaller named class with a test. Never schedule "break up <code>GeneralLedgerService</code>" as its own project; it will never win against client tickets and doesn't need to.</div></li>
+        <li><div><strong>Resolve the <code>Lazy&lt;T&gt;</code> circular deps as you touch those eight files</strong>, not proactively. Each is a signal that one call should go the other direction, not a symptom needing a DI redesign.</div></li>
+      </ol>
+
+      <h3>Explicitly rejected</h3>
+      <div class="rejected">
+        <div><span class="x">✕</span><span>Retrofitting a repository / Unit-of-Work layer over <code>DataContext</code> — CLAUDE.md rejects it deliberately, and it wouldn't touch the actual bug source.</span></div>
+        <div><span class="x">✕</span><span>Chasing a coverage percentage.</span></div>
+        <div><span class="x">✕</span><span>A DDD / Clean Architecture rewrite.</span></div>
+      </div>
+    </section>
+
+    <section id="s5">
+      <h2><span class="n">05</span>Feature coverage vs. OFBiz and Odoo</h2>
+      <p>Produced 2026-07-25. The deliverable is still live: <a href="https://claude.ai/code/artifact/41ee014a-04c8-4e30-b240-2664b2ca06b6">Contracts ERP — Feature Coverage Audit v1</a>.</p>
+
+      <div class="stat-row">
+        <div class="stat"><span class="v">892</span><span class="k">Domain entities</span></div>
+        <div class="stat"><span class="v">146</span><span class="k">API controllers</span></div>
+        <div class="stat"><span class="v">704</span><span class="k">CQRS handlers</span></div>
+        <div class="stat"><span class="v">11</span><span class="k">Modules rated</span></div>
+      </div>
+
+      <p>Counts taken directly from the codebase, not estimated. The audit rates 11 modules Deep / Solid / Partial / Minimal / Absent, scored against OFBiz and Odoo separately, with per-module detail on what's implemented versus what each reference platform has.</p>
+
+      <ul>
+        <li><strong>Near-parity with OFBiz:</strong> Accounting, Order Management.</li>
+        <li><strong>Widest gap vs. Odoo specifically:</strong> Facility / Warehouse — barcode operations, visual routing.</li>
+        <li><strong>Effectively greenfield regardless of benchmark:</strong> Human Resources, Content Management.</li>
+        <li><strong>Two differentiators neither platform has natively:</strong> the real-estate installment-sales workflow (apartments, payment certificates, commissions) and the vehicle service-center module.</li>
+        <li><strong>Zero-code categories:</strong> POS, storefront, marketing automation, quality/maintenance, BI layer, workflow builder, helpdesk.</li>
+      </ul>
+
+      <p>Marked v1 deliberately — prioritization and UI direction were deferred to a later pass, which is part of what ERPv2 has to decide.</p>
+    </section>
+
+    <section id="s6">
+      <h2><span class="n">06</span>Ground rules for any ERPv2 work</h2>
+      <p>From <code>CLAUDE.md</code>, enforced:</p>
+      <ul>
+        <li><strong>Never</strong> run <code>dotnet build</code> / <code>run</code> / <code>watch</code>, or <code>npm run build</code> / <code>start</code> after edits. Make changes, stop, report — the developer re-runs manually.</li>
+        <li><strong>Never</strong> apply an EF migration. Generating migration files or a SQL script for review is fine; applying is human-only.</li>
+        <li>No repository layer — <code>DataContext</code> injects straight into handlers. Lazy loading is off; use explicit joins or <code>.Include()</code>.</li>
+        <li>Domain entities live flat in <code>Domain/</code>, string IDs from the OFBiz heritage, snake_case JSON. DTOs stay PascalCase.</li>
+        <li>Handlers return <code>Result&lt;T&gt;</code> / <code>Results&lt;T&gt;</code> — never throw.</li>
+        <li>OData list endpoints must be registered in <code>Program.cs</code> <code>GetEdmModel()</code>.</li>
+        <li><code>// REFACTOR:</code> comments mark known debt — don't delete one without addressing the cause.</li>
+        <li>Prefer RTK Query and Redux for new work; MobX and <code>agent.ts</code> are legacy by design.</li>
+        <li>Arabic localization via <code>getTranslatedLabel</code> and <code>@ar.json</code> must always be supported.</li>
+        <li>Do not spawn subagents in this repo unless asked.</li>
+      </ul>
+    </section>
+
+    <section id="s7">
+      <h2><span class="n">07</span>Open decisions</h2>
+      <p>None of these were settled in the three sessions above. The first has since been answered.</p>
+      <ol class="q">
+        <li><strong>Decided 2026-08-23 — in-place.</strong> ERPv2 starts from the current solution and evolves it; no greenfield rebuild. Every recommendation in this brief stands as written. <span class="chip ok">Settled</span></li>
+        <li><strong>Is HIS integration still a live driver, and on what timeline?</strong> Track C's urgency depends on the answer.</li>
+        <li><strong>Prioritization across the feature gaps in section 05</strong> — deliberately deferred in v1. HR and Content Management are the two near-greenfield modules; neither is confirmed in or out of scope.</li>
+        <li><strong>Frontend end-state:</strong> does ERPv2 keep the Kendo+MUI pair that Track A is premised on, or is a single-kit rebuild acceptable now that a v2 is on the table?</li>
+        <li><strong>Test infrastructure:</strong> EF InMemory vs. SQLite in-memory vs. Testcontainers/MySQL was never picked — and backend priority 1 is blocked on it.</li>
+      </ol>
+    </section>
+
+    <div class="note">
+      <span class="lbl">Companion register</span>
+      <p><code>ERPv2/Contracts-ERP-vs-Odoo-Feature-Register.xlsx</code> — 265 rows, one per business function, covering all 737 CQRS operations and scored against Odoo. Sheets: Feature Register, Odoo Gap Summary (live COUNTIFS rollup), Legend &amp; Method.</p>
+    </div>
+
+    <section id="s8">
+      <h2><span class="n">08</span>Opening prompt for the new session</h2>
+      <pre><code>Read ERPv2/ERPv2-Brief.md — it's the consolidated context from three
+earlier sessions on modernizing this ERP. I want to work on [track/priority].
+Before proposing anything, check §7 open decisions and ask me the ones that
+would change your approach.</code></pre>
+    </section>
+
+  </main>
+
+  <footer>
+    <span>Contracts ERP · ERPv2</span>
+    <span>Compiled 2026-08-23</span>
+    <span>Counts re-verified against the working tree on the compile date — re-check before quoting, they drift.</span>
+  </footer>
+
+</div>

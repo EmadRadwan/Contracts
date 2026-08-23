@@ -36,51 +36,11 @@ public class ResetSalesCommission
 
             try
             {
-                // 1. Find commission payments (identified by PaymentTypeId since Payment has no SalesCommissionId)
-                var payments = await _context.Payments
-                    .Where(p => p.SalesRequestId == commission.SalesRequestId
-                                && p.PaymentTypeId == "COMMISSION_PAYMENT")
-                    .ToListAsync(ct);
+                // Wipe the generated payments and everything they produced — including payments that
+                // were already disbursed. The confirmation dialog states this outright, so a reset is
+                // a deliberate discard of that history, not an accounting reversal.
+                await CommissionPaymentCleanup.PurgeAsync(_context, commission.SalesRequestId, ct);
 
-                // Guard: reset hard-deletes these payments (and their FinAccountTrans / AcctgTrans).
-                // That is only safe while a payment is still unpaid or was cancelled/voided. Once a
-                // commission payment has actually been disbursed (PMNT_SENT / PMNT_CONFIRMED) or
-                // received, deleting it would erase real financial history instead of reversing it,
-                // so block the reset and require the payment to be voided/cancelled first.
-                var deletableStatuses = new[] { "PMNT_NOT_PAID", "PMNT_CANCELLED", "PMNT_VOID", "PMNT_VOIDED" };
-                var blockingPayment = payments.FirstOrDefault(p => !deletableStatuses.Contains(p.StatusId));
-                if (blockingPayment != null)
-                    return Result<Unit>.Failure(
-                        $"لا يمكن إعادة تعيين العمولة — دفعة العمولة {blockingPayment.PaymentId} تم صرفها بالفعل (الحالة {blockingPayment.StatusId}). يجب إلغاء/إبطال الدفعة أولاً.");
-
-                if (payments.Any())
-                {
-                    var paymentIds = payments.Select(p => p.PaymentId).ToList();
-
-                    // Delete FinAccountTrans linked to these payments; null FK first to break the cycle
-                    var finAccountTrans = await _context.FinAccountTrans
-                        .Where(fat => fat.PaymentId != null && paymentIds.Contains(fat.PaymentId))
-                        .ToListAsync(ct);
-
-                    foreach (var fat in finAccountTrans)
-                        fat.PaymentId = null;
-
-                    _context.FinAccountTrans.RemoveRange(finAccountTrans);
-
-                    // Delete AcctgTrans and entries created when payments were sent
-                    var acctgTransList = await _context.AcctgTrans
-                        .Include(t => t.AcctgTransEntries)
-                        .Where(t => t.PaymentId != null && paymentIds.Contains(t.PaymentId))
-                        .ToListAsync(ct);
-
-                    foreach (var tran in acctgTransList)
-                        _context.AcctgTransEntries.RemoveRange(tran.AcctgTransEntries);
-
-                    _context.AcctgTrans.RemoveRange(acctgTransList);
-                    _context.Payments.RemoveRange(payments);
-                }
-
-                // 2. Reset commission status back to pending
                 commission.StatusId = "COMMISSION_PENDING";
                 commission.LastUpdatedStamp = DateTime.UtcNow;
 

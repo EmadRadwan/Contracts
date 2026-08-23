@@ -33,39 +33,11 @@ public class DeleteSalesCommission
 
             try
             {
-                // 1. If approved, clean up generated payments and accounting entries first
+                // 1. If approved, clean up generated payments and every artifact they produced
+                //    (ledger entries, bank transactions, reconciliation rows, attributes).
+                //    Already-disbursed payments are included — the confirmation dialog says so.
                 if (commission.StatusId == "COMMISSION_APPROVED")
-                {
-                    var payments = await _context.Payments
-                        .Where(p => p.SalesRequestId == commission.SalesRequestId
-                                    && p.PaymentTypeId == "COMMISSION_PAYMENT")
-                        .ToListAsync(ct);
-
-                    if (payments.Any())
-                    {
-                        var paymentIds = payments.Select(p => p.PaymentId).ToList();
-
-                        var finAccountTrans = await _context.FinAccountTrans
-                            .Where(fat => fat.PaymentId != null && paymentIds.Contains(fat.PaymentId))
-                            .ToListAsync(ct);
-
-                        foreach (var fat in finAccountTrans)
-                            fat.PaymentId = null;
-
-                        _context.FinAccountTrans.RemoveRange(finAccountTrans);
-
-                        var acctgTransList = await _context.AcctgTrans
-                            .Include(t => t.AcctgTransEntries)
-                            .Where(t => t.PaymentId != null && paymentIds.Contains(t.PaymentId))
-                            .ToListAsync(ct);
-
-                        foreach (var tran in acctgTransList)
-                            _context.AcctgTransEntries.RemoveRange(tran.AcctgTransEntries);
-
-                        _context.AcctgTrans.RemoveRange(acctgTransList);
-                        _context.Payments.RemoveRange(payments);
-                    }
-                }
+                    await CommissionPaymentCleanup.PurgeAsync(_context, commission.SalesRequestId, ct);
 
                 // 2. Hard delete the commission record
                 _context.SalesCommissions.Remove(commission);

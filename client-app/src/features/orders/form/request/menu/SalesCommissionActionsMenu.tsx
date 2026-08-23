@@ -65,8 +65,8 @@ export const SalesCommissionActionsMenu: React.FC<SalesCommissionActionsMenuProp
             await approveCommission(salesCommissionId).unwrap();
             toast.success(getTranslatedLabel("salesCommission.form.approveSuccess", "تم اعتماد العمولة بنجاح"));
             onCommissionApproved?.();
-        } catch {
-            toast.error(getTranslatedLabel("salesCommission.form.approveError", "فشل في اعتماد العمولة"));
+        } catch (err: any) {
+            toast.error(err?.data?.title ?? getTranslatedLabel("salesCommission.form.approveError", "فشل في اعتماد العمولة"));
         } finally {
             setConfirmApproveOpen(false);
         }
@@ -83,8 +83,8 @@ export const SalesCommissionActionsMenu: React.FC<SalesCommissionActionsMenuProp
             await resetCommission(salesCommissionId).unwrap();
             toast.success(getTranslatedLabel("salesCommission.form.resetSuccess", "تم إعادة تعيين العمولة بنجاح"));
             onCommissionReset?.();
-        } catch {
-            toast.error(getTranslatedLabel("salesCommission.form.resetError", "فشل في إعادة تعيين العمولة"));
+        } catch (err: any) {
+            toast.error(err?.data?.title ?? getTranslatedLabel("salesCommission.form.resetError", "فشل في إعادة تعيين العمولة"));
         } finally {
             setConfirmResetOpen(false);
         }
@@ -101,8 +101,8 @@ export const SalesCommissionActionsMenu: React.FC<SalesCommissionActionsMenuProp
             await deleteCommission(salesCommissionId).unwrap();
             toast.success(getTranslatedLabel("salesCommission.form.deleteSuccess", "تم حذف العمولة بنجاح"));
             onCommissionDeleted?.();
-        } catch {
-            toast.error(getTranslatedLabel("salesCommission.form.deleteError", "فشل في حذف العمولة"));
+        } catch (err: any) {
+            toast.error(err?.data?.title ?? getTranslatedLabel("salesCommission.form.deleteError", "فشل في حذف العمولة"));
         } finally {
             setConfirmDeleteOpen(false);
         }
@@ -187,7 +187,7 @@ export const SalesCommissionActionsMenu: React.FC<SalesCommissionActionsMenuProp
                     <DialogContentText>
                         {getTranslatedLabel(
                             "salesCommission.form.resetConfirmMessage",
-                            "هل أنت متأكد من إعادة تعيين هذه العمولة؟ سيتم حذف جميع مدفوعات العمولة والقيود المحاسبية المرتبطة بها، وسيعود الحالة إلى قيد الانتظار."
+                            "هل أنت متأكد من إعادة تعيين هذه العمولة؟ سيتم حذف جميع مدفوعات العمولة — بما فيها المدفوعات التي تم صرفها بالفعل — وجميع القيود المحاسبية والحركات البنكية المرتبطة بها نهائياً، وسيعود الحالة إلى قيد الانتظار. لا يمكن التراجع عن هذا الإجراء."
                         )}
                     </DialogContentText>
                 </DialogContent>
@@ -218,7 +218,7 @@ export const SalesCommissionActionsMenu: React.FC<SalesCommissionActionsMenuProp
                     <DialogContentText>
                         {getTranslatedLabel(
                             "salesCommission.form.deleteConfirmMessage",
-                            "هل أنت متأكد من حذف هذه العمولة نهائياً؟ إذا كانت معتمدة، سيتم حذف جميع المدفوعات والقيود المحاسبية المرتبطة بها. لا يمكن التراجع عن هذا الإجراء."
+                            "هل أنت متأكد من حذف هذه العمولة نهائياً؟ إذا كانت معتمدة، سيتم حذف جميع المدفوعات — بما فيها التي تم صرفها بالفعل — والقيود المحاسبية والحركات البنكية المرتبطة بها. لا يمكن التراجع عن هذا الإجراء."
                         )}
                     </DialogContentText>
                 </DialogContent>

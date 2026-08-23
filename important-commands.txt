@@ -339,7 +339,8 @@ review 2nd -> New ERP enhancements for GoldenLand
 find invoice -> summarize sessions related to supply certificate invoices
 find project -> project report and start was dedicated to fixes for payroll payment type error in creating their acctg trans
 refactor sales commission
-read all files ->power bi
+compare and ->power bi
+erp modernization
 verify trial balance
 
 
