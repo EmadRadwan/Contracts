@@ -33,13 +33,17 @@ public class SalesOpportunity
     public bool IsWon { get; set; } = false;
     public bool IsClosed { get; set; } = false;
     
+    /// <summary>
+    /// AspNetUsers.Id of the creating user. References AspNetUsers, NOT the
+    /// OFBiz USER_LOGIN table.
+    /// </summary>
     public string? CreatedByUserLogin { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }
     public DateTime? CreatedTxStamp { get; set; }
 
-    public UserLogin? CreatedByUserLoginNavigation { get; set; }
+    public AppUserLogin? CreatedByUser { get; set; }
     public Uom? CurrencyUom { get; set; }
     public DataSource? DataSource { get; set; }
     public MarketingCampaign? MarketingCampaign { get; set; }

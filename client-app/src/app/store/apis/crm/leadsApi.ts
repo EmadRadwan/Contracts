@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { store } from "../../configureStore";
-import { Lead, LeadLov } from "../../../../features/CRM/models/lead";
+import { Lead, LeadLov, LeadAssignment, AssignLeadRequest, BulkAssignLeadsRequest, BulkAssignResult, LeadAssignmentHistory } from "../../../../features/CRM/models/lead";
 import { State, toODataString } from "@progress/kendo-data-query";
 
 interface ListResponse<T> {
@@ -87,6 +87,57 @@ const leadsApi = createApi({
                 invalidatesTags: [{ type: "Lead", id: "LIST" }, { type: "Lead", id: "LOV" }],
             }),
 
+            // Ownership history for one lead
+            fetchLeadAssignmentHistory: builder.query<LeadAssignmentHistory[], string>({
+                query: (id) => ({
+                    url: `/leads/${id}/assignment-history`,
+                    method: "GET",
+                }),
+                providesTags: (result, error, id) => [{ type: "Lead", id: `ASSIGNMENT-${id}` }],
+            }),
+
+            // Assign or reassign a lead to a sales rep
+            assignLead: builder.mutation<LeadAssignment, { id: string; request: AssignLeadRequest }>({
+                query: ({ id, request }) => ({
+                    url: `/leads/${id}/assign`,
+                    method: "POST",
+                    body: request,
+                }),
+                invalidatesTags: (result, error, { id }) => [
+                    { type: "Lead", id },
+                    { type: "Lead", id: `ASSIGNMENT-${id}` },
+                    { type: "Lead", id: "LIST" },
+                    { type: "Lead", id: "LOV" },
+                ],
+            }),
+
+            // Assign many leads to one sales rep
+            bulkAssignLeads: builder.mutation<BulkAssignResult, BulkAssignLeadsRequest>({
+                query: (request) => ({
+                    url: `/leads/bulk-assign`,
+                    method: "POST",
+                    body: request,
+                }),
+                invalidatesTags: [
+                    { type: "Lead", id: "LIST" },
+                    { type: "Lead", id: "LOV" },
+                ],
+            }),
+
+            // Remove the current owner from a lead
+            unassignLead: builder.mutation<LeadAssignment, string>({
+                query: (id) => ({
+                    url: `/leads/${id}/assign`,
+                    method: "DELETE",
+                }),
+                invalidatesTags: (result, error, id) => [
+                    { type: "Lead", id },
+                    { type: "Lead", id: `ASSIGNMENT-${id}` },
+                    { type: "Lead", id: "LIST" },
+                    { type: "Lead", id: "LOV" },
+                ],
+            }),
+
             // Update an existing lead
             updateLead: builder.mutation<Lead, { id: string; lead: Lead }>({
                 query: ({ id, lead }) => ({
@@ -110,6 +161,10 @@ export const {
     useCreateLeadMutation,
     useCreateLeadsBatchMutation,
     useUpdateLeadMutation,
+    useAssignLeadMutation,
+    useBulkAssignLeadsMutation,
+    useFetchLeadAssignmentHistoryQuery,
+    useUnassignLeadMutation,
 } = leadsApi;
 
 export { leadsApi };

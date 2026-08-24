@@ -90,7 +90,11 @@ public class SalesOpportunityAction
 
     // ==================== Audit Fields ====================
 
-    public string CreatedByUserLogin { get; set; } = null!;
+    /// <summary>
+    /// AspNetUsers.Id of the creating user. Nullable - references AspNetUsers,
+    /// NOT the OFBiz USER_LOGIN table, which is a partially-populated seed list.
+    /// </summary>
+    public string? CreatedByUserLogin { get; set; }
     public DateTime CreatedStamp { get; set; }
     public DateTime LastUpdatedStamp { get; set; }
     public DateTime? CreatedTxStamp { get; set; }
@@ -108,5 +112,5 @@ public class SalesOpportunityAction
     public virtual Enumeration? MeetingType { get; set; }
     public virtual Enumeration? MeetingLocation { get; set; }
 
-    public virtual UserLogin CreatedByUserLoginNavigation { get; set; } = null!;
+    public virtual AppUserLogin? CreatedByUser { get; set; }
 }

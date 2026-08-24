@@ -62,14 +62,8 @@ public class CreateSalesOpportunityAction
                 var stamp = DateTime.UtcNow;
                 var dto = request.Action;
 
-                // Get current user login
-                var user = await _context.Users
-                    .FirstOrDefaultAsync(x => x.UserName == _userAccessor.GetUsername(), ct);
-
-                var userLogin = user != null
-                    ? await _context.UserLogins
-                        .FirstOrDefaultAsync(x => x.PartyId == user.PartyId, ct)
-                    : null;
+                // AspNetUsers.Id straight off the JWT - no USER_LOGIN hop.
+                var actingUserId = _userAccessor.GetUserId();
 
                 // Validate Sales Opportunity exists
                 var opportunity = await _context.SalesOpportunities
@@ -145,6 +139,9 @@ public class CreateSalesOpportunityAction
                     var doneDealStage = await _context.SalesOpportunityStages
                         .FirstOrDefaultAsync(s => s.OpportunityStageId == "SOSTG_CLOSED_WON", ct);
 
+                    if (doneDealStage == null)
+                        return Result<SalesOpportunityActionDto>.Failure("Stage 'SOSTG_CLOSED_WON' not found");
+
                     var apartment = await _context.Products
                         .FirstOrDefaultAsync(p => p.ProductId == dto.ProductId, ct);
 
@@ -154,29 +151,49 @@ public class CreateSalesOpportunityAction
                     }
 
                     opportunity.IsWon = true;
+                    opportunity.IsClosed = true;
                     opportunity.OpportunityStageId = doneDealStage.OpportunityStageId;
+                    opportunity.EstimatedProbability = doneDealStage.DefaultProbability ?? opportunity.EstimatedProbability;
                     opportunity.LastUpdatedStamp = stamp;
                     opportunity.LastUpdatedTxStamp = stamp;
 
-                    var historyId = await _utilityService.GetNextSequence("SalesOpportunityHistory");
-                    var changeNote = $"Stage changed to {doneDealStage.Description}";
+                    await AddStageHistoryAsync(
+                        opportunity,
+                        $"Stage changed to {doneDealStage.Description}",
+                        actingUserId,
+                        stamp);
+                }
+                else if (IsCancellationAction(dto.ActionTypeId))
+                {
+                    // A cancellation/loss must close the opportunity, otherwise it sits
+                    // in its original pipeline column forever.
+                    var lostStage = await _context.SalesOpportunityStages
+                        .FirstOrDefaultAsync(s => s.OpportunityStageId == "SOSTG_CLOSED_LOST", ct);
 
-                    _context.SalesOpportunityHistories.Add(new SalesOpportunityHistory
-                    {
-                        SalesOpportunityHistoryId = historyId,
-                        SalesOpportunityId = opportunity.SalesOpportunityId,
-                        Description = opportunity.Description,
-                        EstimatedAmount = opportunity.EstimatedAmount,
-                        EstimatedProbability = opportunity.EstimatedProbability,
-                        CurrencyUomId = opportunity.CurrencyUomId,
-                        OpportunityStageId = opportunity.OpportunityStageId,
-                        EstimatedCloseDate = opportunity.EstimatedCloseDate,
-                        ChangeNote = changeNote,
-                        ModifiedByUserLogin = userLogin?.UserLoginId,
-                        ModifiedTimestamp = stamp,
-                        CreatedStamp = stamp,
-                        LastUpdatedStamp = stamp
-                    });
+                    if (lostStage == null)
+                        return Result<SalesOpportunityActionDto>.Failure("Stage 'SOSTG_CLOSED_LOST' not found");
+
+                    var cancelReasonDescription = await _context.Enumerations
+                        .Where(e => e.EnumTypeId == "CRM_CANCELLATION_REASON" && e.EnumId == dto.CancelReasonId)
+                        .Select(e => e.Description)
+                        .FirstOrDefaultAsync(ct);
+
+                    opportunity.IsWon = false;
+                    opportunity.IsClosed = true;
+                    opportunity.OpportunityStageId = lostStage.OpportunityStageId;
+                    opportunity.EstimatedProbability = lostStage.DefaultProbability ?? 0;
+                    opportunity.LastUpdatedStamp = stamp;
+                    opportunity.LastUpdatedTxStamp = stamp;
+
+                    var changeNote = string.IsNullOrEmpty(cancelReasonDescription)
+                        ? $"Stage changed to {lostStage.Description}"
+                        : $"Stage changed to {lostStage.Description} - {cancelReasonDescription}";
+
+                    await AddStageHistoryAsync(
+                        opportunity,
+                        changeNote,
+                        actingUserId,
+                        stamp);
                 }
 
                 // Generate next sequence ID
@@ -198,7 +215,7 @@ public class CreateSalesOpportunityAction
 
 
                     // Audit fields (following your existing pattern)
-                    CreatedByUserLogin = userLogin?.UserLoginId ?? "SYSTEM",
+                    CreatedByUserLogin = actingUserId,
                     CreatedStamp = stamp,
                     LastUpdatedStamp = stamp,
                     CreatedTxStamp = stamp,
@@ -242,6 +259,35 @@ public class CreateSalesOpportunityAction
         }
 
         #region Business Rule Helpers
+
+        /// <summary>
+        /// Writes a SalesOpportunityHistory snapshot for a stage transition driven by an action.
+        /// </summary>
+        private async Task AddStageHistoryAsync(
+            SalesOpportunity opportunity,
+            string changeNote,
+            string? modifiedByUserLogin,
+            DateTime stamp)
+        {
+            var historyId = await _utilityService.GetNextSequence("SalesOpportunityHistory");
+
+            _context.SalesOpportunityHistories.Add(new SalesOpportunityHistory
+            {
+                SalesOpportunityHistoryId = historyId,
+                SalesOpportunityId = opportunity.SalesOpportunityId,
+                Description = opportunity.Description,
+                EstimatedAmount = opportunity.EstimatedAmount,
+                EstimatedProbability = opportunity.EstimatedProbability,
+                CurrencyUomId = opportunity.CurrencyUomId,
+                OpportunityStageId = opportunity.OpportunityStageId,
+                EstimatedCloseDate = opportunity.EstimatedCloseDate,
+                ChangeNote = changeNote,
+                ModifiedByUserLogin = modifiedByUserLogin,
+                ModifiedTimestamp = stamp,
+                CreatedStamp = stamp,
+                LastUpdatedStamp = stamp
+            });
+        }
 
         private bool IsCancellationAction(string? actionTypeId)
         {

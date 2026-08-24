@@ -48,6 +48,11 @@ public class LeadDto
     public string? OrganizationPartyId { get; set; }
     public string? OrganizationName { get; set; }
     public string? LeadTemperatureId { get; set; }
+
+    // Assignment - current LEAD_OWNER relationship (null when unassigned)
+    public string? OwnerPartyId { get; set; }
+    public string? OwnerName { get; set; }
+    public DateTime? AssignedDate { get; set; }
 }
 
 /// <summary>

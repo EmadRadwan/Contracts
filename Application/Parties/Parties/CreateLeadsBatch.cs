@@ -20,6 +20,12 @@ public class CreateLeadsBatch
         public int Successful { get; init; }
         public int Failed { get; init; }
         public List<BatchLeadError> Errors { get; init; } = new();
+
+        /// <summary>
+        /// PartyIds of the leads created by this batch, so the caller can
+        /// follow up with a bulk assignment. Creation itself never assigns.
+        /// </summary>
+        public List<string> CreatedPartyIds { get; init; } = new();
     }
 
     public record BatchLeadError
@@ -102,6 +108,7 @@ public class CreateLeadsBatch
                 int successful = 0;
                 int failed = 0;
                 var errors = new List<BatchLeadError>();
+                var createdPartyIds = new List<string>();
 
                 for (int i = 0; i < dtoList.Count; i++)
                 {
@@ -342,6 +349,7 @@ public class CreateLeadsBatch
                             LastUpdatedStamp = stamp
                         });
 
+                        createdPartyIds.Add(partyId);
                         successful++;
                     }
                     catch (Exception ex)
@@ -363,7 +371,8 @@ public class CreateLeadsBatch
                     TotalReceived = dtoList.Count,
                     Successful = successful,
                     Failed = failed,
-                    Errors = errors
+                    Errors = errors,
+                    CreatedPartyIds = createdPartyIds
                 };
 
                 if (result.Successful > 0)

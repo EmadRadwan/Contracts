@@ -153,7 +153,6 @@ import ProjectCommissionRatesList from "../../features/orders/form/request/dashb
 import SalesCommissionsList from "../../features/orders/form/request/dashboard/SalesCommissionsList";
 import RequireRole from "./RequireRole";
 import ChangePasswordPage from "../../features/account/ChangePasswordPage";
-import CRMDashboard from "../../features/CRM/dashboard/CRMDashboard";
 import SalesOpportunityDashboard from "../../features/CRM/sales-opportunities/SalesOpportunityDashboard";
 import LeadsDashboard from "../../features/CRM/leads/LeadsDashboard"
 import MultiAcctgTransEntryForm from "../../features/accounting/transaction/form/MultiAcctgTransEntryForm";
@@ -234,7 +233,6 @@ export const routes: RouteObject[] = [
                         children: [
                             {path: "sales-opportunities", element: <SalesOpportunityDashboard/>},
                             {path: "leads", element: <LeadsDashboard/>},
-                            {path: "crm", element: <CRMDashboard/>},
                         ],
                     },
 

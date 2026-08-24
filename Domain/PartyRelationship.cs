@@ -20,12 +20,25 @@ public class PartyRelationship
     public string? PermissionsEnumId { get; set; }
     public string? PositionTitle { get; set; }
     public string? Comments { get; set; }
+
+    /// <summary>
+    /// AspNetUsers.Id of the user who created this relationship. Nullable - rows
+    /// written before this column existed, and any created outside the
+    /// application, have none.
+    ///
+    /// NOTE: this references AspNetUsers, NOT the OFBiz USER_LOGIN table.
+    /// USER_LOGIN is a partially-populated seed list (10 of 24 users) and is not
+    /// used for authentication, so it cannot identify most users.
+    /// </summary>
+    public string? CreatedByUserLogin { get; set; }
+
     public DateTime? LastUpdatedStamp { get; set; }
     public DateTime? LastUpdatedTxStamp { get; set; }
     public DateTime? CreatedStamp { get; set; }
     public DateTime? CreatedTxStamp { get; set; }
 
     public PartyRelationshipType? PartyRelationshipType { get; set; }
+    public AppUserLogin? CreatedByUser { get; set; }
     public PartyRole PartyRole { get; set; } = null!;
     public PartyRole PartyRoleNavigation { get; set; } = null!;
     public PriorityType? PriorityType { get; set; }

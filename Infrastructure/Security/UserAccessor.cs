@@ -17,4 +17,16 @@ public class UserAccessor : IUserAccessor
     {
         return _httpContextAccessor.HttpContext.User.FindFirstValue(ClaimTypes.Name);
     }
+
+    public string? GetUserId()
+    {
+        return _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+    }
+
+    public bool IsInRole(string role)
+    {
+        var user = _httpContextAccessor.HttpContext?.User;
+        if (user == null || string.IsNullOrWhiteSpace(role)) return false;
+        return user.IsInRole(role);
+    }
 }

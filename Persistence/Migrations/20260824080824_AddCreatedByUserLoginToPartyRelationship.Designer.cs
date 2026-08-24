@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Persistence;
 
@@ -10,9 +11,11 @@ using Persistence;
 namespace Persistence.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20260824080824_AddCreatedByUserLoginToPartyRelationship")]
+    partial class AddCreatedByUserLoginToPartyRelationship
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -28345,8 +28348,9 @@ namespace Persistence.Migrations
                         .HasColumnName("COMMENTS");
 
                     b.Property<string>("CreatedByUserLogin")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)")
+                        .HasMaxLength(250)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(250)")
                         .HasColumnName("CREATED_BY_USER_LOGIN");
 
                     b.Property<DateTime?>("CreatedStamp")
@@ -46489,8 +46493,9 @@ namespace Persistence.Migrations
                         .HasColumnName("SALES_OPPORTUNITY_ID");
 
                     b.Property<string>("CreatedByUserLogin")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)")
+                        .HasMaxLength(250)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(250)")
                         .HasColumnName("CREATED_BY_USER_LOGIN");
 
                     b.Property<DateTime?>("CreatedStamp")
@@ -46652,8 +46657,10 @@ namespace Persistence.Migrations
                         .HasColumnName("COMMENT");
 
                     b.Property<string>("CreatedByUserLogin")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(250)")
                         .HasColumnName("CREATED_BY_USER_LOGIN");
 
                     b.Property<DateTime>("CreatedStamp")
@@ -46848,8 +46855,9 @@ namespace Persistence.Migrations
                         .HasColumnName("LAST_UPDATED_TX_STAMP");
 
                     b.Property<string>("ModifiedByUserLogin")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)")
+                        .HasMaxLength(250)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(250)")
                         .HasColumnName("MODIFIED_BY_USER_LOGIN");
 
                     b.Property<DateTime?>("ModifiedTimestamp")
@@ -70412,11 +70420,11 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.PartyRelationship", b =>
                 {
-                    b.HasOne("Domain.AppUserLogin", "CreatedByUser")
+                    b.HasOne("Domain.UserLogin", "CreatedByUserLoginNavigation")
                         .WithMany()
                         .HasForeignKey("CreatedByUserLogin")
                         .OnDelete(DeleteBehavior.NoAction)
-                        .HasConstraintName("PARTY_REL_CREATED_BY_USER");
+                        .HasConstraintName("PARTY_REL_USRLGN");
 
                     b.HasOne("Domain.PartyRelationshipType", "PartyRelationshipType")
                         .WithMany("PartyRelationships")
@@ -70456,7 +70464,7 @@ namespace Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("PARTY_REL_TPROLE");
 
-                    b.Navigation("CreatedByUser");
+                    b.Navigation("CreatedByUserLoginNavigation");
 
                     b.Navigation("PartyRelationshipType");
 
@@ -76279,11 +76287,11 @@ namespace Persistence.Migrations
 
             modelBuilder.Entity("Domain.SalesOpportunity", b =>
                 {
-                    b.HasOne("Domain.AppUserLogin", "CreatedByUser")
-                        .WithMany()
+                    b.HasOne("Domain.UserLogin", "CreatedByUserLoginNavigation")
+                        .WithMany("SalesOpportunities")
                         .HasForeignKey("CreatedByUserLogin")
                         .OnDelete(DeleteBehavior.NoAction)
-                        .HasConstraintName("SLSOPP_CREATED_BY_USER");
+                        .HasConstraintName("SLSOPP_USRLGN");
 
                     b.HasOne("Domain.Uom", "CurrencyUom")
                         .WithMany("SalesOpportunities")
@@ -76327,7 +76335,7 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("SLSOPP_TO_WORKEFFORT");
 
-                    b.Navigation("CreatedByUser");
+                    b.Navigation("CreatedByUserLoginNavigation");
 
                     b.Navigation("CurrencyUom");
 
@@ -76359,11 +76367,12 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("SLSOPPACT_CANCEL_RSN");
 
-                    b.HasOne("Domain.AppUserLogin", "CreatedByUser")
+                    b.HasOne("Domain.UserLogin", "CreatedByUserLoginNavigation")
                         .WithMany()
                         .HasForeignKey("CreatedByUserLogin")
                         .OnDelete(DeleteBehavior.NoAction)
-                        .HasConstraintName("SLSOPPACT_CREATED_BY_USER");
+                        .IsRequired()
+                        .HasConstraintName("SLSOPPACT_USRLGN");
 
                     b.HasOne("Domain.Enumeration", "MeetingLocation")
                         .WithMany()
@@ -76394,7 +76403,7 @@ namespace Persistence.Migrations
 
                     b.Navigation("CancelReason");
 
-                    b.Navigation("CreatedByUser");
+                    b.Navigation("CreatedByUserLoginNavigation");
 
                     b.Navigation("MeetingLocation");
 
@@ -76425,11 +76434,11 @@ namespace Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("SLOPHI_CRNCY_UOM");
 
-                    b.HasOne("Domain.AppUserLogin", "ModifiedByUser")
-                        .WithMany()
+                    b.HasOne("Domain.UserLogin", "ModifiedByUserLoginNavigation")
+                        .WithMany("SalesOpportunityHistories")
                         .HasForeignKey("ModifiedByUserLogin")
                         .OnDelete(DeleteBehavior.NoAction)
-                        .HasConstraintName("SLOPHI_MODIFIED_BY_USER");
+                        .HasConstraintName("SLOPHI_USRLGN");
 
                     b.HasOne("Domain.SalesOpportunityStage", "OpportunityStage")
                         .WithMany("SalesOpportunityHistories")
@@ -76445,7 +76454,7 @@ namespace Persistence.Migrations
 
                     b.Navigation("CurrencyUom");
 
-                    b.Navigation("ModifiedByUser");
+                    b.Navigation("ModifiedByUserLoginNavigation");
 
                     b.Navigation("OpportunityStage");
 
@@ -85377,6 +85386,10 @@ namespace Persistence.Migrations
                     b.Navigation("SalesForecastHistories");
 
                     b.Navigation("SalesForecastModifiedByUserLogins");
+
+                    b.Navigation("SalesOpportunities");
+
+                    b.Navigation("SalesOpportunityHistories");
 
                     b.Navigation("ShipmentReceipts");
 

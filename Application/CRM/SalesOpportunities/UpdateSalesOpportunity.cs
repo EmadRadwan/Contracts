@@ -58,22 +58,44 @@ public class UpdateSalesOpportunity
                 if (opportunity == null)
                     return Result<SalesOpportunityDto>.Failure("Opportunity not found");
 
-                var user = await _context.Users
-                    .FirstOrDefaultAsync(x => x.UserName == _userAccessor.GetUsername(), ct);
-                var userLogin = user != null
-                    ? await _context.UserLogins.FirstOrDefaultAsync(x => x.PartyId == user.PartyId, ct)
-                    : null;
+                // AspNetUsers.Id straight off the JWT - no USER_LOGIN hop.
+                var actingUserId = _userAccessor.GetUserId();
 
                 // Check if stage changed (important for history)
                 var stageChanged = opportunity.OpportunityStageId != dto.OpportunityStageId;
 
-                // Only update these fields if they are explicitly provided
+                // Only update these fields if they are explicitly provided.
+                // The stage-only PATCH endpoint reuses this command with a sparse DTO,
+                // so every assignment must stay null-guarded.
                 if (dto.WorkEffortId != null)
                     opportunity.WorkEffortId = dto.WorkEffortId;
                 if (dto.ProductId != null)
                     opportunity.ProductId = dto.ProductId;
+                if (dto.OpportunityName != null)
+                    opportunity.OpportunityName = dto.OpportunityName;
+                if (dto.Description != null)
+                    opportunity.Description = dto.Description;
+                if (dto.EstimatedAmount.HasValue)
+                    opportunity.EstimatedAmount = dto.EstimatedAmount;
+                if (dto.CurrencyUomId != null)
+                    opportunity.CurrencyUomId = dto.CurrencyUomId;
+                if (dto.EstimatedProbability.HasValue)
+                    opportunity.EstimatedProbability = dto.EstimatedProbability;
+                if (dto.EstimatedCloseDate.HasValue)
+                    opportunity.EstimatedCloseDate = dto.EstimatedCloseDate;
+                if (dto.NextStep != null)
+                    opportunity.NextStep = dto.NextStep;
+                if (dto.NextStepDate.HasValue)
+                    opportunity.NextStepDate = dto.NextStepDate;
+                if (dto.DataSourceId != null)
+                    opportunity.DataSourceId = dto.DataSourceId;
+                if (dto.MarketingCampaignId != null)
+                    opportunity.MarketingCampaignId = dto.MarketingCampaignId;
+                if (dto.TypeEnumId != null)
+                    opportunity.TypeEnumId = dto.TypeEnumId;
 
                 opportunity.LastUpdatedStamp = stamp;
+                opportunity.LastUpdatedTxStamp = stamp;
 
                 // Update stage if changed
                 if (stageChanged && !string.IsNullOrEmpty(dto.OpportunityStageId))
@@ -98,6 +120,20 @@ public class UpdateSalesOpportunity
 
                         if (apartment != null)
                             apartment.ApartmentStatusId = "APARTMENT_RESERVED";
+
+                        opportunity.IsWon = true;
+                        opportunity.IsClosed = true;
+                    }
+                    else if (newStage.OpportunityStageId == "SOSTG_CLOSED_LOST")
+                    {
+                        opportunity.IsWon = false;
+                        opportunity.IsClosed = true;
+                    }
+                    else
+                    {
+                        // Moved back into an open stage - reopen the opportunity.
+                        opportunity.IsWon = false;
+                        opportunity.IsClosed = false;
                     }
 
                     _context.SalesOpportunityHistories.Add(new SalesOpportunityHistory
@@ -111,7 +147,7 @@ public class UpdateSalesOpportunity
                         OpportunityStageId = opportunity.OpportunityStageId,
                         EstimatedCloseDate = opportunity.EstimatedCloseDate,
                         ChangeNote = changeNote,
-                        ModifiedByUserLogin = userLogin?.UserLoginId,
+                        ModifiedByUserLogin = actingUserId,
                         ModifiedTimestamp = stamp,
                         CreatedStamp = stamp,
                         LastUpdatedStamp = stamp

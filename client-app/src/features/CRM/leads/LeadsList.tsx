@@ -2,17 +2,21 @@ import React from 'react';
 import {
     Grid as KendoGrid,
     GridColumn as Column,
+    GridToolbar,
     GridDataStateChangeEvent,
     GridCellProps
 } from '@progress/kendo-react-grid';
 import { State, process } from '@progress/kendo-data-query';
-import { Grid, Typography, Chip, Box } from '@mui/material';
+import { Grid, Typography, Chip, Box, Checkbox } from '@mui/material';
 import Button from '@mui/material/Button';
+import PersonIcon from '@mui/icons-material/Person';
 import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
-import { useFetchLeadsQuery } from '../../../app/store/configureStore';
+import { useFetchLeadsQuery, useAppSelector } from '../../../app/store/configureStore';
 import { Lead } from '../models/lead';
 import LoadingComponent from '../../../app/layout/LoadingComponent';
 import { useLocation, useNavigate } from 'react-router-dom';
+import AssignLeadModal from './AssignLeadModal';
+import BulkAssignLeadsModal from './BulkAssignLeadsModal';
 
 interface LeadsListProps {
     onCreateNew: () => void;
@@ -25,6 +29,11 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
 
     const location = useLocation();
     const navigate = useNavigate();
+
+    // Assignment is the CRM Admin's job - hide the controls for everyone else.
+    // The server enforces this too; this only keeps the UI honest.
+    const { user } = useAppSelector((state) => state.account);
+    const canAssign = (user?.roles || []).includes('CRM_Leads_Assign');
     const highlightedLeadId = location.state?.duplicateLeadId ?? null;
     const highlightedLeadIdRef = React.useRef<string | null>(highlightedLeadId);
 
@@ -51,6 +60,40 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
     const dataStateChange = (e: GridDataStateChangeEvent) => {
         setDataState(e.dataState);
     };
+
+    // Assignment modal state
+    const [assignOpen, setAssignOpen] = React.useState(false);
+    const [leadToAssign, setLeadToAssign] = React.useState<Lead | undefined>(undefined);
+
+    const handleOpenAssign = (lead: Lead) => {
+        setLeadToAssign(lead);
+        setAssignOpen(true);
+    };
+
+    const handleCloseAssign = () => {
+        setAssignOpen(false);
+        setLeadToAssign(undefined);
+    };
+
+    // Bulk selection. Selection is held as a Set of partyIds rather than a flag
+    // on the row, because the grid is server-paged - the row objects are
+    // replaced on every fetch, so a per-row flag would not survive paging.
+    const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+    const [bulkAssignOpen, setBulkAssignOpen] = React.useState(false);
+
+    const toggleRow = (partyId: string) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(partyId)) {
+                next.delete(partyId);
+            } else {
+                next.add(partyId);
+            }
+            return next;
+        });
+    };
+
+    const clearSelection = () => setSelectedIds(new Set());
 
     const processedData = leads || { data: [], total: 0 };
 
@@ -163,6 +206,77 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
         );
     };
 
+    // Custom cell for the assigned owner
+    const OwnerCell = (props: GridCellProps) => {
+        const ownerName = props.dataItem.ownerName;
+        return (
+            <td className={props.className} style={props.style}>
+                {ownerName ? (
+                    <Chip
+                        icon={<PersonIcon />}
+                        label={ownerName}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                    />
+                ) : (
+                    <Chip
+                        label={getTranslatedLabel(`${localizationKey}.unassigned`, 'Unassigned')}
+                        size="small"
+                        variant="outlined"
+                    />
+                )}
+            </td>
+        );
+    };
+
+    // Assign / reassign action
+    const AssignCell = (props: GridCellProps) => {
+        return (
+            <td className={props.className} style={props.style}>
+                <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => handleOpenAssign(props.dataItem)}
+                >
+                    {props.dataItem.ownerPartyId
+                        ? getTranslatedLabel(`${localizationKey}.reassign`, 'Reassign')
+                        : getTranslatedLabel(`${localizationKey}.assign`, 'Assign')}
+                </Button>
+            </td>
+        );
+    };
+
+    // Select-all applies to the current page only, which is what the user can see.
+    const pageIds: string[] = processedData.data.map((d: any) => d.partyId).filter(Boolean);
+    const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+    const somePageSelected = pageIds.some((id) => selectedIds.has(id)) && !allPageSelected;
+
+    const togglePage = () => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (allPageSelected) {
+                pageIds.forEach((id) => next.delete(id));
+            } else {
+                pageIds.forEach((id) => next.add(id));
+            }
+            return next;
+        });
+    };
+
+    const SelectCell = (props: GridCellProps) => {
+        const partyId = props.dataItem.partyId;
+        return (
+            <td className={props.className} style={props.style}>
+                <Checkbox
+                    size="small"
+                    checked={selectedIds.has(partyId)}
+                    onChange={() => toggleRow(partyId)}
+                />
+            </td>
+        );
+    };
+
     if (isLoading) {
         return <LoadingComponent message={getTranslatedLabel(`${localizationKey}.loadingLeads`, 'Loading leads...')} />;
     }
@@ -183,6 +297,42 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
                 total={processedData.total}
                 onDataStateChange={dataStateChange}
             >
+                {canAssign && selectedIds.size > 0 && (
+                    <GridToolbar>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                            <Typography variant="body2">
+                                {getTranslatedLabel(`${localizationKey}.selectedCount`, '{0} selected')
+                                    .replace('{0}', String(selectedIds.size))}
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                size="small"
+                                onClick={() => setBulkAssignOpen(true)}
+                            >
+                                {getTranslatedLabel(`${localizationKey}.assignSelected`, 'Assign selected')}
+                            </Button>
+                            <Button variant="text" size="small" onClick={clearSelection}>
+                                {getTranslatedLabel(`${localizationKey}.clearSelection`, 'Clear')}
+                            </Button>
+                        </Box>
+                    </GridToolbar>
+                )}
+                {canAssign && (
+                    <Column
+                        width={50}
+                        filterable={false}
+                        sortable={false}
+                        cell={SelectCell}
+                        headerCell={() => (
+                            <Checkbox
+                                size="small"
+                                checked={allPageSelected}
+                                indeterminate={somePageSelected}
+                                onChange={togglePage}
+                            />
+                        )}
+                    />
+                )}
 
                 {/* <Column
                     field="partyId"
@@ -211,12 +361,40 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
                     width={200}
                 />
                 <Column
+                    field="ownerName"
+                    title={getTranslatedLabel(`${localizationKey}.owner`, 'Assigned To')}
+                    cell={OwnerCell}
+                    width={200}
+                />
+                <Column
                     field="address1"
                     title={getTranslatedLabel(`${localizationKey}.address`, 'Address')}
                     cell={AddressCell}
 
                 />
+                {canAssign && (
+                    <Column
+                        title={getTranslatedLabel(`${localizationKey}.actions`, 'Actions')}
+                        cell={AssignCell}
+                        width={140}
+                        filterable={false}
+                        sortable={false}
+                    />
+                )}
             </KendoGrid>
+
+            <AssignLeadModal
+                open={assignOpen}
+                onClose={handleCloseAssign}
+                lead={leadToAssign}
+            />
+
+            <BulkAssignLeadsModal
+                open={bulkAssignOpen}
+                onClose={() => setBulkAssignOpen(false)}
+                leadPartyIds={Array.from(selectedIds)}
+                onAssigned={clearSelection}
+            />
         </div>
     );
 };

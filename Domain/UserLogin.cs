@@ -59,8 +59,6 @@ public class UserLogin
         SalesForecastCreatedByUserLogins = new HashSet<SalesForecast>();
         SalesForecastHistories = new HashSet<SalesForecastHistory>();
         SalesForecastModifiedByUserLogins = new HashSet<SalesForecast>();
-        SalesOpportunities = new HashSet<SalesOpportunity>();
-        SalesOpportunityHistories = new HashSet<SalesOpportunityHistory>();
         ShipmentReceipts = new HashSet<ShipmentReceipt>();
         ShipmentStatuses = new HashSet<ShipmentStatus>();
         TestingStatuses = new HashSet<TestingStatus>();
@@ -152,8 +150,6 @@ public class UserLogin
     public ICollection<SalesForecast> SalesForecastCreatedByUserLogins { get; set; }
     public ICollection<SalesForecastHistory> SalesForecastHistories { get; set; }
     public ICollection<SalesForecast> SalesForecastModifiedByUserLogins { get; set; }
-    public ICollection<SalesOpportunity> SalesOpportunities { get; set; }
-    public ICollection<SalesOpportunityHistory> SalesOpportunityHistories { get; set; }
     public ICollection<ShipmentReceipt> ShipmentReceipts { get; set; }
     public ICollection<ShipmentStatus> ShipmentStatuses { get; set; }
     public ICollection<TestingStatus> TestingStatuses { get; set; }

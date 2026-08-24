@@ -12,6 +12,10 @@ public class SalesOpportunityHistory
     public DateTime? EstimatedCloseDate { get; set; }
     public string? OpportunityStageId { get; set; }
     public string? ChangeNote { get; set; }
+    /// <summary>
+    /// AspNetUsers.Id of the modifying user. References AspNetUsers, NOT the
+    /// OFBiz USER_LOGIN table.
+    /// </summary>
     public string? ModifiedByUserLogin { get; set; }
     public DateTime? ModifiedTimestamp { get; set; }
     public DateTime? LastUpdatedStamp { get; set; }
@@ -20,7 +24,7 @@ public class SalesOpportunityHistory
     public DateTime? CreatedTxStamp { get; set; }
 
     public Uom? CurrencyUom { get; set; }
-    public UserLogin? ModifiedByUserLoginNavigation { get; set; }
+    public AppUserLogin? ModifiedByUser { get; set; }
     public SalesOpportunityStage? OpportunityStage { get; set; }
     public SalesOpportunity? SalesOpportunity { get; set; }
 }

@@ -35,6 +35,7 @@ import FormInput from '../../../app/common/form/FormInput';
 import { useCreateLeadsBatchMutation } from '../../../app/store/configureStore';
 import AddIcon from '@mui/icons-material/Add';
 import { useAppSelector } from '../../../app/store/configureStore';
+import BulkAssignLeadsModal from './BulkAssignLeadsModal';
 
 interface ImportedDataGridProps {
   data: any[];
@@ -54,6 +55,7 @@ interface BatchCreateLeadsResult {
   successful: number;
   failed: number;
   errors: BatchLeadError[];
+  createdPartyIds: string[];
 }
 
 const DATA_SOURCE_MAP: Record<string, string> = {
@@ -88,7 +90,11 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
   const [batchResult, setBatchResult] = useState<BatchCreateLeadsResult | null>(null);
   const [resultModalOpen, setResultModalOpen] = useState(false);
   const [failedIndices, setFailedIndices] = useState<Set<number>>(new Set());
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignedDone, setAssignedDone] = useState(false);
   const language = useAppSelector((state) => state.localization.language);
+  const { user } = useAppSelector((state) => state.account);
+  const canAssign = (user?.roles || []).includes('CRM_Leads_Assign');
 
   const processed = process(gridData, dataState);
   const columns = data.length > 0 ? Object.keys(data[0]) : [];
@@ -99,7 +105,8 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
       const result: BatchCreateLeadsResult = await createBatchLeads(mapped).unwrap();
       setBatchResult(result);
 
-      if (result.failed > 0) {
+      // Show the summary whenever there is something to report or to assign.
+      if (result.failed > 0 || result.successful > 0) {
         setResultModalOpen(true);
       } else {
         onClose();
@@ -240,7 +247,9 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
         PaperProps={{ sx: { borderRadius: 2 } }}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <WarningAmberIcon color="warning" />
+          {batchResult && batchResult.failed > 0
+            ? <WarningAmberIcon color="warning" />
+            : <CheckCircleOutlineIcon color="success" />}
           {getTranslatedLabel(`${localizationKey}.importSummaryTitle`, 'Import Summary')}
         </DialogTitle>
 
@@ -263,6 +272,28 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
               variant="outlined"
             />
           </Box>
+
+          {/* Assignment step - imported leads are created unassigned */}
+          {canAssign && batchResult && batchResult.createdPartyIds?.length > 0 && (
+            <Alert
+              severity={assignedDone ? 'success' : 'info'}
+              sx={{ mb: 3 }}
+              action={
+                !assignedDone && (
+                  <Button color="inherit" size="small" onClick={() => setAssignOpen(true)}>
+                    {getTranslatedLabel(`${localizationKey}.assignNow`, 'Assign')}
+                  </Button>
+                )
+              }
+            >
+              {assignedDone
+                ? getTranslatedLabel(`${localizationKey}.assignDone`, 'The imported leads have been assigned.')
+                : getTranslatedLabel(
+                    `${localizationKey}.assignPrompt`,
+                    '{0} leads were created without an owner. Assign them to a sales rep now?'
+                  ).replace('{0}', String(batchResult.createdPartyIds.length))}
+            </Alert>
+          )}
 
           {batchResult && batchResult.errors.length > 0 && (
             <>
@@ -309,20 +340,30 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
         </DialogContent>
 
         <DialogActions sx={{ gap: 1 }}>
-          <Button
-            onClick={handleKeepFailedRows}
-            variant="contained"
-            color="warning"
-            startIcon={<WarningAmberIcon />}
-          >
-            {getTranslatedLabel(`${localizationKey}.fixFailedRows`, 'Fix Failed Rows')}
-          </Button>
+          {batchResult && batchResult.failed > 0 && (
+            <Button
+              onClick={handleKeepFailedRows}
+              variant="contained"
+              color="warning"
+              startIcon={<WarningAmberIcon />}
+            >
+              {getTranslatedLabel(`${localizationKey}.fixFailedRows`, 'Fix Failed Rows')}
+            </Button>
+          )}
 
           <Button onClick={handleResultModalClose} variant="outlined">
             {getTranslatedLabel(`${localizationKey}.done`, 'Done')}
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Bulk-assign the leads this import just created */}
+      <BulkAssignLeadsModal
+        open={assignOpen}
+        onClose={() => setAssignOpen(false)}
+        leadPartyIds={batchResult?.createdPartyIds ?? []}
+        onAssigned={() => setAssignedDone(true)}
+      />
     </>
   );
 };

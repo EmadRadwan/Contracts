@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CRM Module — Test Plan &amp; Gap Analysis</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 16mm 14mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 9.4pt; line-height: 1.45; color: #1a1a1a; margin: 0;
+  }
+  h1, h2, h3, h4 { font-family: Georgia, "Times New Roman", serif; margin: 0; }
+  h1 { font-size: 25pt; line-height: 1.15; letter-spacing: -0.4pt; }
+  h2 {
+    font-size: 14pt; margin: 20pt 0 8pt; padding-bottom: 4pt;
+    border-bottom: 1.5pt solid #12395e; color: #12395e;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 11pt; margin: 14pt 0 5pt; color: #12395e;
+    page-break-after: avoid;
+  }
+  h4 { font-size: 9.6pt; margin: 10pt 0 4pt; color: #333; page-break-after: avoid; }
+  p { margin: 0 0 7pt; }
+  ul, ol { margin: 0 0 8pt; padding-left: 16pt; }
+  li { margin-bottom: 3pt; }
+  code {
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.3pt;
+    background: #f0f2f5; padding: 0.5pt 3pt; border-radius: 2pt; color: #0f2f4d;
+  }
+  pre {
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 7.8pt;
+    background: #f6f7f9; border-left: 2.5pt solid #12395e; padding: 7pt 9pt;
+    margin: 0 0 9pt; white-space: pre-wrap; line-height: 1.4; border-radius: 0 3pt 3pt 0;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 0 0 10pt; font-size: 8.4pt; }
+  th {
+    background: #12395e; color: #fff; text-align: left; padding: 4.5pt 6pt;
+    font-weight: 600; font-size: 8.2pt; letter-spacing: 0.2pt;
+  }
+  td { padding: 4pt 6pt; border-bottom: 0.5pt solid #d8dde3; vertical-align: top; }
+  tr { page-break-inside: avoid; }
+  tbody tr:nth-child(even) { background: #f7f9fb; }
+  .step { width: 26pt; text-align: center; color: #12395e; font-weight: 700; }
+  .chk  { width: 30pt; text-align: center; color: #98a2ad; font-size: 12pt; line-height: 1; }
+  .cover {
+    border-bottom: 3pt solid #12395e; padding-bottom: 14pt; margin-bottom: 16pt;
+  }
+  .cover .kicker {
+    font-size: 8.5pt; letter-spacing: 2.2pt; text-transform: uppercase;
+    color: #6b7785; margin-bottom: 8pt; font-family: Helvetica, Arial, sans-serif;
+  }
+  .cover .sub { font-size: 11pt; color: #46525f; margin-top: 8pt; font-style: italic; }
+  .meta {
+    display: flex; gap: 0; margin-top: 14pt; border-top: 0.5pt solid #d8dde3; padding-top: 10pt;
+  }
+  .meta div { flex: 1; border-left: 2pt solid #12395e; padding-left: 7pt; margin-right: 10pt; }
+  .meta .lbl { font-size: 7pt; text-transform: uppercase; letter-spacing: 1pt; color: #6b7785; }
+  .meta .val { font-size: 9pt; font-weight: 600; }
+  .callout {
+    background: #f2f6fa; border-left: 3pt solid #12395e;
+    padding: 8pt 10pt; margin: 0 0 10pt; page-break-inside: avoid;
+  }
+  .warn { background: #fdf4ec; border-left-color: #b5651d; }
+  .warn strong { color: #8f4c12; }
+  .bad  { background: #fcf1f1; border-left-color: #a92f2f; }
+  .bad strong { color: #8a2020; }
+  .good { background: #f0f7f0; border-left-color: #2e6b34; }
+  .good strong { color: #24592a; }
+  .callout p:last-child { margin-bottom: 0; }
+  .pill {
+    display: inline-block; font-size: 7pt; font-weight: 700; letter-spacing: 0.5pt;
+    padding: 1.5pt 5pt; border-radius: 8pt; text-transform: uppercase; vertical-align: 1pt;
+  }
+  .p-new  { background: #d9ead9; color: #24592a; }
+  .p-high { background: #f7d9d9; color: #8a2020; }
+  .p-med  { background: #fbeacc; color: #8f4c12; }
+  .p-low  { background: #e3e8ee; color: #46525f; }
+  .pagebreak { page-break-before: always; }
+  .toc { columns: 2; column-gap: 22pt; font-size: 8.8pt; }
+  .toc div { margin-bottom: 3pt; break-inside: avoid; }
+  .toc .n { color: #12395e; font-weight: 700; display: inline-block; width: 22pt; }
+  .footnote { font-size: 7.8pt; color: #6b7785; font-style: italic; }
+  .nb { font-size: 8.2pt; color: #46525f; }
+  td.ref { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 7.4pt; color: #46525f; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="kicker">Contracts ERP &middot; Quality Review</div>
+  <h1>CRM Module<br>Test Plan &amp; Gap Analysis</h1>
+  <div class="sub">A full acceptance pass over Leads and Sales Opportunities, plus the features
+  the module still needs to be complete.</div>
+  <div class="meta">
+    <div><div class="lbl">Date</div><div class="val">23 August 2026</div></div>
+    <div><div class="lbl">Scope</div><div class="val">Application/CRM &middot; features/CRM</div></div>
+    <div><div class="lbl">Build</div><div class="val">master @ ffa069af +3 fixes</div></div>
+    <div><div class="lbl">Suites</div><div class="val">10 &middot; 96 checks</div></div>
+  </div>
+</div>
+
+<h2>Contents</h2>
+<div class="toc">
+  <div><span class="n">1</span>How to use this document</div>
+  <div><span class="n">2</span>Pre-flight setup</div>
+  <div><span class="n">3</span>Suite A — Access &amp; permissions</div>
+  <div><span class="n">4</span>Suite B — Leads: create, edit, duplicates</div>
+  <div><span class="n">5</span>Suite C — Leads: grid &amp; lookup</div>
+  <div><span class="n">6</span>Suite D — Excel / CSV bulk import</div>
+  <div><span class="n">7</span>Suite E — Opportunities: create &amp; edit</div>
+  <div><span class="n">8</span>Suite F — Pipeline board &amp; list</div>
+  <div><span class="n">9</span>Suite G — Action engine</div>
+  <div><span class="n">10</span>Suite H — History &amp; audit</div>
+  <div><span class="n">11</span>Suite I — Arabic / RTL</div>
+  <div><span class="n">12</span>Suite J — API &amp; data integrity</div>
+  <div><span class="n">13</span>Regression pack (3 recent fixes)</div>
+  <div><span class="n">14</span>Known open defects — do not re-report</div>
+  <div><span class="n">15</span>Missing features — within CRM</div>
+  <div><span class="n">16</span>Missing features — cross-module</div>
+  <div><span class="n">17</span>Suggested build order</div>
+</div>
+
+<h2>1 &nbsp; How to use this document</h2>
+<p>Every suite is a table of ordered steps with an explicit expected result and a tick box. Work a
+suite top to bottom — later steps depend on records created by earlier ones. Where a step needs a
+database check, the SQL is given inline; run it against the dev database with:</p>
+<pre>MYSQL_PWD='&lt;dev password&gt;' mysql -h localhost -u root -D erp_contracts -e "&lt;query&gt;"</pre>
+<p>Front end runs at <code>http://localhost:3000</code>, API at <code>:5001</code>. Sections 14 to 16
+are not test steps: section 14 lists defects already known, so time is not spent re-reporting them,
+and sections 15 and 16 are the gap analysis.</p>
+
+<div class="callout">
+  <p><strong>What this module is.</strong> Two entities. A <strong>Lead</strong> is a person — a
+  <code>Party</code> of type <code>PERSON</code> carrying the <code>LEAD</code> role. A
+  <strong>Sales Opportunity</strong> is a deal, joined to leads many-to-many through
+  <code>SalesOpportunityRole</code>. The module has been specialised for real-estate unit sales: an
+  opportunity carries a Project (<code>WorkEffortId</code>) and a Unit (<code>ProductId</code>), and
+  closing a deal reserves the apartment.</p>
+</div>
+
+<h2>2 &nbsp; Pre-flight setup</h2>
+
+<h3>2.1 &nbsp; Accounts and permissions</h3>
+<p>You need three logins to test properly. All three profiles already exist in the development
+database — the accounts below are confirmed present, email-confirmed and not locked out. Obtain the
+passwords from whoever provisioned the accounts; they cannot be recovered from the database.</p>
+<table>
+  <thead><tr><th style="width:20%">Account</th><th style="width:22%">Email</th><th style="width:26%">Roles</th><th>Used for</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Emad</strong></td><td class="ref">eradwan1967@gmail.com</td><td>44 roles, incl. <code>CRM_View</code></td><td>Suites B–J. <em>Ahmad</em> (41 roles) is an equivalent alternative</td></tr>
+    <tr><td><strong>Gamal</strong></td><td class="ref">mhussein@gmail.com</td><td>Exactly 9 roles, all CRM, nothing else</td><td>Confirms the module works with no unrelated roles. Ten further accounts share this exact profile: Mark, Reham, Nagy, Medhat, Eman, Yasmin, Ayman, Ahlam, Peter, Alaa</td></tr>
+    <tr><td><strong>Ashraf</strong></td><td class="ref">ashrafa@gmail.com</td><td>30 roles, <strong>no</strong> <code>CRM_View</code></td><td>Suite A negative tests. Heavily privileged but still locked out of CRM, which proves the gate rather than merely proving a weak account is weak. Lighter alternatives: Naira, Enji, Reda, Maher</td></tr>
+  </tbody>
+</table>
+<div class="callout warn">
+  <p><strong>What Suite A can and cannot prove.</strong> The eleven CRM-only accounts carry
+  <code>CRM_Leads_View/Create/Edit/Delete</code> and <code>CRM_Contacts_*</code> in addition to
+  <code>CRM_View</code> — but <strong>no code reads those granular roles</strong>. Only
+  <code>CRM_View</code> gates anything, at the route level. Gamal therefore sees an identical surface
+  to any <code>CRM_View</code> holder, and no test can distinguish them. Note the consequence for
+  defect K10: permission to delete leads is already assigned to eleven users, and no delete function
+  exists for it to unlock.</p>
+</div>
+
+<h3>2.2 &nbsp; Verify reference data before you start</h3>
+<p>Every dropdown in this module is database-driven. If a list is empty during testing, the cause is
+almost always missing reference rows, not application code. Confirm these counts first.</p>
+<pre>SELECT ENUM_TYPE_ID, COUNT(*) FROM ENUMERATION
+ WHERE ENUM_TYPE_ID LIKE 'CRM%' GROUP BY 1;
+SELECT COUNT(*) FROM SALES_OPPORTUNITY_STAGE;
+SELECT COUNT(*) FROM DATA_SOURCE;</pre>
+<table>
+  <thead><tr><th style="width:42%">Reference set</th><th style="width:14%">Expected</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Pipeline stages</td><td>6</td><td>Prospect 10% → Qualified 25% → Proposal 50% → Negotiation 75% → Closed Won 100% / Closed Lost 0%</td></tr>
+    <tr><td><code>CRM_ACTION_TYPE</code></td><td>15</td><td>Drives the Next Action dropdown and all conditional fields</td></tr>
+    <tr><td><code>CRM_CANCELLATION_REASON</code></td><td>13</td><td>Low Budget, Wrong Number, Not Interested, Rent, …</td></tr>
+    <tr><td><code>CRM_MEETING_TYPE</code></td><td>5</td><td>Initial, Follow-Up, Demo, Negotiation, Closing</td></tr>
+    <tr><td><code>CRM_MEETING_LOC</code></td><td>3</td><td>Indoor, Outdoor, Online</td></tr>
+    <tr><td>Data sources</td><td>13</td><td>Must include <code>INDIRECT</code> — it drives the broker rule</td></tr>
+  </tbody>
+</table>
+<p>You also need at least one <strong>project with available apartments</strong>, one party with the
+<strong>sales rep</strong> role and one with the <strong>broker</strong> role, or Suites E and G
+cannot be completed.</p>
+
+<h3>2.3 &nbsp; Test data file</h3>
+<p>Prepare an Excel file for Suite D with these exact headers — the importer matches on header text,
+so a renamed column silently imports as blank:</p>
+<pre>First Name | Last Name | Title | Email | Mobile Number | Lead source | Address1 | Address2 | City | Country</pre>
+<p>Populate 10 rows: 6 valid, 1 with a blank First Name, 2 sharing one email address, and 1 with
+<code>Lead source</code> set to a value not in the map (e.g. "Billboard").</p>
+
+<div class="pagebreak"></div>
+<h2>3 &nbsp; Suite A — Access &amp; permissions</h2>
+<table>
+  <thead><tr><th class="step">#</th><th style="width:41%">Step</th><th>Expected result</th><th class="chk">✓</th></tr></thead>
+  <tbody>
+    <tr><td class="step">A1</td><td>Log in as the non-CRM user, navigate to <code>/sales-opportunities</code> directly by URL</td><td>Access denied / redirected. The route sits behind <code>RequireRole CRM_View</code></td><td class="chk">☐</td></tr>
+    <tr><td class="step">A2</td><td>Same user, navigate to <code>/leads</code></td><td>Access denied</td><td class="chk">☐</td></tr>
+    <tr><td class="step">A3</td><td>Same user, inspect the top header bar</td><td>The CRM entry is not rendered</td><td class="chk">☐</td></tr>
+    <tr><td class="step">A4</td><td>Navigate to <code>/crm</code> by URL</td><td>Route no longer exists — the dead placeholder screen was removed. Confirm no blank page or console error</td><td class="chk">☐</td></tr>
+    <tr><td class="step">A5</td><td>Log in as the CRM-only user, click CRM in the header</td><td>Lands on the Sales Pipeline board</td><td class="chk">☐</td></tr>
+    <tr><td class="step">A6</td><td>Use the sub-menu to move between Sales Opportunities and Leads</td><td>Both load; the active item is highlighted and bold</td><td class="chk">☐</td></tr>
+    <tr><td class="step">A7</td><td>Log out, then request <code>/api/salesOpportunities</code> with no bearer token</td><td>401 Unauthorized</td><td class="chk">☐</td></tr>
+  </tbody>
+</table>
+
+<h2>4 &nbsp; Suite B — Leads: create, edit, duplicates</h2>
+<table>
+  <thead><tr><th class="step">#</th><th style="width:41%">Step</th><th>Expected result</th><th class="chk">✓</th></tr></thead>
+  <tbody>
+    <tr><td class="step">B1</td><td>Leads → <em>New Lead</em>. Submit with every field empty</td><td>First Name is flagged required; nothing is saved</td><td class="chk">☐</td></tr>
+    <tr><td class="step">B2</td><td>Enter First Name only, submit</td><td>Lead is created. Email, mobile and address are all optional</td><td class="chk">☐</td></tr>
+    <tr><td class="step">B3</td><td>Create a lead with all fields: name, email, mobile, country, source, both address lines</td><td>Saved and visible in the grid</td><td class="chk">☐</td></tr>
+    <tr><td class="step">B4</td><td>Confirm the contact details actually persisted</td><td>Run the SQL below — one email row and one mobile row must exist for that party</td><td class="chk">☐</td></tr>
+    <tr><td class="step">B5</td><td>Set Lead Temperature to Hot, save, reopen the record</td><td>Hot is still selected after the round trip</td><td class="chk">☐</td></tr>
+    <tr><td class="step">B6</td><td>Create a second lead using the <strong>same email</strong> as B3</td><td>A "Lead Already Exists" dialog appears instead of a duplicate record</td><td class="chk">☐</td></tr>
+    <tr><td class="step">B7</td><td>In that dialog, choose to view the existing lead</td><td>Navigates to the Leads list filtered to that one party, then opens it in edit mode automatically</td><td class="chk">☐</td></tr>
+    <tr><td class="step">B8</td><td>Press browser Back, then Forward</td><td>The duplicate filter does not stick — the grid returns to the full list</td><td class="chk">☐</td></tr>
+    <tr><td class="step">B9</td><td>Edit a lead: change name, email, mobile, country and temperature, save, reopen</td><td>Every change persisted</td><td class="chk">☐</td></tr>
+    <tr><td class="step">B10</td><td>Edit a lead and clear its email entirely, save, reopen</td><td>Record the actual behaviour — clearing a contact mech is a common weak spot</td><td class="chk">☐</td></tr>
+    <tr><td class="step">B11</td><td>Enter a malformed email such as <code>abc@</code></td><td>Record the behaviour: the field is typed <code>email</code> client-side but the server does not validate format</td><td class="chk">☐</td></tr>
+    <tr><td class="step">B12</td><td>Enter an Arabic name and a +20 mobile number</td><td>Both round-trip without mangling</td><td class="chk">☐</td></tr>
+  </tbody>
+</table>
+<pre>SELECT p.PARTY_ID, cm.INFO_STRING AS email, tn.CONTACT_NUMBER AS phone, ds.DATA_SOURCE_ID
+FROM PARTY p
+LEFT JOIN PARTY_CONTACT_MECH pcm ON pcm.PARTY_ID = p.PARTY_ID
+LEFT JOIN CONTACT_MECH cm        ON cm.CONTACT_MECH_ID = pcm.CONTACT_MECH_ID
+LEFT JOIN TELECOM_NUMBER tn      ON tn.CONTACT_MECH_ID = cm.CONTACT_MECH_ID
+LEFT JOIN PARTY_DATA_SOURCE ds   ON ds.PARTY_ID = p.PARTY_ID
+WHERE p.PARTY_ID = '&lt;new party id&gt;';</pre>
+
+<h2>5 &nbsp; Suite C — Leads: grid &amp; lookup</h2>
+<p class="nb">The grid is served by OData (<code>/odata/leadRecords</code>) and paged
+<em>server-side</em>. Sorting and filtering must therefore act on the whole table, not just the
+visible page — that is what steps C3 and C4 are testing.</p>
+<table>
+  <thead><tr><th class="step">#</th><th style="width:41%">Step</th><th>Expected result</th><th class="chk">✓</th></tr></thead>
+  <tbody>
+    <tr><td class="step">C1</td><td>Open Leads with more than 10 records present</td><td>10 rows shown, total count correct in the pager</td><td class="chk">☐</td></tr>
+    <tr><td class="step">C2</td><td>Page forward and back; change page size</td><td>Rows change, no duplicates across pages, count stays stable</td><td class="chk">☐</td></tr>
+    <tr><td class="step">C3</td><td>Sort by Name descending while on page 2</td><td>The whole dataset re-sorts — verify the true last name alphabetically appears first, not merely the page's</td><td class="chk">☐</td></tr>
+    <tr><td class="step">C4</td><td>Filter the name column by a value that only exists on a later page</td><td>The match is found — proves the filter reaches the server</td><td class="chk">☐</td></tr>
+    <tr><td class="step">C5</td><td>Click a lead name in the grid</td><td>Opens that lead in edit mode with all fields populated</td><td class="chk">☐</td></tr>
+    <tr><td class="step">C6</td><td>Click an email cell, then a phone cell</td><td><code>mailto:</code> and <code>tel:</code> links fire</td><td class="chk">☐</td></tr>
+    <tr><td class="step">C7</td><td>Confirm a lead with no email/phone renders</td><td>Shows a dash placeholder, not an empty or broken cell</td><td class="chk">☐</td></tr>
+    <tr><td class="step">C8</td><td>Open an opportunity form and type 3 letters into the Leads picker</td><td>Server-side search returns matches; the list is not filtered client-side</td><td class="chk">☐</td></tr>
+    <tr><td class="step">C9</td><td>Type a string matching nothing</td><td>"No leads found" is displayed</td><td class="chk">☐</td></tr>
+    <tr><td class="step">C10</td><td>Search the picker by email fragment rather than name</td><td>Matches — the LOV searches both</td><td class="chk">☐</td></tr>
+  </tbody>
+</table>
+
+<div class="pagebreak"></div>
+<h2>6 &nbsp; Suite D — Excel / CSV bulk import</h2>
+<p class="nb">This is the highest-risk area of the module: it is the only place that writes many
+parties in one transaction, and it is the only place with partial-failure semantics.</p>
+<table>
+  <thead><tr><th class="step">#</th><th style="width:41%">Step</th><th>Expected result</th><th class="chk">✓</th></tr></thead>
+  <tbody>
+    <tr><td class="step">D1</td><td>Leads → <em>Upload Excel</em>. Drag the prepared file onto the drop zone</td><td>Parses and switches to the staging grid</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D2</td><td>Repeat using the click-to-browse path</td><td>Same result</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D3</td><td>Upload a <code>.csv</code> and a <code>.xls</code></td><td>Both accepted — all three formats are configured</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D4</td><td>Upload a <code>.pdf</code> or <code>.docx</code></td><td>Rejected by the drop zone</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D5</td><td>Upload a file whose sheet has 5 data rows followed by 200 visually blank rows</td><td>Exactly 5 rows appear — blank-row stripping works</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D6</td><td>Upload a file with a header row only</td><td>A clear "no data rows" error, not a silent empty grid</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D7</td><td>In the staging grid, edit a cell and delete a row</td><td>Both work before anything is committed</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D8</td><td>Check the row whose Lead source was "Billboard"</td><td>Falls back to <code>OTHER</code> rather than failing the row</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D9</td><td>Check a row whose Lead source was "facebook" in lower case</td><td>Maps to <code>FACEBOOK</code> — the match is case-insensitive</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D10</td><td>Click Save</td><td>Result dialog reports total received / successful / failed</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D11</td><td>Read the failure list</td><td>The blank-First-Name row is listed by row index with a readable reason</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D12</td><td>Check the two rows sharing an email</td><td>Confirm the documented behaviour for in-batch duplicates and record which of the two won</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D13</td><td>Confirm the good rows really committed</td><td>The successful count matches new <code>LEAD</code> rows in the database — see SQL below</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D14</td><td>Fix the failed row in the grid and press Save again</td><td>Only the fixed row is created; the already-saved rows are not duplicated</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D15</td><td>Import a file where <em>every</em> row is invalid</td><td>Zero rows created and the transaction rolls back cleanly</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D16</td><td>Import roughly 500 rows</td><td>Completes without timeout; note the elapsed time</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D17</td><td>Import a row whose email already belongs to an existing lead</td><td>Record the behaviour — cross-batch duplicate handling differs from the single-create path</td><td class="chk">☐</td></tr>
+    <tr><td class="step">D18</td><td>Import Arabic names and Egyptian mobile numbers with a leading zero</td><td>Encoding preserved; the leading zero is not eaten by numeric coercion</td><td class="chk">☐</td></tr>
+  </tbody>
+</table>
+<pre>SELECT COUNT(*) FROM PARTY_ROLE WHERE ROLE_TYPE_ID = 'LEAD';
+SELECT p.PARTY_ID, pe.FIRST_NAME, pe.LAST_NAME, p.CREATED_STAMP
+FROM PARTY p JOIN PERSON pe ON pe.PARTY_ID = p.PARTY_ID
+WHERE p.CREATED_STAMP &gt;= CURDATE() ORDER BY p.CREATED_STAMP DESC;</pre>
+
+<h2>7 &nbsp; Suite E — Opportunities: create &amp; edit</h2>
+<table>
+  <thead><tr><th class="step">#</th><th style="width:41%">Step</th><th>Expected result</th><th class="chk">✓</th></tr></thead>
+  <tbody>
+    <tr><td class="step">E1</td><td><em>New Opportunity</em>, submit empty</td><td>Stage, Owner and at least one linked Lead are all enforced</td><td class="chk">☐</td></tr>
+    <tr><td class="step">E2</td><td>Fill everything except the Leads picker, submit</td><td>Inline error: at least one lead must be linked</td><td class="chk">☐</td></tr>
+    <tr><td class="step">E3</td><td>Select a Project</td><td>The Unit dropdown populates with that project's apartments only</td><td class="chk">☐</td></tr>
+    <tr><td class="step">E4</td><td>Pick a Unit, then change the Project</td><td>The Unit selection clears — it must not keep a unit from the old project</td><td class="chk">☐</td></tr>
+    <tr><td class="step">E5</td><td>Pick a lead whose data source is <strong>not</strong> <code>INDIRECT</code></td><td>The Broker field stays hidden</td><td class="chk">☐</td></tr>
+    <tr><td class="step">E6</td><td>Pick a lead whose data source <strong>is</strong> <code>INDIRECT</code></td><td>The Broker field appears and becomes required</td><td class="chk">☐</td></tr>
+    <tr><td class="step">E7</td><td>Switch back to a non-indirect lead</td><td>Broker hides again and no stale broker is submitted</td><td class="chk">☐</td></tr>
+    <tr><td class="step">E8</td><td>Use <em>Add New Lead</em> inside the opportunity form</td><td>Modal opens, the lead is created, and it is selected in the picker on close</td><td class="chk">☐</td></tr>
+    <tr><td class="step">E9</td><td>Inside that modal, open the Country dropdown</td><td>The dropdown renders above the modal, not clipped behind it</td><td class="chk">☐</td></tr>
+    <tr><td class="step">E10</td><td>Save a complete opportunity</td><td>Created; appears on the board in the chosen stage column</td><td class="chk">☐</td></tr>
+    <tr><td class="step">E11</td><td>Verify the owner and broker links</td><td>Rows exist in <code>SALES_OPPORTUNITY_ROLE</code> with role types <code>OWNER</code>, <code>BROKER</code>, <code>LEAD_CONTACT</code></td><td class="chk">☐</td></tr>
+    <tr><td class="step">E12</td><td>Verify the party roles were auto-created</td><td>If the chosen party lacked the <code>BROKER</code> role it is added to <code>PARTY_ROLE</code> automatically</td><td class="chk">☐</td></tr>
+    <tr><td class="step">E13</td><td>Edit the opportunity: change Project, Unit and Owner, save, reopen</td><td>All three persisted</td><td class="chk">☐</td></tr>
+    <tr><td class="step">E14</td><td>Edit and change only the stage</td><td>Project, Unit, Owner and Leads are all untouched</td><td class="chk">☐</td></tr>
+    <tr><td class="step">E15</td><td>Try to select two leads in the picker</td><td>Only the last one is kept — see defect K3, this is expected for now</td><td class="chk">☐</td></tr>
+  </tbody>
+</table>
+
+<div class="pagebreak"></div>
+<h2>8 &nbsp; Suite F — Pipeline board &amp; list</h2>
+<table>
+  <thead><tr><th class="step">#</th><th style="width:41%">Step</th><th>Expected result</th><th class="chk">✓</th></tr></thead>
+  <tbody>
+    <tr><td class="step">F1</td><td>Open the Sales Pipeline board</td><td>Six columns in sequence order, each with a count chip</td><td class="chk">☐</td></tr>
+    <tr><td class="step">F2</td><td>Check a card's contents</td><td>Shows lead name, probability, owner, broker if present, close date if set, and a lead-count chip</td><td class="chk">☐</td></tr>
+    <tr><td class="step">F3</td><td>Hover the lead-count chip</td><td>Tooltip lists every linked lead by name</td><td class="chk">☐</td></tr>
+    <tr><td class="step">F4</td><td>Drag a card from Prospect to Qualified</td><td>Card moves, both column counts update, change persists after a page refresh</td><td class="chk">☐</td></tr>
+    <tr><td class="step">F5</td><td>Drag a card and drop it back on its own column</td><td>No update call is made and no history row is written</td><td class="chk">☐</td></tr>
+    <tr><td class="step">F6</td><td>Confirm probability tracked the move</td><td>Prospect 10 → Qualified 25 — the stage default is applied</td><td class="chk">☐</td></tr>
+    <tr><td class="step">F7</td><td>Switch to List view</td><td>Same records in a Kendo grid with paging, sorting and filtering</td><td class="chk">☐</td></tr>
+    <tr><td class="step">F8</td><td>Inspect the Project and Unit columns</td><td>Values are currently swapped — see defect K5, expected for now</td><td class="chk">☐</td></tr>
+    <tr><td class="step">F9</td><td>Use Edit and Action from the list rows</td><td>Both open the same screens as the board</td><td class="chk">☐</td></tr>
+    <tr><td class="step">F10</td><td>Toggle board ↔ list several times</td><td>No stale data, no duplicated fetches</td><td class="chk">☐</td></tr>
+    <tr><td class="step">F11</td><td>Open a card whose opportunity has no linked lead rows</td><td>Record the behaviour — the list view reads <code>leads[0]</code> without a guard</td><td class="chk">☐</td></tr>
+  </tbody>
+</table>
+
+<h2>9 &nbsp; Suite G — Action engine</h2>
+<p>This is the core business logic. Test the matrix below <strong>row by row</strong>: for each action
+type, confirm the listed fields appear, that saving is blocked while a required one is empty, and that
+the stated side effects occur.</p>
+<table>
+  <thead><tr>
+    <th style="width:24%">Action type</th><th style="width:11%">Date</th><th style="width:13%">Cancel reason</th>
+    <th style="width:15%">Meeting fields</th><th style="width:13%">Project + Unit</th><th>Side effect on the opportunity</th>
+  </tr></thead>
+  <tbody>
+    <tr><td>Follow up</td><td>required</td><td>—</td><td>—</td><td>—</td><td>none</td></tr>
+    <tr><td>No Answer</td><td>required</td><td>—</td><td>—</td><td>—</td><td>none</td></tr>
+    <tr><td>Set meeting</td><td>required</td><td>—</td><td>—</td><td>—</td><td>none</td></tr>
+    <tr><td>Interested</td><td>required</td><td>—</td><td>—</td><td>—</td><td>none</td></tr>
+    <tr><td>Fresh Stage</td><td>required</td><td>—</td><td>—</td><td>—</td><td>none</td></tr>
+    <tr><td>Meeting</td><td>required</td><td>—</td><td>required</td><td>—</td><td>none</td></tr>
+    <tr><td>Site Visit</td><td>client only</td><td>—</td><td>required</td><td>—</td><td>none</td></tr>
+    <tr><td>Following up after Meeting</td><td>client only</td><td>—</td><td>—</td><td>—</td><td>none</td></tr>
+    <tr><td>Reservation</td><td>client only</td><td>—</td><td>—</td><td>required</td><td>retargets the opportunity's project + unit</td></tr>
+    <tr><td><strong>Done Deal</strong></td><td>client only</td><td>—</td><td>—</td><td>required</td><td>won + closed, stage → Closed Won, probability 100, apartment → reserved, history row</td></tr>
+    <tr><td><strong>Cancellation</strong></td><td>—</td><td>required</td><td>—</td><td>—</td><td>closed, stage → Closed Lost, probability 0, history row naming the reason</td></tr>
+    <tr><td>Just info / Hiring / Broker / No answer all the time</td><td>—</td><td>—</td><td>—</td><td>—</td><td>none — comment only</td></tr>
+  </tbody>
+</table>
+<p class="footnote">"client only" means the front end demands the field but the server does not. Not a
+data-loss risk, but it means an API caller can skip it — see defect K4.</p>
+
+<table>
+  <thead><tr><th class="step">#</th><th style="width:41%">Step</th><th>Expected result</th><th class="chk">✓</th></tr></thead>
+  <tbody>
+    <tr><td class="step">G1</td><td>Open an opportunity's Action modal</td><td>Two tabs, Actions and History; the Actions tab is active</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G2</td><td>Cycle the Next Action dropdown through all 15 types</td><td>Fields appear and disappear exactly as the matrix specifies</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G3</td><td>Choose Follow up, leave the date empty</td><td>Save is disabled</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G4</td><td>Open the date picker and try to choose yesterday</td><td>Past dates are blocked</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G5</td><td>Save a Follow up with a date and a comment</td><td>Appears at the top of the comment feed with type, timestamp, date and comment</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G6</td><td>Save a Meeting with type, location and note</td><td>All three render on the feed card</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G7</td><td>Choose Meeting and leave Meeting Type empty, submit</td><td>Server rejects it. <em>Note the error text mentions "Cancel Reason" — see defect K6</em></td><td class="chk">☐</td></tr>
+    <tr><td class="step">G8</td><td>Choose Reservation without a Unit, submit</td><td>Rejected: unit and project are required</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G9</td><td>Save a Reservation against a <em>different</em> project and unit from the opportunity's current pair</td><td>The opportunity is retargeted to the new project and unit</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G10</td><td>Save a <strong>Cancellation</strong> with a reason</td><td>Card moves to Closed Lost, is flagged closed, and the history note names the reason</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G11</td><td>Reopen the Action modal on that cancelled opportunity</td><td>Every input and the Save button are disabled</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G12</td><td>Save a <strong>Done Deal</strong> on a different opportunity</td><td>Moves to Closed Won, flagged won and closed, probability 100</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G13</td><td>Check the apartment used in G12</td><td><code>APARTMENT_RESERVED</code> — see SQL below</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G14</td><td>Reopen the Action modal on the won opportunity</td><td>Locked, same as G11</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G15</td><td>Try to drag the won card to another column</td><td>Record the behaviour — the board does not currently block dragging a closed deal</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G16</td><td>Log 6 actions on one opportunity</td><td>Feed is newest-first and scrolls inside the modal</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G17</td><td>Save an action with a comment only, no other field</td><td>Accepted, card shows the comment</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G18</td><td>Save an action with no comment at all</td><td>Card shows "No additional details" rather than an empty box</td><td class="chk">☐</td></tr>
+    <tr><td class="step">G19</td><td>Look for an "Answered" chip on any action</td><td>It never appears — the flag exists in the model but no control sets it. See defect K7</td><td class="chk">☐</td></tr>
+  </tbody>
+</table>
+<pre>SELECT so.SALES_OPPORTUNITY_ID, so.OPPORTUNITY_STAGE_ID, so.IS_WON, so.IS_CLOSED,
+       so.ESTIMATED_PROBABILITY, p.PRODUCT_ID, p.APARTMENT_STATUS_ID
+FROM SALES_OPPORTUNITY so LEFT JOIN PRODUCT p ON p.PRODUCT_ID = so.PRODUCT_ID
+WHERE so.SALES_OPPORTUNITY_ID = '&lt;id&gt;';</pre>
+
+<div class="pagebreak"></div>
+<h2>10 &nbsp; Suite H — History &amp; audit</h2>
+<table>
+  <thead><tr><th class="step">#</th><th style="width:41%">Step</th><th>Expected result</th><th class="chk">✓</th></tr></thead>
+  <tbody>
+    <tr><td class="step">H1</td><td>Open the History tab on a newly created opportunity</td><td>One entry: "Opportunity created"</td><td class="chk">☐</td></tr>
+    <tr><td class="step">H2</td><td>Drag it through three stages, then reopen History</td><td>Three further entries, each naming the destination stage</td><td class="chk">☐</td></tr>
+    <tr><td class="step">H3</td><td>Check the attribution line on each entry</td><td>Shows the modifying user and a timestamp</td><td class="chk">☐</td></tr>
+    <tr><td class="step">H4</td><td>Log a Cancellation and check History</td><td>New entry whose note includes the cancellation reason text</td><td class="chk">☐</td></tr>
+    <tr><td class="step">H5</td><td>Confirm the History tab only loads when opened</td><td>Network panel shows the history call fires on tab switch, not on modal open</td><td class="chk">☐</td></tr>
+    <tr><td class="step">H6</td><td>Switch between Actions and History repeatedly</td><td>Neither list loses state or double-fetches</td><td class="chk">☐</td></tr>
+    <tr><td class="step">H7</td><td>Verify history is a true snapshot</td><td>Each row carries the stage, amount, probability and close date <em>as at that moment</em></td><td class="chk">☐</td></tr>
+  </tbody>
+</table>
+
+<h2>11 &nbsp; Suite I — Arabic / RTL</h2>
+<table>
+  <thead><tr><th class="step">#</th><th style="width:41%">Step</th><th>Expected result</th><th class="chk">✓</th></tr></thead>
+  <tbody>
+    <tr><td class="step">I1</td><td>Switch the interface to Arabic and reload the board</td><td>Stage names show Arabic descriptions: عميل محتمل, مؤهل, عرض, تفاوض, صفقة مكتسبة, صفقة خاسرة</td><td class="chk">☐</td></tr>
+    <tr><td class="step">I2</td><td>Open the Action modal in Arabic</td><td>All 15 action types, 13 reasons, 5 meeting types and 3 locations render in Arabic</td><td class="chk">☐</td></tr>
+    <tr><td class="step">I3</td><td>Check icon and button alignment throughout</td><td>Icons flip to the correct side; nothing overlaps</td><td class="chk">☐</td></tr>
+    <tr><td class="step">I4</td><td>Check the comment feed and History cards in Arabic</td><td>Text is right-aligned and reads correctly</td><td class="chk">☐</td></tr>
+    <tr><td class="step">I5</td><td>Confirm the language header reaches the API</td><td>Requests carry <code>Accept-Language: ar</code></td><td class="chk">☐</td></tr>
+    <tr><td class="step">I6</td><td>Switch back to English mid-session</td><td>Lists re-fetch in English without a full reload</td><td class="chk">☐</td></tr>
+    <tr><td class="step">I7</td><td>Check date formatting on board cards</td><td>Note that card dates are hard-coded to the <code>ar-EG</code> calendar regardless of language — see defect K8</td><td class="chk">☐</td></tr>
+  </tbody>
+</table>
+
+<h2>12 &nbsp; Suite J — API &amp; data integrity</h2>
+<p class="nb">These steps go around the UI on purpose. Several opportunity fields are persisted by the
+API but not yet collected by any form, so the only way to exercise them is directly.</p>
+<table>
+  <thead><tr><th class="step">#</th><th style="width:41%">Step</th><th>Expected result</th><th class="chk">✓</th></tr></thead>
+  <tbody>
+    <tr><td class="step">J1</td><td><code>POST /api/salesOpportunities</code> with name, description, estimated amount, currency, probability and close date</td><td>All values are stored on <code>SALES_OPPORTUNITY</code>, not only on the history row</td><td class="chk">☐</td></tr>
+    <tr><td class="step">J2</td><td><code>GET /api/salesOpportunities</code> and read that record back</td><td>Every field submitted in J1 is returned</td><td class="chk">☐</td></tr>
+    <tr><td class="step">J3</td><td><code>PUT /api/salesOpportunities/{id}</code> changing amount and close date only</td><td>Both change; name, description, project, unit and owner are untouched</td><td class="chk">☐</td></tr>
+    <tr><td class="step">J4</td><td><code>PATCH /api/salesOpportunities/{id}/stage</code> on that same record</td><td>Only the stage changes — <strong>amount, name and close date must survive</strong>. This is the key regression check for the sparse-DTO path</td><td class="chk">☐</td></tr>
+    <tr><td class="step">J5</td><td><code>POST</code> an opportunity with a stage id that does not exist</td><td>Clean failure message, no partial write</td><td class="chk">☐</td></tr>
+    <tr><td class="step">J6</td><td><code>POST</code> an action referencing a non-existent opportunity</td><td>Clean failure, nothing written</td><td class="chk">☐</td></tr>
+    <tr><td class="step">J7</td><td><code>POST</code> an action with an action type outside <code>CRM_ACTION_TYPE</code></td><td>Rejected as invalid</td><td class="chk">☐</td></tr>
+    <tr><td class="step">J8</td><td>Force a failure mid-transaction on the batch import, then check the tables</td><td>No orphan <code>PARTY</code> rows without <code>PERSON</code> or <code>PARTY_ROLE</code></td><td class="chk">☐</td></tr>
+    <tr><td class="step">J9</td><td>Run the orphan sweep below after finishing every suite</td><td>All three counts are zero</td><td class="chk">☐</td></tr>
+  </tbody>
+</table>
+<pre>-- leads with no person record
+SELECT COUNT(*) FROM PARTY_ROLE pr LEFT JOIN PERSON pe ON pe.PARTY_ID = pr.PARTY_ID
+WHERE pr.ROLE_TYPE_ID = 'LEAD' AND pe.PARTY_ID IS NULL;
+-- opportunities with no linked lead
+SELECT COUNT(*) FROM SALES_OPPORTUNITY so WHERE NOT EXISTS (
+  SELECT 1 FROM SALES_OPPORTUNITY_ROLE r WHERE r.SALES_OPPORTUNITY_ID = so.SALES_OPPORTUNITY_ID
+    AND r.ROLE_TYPE_ID NOT IN ('OWNER','BROKER'));
+-- closed-stage opportunities left open
+SELECT COUNT(*) FROM SALES_OPPORTUNITY
+WHERE OPPORTUNITY_STAGE_ID IN ('SOSTG_CLOSED_WON','SOSTG_CLOSED_LOST') AND IS_CLOSED = 0;</pre>
+
+<div class="pagebreak"></div>
+<h2>13 &nbsp; Regression pack — three recent fixes</h2>
+<p>Three defects were repaired immediately before this test pass. Run these first; if any fails, stop
+and report before continuing with the full suites.</p>
+
+<h3>R1 &nbsp; Dead <code>/crm</code> screen removed</h3>
+<table>
+  <thead><tr><th class="step">#</th><th style="width:41%">Step</th><th>Expected result</th><th class="chk">✓</th></tr></thead>
+  <tbody>
+    <tr><td class="step">R1.1</td><td>Browse to <code>/crm</code></td><td>Route is gone; no blank screen, no console error</td><td class="chk">☐</td></tr>
+    <tr><td class="step">R1.2</td><td>Click CRM in the top header</td><td>Goes to the Sales Pipeline as before</td><td class="chk">☐</td></tr>
+    <tr><td class="step">R1.3</td><td>Confirm the front end compiles</td><td>No unresolved-import error — the screen had been importing a file that does not exist</td><td class="chk">☐</td></tr>
+  </tbody>
+</table>
+
+<h3>R2 &nbsp; Opportunity fields now persisted</h3>
+<div class="callout warn">
+  <p><strong>Background.</strong> The create handler previously wrote only stage, project and unit to
+  the opportunity row. Name, description, amount, currency, probability, close date, next step, data
+  source, campaign and type were written to the <em>history</em> row only and were lost from the record
+  itself. Both create and update now persist them.</p>
+</div>
+<table>
+  <thead><tr><th class="step">#</th><th style="width:41%">Step</th><th>Expected result</th><th class="chk">✓</th></tr></thead>
+  <tbody>
+    <tr><td class="step">R2.1</td><td>Create an opportunity through the UI, then read <code>SALES_OPPORTUNITY</code></td><td><code>ESTIMATED_PROBABILITY</code> and <code>CURRENCY_UOM_ID</code> are populated from the stage default and the fallback</td><td class="chk">☐</td></tr>
+    <tr><td class="step">R2.2</td><td>Run Suite J steps J1–J3</td><td>All API-supplied fields survive on the entity</td><td class="chk">☐</td></tr>
+    <tr><td class="step">R2.3</td><td><strong>Run J4.</strong> Drag a card between columns on the board</td><td>The record's other fields are <strong>not</strong> blanked by the stage-only patch. This is the highest-risk regression of the change</td><td class="chk">☐</td></tr>
+    <tr><td class="step">R2.4</td><td>Compare the first history row against the entity</td><td>They agree — history is now snapshotted from the saved entity</td><td class="chk">☐</td></tr>
+  </tbody>
+</table>
+
+<h3>R3 &nbsp; Cancelled and won deals now close</h3>
+<div class="callout warn">
+  <p><strong>Background.</strong> Only Done Deal previously had any effect, and even that set
+  <code>IS_WON</code> without <code>IS_CLOSED</code>. A cancelled deal kept sitting in its original
+  pipeline column indefinitely. Cancellation now closes the opportunity and moves it to Closed Lost,
+  and the same flags are applied when a card is dragged to a closed column.</p>
+</div>
+<table>
+  <thead><tr><th class="step">#</th><th style="width:41%">Step</th><th>Expected result</th><th class="chk">✓</th></tr></thead>
+  <tbody>
+    <tr><td class="step">R3.1</td><td>Log a Cancellation with a reason on an open opportunity</td><td>Stage → Closed Lost, <code>IS_CLOSED = 1</code>, <code>IS_WON = 0</code>, probability 0</td><td class="chk">☐</td></tr>
+    <tr><td class="step">R3.2</td><td>Check the history row it produced</td><td>Change note names the stage <em>and</em> the cancellation reason</td><td class="chk">☐</td></tr>
+    <tr><td class="step">R3.3</td><td>Log a Done Deal on another opportunity</td><td><code>IS_WON = 1</code> and <code>IS_CLOSED = 1</code> — previously only the first was set</td><td class="chk">☐</td></tr>
+    <tr><td class="step">R3.4</td><td>Drag a card directly onto Closed Lost</td><td>Flags are set the same way as the action path</td><td class="chk">☐</td></tr>
+    <tr><td class="step">R3.5</td><td>Drag a closed card back onto Prospect</td><td>It reopens: both flags clear and the Action modal unlocks again</td><td class="chk">☐</td></tr>
+    <tr><td class="step">R3.6</td><td>After R3.5, check the apartment status</td><td>It stays <code>APARTMENT_RESERVED</code> — reopening does not release the unit. Known gap, listed at K9</td><td class="chk">☐</td></tr>
+    <tr><td class="step">R3.7</td><td>Run the third query in Suite J's orphan sweep</td><td>Zero rows in a closed stage but still flagged open</td><td class="chk">☐</td></tr>
+  </tbody>
+</table>
+
+<div class="pagebreak"></div>
+<h2>14 &nbsp; Known open defects — do not re-report</h2>
+<p>Found during code review and left unfixed by agreement. Confirm each still behaves as described
+rather than raising it again.</p>
+<table>
+  <thead><tr><th style="width:7%">Ref</th><th style="width:30%">Defect</th><th style="width:38%">Effect</th><th>Location</th></tr></thead>
+  <tbody>
+    <tr><td>K1</td><td>Command validators never execute</td><td>Every <code>CommandValidator</code> in the CRM feature is dead code — the MediatR pipeline has no validation behaviour, only logging. Handlers re-check the important rules by hand, so nothing is broken today, but the validators give false assurance</td><td class="ref">ApplicationServiceExtensions.cs</td></tr>
+    <tr><td>K2</td><td>Two divergent lead-create paths</td><td><code>POST /leads</code> is live but unused; the UI posts to <code>/parties/createLead</code>. Two implementations to keep in step, one never exercised</td><td class="ref">CRM/Leads/CreateLead.cs</td></tr>
+    <tr><td>K3</td><td>Lead picker is single-select</td><td>Marked multiple, but selecting a second lead discards the first. The database supports many leads per opportunity; the UI cannot produce it</td><td class="ref">LeadPicker.tsx:57</td></tr>
+    <tr><td>K4</td><td>Client and server date rules disagree</td><td>The server's required-date list contains <code>FOLLOW_UP_AFTER_MEETING</code>, but the real enum value is <code>FOLLOWING_UP_AFTER_MEETING</code>, so that rule never fires. The client also demands dates for Site Visit, Reservation and Done Deal where the server does not</td><td class="ref">CreateSalesOpportunityAction.cs</td></tr>
+    <tr><td>K5</td><td>Swapped columns in list view</td><td>Project and Unit headers are attached to the opposite fields</td><td class="ref">SalesOpportunityList.tsx:84</td></tr>
+    <tr><td>K6</td><td>Wrong error text</td><td>A missing meeting type returns "Invalid Cancel Reason" — copy-paste in the validation branch</td><td class="ref">CreateSalesOpportunityAction.cs</td></tr>
+    <tr><td>K7</td><td>"Answered" flag unreachable</td><td>The entity, DTO and the feed's chip all support it, but no control ever sets it, so it is permanently false</td><td class="ref">AddActionsModal.tsx</td></tr>
+    <tr><td>K8</td><td>Hard-coded date locale</td><td>Board cards format dates as <code>ar-EG</code> whatever the chosen language</td><td class="ref">SalesOpportunityBoard.tsx:95</td></tr>
+    <tr><td>K9</td><td>Units are never released</td><td>Winning a deal reserves the apartment; reopening or cancelling never returns it to available</td><td class="ref">Update/CreateAction handlers</td></tr>
+    <tr><td>K10</td><td>No delete anywhere</td><td>Leads and opportunities can only be created and edited, though <code>CRM_Leads_Delete</code> is a seeded role</td><td class="ref">module-wide</td></tr>
+    <tr><td>K11</td><td>Unused lead attributes</td><td><code>Tags</code>, <code>MarketingStatus</code>, <code>LastContactedTime</code> and <code>OrganizationPartyId</code> are declared on the DTO but never read or written</td><td class="ref">LeadDto.cs</td></tr>
+    <tr><td>K12</td><td>Actions do not record their own unit</td><td>A Reservation mutates the opportunity's project and unit but the action row itself stores neither, so the history of which unit was discussed when is lost</td><td class="ref">SalesOpportunityAction.cs</td></tr>
+  </tbody>
+</table>
+
+<h2>15 &nbsp; Missing features — within CRM</h2>
+<p>These are absences rather than defects: capabilities a sales team would reasonably expect that the
+module does not yet have.</p>
+
+<h3>15.1 &nbsp; Follow-up management <span class="pill p-high">highest value</span></h3>
+<p>Every action can carry a next-action date, and the whole team is being asked to enter them — but
+nothing ever reads them back. There is no "my follow-ups due today" list, no overdue indicator, no
+calendar, no reminder, no notification. A sales rep has no way to find what they promised to do
+without opening opportunities one at a time. This is the single largest functional gap: the data is
+already being captured and simply has no consumer.</p>
+
+<h3>15.2 &nbsp; Pipeline analytics <span class="pill p-high">highest value</span></h3>
+<p>The module has no reporting of any kind — there is not one CRM report handler in the codebase.
+Missing: conversion rate by stage, win/loss rate, average days in stage, sales-cycle length,
+lead-source effectiveness, rep leaderboard, forecast weighted by probability. The stage-history table
+already records every transition with a timestamp, so most of these are queries waiting to be written
+rather than new data capture.</p>
+
+<h3>15.3 &nbsp; Lead assignment and ownership</h3>
+<p>Opportunities have an owner, but leads do not. There is no assignment of an incoming lead to a rep,
+no reassignment, no round-robin or territory distribution, no unassigned-leads queue, and no
+first-response SLA. On a bulk import of several hundred leads there is no way to divide the work.</p>
+
+<h3>15.4 &nbsp; Lead lifecycle and conversion</h3>
+<p>Nothing ever promotes a lead. When a deal is won the person keeps only the <code>LEAD</code> role
+and never gains <code>CUSTOMER</code>, so the won buyer is invisible to the rest of the system as a
+customer. There is also no qualified/unqualified/nurture distinction — lead temperature is a two-value
+radio with no scoring behind it — and no archive or recycle path for dead leads.</p>
+
+<h3>15.5 &nbsp; Deal economics</h3>
+<p>The pipeline carries no money. Estimated amount and currency exist in the database and are now
+persisted, but no form collects them and the board's value chip is commented out. There is no link to
+unit list prices, no discount or negotiated-price capture, and therefore no weighted forecast. For a
+property business this is a significant hole — the pipeline cannot answer "what is in play this
+quarter".</p>
+
+<h3>15.6 &nbsp; Duplicate and data quality management</h3>
+<p>Duplicate detection is exact-match on a single field. There is no fuzzy matching on name or phone,
+no merge of two lead records, no bulk de-duplication, and no reconciliation between imported rows and
+existing parties. The Party module already contains a contact-mech match/dedup map that the CRM import
+does not use.</p>
+
+<h3>15.7 &nbsp; Communication logging</h3>
+<p>Every interaction has to be typed in by hand. There is no email, WhatsApp or SMS integration, no
+call logging or click-to-call, no templates, and no inbound capture — so a lead that replies by email
+leaves no trace in the system. Related: there is no consent or opt-out tracking, which matters as soon
+as any bulk outreach is attempted.</p>
+
+<h3>15.8 &nbsp; Smaller gaps</h3>
+<ul>
+  <li><strong>No opportunity detail page.</strong> Everything happens in a 580-pixel modal; there is no single screen showing a deal with its leads, actions, history and documents together.</li>
+  <li><strong>No attachments.</strong> Nowhere to keep an ID copy, a signed reservation form or a floor plan against a lead or a deal.</li>
+  <li><strong>No bulk operations</strong> in either list — no bulk reassign, bulk stage move or bulk export.</li>
+  <li><strong>Weak search.</strong> Opportunity search covers name and description only, so a deal cannot be found by the lead's phone number or email — the way an inbound call actually arrives.</li>
+  <li><strong>No competitor tracking</strong>, though the <code>SalesOpportunityCompetitor</code> table exists and is unused.</li>
+  <li><strong>No field-level audit.</strong> History records stage transitions only; a changed owner, unit or amount leaves no trace.</li>
+  <li><strong>No territory or branch segmentation</strong>, so every rep sees every lead.</li>
+</ul>
+
+<div class="pagebreak"></div>
+<h2>16 &nbsp; Missing features — integration with other modules</h2>
+<p>The CRM is currently a closed loop: leads go in, a stage changes, and the trail stops. Every item
+below is an existing ERP capability that the CRM does not yet reach.</p>
+
+<h3>16.1 &nbsp; Reserve Requests — the deal hand-off <span class="pill p-high">highest value</span></h3>
+<p>The system already has a proper reservation workflow: <code>CreateReserveRequest</code> takes a
+buyer, an employee, a reserve amount, a payment method and cheque details, creates a
+<code>ReserveRequest</code> record and reserves the apartment. The CRM ignores all of it — a Done Deal
+simply writes <code>APARTMENT_RESERVED</code> straight onto the product row.</p>
+<p>The consequence is that a deal won in the CRM produces a reserved unit with <em>no</em> reservation
+record: no buyer of record, no deposit, no payment method, nothing for finance to collect against. The
+two halves of the same business event are recorded in two places that do not know about each other.
+Winning a deal should raise a reserve request pre-filled from the opportunity.</p>
+
+<h3>16.2 &nbsp; Orders, quotes and invoices <span class="pill p-high">highest value</span></h3>
+<p>The plumbing for this already exists and is entirely unused. <code>OrderItem</code> and
+<code>InvoiceItem</code> both carry a <code>SalesOpportunityId</code> column, and a
+<code>SalesOpportunityQuote</code> table exists — but <strong>no handler anywhere writes any of
+them</strong>. Nothing generates a quote from an opportunity, nothing creates a sales order from a won
+deal, and no invoice can be traced back to the deal that produced it. Until one of these is populated
+there is no revenue attribution: it is impossible to answer "which lead source actually produced
+money", only "which produced deals".</p>
+
+<h3>16.3 &nbsp; Sales commission <span class="pill p-med">high</span></h3>
+<p>A full commission feature exists, with project commission rates and split handling. The CRM captures
+exactly the two parties commission depends on — the owning sales rep and, for indirect deals, the
+broker — and passes neither to it. Commission is calculated downstream from other data, so the
+attribution the CRM holds is discarded. The broker role in particular is captured with no broker
+commission consequence at all.</p>
+
+<h3>16.4 &nbsp; Catalog and unit availability <span class="pill p-med">high</span></h3>
+<p>Unit reservation is fire-and-forget. There is no check that a unit is still available when a deal is
+won, so two opportunities can both close on the same apartment; no reservation expiry; and no release
+when a deal is cancelled or reopened (K9). Unit availability should be validated at close time and
+released on loss.</p>
+
+<h3>16.5 &nbsp; Party module <span class="pill p-med">high</span></h3>
+<p>A won lead never becomes a customer (15.4), so the buyer cannot be selected in orders, invoices or
+payments without being re-created by hand — which is exactly how duplicate parties appear. The import
+also bypasses the Party module's existing contact-mech matching.</p>
+
+<h3>16.6 &nbsp; Accounting and collections <span class="pill p-low">medium</span></h3>
+<p>The module overview describes the CRM as "integrated with order and collection history, so a sales
+rep sees the whole customer relationship in one place". That integration does not exist in the code. A
+rep looking at a lead sees no invoices, no payments, no outstanding balance and no cheque status, even
+when the same person is an existing customer elsewhere in the system.</p>
+
+<h3>16.7 &nbsp; Business intelligence <span class="pill p-low">medium</span></h3>
+<p>The Power BI semantic model covers projects, revenues, expenses and the general ledger. There is no
+CRM fact or dimension in it — no pipeline snapshot, no stage-transition fact, no lead-source dimension.
+Since the CRM has no internal reporting either (15.2), the pipeline is currently invisible to
+management in both places.</p>
+
+<h3>16.8 &nbsp; Marketing campaigns <span class="pill p-low">medium</span></h3>
+<p>A complete campaign model exists in the domain — <code>MarketingCampaign</code> with roles, prices,
+promotions and notes. The opportunity has a <code>MarketingCampaignId</code> column that nothing ever
+fills. Attribution therefore stops at the lead source; there is no campaign-level cost, response rate
+or return.</p>
+
+<h3>16.9 &nbsp; Documents, notifications and HR <span class="pill p-low">medium</span></h3>
+<ul>
+  <li><strong>Documents.</strong> QuestPDF is already configured across the solution, but no reservation form, offer letter or deal summary is generated from an opportunity.</li>
+  <li><strong>Notifications.</strong> No alert when a lead is assigned, when a follow-up falls due, or when a deal is won. Nothing pushes; the user must go looking.</li>
+  <li><strong>HR.</strong> Sales reps are parties with a role, unconnected to employee targets or quotas, so achieved-versus-target is not answerable.</li>
+</ul>
+
+<h2>17 &nbsp; Suggested build order</h2>
+<p>If the gap list is to be worked through, this sequence delivers value earliest and keeps each step
+small enough to ship on its own.</p>
+<table>
+  <thead><tr><th style="width:6%">#</th><th style="width:34%">Item</th><th style="width:12%">Effort</th><th>Why first</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Follow-up queue — "due today / overdue" per rep</td><td>Small</td><td>The data is already captured; this is a query and a screen. Immediate daily value</td></tr>
+    <tr><td>2</td><td>Won deal → reserve request hand-off</td><td>Medium</td><td>Closes the worst data-integrity hole: reserved units with no reservation record</td></tr>
+    <tr><td>3</td><td>Lead → customer conversion on win</td><td>Small</td><td>Unblocks orders, invoices and payments for won buyers; prevents duplicate parties</td></tr>
+    <tr><td>4</td><td>Deal amount on the form + pipeline value on the board</td><td>Small</td><td>Persistence already landed; this is form fields and re-enabling a chip</td></tr>
+    <tr><td>5</td><td>Pipeline dashboard — conversion, win rate, source performance</td><td>Medium</td><td>Stage history already holds everything needed</td></tr>
+    <tr><td>6</td><td>Lead assignment and ownership</td><td>Medium</td><td>Makes bulk import usable at scale</td></tr>
+    <tr><td>7</td><td>Unit availability validation and release</td><td>Small</td><td>Prevents double-selling the same apartment</td></tr>
+    <tr><td>8</td><td>Commission attribution from opportunity owner and broker</td><td>Medium</td><td>Connects the CRM to money already being calculated elsewhere</td></tr>
+    <tr><td>9</td><td>Opportunity detail page replacing the modal</td><td>Medium</td><td>Prerequisite for attachments, field audit and a richer timeline</td></tr>
+    <tr><td>10</td><td>Communication logging</td><td>Large</td><td>Highest ongoing value, but needs external service decisions first</td></tr>
+  </tbody>
+</table>
+
+<p class="footnote" style="margin-top:16pt; border-top:0.5pt solid #d8dde3; padding-top:8pt;">
+Prepared from a full read of <code>Application/CRM</code>, <code>API/Controllers/CRM</code>,
+<code>client-app/src/features/CRM</code>, the CRM domain entities, seed data and the live reference
+tables in the development database. Defect references K1–K12 and regression items R1–R3 correspond to
+the code review of the same date.</p>
+
+</body>
+</html>

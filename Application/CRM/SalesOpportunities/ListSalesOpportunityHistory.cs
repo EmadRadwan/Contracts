@@ -46,38 +46,24 @@ public class ListSalesOpportunityHistory
                 .OrderByDescending(h => h.CreatedStamp)   // Latest first
                 .ToListAsync(ct);
 
-            // Resolve DisplayName for each ModifiedByUserLogin (UserLoginId) in one batch,
-            // avoiding an N+1 query per history row.
-            var userLoginIds = history
+            // Resolve DisplayName for each ModifiedByUserLogin in one batch,
+            // avoiding an N+1 query per history row. The column holds
+            // AspNetUsers.Id, so this is a single lookup - previously it went
+            // via USER_LOGIN, which only covers 10 of 24 users and left the
+            // rest showing a raw id.
+            var userIds = history
                 .Where(h => !string.IsNullOrEmpty(h.ModifiedByUserLogin))
                 .Select(h => h.ModifiedByUserLogin!)
                 .Distinct()
                 .ToList();
 
-            var displayNameByUserLoginId = new Dictionary<string, string>();
+            var displayNameByUserId = new Dictionary<string, string>();
 
-            if (userLoginIds.Count > 0)
+            if (userIds.Count > 0)
             {
-                var userLogins = await _context.UserLogins
-                    .Where(ul => userLoginIds.Contains(ul.UserLoginId))
-                    .ToListAsync(ct);
-
-                var partyIds = userLogins
-                    .Where(ul => ul.PartyId != null)
-                    .Select(ul => ul.PartyId!)
-                    .Distinct()
-                    .ToList();
-
-                var users = await _context.Users
-                    .Where(u => partyIds.Contains(u.PartyId))
-                    .ToListAsync(ct);
-
-                var displayNameByPartyId = users
-                    .ToDictionary(u => u.PartyId, u => u.DisplayName);
-
-                displayNameByUserLoginId = userLogins
-                    .Where(ul => ul.PartyId != null && displayNameByPartyId.ContainsKey(ul.PartyId))
-                    .ToDictionary(ul => ul.UserLoginId, ul => displayNameByPartyId[ul.PartyId!]);
+                displayNameByUserId = await _context.Users
+                    .Where(u => userIds.Contains(u.Id))
+                    .ToDictionaryAsync(u => u.Id, u => u.DisplayName, ct);
             }
 
             var result = history.Select(h => new SalesOpportunityHistoryDto
@@ -95,7 +81,7 @@ public class ListSalesOpportunityHistory
                 ChangeNote = h.ChangeNote,
                 ModifiedByUserLogin = h.ModifiedByUserLogin,
                 ModifiedByDisplayName = h.ModifiedByUserLogin != null
-                    && displayNameByUserLoginId.TryGetValue(h.ModifiedByUserLogin, out var displayName)
+                    && displayNameByUserId.TryGetValue(h.ModifiedByUserLogin, out var displayName)
                     ? displayName
                     : h.ModifiedByUserLogin,
                 ModifiedTimestamp = h.ModifiedTimestamp,

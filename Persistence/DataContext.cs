@@ -31539,6 +31539,20 @@ entity.Property(e => e.GlSubAccountCourseLabelId)
 
                 entity.HasIndex(e => e.PartyRelationshipTypeId, "PARTY_REL_TYPE");
 
+                entity.HasIndex(e => e.CreatedByUserLogin, "PARTY_REL_USRLGN");
+
+                // Holds AspNetUsers.Id - width and charset match that column so the
+                // foreign key is exact. Deliberately NOT the OFBiz USER_LOGIN table.
+                entity.Property(e => e.CreatedByUserLogin)
+                    .HasMaxLength(255)
+                    .HasColumnName("CREATED_BY_USER_LOGIN");
+
+                entity.HasOne(d => d.CreatedByUser)
+                    .WithMany()
+                    .HasForeignKey(d => d.CreatedByUserLogin)
+                    .HasConstraintName("PARTY_REL_CREATED_BY_USER")
+                    .OnDelete(DeleteBehavior.Restrict);
+
                 entity.HasIndex(e => e.CreatedTxStamp, "PRT_RLTNSHP_TXCRTS");
 
                 entity.HasIndex(e => e.LastUpdatedTxStamp, "PRT_RLTNSHP_TXSTMP");
@@ -50715,9 +50729,9 @@ entity.Property(e => e.BuildingNumber)
                       .IsUnicode(false)
                       .HasColumnName("WORK_EFFORT_ID");
 
+                // Holds AspNetUsers.Id - references AspNetUsers, not USER_LOGIN.
                 entity.Property(e => e.CreatedByUserLogin)
-                    .HasMaxLength(250)
-                    .IsUnicode(false)
+                    .HasMaxLength(255)
                     .HasColumnName("CREATED_BY_USER_LOGIN");
 
                 entity.Property(e => e.CreatedStamp)
@@ -50799,10 +50813,11 @@ entity.Property(e => e.BuildingNumber)
                         .HasDefaultValue(false);
 
 
-                entity.HasOne(d => d.CreatedByUserLoginNavigation)
-                    .WithMany(p => p.SalesOpportunities)
+                entity.HasOne(d => d.CreatedByUser)
+                    .WithMany()
                     .HasForeignKey(d => d.CreatedByUserLogin)
-                    .HasConstraintName("SLSOPP_USRLGN");
+                    .HasConstraintName("SLSOPP_CREATED_BY_USER")
+                    .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(d => d.CurrencyUom)
                     .WithMany(p => p.SalesOpportunities)
@@ -50907,11 +50922,12 @@ entity.Property(e => e.BuildingNumber)
         .HasColumnName("IS_WON")
         .HasDefaultValue(false);
 
+    // Holds AspNetUsers.Id - width matches that column so the FK is exact.
+    // Nullable: an action created without a resolvable user records no actor
+    // rather than inventing a sentinel value.
     entity.Property(e => e.CreatedByUserLogin)
-        .HasMaxLength(250)
-        .IsUnicode(false)
-        .HasColumnName("CREATED_BY_USER_LOGIN")
-        .IsRequired();
+        .HasMaxLength(255)
+        .HasColumnName("CREATED_BY_USER_LOGIN");
 
     entity.Property(e => e.CreatedStamp)
         .HasColumnType("datetime")
@@ -50970,10 +50986,10 @@ entity.Property(e => e.Note)
         .HasConstraintName("SLSOPPACT_CANCEL_RSN")
         .OnDelete(DeleteBehavior.Restrict);
 
-    entity.HasOne(d => d.CreatedByUserLoginNavigation)
+    entity.HasOne(d => d.CreatedByUser)
         .WithMany()
         .HasForeignKey(d => d.CreatedByUserLogin)
-        .HasConstraintName("SLSOPPACT_USRLGN")
+        .HasConstraintName("SLSOPPACT_CREATED_BY_USER")
         .OnDelete(DeleteBehavior.Restrict);
         
         entity.HasOne(d => d.MeetingType)
@@ -50988,10 +51004,10 @@ entity.HasOne(d => d.MeetingLocation)
     .HasConstraintName("SLSOPPACT_MEETING_LOC")
     .OnDelete(DeleteBehavior.Restrict);
 
-entity.HasOne(d => d.CreatedByUserLoginNavigation)
+entity.HasOne(d => d.CreatedByUser)
     .WithMany()
     .HasForeignKey(d => d.CreatedByUserLogin)
-    .HasConstraintName("SLSOPPACT_USRLGN")
+    .HasConstraintName("SLSOPPACT_CREATED_BY_USER")
     .OnDelete(DeleteBehavior.Restrict);
 });
             
@@ -51119,10 +51135,16 @@ entity.HasOne(d => d.CreatedByUserLoginNavigation)
                     .HasColumnType("datetime")
                     .HasColumnName("LAST_UPDATED_TX_STAMP");
 
+                // Holds AspNetUsers.Id - references AspNetUsers, not USER_LOGIN.
                 entity.Property(e => e.ModifiedByUserLogin)
-                    .HasMaxLength(250)
-                    .IsUnicode(false)
+                    .HasMaxLength(255)
                     .HasColumnName("MODIFIED_BY_USER_LOGIN");
+
+                entity.HasOne(d => d.ModifiedByUser)
+                    .WithMany()
+                    .HasForeignKey(d => d.ModifiedByUserLogin)
+                    .HasConstraintName("SLOPHI_MODIFIED_BY_USER")
+                    .OnDelete(DeleteBehavior.Restrict);
 
                 entity.Property(e => e.ModifiedTimestamp)
                     .HasColumnType("datetime")
@@ -51146,11 +51168,6 @@ entity.HasOne(d => d.CreatedByUserLoginNavigation)
                     .WithMany(p => p.SalesOpportunityHistories)
                     .HasForeignKey(d => d.CurrencyUomId)
                     .HasConstraintName("SLOPHI_CRNCY_UOM");
-
-                entity.HasOne(d => d.ModifiedByUserLoginNavigation)
-                    .WithMany(p => p.SalesOpportunityHistories)
-                    .HasForeignKey(d => d.ModifiedByUserLogin)
-                    .HasConstraintName("SLOPHI_USRLGN");
 
                 entity.HasOne(d => d.OpportunityStage)
                     .WithMany(p => p.SalesOpportunityHistories)

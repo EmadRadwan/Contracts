@@ -58,13 +58,8 @@ public class CreateSalesOpportunity
                 var stamp = DateTime.UtcNow;
                 var dto = request.Opportunity;
 
-                // Get current user
-                var user = await _context.Users
-                    .FirstOrDefaultAsync(x => x.UserName == _userAccessor.GetUsername(), ct);
-
-                var userLogin = user != null
-                    ? await _context.UserLogins.FirstOrDefaultAsync(x => x.PartyId == user.PartyId, ct)
-                    : null;
+                // AspNetUsers.Id straight off the JWT - no USER_LOGIN hop.
+                var actingUserId = _userAccessor.GetUserId();
 
                 // Validate stage exists
                 var stage = await _context.SalesOpportunityStages
@@ -83,9 +78,22 @@ public class CreateSalesOpportunity
                     OpportunityStageId = dto.OpportunityStageId,
                     WorkEffortId = dto.WorkEffortId,   // Assuming ProjectId maps to WorkEffortId
                     ProductId = dto.ProductId,        // Assuming UnitId maps to ProductId
-                    CreatedByUserLogin = userLogin?.UserLoginId,
+                    OpportunityName = dto.OpportunityName,
+                    Description = dto.Description,
+                    EstimatedAmount = dto.EstimatedAmount,
+                    EstimatedProbability = dto.EstimatedProbability ?? stage.DefaultProbability,
+                    CurrencyUomId = dto.CurrencyUomId ?? "USD",
+                    EstimatedCloseDate = dto.EstimatedCloseDate,
+                    NextStep = dto.NextStep,
+                    NextStepDate = dto.NextStepDate,
+                    DataSourceId = dto.DataSourceId,
+                    MarketingCampaignId = dto.MarketingCampaignId,
+                    TypeEnumId = dto.TypeEnumId,
+                    CreatedByUserLogin = actingUserId,
                     CreatedStamp = stamp,
-                    LastUpdatedStamp = stamp
+                    LastUpdatedStamp = stamp,
+                    CreatedTxStamp = stamp,
+                    LastUpdatedTxStamp = stamp
                 };
 
                 _context.SalesOpportunities.Add(opportunity);
@@ -146,14 +154,14 @@ public class CreateSalesOpportunity
                 {
                     SalesOpportunityHistoryId = historyId,
                     SalesOpportunity = opportunity,
-                    Description = dto.Description,
-                    EstimatedAmount = dto.EstimatedAmount ?? 0,
-                    EstimatedProbability = dto.EstimatedProbability ?? stage.DefaultProbability ?? 0,
-                    CurrencyUomId = dto.CurrencyUomId ?? "USD",
-                    OpportunityStageId = dto.OpportunityStageId,
-                    EstimatedCloseDate = dto.EstimatedCloseDate,
+                    Description = opportunity.Description,
+                    EstimatedAmount = opportunity.EstimatedAmount ?? 0,
+                    EstimatedProbability = opportunity.EstimatedProbability ?? 0,
+                    CurrencyUomId = opportunity.CurrencyUomId,
+                    OpportunityStageId = opportunity.OpportunityStageId,
+                    EstimatedCloseDate = opportunity.EstimatedCloseDate,
                     ChangeNote = "Opportunity created",
-                    ModifiedByUserLogin = userLogin?.UserLoginId,
+                    ModifiedByUserLogin = actingUserId,
                     ModifiedTimestamp = stamp,
                     CreatedStamp = stamp,
                     LastUpdatedStamp = stamp
@@ -181,6 +189,11 @@ public class CreateSalesOpportunity
                     OpportunityStageName = stage.Description,
                     StageSequenceNum = stage.SequenceNum,
                     OwnerPartyId = dto.OwnerPartyId,
+                    BrokerPartyId = dto.BrokerPartyId,
+                    WorkEffortId = opportunity.WorkEffortId,
+                    ProductId = opportunity.ProductId,
+                    IsWon = opportunity.IsWon,
+                    IsClosed = opportunity.IsClosed,
                     EstimatedCloseDate = opportunity.EstimatedCloseDate,
                     CreatedStamp = opportunity.CreatedStamp,
                     NextStep = opportunity.NextStep,

@@ -47,6 +47,71 @@ export interface Lead {
     organizationPartyId?: string;
     organizationName?: string;
     leadTemperatureId: 'C' | 'F'
+
+    // Assignment - current LEAD_OWNER relationship (undefined when unassigned)
+    ownerPartyId?: string;
+    ownerName?: string;
+    assignedDate?: string;
+}
+
+/**
+ * Current ownership of a lead.
+ */
+export interface LeadAssignment {
+    leadPartyId: string;
+    leadName?: string;
+    ownerPartyId?: string;
+    ownerName?: string;
+    fromDate?: string;
+    thruDate?: string;
+    comments?: string;
+}
+
+/**
+ * Payload for POST /leads/{id}/assign
+ */
+export interface AssignLeadRequest {
+    ownerPartyId: string;
+    comments?: string;
+}
+
+/**
+ * One entry in a lead's ownership history.
+ */
+export interface LeadAssignmentHistory {
+    ownerPartyId?: string;
+    ownerName?: string;
+    fromDate: string;
+    thruDate?: string;
+    comments?: string;
+    /** UserLogin that performed the assignment; absent on older rows. */
+    assignedByUserLogin?: string;
+    isCurrent: boolean;
+}
+
+/**
+ * Payload for POST /leads/bulk-assign
+ */
+export interface BulkAssignLeadsRequest {
+    leadPartyIds: string[];
+    ownerPartyId: string;
+    comments?: string;
+}
+
+export interface BulkAssignError {
+    leadPartyId: string;
+    leadName?: string;
+    reason: string;
+}
+
+export interface BulkAssignResult {
+    totalReceived: number;
+    successful: number;
+    failed: number;
+    alreadyOwned: number;
+    ownerPartyId?: string;
+    ownerName?: string;
+    errors: BulkAssignError[];
 }
 
 /**
