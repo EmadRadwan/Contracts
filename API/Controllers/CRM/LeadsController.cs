@@ -33,6 +33,7 @@ public class LeadsController : BaseApiController
     /// Create a new lead.
     /// </summary>
     [HttpPost]
+    [Authorize(Roles = LeadAssignmentConstants.CreateSecurityRole)]
     public async Task<IActionResult> CreateLead([FromBody] LeadDto lead)
     {
         return HandleResult(await Mediator.Send(new CreateLead.Command
@@ -45,6 +46,7 @@ public class LeadsController : BaseApiController
     /// Update an existing lead.
     /// </summary>
     [HttpPut("{id}")]
+    [Authorize(Roles = LeadAssignmentConstants.EditSecurityRole)]
     public async Task<IActionResult> UpdateLead(string id, [FromBody] LeadDto lead)
     {
         lead.PartyId = id;

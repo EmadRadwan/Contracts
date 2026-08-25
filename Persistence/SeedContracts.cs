@@ -3070,9 +3070,11 @@ public class SeedContracts
                 "Duplicate_Payment",
                 // CRM Roles
                 "CRM_View",
-                "CRM_Leads_View", "CRM_Leads_Create", "CRM_Leads_Edit", "CRM_Leads_Delete",
+                // Only roles the code actually reads. CRM_Leads_View,
+                // CRM_Leads_Delete and the CRM_Contacts_* family were seeded but
+                // never enforced anywhere - re-add them when the features exist.
+                "CRM_Leads_Create", "CRM_Leads_Edit",
                 "CRM_Leads_Assign", "CRM_Leads_ViewAll",
-                "CRM_Contacts_View", "CRM_Contacts_Create", "CRM_Contacts_Edit", "CRM_Contacts_Delete",
                 "ApproveEmployeeAdvance", "DeleteEmployeeAdvance",
                 "Manufacturing_View"
             };
@@ -3381,9 +3383,8 @@ public class SeedContracts
                     "CreateSalesRequest",
                     // CRM Roles
                     "CRM_View",
-                    "CRM_Leads_View", "CRM_Leads_Create", "CRM_Leads_Edit", "CRM_Leads_Delete",
+                    "CRM_Leads_Create", "CRM_Leads_Edit",
                     "CRM_Leads_Assign", "CRM_Leads_ViewAll",
-                    "CRM_Contacts_View", "CRM_Contacts_Create", "CRM_Contacts_Edit", "CRM_Contacts_Delete",
                     "ApproveEmployeeAdvance", "DeleteEmployeeAdvance"
                 }
             },

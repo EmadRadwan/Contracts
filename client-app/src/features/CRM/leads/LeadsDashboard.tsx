@@ -27,6 +27,11 @@ const LeadsDashboard: React.FC = () => {
 
     const language = useAppSelector((state) => state.localization.language);
 
+    // Creating leads is the CRM Admin's job. The server enforces this too;
+    // hiding the buttons only keeps the UI honest.
+    const { user } = useAppSelector((state) => state.account);
+    const canCreate = (user?.roles || []).includes('CRM_Leads_Create');
+
     // Handlers
     const handleUploadExcel = useCallback(() => {
         setUploadOpen(true);
@@ -122,22 +127,26 @@ const LeadsDashboard: React.FC = () => {
                     </Typography>
 
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Button
-                            variant="contained"
-                            color="primary"
+                        {canCreate && (
+                            <Button
+                                variant="contained"
+                                color="primary"
 
-                            onClick={handleCreateNew}
-                        >
-                            <AddIcon sx={{ ml: language === "ar" ? 0.5 : 0, mr: language === "ar" ? 0 : 0.5 }} /> {getTranslatedLabel(`${localizationKey}.createNew`, 'New Lead')}
-                        </Button>
+                                onClick={handleCreateNew}
+                            >
+                                <AddIcon sx={{ ml: language === "ar" ? 0.5 : 0, mr: language === "ar" ? 0 : 0.5 }} /> {getTranslatedLabel(`${localizationKey}.createNew`, 'New Lead')}
+                            </Button>
+                        )}
 
-                        <Button
-                            variant="contained"
-                            color="secondary"
-                            onClick={handleUploadExcel}
-                        >
-                            <DriveFolderUploadIcon sx={{ ml: language === "ar" ? 0.5 : 0, mr: language === "ar" ? 0 : 0.5 }} />{getTranslatedLabel(`${localizationKey}.uploadExcel`, 'Upload Excel')}
-                        </Button>
+                        {canCreate && (
+                            <Button
+                                variant="contained"
+                                color="secondary"
+                                onClick={handleUploadExcel}
+                            >
+                                <DriveFolderUploadIcon sx={{ ml: language === "ar" ? 0.5 : 0, mr: language === "ar" ? 0 : 0.5 }} />{getTranslatedLabel(`${localizationKey}.uploadExcel`, 'Upload Excel')}
+                            </Button>
+                        )}
                     </Box>
                 </Box>
 

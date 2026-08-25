@@ -1,5 +1,6 @@
 using Application.Accounting.Accounting;
 using Application.Accounting.FinAccounts;
+using Application.Accounting.Invoices;
 using Application.Accounting.Services.Models;
 using Application.Catalog.Products.Services.Cost;
 using Application.Catalog.Products.Services.Inventory;
@@ -3813,23 +3814,41 @@ public class GeneralLedgerService : IGeneralLedgerService
             DateOnly monthEnd = monthStart.AddMonths(1).AddDays(-1);
 
             // PreferredPaymentMethodId mapping (CASH -> CASH, everything else -> BANK_TRANSFER)
-            string preferredMethodId = payment.PaymentMethodId == "CASH" ? "CASH" : "BANK_TRANSFER";
+            string preferredMethodId = payment.PaymentMethodId == PayrollConstants.CashMethod
+                ? PayrollConstants.CashMethod
+                : PayrollConstants.BankTransferMethod;
 
+            // Which invoices belong to THIS payment is decided by the method snapshot the batch
+            // wrote onto each invoice at run time (PayrollConstants.PaymentMethodAttrName), not by
+            // the employee's CURRENT Party.PreferredPayrollPaymentMethodId. Editing an employee's
+            // preference after a run used to silently move their invoice between the cash and bank
+            // settlements, so a payment created months earlier no longer matched any run total and
+            // could never be posted.
+            //
+            // Invoices predating the snapshot have no attribute; for those we fall back to the live
+            // preference, which is exactly the old behaviour — no worse for historical data, and
+            // every run executed from now on is immutable. The fallback keys on the ROW's absence,
+            // not on a null value: an employee run with no preference set gets a snapshot row with a
+            // null AttrValue, and that must stay matched by neither payment (the two run totals in
+            // BatchCreatePayrollInvoices exclude them too) rather than falling through to the party.
             var invoiceData = await (from inv in _context.Invoices
                                      join prty in _context.Parties on inv.PartyIdFrom equals prty.PartyId
+                                     join attr in _context.InvoiceAttributes
+                                             .Where(a => a.AttrName == PayrollConstants.PaymentMethodAttrName)
+                                         on inv.InvoiceId equals attr.InvoiceId into attrJoin
+                                     from attr in attrJoin.DefaultIfEmpty()
                                      where inv.InvoiceTypeId == "PAYROL_INVOICE"
                                            && inv.PartyId == organizationPartyId
                                            && inv.InvoiceDate >= monthStart
                                            && inv.InvoiceDate <= monthEnd
-                                           && prty.PreferredPayrollPaymentMethodId == preferredMethodId
+                                           && (attr != null
+                                               ? attr.AttrValue
+                                               : prty.PreferredPayrollPaymentMethodId) == preferredMethodId
                                      select new { Invoice = inv, Party = prty }).ToListAsync();
 
-            // 3. Total the candidate run so we can distinguish the ONE aggregate settlement
-            //    (the batch payment that pays the whole month's run for this method) from an
-            //    ad-hoc payment (a raise / bonus / individual settlement). Only the aggregate
-            //    may fan out to every employee invoice; anything else posts just what it pays.
-            //    NOTE: the previous version debited EVERY month+method invoice for any payment,
-            //    so each extra cash/bank payroll payment re-booked the whole run (triple-booking).
+            // 3. Total the candidate run so we can check the aggregate settlement against it.
+            //    NOTE: an early version debited EVERY month+method invoice for any payment, so each
+            //    extra cash/bank payroll payment re-booked the whole run (triple-booking).
             var invoiceTotals = new Dictionary<string, decimal>();
             decimal runTotal = 0m;
             foreach (var d in invoiceData)
@@ -3840,10 +3859,34 @@ public class GeneralLedgerService : IGeneralLedgerService
             }
             runTotal = _acctgMiscService.CustomRound(runTotal, (int)ledgerDecimals, roundingMode);
 
-            // A payment settles the whole run ONLY if it isn't directed at a specific account
-            // (OverrideGlAccountId) and its amount matches the run exactly.
+            // A payment is the batch's aggregate settlement (it may fan out to every employee
+            // invoice) when it is addressed to the shared staff party with no directed account.
+            // Anything else — a raise, a bonus, an individual settlement — posts only what it pays.
+            //
+            // This is deliberately NOT inferred from `runTotal == paymentAmount`. The run total is
+            // recomputed here from live data, so any later change to it reclassified a months-old
+            // aggregate payment as ad-hoc, which then went looking for an accrued account on the
+            // staff party — a party that has none by design, and never will. The identity of a
+            // payment is a fact about the payment, not about whether the arithmetic still lines up.
+            // Same marker GetProjectPayroll / GetCompanyReport.GetPayroll / Fact_Project_Payroll use.
             bool isAggregateRunSettlement =
-                string.IsNullOrEmpty(payment.OverrideGlAccountId) && runTotal == paymentAmount;
+                payment.PartyIdTo == PayrollConstants.StaffPartyId
+                && string.IsNullOrEmpty(payment.OverrideGlAccountId);
+
+            // The arithmetic is now a validation rather than a classification, so a mismatch fails
+            // where it can be explained. It means the run moved after this payment was created — an
+            // invoice edited, or an employee's payment method changed — and either the payment
+            // amount or the invoices need correcting before it can settle the run.
+            if (isAggregateRunSettlement && runTotal != paymentAmount)
+            {
+                throw new InvalidOperationException(
+                    $"Payroll payment {paymentId} settles the whole {preferredMethodId} run for " +
+                    $"{month:D2}/{year}, but its amount no longer matches that run: payment {paymentAmount} " +
+                    $"vs run total {runTotal} across {invoiceData.Count} invoice(s), a difference of " +
+                    $"{paymentAmount - runTotal}. The run has changed since the payment was created " +
+                    $"(an invoice was edited, or an employee's payroll payment method was changed). " +
+                    $"Correct the payment amount or the invoices so the two agree, then post again.");
+            }
 
             var entries = new List<AcctgTransEntry>();
 
@@ -3887,10 +3930,16 @@ public class GeneralLedgerService : IGeneralLedgerService
                         .Select(pga => pga.GlAccountId)
                         .FirstOrDefaultAsync();
 
+                    // Skipping the debit here would leave the transaction short by this invoice and
+                    // fail the balance guard below with an arithmetic message that names no cause,
+                    // so fail here instead, where the missing account can be pointed at.
                     if (string.IsNullOrEmpty(accruedGlAccountId))
                     {
-                        _logger.LogWarning($"Accrued account not found for employee {data.Invoice.PartyIdFrom}. Skipping debit entry.");
-                        continue;
+                        throw new InvalidOperationException(
+                            $"Cannot post payroll payment {paymentId}: employee {data.Invoice.PartyIdFrom} " +
+                            $"(invoice {data.Invoice.InvoiceId}, {invoiceTotal}) has no EMPLOYEE " +
+                            $"ACCOUNTS_PAYABLE account to clear. Link the employee's accrued salary " +
+                            $"account, then post again.");
                     }
 
                     entries.Add(new AcctgTransEntry
@@ -3914,8 +3963,9 @@ public class GeneralLedgerService : IGeneralLedgerService
             else
             {
                 // ===== Mode 2: directed / ad-hoc payment — post ONLY what this payment pays =====
-                // Debit account precedence: explicit OverrideGlAccountId, else the recipient's
-                // accrued payable. Never fans out to the whole run.
+                // A payment to an individual employee: a raise, a bonus, or settling one salary
+                // outside the batch run. Debit account precedence: explicit OverrideGlAccountId,
+                // else the recipient's own accrued payable. Never fans out to the whole run.
                 var debitGlAccountId = payment.OverrideGlAccountId;
                 if (string.IsNullOrEmpty(debitGlAccountId))
                 {
@@ -3931,8 +3981,11 @@ public class GeneralLedgerService : IGeneralLedgerService
                 if (string.IsNullOrEmpty(debitGlAccountId))
                 {
                     throw new InvalidOperationException(
-                        $"Cannot post payroll payment {paymentId}: no OverrideGlAccountId and no accrued " +
-                        $"account for party {payment.PartyIdTo}.");
+                        $"Cannot post payroll payment {paymentId} to party {payment.PartyIdTo}: it has no " +
+                        $"OverrideGlAccountId and no EMPLOYEE ACCOUNTS_PAYABLE account. A payroll payment " +
+                        $"that is not the batch's aggregate settlement (those go to party " +
+                        $"{PayrollConstants.StaffPartyId}) must be addressed to an employee with an accrued " +
+                        $"salary account, or carry an explicit GL account.");
                 }
 
                 entries.Add(new AcctgTransEntry

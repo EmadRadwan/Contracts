@@ -1,3 +1,5 @@
+using Application.Accounting.Payments;
+using Application.Projects;
 using Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -39,58 +41,55 @@ public class ResetSalesRequest
                 return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
                     "Only approved sales requests can be reset.");
 
+            // An approved commission owns real payments — some already disbursed — and its snapshot
+            // of the sale (price, collected amount) is what those payments were computed from.
+            // Resetting here would either wipe payments the commission still points at or leave it
+            // pointing at a sale that no longer exists, so make the user unwind the commission
+            // first. Pending commissions have generated nothing yet and don't block.
+            var blockingCommission = await _context.SalesCommissions
+                .Where(c => c.SalesRequestId == salesRequestId
+                            && (c.StatusId == "COMMISSION_APPROVED" || c.StatusId == "COMMISSION_PAID"))
+                .Select(c => c.SalesCommissionId)
+                .FirstOrDefaultAsync(ct);
+
+            if (blockingCommission != null)
+                // Arabic: this rule is hit by end users during normal work and the toast shows the
+                // message verbatim, so it follows the UI language rather than the handler's other
+                // developer-facing strings.
+                return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
+                    $"لا يمكن إعادة تعيين طلب المبيعات: توجد عمولة مبيعات معتمدة ({blockingCommission}) مرتبطة بهذا الطلب. " +
+                    "يجب إعادة تعيين تلك العمولة أو حذفها أولاً، ثم إعادة تعيين طلب المبيعات.");
+
             await using var transaction = await _context.Database.BeginTransactionAsync(ct);
 
             try
             {
                 // 2. Clean up artifacts created during approval
+                // REFACTOR: this used to delete payments and only the AcctgTrans carrying
+                //           SALES_REQUEST_ID, which left the ledger rows hanging off the payments
+                //           behind and made SaveChanges fail on ACCTTX_PAYMENT. Share the delete
+                //           path's cleanup so the two can't drift apart again.
 
-                // Delete Payments and related FinAccountTran
+                // Customer payments (advance, installments, maintenance deposit) and everything
+                // hanging off them. Commission payments are excluded deliberately: an approved
+                // commission is refused above, so anything left with that type belongs to a record
+                // this handler must not silently destroy.
                 var payments = await _context.Payments
-                    .Where(p => p.SalesRequestId == sr.SalesRequestId)
+                    .Where(p => p.SalesRequestId == salesRequestId
+                                && p.PaymentTypeId != CommissionPaymentCleanup.CommissionPaymentTypeId)
                     .ToListAsync(ct);
 
-                if (payments.Any())
-                {
-                    var paymentIds = payments.Select(p => p.PaymentId).ToList();
+                await PaymentArtifactCleanup.PurgePaymentsAsync(_context, payments, ct);
 
-                    var finAccountTrans = await _context.FinAccountTrans
-                        .Where(fat => paymentIds.Contains(fat.PaymentId))
-                        .ToListAsync(ct);
-
-                    // ── Critical step: break the cycle by nulling one direction ──
-                    // Usually safest to null the FK pointing from the "dependent" side
-                    // (try PaymentId first; if it fails → try nulling FinAccountTransId instead)
-                    foreach (var tran in finAccountTrans)
-                    {
-                        tran.PaymentId = null;   // ← this removes the reference FinAccountTran → Payment
-                    }
-
-                    // Optional: also null the reverse if needed (rarely required)
-                    // foreach (var p in payments)
-                    // {
-                    //     p.FinAccountTransId = null;
-                    // }
-
-                    _context.FinAccountTrans.RemoveRange(finAccountTrans);
-                    _context.Payments.RemoveRange(payments);
-                }
-
-                // Delete AcctgTrans and entries
-                var acctgTransList = await _context.AcctgTrans
-                    .Include(t => t.AcctgTransEntries)
-                    .Where(t => t.SalesRequestId == sr.SalesRequestId)
+                // Ledger transactions booked against the request itself (APARTMENT_SALE_*,
+                // APARTMENT_MAINTENANCE_DEPOSIT) — these carry no PAYMENT_ID, so the purge above
+                // does not reach them.
+                var acctgTransIds = await _context.AcctgTrans
+                    .Where(t => t.SalesRequestId == salesRequestId)
+                    .Select(t => t.AcctgTransId)
                     .ToListAsync(ct);
 
-                if (acctgTransList.Any())
-                {
-                    foreach (var tran in acctgTransList)
-                    {
-                        _context.AcctgTransEntries.RemoveRange(tran.AcctgTransEntries);
-                    }
-
-                    _context.AcctgTrans.RemoveRange(acctgTransList);
-                }
+                await PaymentArtifactCleanup.PurgeAcctgTransAsync(_context, acctgTransIds, ct);
 
                 // 3. Revert statuses
                 sr.StatusId = "SALES_REQUEST_CREATED";
@@ -114,8 +113,10 @@ public class ResetSalesRequest
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(ct);
+                // Innermost provider message — an FK violation's detail sits there, and the UI
+                // shows this text verbatim.
                 return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
-                    $"Failed to reset sales request: {ex.Message}");
+                    $"Failed to reset sales request: {ex.GetBaseException().Message}");
             }
 
             // 5. Return updated DTO

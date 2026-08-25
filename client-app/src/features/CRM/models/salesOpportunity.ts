@@ -99,7 +99,7 @@ export interface SalesOpportunityAction {
 export interface SalesOpportunityLead {
     partyId?: string;
     partyName?: string;
-    roleTypeId?: string;  // e.g., "LEAD_CONTACT", "DECISION_MAKER", "INFLUENCER"
+    roleTypeId?: string;  // defaults to "LEAD"; future: "DECISION_MAKER", "INFLUENCER"
     roleDescription?: string;
     email?: string;
     dataSourceId?: string;

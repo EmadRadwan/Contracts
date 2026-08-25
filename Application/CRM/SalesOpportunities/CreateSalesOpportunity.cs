@@ -1,4 +1,5 @@
 using Application.Core;
+using Application.CRM.Leads.Assignment;
 using Application.Interfaces;
 using Domain;
 using FluentValidation;
@@ -133,7 +134,7 @@ public class CreateSalesOpportunity
                     if (string.IsNullOrEmpty(lead.PartyId))
                         continue;
 
-                    var roleTypeId = lead.RoleTypeId ?? "LEAD_CONTACT";
+                    var roleTypeId = lead.RoleTypeId ?? LeadAssignmentConstants.LeadRoleTypeId;
 
                     // Ensure the party has the required role
                     await EnsurePartyRoleExists(lead.PartyId, roleTypeId, stamp, ct);

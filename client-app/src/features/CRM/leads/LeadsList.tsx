@@ -34,6 +34,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
     // The server enforces this too; this only keeps the UI honest.
     const { user } = useAppSelector((state) => state.account);
     const canAssign = (user?.roles || []).includes('CRM_Leads_Assign');
+    const canEdit = (user?.roles || []).includes('CRM_Leads_Edit');
     const highlightedLeadId = location.state?.duplicateLeadId ?? null;
     const highlightedLeadIdRef = React.useRef<string | null>(highlightedLeadId);
 
@@ -110,6 +111,19 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
 
     // Custom cell for name (clickable)
     const NameCell = (props: GridCellProps) => {
+        const name = props.dataItem.fullName
+            || `${props.dataItem.firstName} ${props.dataItem.lastName}`.trim();
+
+        // Without CRM_Leads_Edit the name is plain text - the form it opens is
+        // edit-only, so offering the link would lead to a rejected save.
+        if (!canEdit) {
+            return (
+                <td className={props.className} style={props.style}>
+                    <Typography variant="body2">{name}</Typography>
+                </td>
+            );
+        }
+
         return (
             <td className={props.className} style={props.style}>
                 <Button
@@ -118,7 +132,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
                     onClick={() => onEditLead(props.dataItem)}
                     sx={{ textTransform: 'none', justifyContent: 'flex-start', p: 0 }}
                 >
-                    {props.dataItem.fullName || `${props.dataItem.firstName} ${props.dataItem.lastName}`.trim()}
+                    {name}
                 </Button>
             </td>
         );

@@ -1,3 +1,5 @@
+using Application.Accounting.Payments;
+using Application.Projects;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
@@ -55,49 +57,44 @@ public class DeleteSalesRequest
                     return Result<Unit>.Failure("Associated apartment not found");
 
                 // -----------------------------------------------------------------
-                // 3. Clean up related artifacts if the request was approved
+                // 3. Clean up related artifacts
                 // -----------------------------------------------------------------
-                if (sr.StatusId == "SALES_REQUEST_APPROVED")
-                {
-                    // Delete generated payments
-                    var payments = await _context.Payments
-                        .Where(p => p.SalesRequestId == sr.SalesRequestId)
-                        .ToListAsync(ct);
+                // REFACTOR: the cleanup used to run only for SALES_REQUEST_APPROVED. Artifacts can
+                //           outlive that status (a commission approved against the request, a
+                //           half-finished reset), and the FKs below are all NO ACTION, so anything
+                //           left behind rejects the whole delete. Purge unconditionally instead —
+                //           the queries are no-ops when there is nothing to remove.
 
-                    if (payments.Any())
-                    {
-                        var paymentIds = payments.Select(p => p.PaymentId).ToList();
+                // 3a. Commission first. SALES_COMMISSION.FK_SALES_COMM_SR is Restrict, so an
+                //     approved commission blocks the delete outright, and the ledger rows its
+                //     payments produced carry no SALES_REQUEST_ID — only the commission cleanup
+                //     knows how to find them (via PAYMENT_ID / FIN_ACCOUNT_TRANS_ID).
+                await CommissionPaymentCleanup.PurgeAsync(_context, salesRequestId, ct);
 
-                        // Delete related FinAccountTran
-                        var finAccountTrans = await _context.FinAccountTrans
-                            .Where(fat => fat.PaymentId != null && paymentIds.Contains(fat.PaymentId))
-                            .ToListAsync(ct);
+                var commissions = await _context.SalesCommissions
+                    .Where(c => c.SalesRequestId == salesRequestId)
+                    .ToListAsync(ct);
 
-                        if (finAccountTrans.Any())
-                            _context.FinAccountTrans.RemoveRange(finAccountTrans);
+                if (commissions.Any())
+                    _context.SalesCommissions.RemoveRange(commissions);
 
-                        _context.Payments.RemoveRange(payments);
-                    }
+                // 3b. Customer payments (advance, installments, maintenance deposit) and every
+                //     artifact hanging off them.
+                var payments = await _context.Payments
+                    .Where(p => p.SalesRequestId == salesRequestId
+                                && p.PaymentTypeId != CommissionPaymentCleanup.CommissionPaymentTypeId)
+                    .ToListAsync(ct);
 
-                    // Delete accounting transaction + entries
-                    var acctgTransList = await _context.AcctgTrans
-                        .Include(t => t.AcctgTransEntries)
-                        .Where(t => t.SalesRequestId == sr.SalesRequestId)
-                        .ToListAsync(ct);
+                await PaymentArtifactCleanup.PurgePaymentsAsync(_context, payments, ct);
 
-                    if (acctgTransList.Any())
-                    {
-                        // REFACTOR: Remove all entries from all transactions first
-                        // Ensures no FK violations when deleting parent AcctgTran records.
-                        foreach (var tran in acctgTransList)
-                        {
-                            _context.AcctgTransEntries.RemoveRange(tran.AcctgTransEntries);
-                        }
+                // 3c. Ledger transactions booked against the request itself (APARTMENT_SALE_*,
+                //     APARTMENT_MAINTENANCE_DEPOSIT) — these carry no PAYMENT_ID, so 3b misses them.
+                var acctgTransIds = await _context.AcctgTrans
+                    .Where(t => t.SalesRequestId == salesRequestId)
+                    .Select(t => t.AcctgTransId)
+                    .ToListAsync(ct);
 
-                        // REFACTOR: Now safely remove all parent AcctgTran records
-                        _context.AcctgTrans.RemoveRange(acctgTransList);
-                    }
-                }
+                await PaymentArtifactCleanup.PurgeAcctgTransAsync(_context, acctgTransIds, ct);
 
                 if (sr.Installments.Any())
                 {
@@ -137,7 +134,10 @@ public class DeleteSalesRequest
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(ct);
-                return Result<Unit>.Failure($"Failed to delete sales request: {ex.Message}");
+                // Surface the innermost provider message — an FK violation's detail sits there, and
+                // the UI shows this text verbatim.
+                var detail = ex.GetBaseException().Message;
+                return Result<Unit>.Failure($"Failed to delete sales request: {detail}");
             }
         }
     }

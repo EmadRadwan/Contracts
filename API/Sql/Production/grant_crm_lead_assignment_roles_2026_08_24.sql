@@ -17,7 +17,7 @@
 --       the script safe to run first, or on its own.)
 --   2. Grants CRM_Leads_Assign to the two CRM Admins only:
 --        eradwan1967@gmail.com (Emad)
---        rmostafa@gmail.com    (Ayman)
+--        RAYMAN@GMAIL.COM    (Ayman)
 --   3. Grants CRM_Leads_ViewAll to EVERY current CRM_View holder, so
 --      nobody's leads list changes on deploy day.
 --
@@ -57,7 +57,7 @@ WHERE Name IN ('CRM_Leads_Assign','CRM_Leads_ViewAll');
 
 -- 1b. The two CRM Admins must resolve. Expected: 2 rows.
 SELECT Id, UserName, Email FROM AspNetUsers
-WHERE NormalizedEmail IN ('ERADWAN1967@GMAIL.COM','RMOSTAFA@GMAIL.COM');
+WHERE NormalizedEmail IN ('ERADWAN1967@GMAIL.COM','RAYMAN@GMAIL.COM');
 
 -- 1c. Everyone who will receive CRM_Leads_ViewAll. Expected: 13 rows in dev
 --     (all current CRM_View holders, Ahmad included).
@@ -94,7 +94,7 @@ INSERT INTO AspNetUserRoles (UserId, RoleId)
 SELECT u.Id, r.Id
 FROM AspNetUsers u
 CROSS JOIN AspNetRoles r
-WHERE u.NormalizedEmail IN ('ERADWAN1967@GMAIL.COM','RMOSTAFA@GMAIL.COM')
+WHERE u.NormalizedEmail IN ('ERADWAN1967@GMAIL.COM','RAYMAN@GMAIL.COM')
   AND r.Name = 'CRM_Leads_Assign'
   AND NOT EXISTS (
       SELECT 1 FROM AspNetUserRoles ur

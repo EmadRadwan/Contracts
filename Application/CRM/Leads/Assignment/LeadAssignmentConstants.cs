@@ -21,4 +21,14 @@ public static class LeadAssignmentConstants
     /// sees only the leads currently assigned to them.
     /// </summary>
     public const string ViewAllSecurityRole = "CRM_Leads_ViewAll";
+
+    /// <summary>
+    /// Security role permitting a user to create leads, singly or by Excel import.
+    /// </summary>
+    public const string CreateSecurityRole = "CRM_Leads_Create";
+
+    /// <summary>
+    /// Security role permitting a user to edit an existing lead.
+    /// </summary>
+    public const string EditSecurityRole = "CRM_Leads_Edit";
 }

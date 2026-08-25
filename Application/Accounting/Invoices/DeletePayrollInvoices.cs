@@ -63,7 +63,7 @@ public class DeletePayrollInvoices
                     var paymentIds = await _context.Payments
                         .Where(p => p.PaymentTypeId == "PAYROL_PAYMENT"
                                     && p.PartyIdFrom == request.OrganizationPartyId
-                                    && p.PartyIdTo == "276"
+                                    && p.PartyIdTo == PayrollConstants.StaffPartyId
                                     && p.EffectiveDate >= monthStart
                                     && p.EffectiveDate <= monthEnd)
                         .Select(p => p.PaymentId)

@@ -122,7 +122,7 @@ public class CreateLead
                     PartyType = partyTypePerson,
                     Status = statusEnabled,
                     Description = fullName,
-                    MainRole = "LEAD_CONTACT",
+                    MainRole = "LEAD",
                     LeadTemperatureId = dto.LeadTemperatureId ?? "C",
                     DataSourceId = string.IsNullOrWhiteSpace(dto.DataSourceId) ? null : dto.DataSourceId,
                     CreatedStamp = stamp,

@@ -22,24 +22,56 @@ public static class SalesCommissionCalculator
         return collectedRatio >= UpperThreshold ? 1m : 0.5m;
     }
 
-    public static string? ValidateRequiredParties(SalesCommissionDto dto, bool isIndirect)
+    // Every party slot is optional — the user may not know who the manager or the broker is when the
+    // commission is first recorded. What is NOT optional is the pairing: a party and its percentage are
+    // filled in together or left out together. A percentage without a party would compute an amount
+    // nobody can be paid on approval, yet reports (SalesCommissionsDateRangeExcel) sum those amounts
+    // blindly — so the totals would silently exceed the payments actually issued.
+    public static string? ValidatePartyPercentPairing(SalesCommissionDto dto, bool isIndirect)
     {
-        if (string.IsNullOrEmpty(dto.SalesRepPartyId))
-            return "يجب تحديد المندوب";
+        var slots = new List<(string? PartyId, decimal? Percent, string Label)>
+        {
+            (dto.SalesRepPartyId, dto.SalesRepPercent, "المندوب"),
+            (dto.ManagerPartyId, dto.ManagerPercent, "المدير"),
+            (dto.SalesRep2PartyId, dto.SalesRep2Percent, "المندوب الثاني"),
+            (dto.Manager2PartyId, dto.Manager2Percent, "المدير الثاني"),
+        };
 
-        if (string.IsNullOrEmpty(dto.ManagerPartyId))
-            return "يجب تحديد المدير";
+        // External slots only exist for INDIRECT sales; the handlers null them out otherwise.
+        if (isIndirect)
+        {
+            slots.Add((dto.ExternalCompanyPartyId, dto.ExternalCompanyPercent, "شركة الوسيط"));
+            slots.Add((dto.ExternalSalesRepPartyId, dto.ExternalSalesRepPercent, "مندوب الوسيط"));
+            slots.Add((dto.ExternalManagerPartyId, dto.ExternalManagerPercent, "مدير الوسيط"));
+        }
 
-        if (dto.SalesRep2Percent.HasValue && string.IsNullOrEmpty(dto.SalesRep2PartyId))
-            return "يجب تحديد المندوب الثاني عند إدخال نسبته";
+        foreach (var (partyId, percent, label) in slots)
+        {
+            var hasParty = !string.IsNullOrEmpty(partyId);
+            var hasPercent = (percent ?? 0m) > 0m;
 
-        if (dto.Manager2Percent.HasValue && string.IsNullOrEmpty(dto.Manager2PartyId))
-            return "يجب تحديد المدير الثاني عند إدخال نسبته";
+            if (hasPercent && !hasParty)
+                return $"تم إدخال نسبة {label} بدون تحديد الطرف — حدد {label} أو اجعل النسبة صفراً";
 
-        if (isIndirect && string.IsNullOrEmpty(dto.ExternalCompanyPartyId))
-            return "يجب تحديد شركة الوسيط للبيع غير المباشر";
+            if (hasParty && !hasPercent)
+                return $"تم تحديد {label} بدون نسبة — أدخل نسبة {label} أو احذف الطرف";
+        }
 
         return null;
+    }
+
+    // Belt-and-braces for the invariant ValidatePartyPercentPairing enforces: a slot with no party
+    // earns nothing, so no amount is ever computed — and therefore stored — against a party that does
+    // not exist. A no-op once the pairing check has passed.
+    public static void ClearUnassignedPartyPercents(SalesCommissionDto dto)
+    {
+        if (string.IsNullOrEmpty(dto.SalesRepPartyId)) dto.SalesRepPercent = 0m;
+        if (string.IsNullOrEmpty(dto.ManagerPartyId)) dto.ManagerPercent = 0m;
+        if (string.IsNullOrEmpty(dto.SalesRep2PartyId)) dto.SalesRep2Percent = null;
+        if (string.IsNullOrEmpty(dto.Manager2PartyId)) dto.Manager2Percent = null;
+        if (string.IsNullOrEmpty(dto.ExternalCompanyPartyId)) dto.ExternalCompanyPercent = null;
+        if (string.IsNullOrEmpty(dto.ExternalSalesRepPartyId)) dto.ExternalSalesRepPercent = null;
+        if (string.IsNullOrEmpty(dto.ExternalManagerPartyId)) dto.ExternalManagerPercent = null;
     }
 
     public static string? ValidateAgainstConfiguredRate(SalesCommissionDto dto, ProjectCommissionRate? configuredRate, bool isIndirect)
@@ -128,25 +160,28 @@ public static class SalesCommissionCalculator
                 : null,
         };
 
-        if (!isIndirect || !externalCompanyPercent.HasValue)
+        if (!isIndirect)
             return result;
 
-        var extCompanyGross = salePrice * (externalCompanyPercent.Value / 100m) * commissionFactor;
-        result.ExternalCompanyGrossAmount = extCompanyGross;
-
-        if (!hasVatExemption)
+        // The three external slots are independent: the broker company may be unknown while its rep is
+        // already named, or vice versa. Each is computed on its own percentage — never gated on another.
+        if (externalCompanyPercent.HasValue)
         {
-            // VAT is embedded in the gross amount: base = gross × 100/(100+VAT), then WHT is deducted from the base
+            var extCompanyGross = salePrice * (externalCompanyPercent.Value / 100m) * commissionFactor;
+            result.ExternalCompanyGrossAmount = extCompanyGross;
+
+            // VAT exemption and withholding-tax exemption are independent tax statuses — a VAT-exempt
+            // broker is still subject to WHT, and only HasWithholdingTaxExemption removes it. VAT, when
+            // it applies, is embedded in the gross amount, so WHT is deducted from the VAT-exclusive
+            // base; for a VAT-exempt broker nothing is embedded and the gross IS the base.
             var vatRate = vatPercent > 0 ? vatPercent : 14m;
-            var baseAmount = extCompanyGross * 100m / (100m + vatRate);
+            var baseAmount = hasVatExemption
+                ? extCompanyGross
+                : extCompanyGross * 100m / (100m + vatRate);
 
             result.ExternalCompanyNetAmount = (!hasWithholdingTaxExemption && withholdingTaxPercent > 0)
                 ? extCompanyGross - baseAmount * (withholdingTaxPercent / 100m)
                 : extCompanyGross;
-        }
-        else
-        {
-            result.ExternalCompanyNetAmount = extCompanyGross;
         }
 
         if (externalSalesRepPercent.HasValue)

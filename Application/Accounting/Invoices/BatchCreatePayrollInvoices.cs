@@ -94,7 +94,7 @@ public class BatchCreatePayrollInvoices
             var paymentIds = await _context.Payments
                 .Where(p => p.PaymentTypeId == "PAYROL_PAYMENT"
                             && p.PartyIdFrom == organizationPartyId
-                            && p.PartyIdTo == "276"
+                            && p.PartyIdTo == PayrollConstants.StaffPartyId
                             && p.EffectiveDate >= monthStart
                             && p.EffectiveDate <= monthEnd)
                 .Select(p => p.PaymentId)
@@ -237,6 +237,29 @@ public class BatchCreatePayrollInvoices
                     var invoiceId = createdInvoice.InvoiceId;
                     var itemSeqId = 1;
 
+                    // 1b. Snapshot the payment method this invoice was run under, so the aggregate
+                    // payment it belongs to is a recorded fact rather than something re-derived from
+                    // Party.PreferredPayrollPaymentMethodId months later. Editing an employee's
+                    // preference after the run must not move a historical invoice between the cash
+                    // and bank settlements — which is exactly what used to leave an already-created
+                    // payment unable to post. Read back by
+                    // GeneralLedgerService.CreateAcctgTransAndEntriesForPayrollPayment.
+                    //
+                    // Stored verbatim, NOT normalised to one of the two methods: the two payment
+                    // totals below are summed with exact equality on CASH / BANK_TRANSFER, so an
+                    // employee whose preference is unset belongs to neither payment. Defaulting a
+                    // blank to BANK_TRANSFER here would make the posting debit an invoice that no
+                    // payment amount covers, and the transaction would not balance.
+                    _context.InvoiceAttributes.Add(new InvoiceAttribute
+                    {
+                        InvoiceId = invoiceId,
+                        AttrName = PayrollConstants.PaymentMethodAttrName,
+                        AttrValue = emp.PreferredPayrollPaymentMethodId,
+                        AttrDescription = "Payroll payment method at run time",
+                        CreatedStamp = DateTime.UtcNow,
+                        LastUpdatedStamp = DateTime.UtcNow
+                    });
+
                     // 2. Add Salary Item
                     if (emp.BaseSalary > 0)
                     {
@@ -360,11 +383,11 @@ public class BatchCreatePayrollInvoices
                 // STEP 3: Create Payments based on Preferred Payment Method
                 // ===================================================================
                 var cashTotal = request.Employees
-                    .Where(e => e.PreferredPayrollPaymentMethodId == "CASH")
+                    .Where(e => e.PreferredPayrollPaymentMethodId == PayrollConstants.CashMethod)
                     .Sum(e => employeeInvoiceTotals.GetValueOrDefault(e.EmployeeId));
 
                 var bankTransferTotal = request.Employees
-                    .Where(e => e.PreferredPayrollPaymentMethodId == "BANK_TRANSFER")
+                    .Where(e => e.PreferredPayrollPaymentMethodId == PayrollConstants.BankTransferMethod)
                     .Sum(e => employeeInvoiceTotals.GetValueOrDefault(e.EmployeeId));
 
                 if (cashTotal > 0)
@@ -374,8 +397,8 @@ public class BatchCreatePayrollInvoices
                         {
                             PaymentTypeId = "PAYROL_PAYMENT",
                             PartyIdFrom = request.OrganizationPartyId,
-                            PartyIdTo = "276",
-                            PaymentMethodId = "CASH",
+                            PartyIdTo = PayrollConstants.StaffPartyId,
+                            PaymentMethodId = PayrollConstants.CashMethod,
                             Amount = cashTotal,
                             StatusId = "PMNT_NOT_PAID",
                             IsBankTransfer = false,
@@ -396,7 +419,7 @@ public class BatchCreatePayrollInvoices
                         {
                             PaymentTypeId = "PAYROL_PAYMENT",
                             PartyIdFrom = request.OrganizationPartyId,
-                            PartyIdTo = "276",
+                            PartyIdTo = PayrollConstants.StaffPartyId,
                             PaymentMethodId = "CIB_CHECKING",
                             Amount = bankTransferTotal,
                             StatusId = "PMNT_NOT_PAID",

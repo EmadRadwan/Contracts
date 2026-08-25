@@ -53,9 +53,13 @@ public class UpdateSalesCommission
             var projectId = commission.ProjectId ?? sr.p.ProjectId;
             var salePrice = sr.s.TotalPrice ?? 0m;
 
-            var partyError = SalesCommissionCalculator.ValidateRequiredParties(dto, isIndirect);
+            // Party slots are optional, but a party and its percentage must be filled in together —
+            // see ValidatePartyPercentPairing for why a lone percentage corrupts the commission reports.
+            var partyError = SalesCommissionCalculator.ValidatePartyPercentPairing(dto, isIndirect);
             if (partyError != null)
                 return Result<SalesCommissionDto>.Failure(partyError);
+
+            SalesCommissionCalculator.ClearUnassignedPartyPercents(dto);
 
             // Validate submitted percentages against the configured project rate
             var configuredRate = projectId != null

@@ -74,29 +74,50 @@ function makePercentCapValidator(
     };
 }
 
+// Mirror of the backend's ValidatePartyPercentPairing: a slot may be left entirely empty, but a party
+// that IS named must carry a percentage — otherwise approval would create no payment for someone the
+// user deliberately assigned. The reverse case (percentage, no party) is not an error here: the
+// percentage is zeroed on submit and flagged inline, so the user can save a half-known commission.
+function makePercentRequiredValidator(partySelected: boolean, label: string) {
+    return (v: any) =>
+        partySelected && (v ?? 0) <= 0
+            ? `أدخل نسبة ${label} أو احذف الطرف`
+            : undefined;
+}
+
 // External broker net calc — mirrors SalesCommissionCalculator.CalculateAmountsCore's external
-// company VAT/WHT math on the backend. VAT is embedded in the gross amount; WHT is deducted from
-// the VAT-exclusive base unless exempt.
+// company VAT/WHT math on the backend. The two exemptions are independent: a VAT-exempt broker is
+// still subject to WHT, and only hasWithholdingTaxExemption removes it. VAT, when it applies, is
+// embedded in the gross amount, so WHT comes off the VAT-exclusive base; with no VAT embedded the
+// gross IS the base.
+interface TaxBreakdown {
+    gross: number;
+    vat: number;   // VAT embedded in the gross — 0 when the party is VAT-exempt or not VAT-liable
+    wht: number;   // withholding tax actually deducted — 0 when exempt or the rate is 0
+    net: number;
+}
+
 function calcExternalCompanyAmounts(
     salePrice: number, percent: number, factor: number,
     hasVatExemption: boolean, vatPercent: number,
     hasWithholdingTaxExemption: boolean, withholdingTaxPercent: number
-) {
+): TaxBreakdown {
     const gross = salePrice * percent / 100 * factor;
-    if (hasVatExemption) return { gross, net: gross };
     const vatRate = vatPercent > 0 ? vatPercent : 14;
-    const baseAmount = gross * 100 / (100 + vatRate);
-    const net = (!hasWithholdingTaxExemption && withholdingTaxPercent > 0)
-        ? gross - baseAmount * (withholdingTaxPercent / 100)
-        : gross;
-    return { gross, net };
+    const baseAmount = hasVatExemption ? gross : gross * 100 / (100 + vatRate);
+    const vat = gross - baseAmount;
+    const wht = (!hasWithholdingTaxExemption && withholdingTaxPercent > 0)
+        ? baseAmount * (withholdingTaxPercent / 100)
+        : 0;
+    return { gross, vat, wht, net: gross - wht };
 }
 
 // External broker's rep/manager net calc — WHT-only, mirrors the backend's ExternalSalesRep/ExternalManager math.
-function calcWhtOnlyAmounts(salePrice: number, percent: number, factor: number, hasExemption: boolean, withholdingTaxPercent: number) {
+// These are natural persons, so no VAT is embedded and the gross is the withholding base.
+function calcWhtOnlyAmounts(salePrice: number, percent: number, factor: number, hasExemption: boolean, withholdingTaxPercent: number): TaxBreakdown {
     const gross = salePrice * percent / 100 * factor;
-    const net = (!hasExemption && withholdingTaxPercent > 0) ? gross - gross * (withholdingTaxPercent / 100) : gross;
-    return { gross, net };
+    const wht = (!hasExemption && withholdingTaxPercent > 0) ? gross * (withholdingTaxPercent / 100) : 0;
+    return { gross, vat: 0, wht, net: gross - wht };
 }
 
 interface Props {
@@ -112,8 +133,9 @@ interface CommissionPartyRowProps {
     partyLabel: string;
     percentLabel: string;
     partyComponent: ComponentType<any>;
-    percentValidator?: (value: any) => string | undefined;
+    percentValidators?: Array<(value: any) => string | undefined>;
     disabled: boolean;
+    partySelected: boolean;
     showQuickCreate: boolean;
     quickCreateTooltip: string;
     onQuickCreate: () => void;
@@ -137,7 +159,7 @@ interface CommissionPartyRowProps {
 // Once approved, `finalAmount` (the persisted, already-paid amount) is shown instead.
 function CommissionPartyRow({
     partyFieldName, percentFieldName, partyLabel, percentLabel, partyComponent,
-    percentValidator, disabled, showQuickCreate, quickCreateTooltip, onQuickCreate,
+    percentValidators, disabled, partySelected, showQuickCreate, quickCreateTooltip, onQuickCreate,
     amountRoleLabel, percent, salePrice, factor, finalAmount, secondToggle,
 }: CommissionPartyRowProps) {
     const fullAmount = salePrice * percent / 100;
@@ -154,7 +176,6 @@ function CommissionPartyRow({
                             label={partyLabel}
                             component={partyComponent}
                             disabled={disabled}
-                            validator={requiredValidator}
                         />
                     </Grid>
                     <Grid item xs={1}>
@@ -176,13 +197,19 @@ function CommissionPartyRow({
                     component={FormNumericTextBox}
                     min={0} max={100} format="n4"
                     disabled={disabled}
-                    validator={percentValidator ? [percentValidator] : undefined}
+                    validator={percentValidators?.length ? percentValidators : undefined}
                 />
             </Grid>
             {disabled && finalAmount ? (
                 <Grid item xs={12} md={4}>
                     <Typography variant="body2" sx={{ mt: 3 }}>
                         {amountRoleLabel}: {formatEGP(finalAmount)}
+                    </Typography>
+                </Grid>
+            ) : percent > 0 && !partySelected ? (
+                <Grid item xs={12} md={4}>
+                    <Typography variant="body2" color="warning.main" sx={{ mt: 3 }}>
+                        {`${amountRoleLabel}: لم يتم تحديد الطرف — لن تُحتسب عمولة وستُحفظ النسبة صفراً`}
                     </Typography>
                 </Grid>
             ) : percent > 0 ? (
@@ -215,34 +242,71 @@ interface ExternalAmountInfoProps {
     percent: number;
     salePrice: number;
     factor: number;
-    calcAmounts: (salePrice: number, percent: number, factor: number) => { gross: number; net: number };
+    calcAmounts: (salePrice: number, percent: number, factor: number) => TaxBreakdown;
     finalGross?: number | null;
     finalNet?: number | null;
     disabled: boolean;
+    partySelected: boolean;
 }
 
-// Info line for the external broker rows (company/sales rep/manager): shows percent, full net
-// value, and the net value currently deserved based on collection. Once approved, shows the
-// persisted final gross/net instead.
-function ExternalAmountInfo({ label, percent, salePrice, factor, calcAmounts, finalGross, finalNet, disabled }: ExternalAmountInfoProps) {
+// Info line for the external broker rows (company/sales rep/manager): percent, gross, every tax that
+// is actually taken off it, then the net and the net currently deserved based on collection. A tax
+// line only appears when it is really applied — a VAT-exempt broker shows no VAT line but still shows
+// its withholding line, since the two exemptions are independent. Once approved, shows the persisted
+// gross/net with the deduction derived from them.
+function ExternalAmountInfo({ label, percent, salePrice, factor, calcAmounts, finalGross, finalNet, disabled, partySelected }: ExternalAmountInfoProps) {
     if (disabled && finalGross) {
+        const deducted = finalNet != null ? finalGross - finalNet : 0;
         return (
             <Grid item xs={12} md={5}>
-                <Typography variant="body2" sx={{ mt: 3 }}>
-                    {label} — إجمالي: {formatEGP(finalGross)}
-                    {finalNet != null && <>{" / "}صافي: {formatEGP(finalNet)}</>}
-                </Typography>
+                <Box sx={{ mt: 3 }}>
+                    <Typography variant="body2">
+                        {label} — إجمالي: {formatEGP(finalGross)}
+                    </Typography>
+                    {deducted > 0 && (
+                        <Typography variant="caption" color="error.main" display="block">
+                            {`ض.الاستقطاع المخصومة: −${formatEGP(deducted)}`}
+                        </Typography>
+                    )}
+                    {finalNet != null && (
+                        <Typography variant="body2">صافي: {formatEGP(finalNet)}</Typography>
+                    )}
+                </Box>
             </Grid>
         );
     }
     if (percent <= 0) return null;
+    if (!partySelected) {
+        return (
+            <Grid item xs={12} md={5}>
+                <Typography variant="body2" color="warning.main" sx={{ mt: 3 }}>
+                    {`${label}: لم يتم تحديد الطرف — لن تُحتسب عمولة وستُحفظ النسبة صفراً`}
+                </Typography>
+            </Grid>
+        );
+    }
     const full = calcAmounts(salePrice, percent, 1);
     const now = calcAmounts(salePrice, percent, factor);
     return (
         <Grid item xs={12} md={5}>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
-                {`${label}: ${percent}% ← صافي القيمة الكاملة: ${formatEGP(full.net)} ← المستحق الآن: ${formatEGP(now.net)}`}
-            </Typography>
+            <Box sx={{ mt: 3 }}>
+                <Typography variant="body2" color="text.secondary">
+                    {`${label}: ${percent}% ← إجمالي القيمة الكاملة: ${formatEGP(full.gross)}`}
+                </Typography>
+                {full.vat > 0 && (
+                    <Typography variant="caption" color="text.secondary" display="block">
+                        {`ض.ق.م المضمنة: ${formatEGP(full.vat)}`}
+                    </Typography>
+                )}
+                {full.wht > 0 && (
+                    <Typography variant="caption" color="error.main" display="block">
+                        {`ض.الاستقطاع المخصومة: −${formatEGP(full.wht)}`}
+                    </Typography>
+                )}
+                <Typography variant="body2" color="text.secondary">
+                    {`صافي القيمة الكاملة: ${formatEGP(full.net)} ← المستحق الآن: ${formatEGP(now.net)}`}
+                </Typography>
+            </Box>
         </Grid>
     );
 }
@@ -296,6 +360,11 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
 
     const activeCommission = editMode === 2 ? commission : existingCommission ?? undefined;
 
+    // These six toggles live outside the Kendo Form, so remounting the Form (its `key` changes with the
+    // sales request) does not reset them. In create mode the user can point the sales-request combobox
+    // at a request that already has a commission and then at one that does not — activeCommission goes
+    // defined → undefined while this component stays mounted. Without the else branch the previous
+    // record's tax exemptions would silently carry into the new commission.
     useEffect(() => {
         if (activeCommission) {
             setHasTwoSalesReps(!!activeCommission.salesRep2PartyId);
@@ -304,6 +373,13 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
             setHasWithholdingTaxExemption(activeCommission.hasWithholdingTaxExemption ?? false);
             setHasExternalSalesRepWhtExemption(activeCommission.hasExternalSalesRepWithholdingTaxExemption ?? false);
             setHasExternalManagerWhtExemption(activeCommission.hasExternalManagerWithholdingTaxExemption ?? false);
+        } else {
+            setHasTwoSalesReps(false);
+            setHasTwoManagers(false);
+            setHasVatExemption(false);
+            setHasWithholdingTaxExemption(false);
+            setHasExternalSalesRepWhtExemption(false);
+            setHasExternalManagerWhtExemption(false);
         }
     }, [activeCommission]);
 
@@ -415,30 +491,39 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
         const isIndirect = data.saleTypeId === "COMM_SALE_INDIRECT";
         const srId = data.salesRequestId?.salesRequestId ?? null;
 
+        // A party slot may be left unassigned — the user often does not know the manager or the broker
+        // when the commission is first recorded. Its percentage is dropped so no amount is ever stored
+        // against a party that does not exist; the backend enforces the same pairing rule.
+        const partyId = (party: any) => party?.fromPartyId ?? null;
+        const pct = (party: any, value: number | null | undefined) =>
+            partyId(party) ? (value ?? null) : null;
+
         const payload: Partial<SalesCommission> = {
             salesRequestId: srId,
             saleTypeId: data.saleTypeId,
-            salesRepPartyId: data.salesRepParty?.fromPartyId ?? null,
-            salesRepPercent: data.salesRepPercent ?? 0,
-            managerPartyId: data.managerParty?.fromPartyId ?? null,
-            managerPercent: data.managerPercent ?? 0,
-            salesRep2PartyId: hasTwoSalesReps ? (data.salesRep2Party?.fromPartyId ?? null) : null,
-            salesRep2Percent: hasTwoSalesReps ? (data.salesRep2Percent ?? null) : null,
-            manager2PartyId: hasTwoManagers ? (data.manager2Party?.fromPartyId ?? null) : null,
-            manager2Percent: hasTwoManagers ? (data.manager2Percent ?? null) : null,
-            externalCompanyPartyId: isIndirect ? (data.externalCompanyParty?.fromPartyId ?? null) : null,
-            externalCompanyPercent: isIndirect ? (data.externalCompanyPercent ?? null) : null,
-            externalSalesRepPartyId: isIndirect ? (data.externalSalesRepParty?.fromPartyId ?? null) : null,
-            externalSalesRepPercent: isIndirect ? (data.externalSalesRepPercent ?? null) : null,
+            salesRepPartyId: partyId(data.salesRepParty),
+            salesRepPercent: pct(data.salesRepParty, data.salesRepPercent) ?? 0,
+            managerPartyId: partyId(data.managerParty),
+            managerPercent: pct(data.managerParty, data.managerPercent) ?? 0,
+            salesRep2PartyId: hasTwoSalesReps ? partyId(data.salesRep2Party) : null,
+            salesRep2Percent: hasTwoSalesReps ? pct(data.salesRep2Party, data.salesRep2Percent) : null,
+            manager2PartyId: hasTwoManagers ? partyId(data.manager2Party) : null,
+            manager2Percent: hasTwoManagers ? pct(data.manager2Party, data.manager2Percent) : null,
+            externalCompanyPartyId: isIndirect ? partyId(data.externalCompanyParty) : null,
+            externalCompanyPercent: isIndirect ? pct(data.externalCompanyParty, data.externalCompanyPercent) : null,
+            externalSalesRepPartyId: isIndirect ? partyId(data.externalSalesRepParty) : null,
+            externalSalesRepPercent: isIndirect ? pct(data.externalSalesRepParty, data.externalSalesRepPercent) : null,
             hasExternalSalesRepWithholdingTaxExemption: isIndirect ? hasExternalSalesRepWhtExemption : false,
             externalSalesRepNationalId: isIndirect ? (data.externalSalesRepNationalId ?? null) : null,
-            externalManagerPartyId: isIndirect ? (data.externalManagerParty?.fromPartyId ?? null) : null,
-            externalManagerPercent: isIndirect ? (data.externalManagerPercent ?? null) : null,
+            externalManagerPartyId: isIndirect ? partyId(data.externalManagerParty) : null,
+            externalManagerPercent: isIndirect ? pct(data.externalManagerParty, data.externalManagerPercent) : null,
             hasExternalManagerWithholdingTaxExemption: isIndirect ? hasExternalManagerWhtExemption : false,
             externalManagerNationalId: isIndirect ? (data.externalManagerNationalId ?? null) : null,
             hasVatExemption: isIndirect ? hasVatExemption : false,
             hasWithholdingTaxExemption: isIndirect ? hasWithholdingTaxExemption : false,
-            vatPercent: isIndirect ? (hasVatExemption ? 0 : (data.vatPercent ?? 14)) : 0,
+            // Not zeroed by hasVatExemption: that flag is the single source of truth for the exemption,
+            // and zeroing the rate made the reloaded field read 0% while the calc fell back to 14%.
+            vatPercent: isIndirect ? (data.vatPercent ?? 14) : 0,
             // Not zeroed by hasWithholdingTaxExemption: this rate also drives the external
             // sales rep / manager net calc, gated independently by their own exemption flags.
             withholdingTaxPercent: isIndirect ? (data.withholdingTaxPercent ?? 5) : 0,
@@ -471,6 +556,20 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
         }
         setQuickCreate(q => ({ ...q, open: false }));
     }
+
+    // Unassigned slots on the saved record, for the approve confirmation. Only slots that always
+    // exist are listed — a second rep/manager simply does not exist when its party is empty.
+    const unassignedSavedParties = useMemo(() => {
+        if (!activeCommission) return [];
+        const savedIsIndirect = activeCommission.saleTypeId === "COMM_SALE_INDIRECT";
+        return [
+            { id: activeCommission.salesRepPartyId, label: "المندوب الأول", shown: true },
+            { id: activeCommission.managerPartyId, label: "المدير الأول", shown: true },
+            { id: activeCommission.externalCompanyPartyId, label: "شركة الوسيط", shown: savedIsIndirect },
+            { id: activeCommission.externalSalesRepPartyId, label: "مندوب الوسيط", shown: savedIsIndirect },
+            { id: activeCommission.externalManagerPartyId, label: "مدير الوسيط", shown: savedIsIndirect },
+        ].filter(x => x.shown && !x.id).map(x => x.label);
+    }, [activeCommission]);
 
     const isApproved = activeCommission?.statusId === "COMMISSION_APPROVED";
 
@@ -511,6 +610,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                     salesCommissionId={activeCommission.salesCommissionId}
                                     currentStatusId={activeCommission.statusId}
                                     disabled={false}
+                                    unassignedParties={unassignedSavedParties}
                                     onCommissionApproved={cancelEdit}
                                     onCommissionReset={cancelEdit}
                                     onCommissionDeleted={cancelEdit}
@@ -576,6 +676,33 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                         const extValidator = maxExtPct !== undefined
                             ? (v: any) => (v ?? 0) > maxExtPct ? `الحد الأقصى ${maxExtPct.toFixed(4)}%` : undefined
                             : undefined;
+
+                        // Every party slot is optional — the user may not know the manager or the broker yet.
+                        const isPartySelected = (fieldName: string) =>
+                            !!formRenderProps.valueGetter(fieldName)?.fromPartyId;
+                        const validators = (...vs: Array<((v: any) => string | undefined) | undefined>) =>
+                            vs.filter(Boolean) as Array<(v: any) => string | undefined>;
+
+                        const repSelected = isPartySelected("salesRepParty");
+                        const rep2Selected = isPartySelected("salesRep2Party");
+                        const mgrSelected = isPartySelected("managerParty");
+                        const mgr2Selected = isPartySelected("manager2Party");
+                        const extCompanySelected = isPartySelected("externalCompanyParty");
+                        const extRepSelected = isPartySelected("externalSalesRepParty");
+                        const extMgrSelected = isPartySelected("externalManagerParty");
+
+                        // Slots the user can currently see but has left empty — these produce no payment
+                        // on approval, so they are called out before saving rather than after.
+                        const unassignedParties = [
+                            { selected: repSelected, label: "المندوب الأول", shown: true },
+                            { selected: mgrSelected, label: "المدير الأول", shown: true },
+                            { selected: rep2Selected, label: "المندوب الثاني", shown: hasTwoSalesReps },
+                            { selected: mgr2Selected, label: "المدير الثاني", shown: hasTwoManagers },
+                            { selected: extCompanySelected, label: "شركة الوسيط", shown: isIndirect },
+                            { selected: extRepSelected, label: "مندوب الوسيط", shown: isIndirect },
+                            { selected: extMgrSelected, label: "مدير الوسيط", shown: isIndirect },
+                        ].filter(x => x.shown && !x.selected).map(x => x.label);
+
                         
                         return (
                             <FormElement>
@@ -733,7 +860,8 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                         partyLabel={getTranslatedLabel("salesCommission.form.salesRep1", "المندوب الأول")}
                                         percentLabel={getTranslatedLabel("salesCommission.form.salesRep1Percent", "نسبة المندوب الأول %")}
                                         partyComponent={FormComboBoxVirtualPartySalesRep}
-                                        percentValidator={repValidator}
+                                        percentValidators={validators(repValidator, makePercentRequiredValidator(repSelected, "المندوب الأول"))}
+                                        partySelected={repSelected}
                                         disabled={isApproved}
                                         showQuickCreate={!isApproved && isIndirect}
                                         quickCreateTooltip="إنشاء مندوب جديد"
@@ -758,7 +886,8 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                             partyLabel={getTranslatedLabel("salesCommission.form.salesRep2", "المندوب الثاني")}
                                             percentLabel={getTranslatedLabel("salesCommission.form.salesRep2Percent", "نسبة المندوب الثاني %")}
                                             partyComponent={FormComboBoxVirtualPartySalesRep}
-                                            percentValidator={rep2Validator}
+                                            percentValidators={validators(rep2Validator, makePercentRequiredValidator(rep2Selected, "المندوب الثاني"))}
+                                            partySelected={rep2Selected}
                                             disabled={isApproved}
                                             showQuickCreate={!isApproved && isIndirect}
                                             quickCreateTooltip="إنشاء مندوب جديد"
@@ -778,7 +907,8 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                         partyLabel={getTranslatedLabel("salesCommission.form.manager1", "المدير الأول")}
                                         percentLabel={getTranslatedLabel("salesCommission.form.manager1Percent", "نسبة المدير الأول %")}
                                         partyComponent={FormComboBoxVirtualPartySalesManager}
-                                        percentValidator={mgrValidator}
+                                        percentValidators={validators(mgrValidator, makePercentRequiredValidator(mgrSelected, "المدير الأول"))}
+                                        partySelected={mgrSelected}
                                         disabled={isApproved}
                                         showQuickCreate={!isApproved && isIndirect}
                                         quickCreateTooltip="إنشاء مدير جديد"
@@ -803,7 +933,8 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                             partyLabel={getTranslatedLabel("salesCommission.form.manager2", "المدير الثاني")}
                                             percentLabel={getTranslatedLabel("salesCommission.form.manager2Percent", "نسبة المدير الثاني %")}
                                             partyComponent={FormComboBoxVirtualPartySalesManager}
-                                            percentValidator={mgr2Validator}
+                                            percentValidators={validators(mgr2Validator, makePercentRequiredValidator(mgr2Selected, "المدير الثاني"))}
+                                            partySelected={mgr2Selected}
                                             disabled={isApproved}
                                             showQuickCreate={!isApproved && isIndirect}
                                             quickCreateTooltip="إنشاء مدير جديد"
@@ -884,7 +1015,6 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                                 label={getTranslatedLabel("salesCommission.form.externalCompany", "شركة الوسيط")}
                                                                 component={FormComboBoxVirtualPartyBroker}
                                                                 disabled={isApproved}
-                                                                validator={requiredValidator}
                                                             />
                                                         </Grid>
                                                         <Grid item xs={1}>
@@ -906,7 +1036,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         component={FormNumericTextBox}
                                                         min={0} max={100} format="n4"
                                                         disabled={isApproved}
-                                                        validator={extValidator ? [extValidator] : undefined}
+                                                        validator={validators(extValidator, makePercentRequiredValidator(extCompanySelected, "الوسيط"))}
                                                     />
                                                 </Grid>
                                                 <ExternalAmountInfo
@@ -919,6 +1049,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         hasVatExemption, formRenderProps.valueGetter("vatPercent") ?? 14,
                                                         hasWithholdingTaxExemption, formRenderProps.valueGetter("withholdingTaxPercent") ?? 5
                                                     )}
+                                                    partySelected={extCompanySelected}
                                                     finalGross={activeCommission?.externalCompanyGrossAmount}
                                                     finalNet={activeCommission?.externalCompanyNetAmount}
                                                     disabled={isApproved}
@@ -936,7 +1067,6 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                                 label={getTranslatedLabel("salesCommission.form.externalSalesRep", "مندوب الوسيط")}
                                                                 component={FormComboBoxVirtualPartyExternalSalesRep}
                                                                 disabled={isApproved}
-                                                                validator={requiredValidator}
                                                             />
                                                         </Grid>
                                                         <Grid item xs={1}>
@@ -958,6 +1088,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         component={FormNumericTextBox}
                                                         min={0} max={100} format="n4"
                                                         disabled={isApproved}
+                                                        validator={validators(makePercentRequiredValidator(extRepSelected, "مندوب الوسيط"))}
                                                     />
                                                 </Grid>
                                                 <Grid item xs={6} md={2}>
@@ -991,6 +1122,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         sp, pct, f,
                                                         hasExternalSalesRepWhtExemption, formRenderProps.valueGetter("withholdingTaxPercent") ?? 5
                                                     )}
+                                                    partySelected={extRepSelected}
                                                     finalGross={activeCommission?.externalSalesRepAmount}
                                                     finalNet={activeCommission?.externalSalesRepNetAmount}
                                                     disabled={isApproved}
@@ -1008,7 +1140,6 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                                 label={getTranslatedLabel("salesCommission.form.externalManager", "مدير الوسيط")}
                                                                 component={FormComboBoxVirtualPartyExternalSalesManager}
                                                                 disabled={isApproved}
-                                                                validator={requiredValidator}
                                                             />
                                                         </Grid>
                                                         <Grid item xs={1}>
@@ -1030,6 +1161,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         component={FormNumericTextBox}
                                                         min={0} max={100} format="n4"
                                                         disabled={isApproved}
+                                                        validator={validators(makePercentRequiredValidator(extMgrSelected, "مدير الوسيط"))}
                                                     />
                                                 </Grid>
                                                 <Grid item xs={6} md={2}>
@@ -1063,6 +1195,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         sp, pct, f,
                                                         hasExternalManagerWhtExemption, formRenderProps.valueGetter("withholdingTaxPercent") ?? 5
                                                     )}
+                                                    partySelected={extMgrSelected}
                                                     finalGross={activeCommission?.externalManagerAmount}
                                                     finalNet={activeCommission?.externalManagerNetAmount}
                                                     disabled={isApproved}
@@ -1083,6 +1216,21 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                             />
                                         </Grid>
                                     </Grid>
+
+                                    {/* Unassigned parties — savable, but they earn nothing until named */}
+                                    {!isApproved && unassignedParties.length > 0 && (
+                                        <Alert severity="warning" sx={{ mt: 2 }}>
+                                            {getTranslatedLabel(
+                                                "salesCommission.form.unassignedParties",
+                                                "لم يتم تحديد الأطراف التالية"
+                                            )}
+                                            {`: ${unassignedParties.join("، ")} — `}
+                                            {getTranslatedLabel(
+                                                "salesCommission.form.unassignedPartiesHint",
+                                                "يمكنك الحفظ الآن وتحديدها لاحقاً، ولن يتم إنشاء دفعات لها عند الاعتماد."
+                                            )}
+                                        </Alert>
+                                    )}
 
                                     {/* Action Buttons */}
                                     <div className="k-form-buttons" style={{ marginTop: "20px" }}>

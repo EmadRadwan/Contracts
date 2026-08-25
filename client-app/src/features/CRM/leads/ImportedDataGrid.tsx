@@ -72,8 +72,11 @@ const mapRowToDto = (row: any) => ({
   personalTitle: row['Title'] ?? '',
   infoString: row['Email'] ?? '',
   mobileContactNumber: row['Mobile Number'] ? String(row['Mobile Number']) : '',
-  dataSourceId:
-    DATA_SOURCE_MAP[(row['Lead source'] ?? '').toString().toLowerCase()] ?? 'OTHER',
+  // A blank Lead source stays blank so the server rejects the row. Only an
+  // unrecognised value falls back to OTHER.
+  dataSourceId: (row['Lead source'] ?? '').toString().trim()
+    ? (DATA_SOURCE_MAP[row['Lead source'].toString().trim().toLowerCase()] ?? 'OTHER')
+    : '',
   address1: row['Address1'] ?? '',
   address2: row['Address2'] ?? '',
   city: row['City'] ?? '',

@@ -90,8 +90,10 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
             await deleteSR(salesRequestId).unwrap();
             toast.success(getTranslatedLabel("salesRequest.deleted", "Sales Request Deleted"));
             onSalesRequestDeleted?.();
-        } catch (error) {
-            toast.error(getTranslatedLabel("salesRequest.deleteError", "Failed to delete sales request"));
+        } catch (err: any) {
+            // Show what the server actually said (FK violations, business-rule blocks) instead of
+            // swallowing every failure behind the same generic sentence.
+            toast.error(err?.data?.title ?? getTranslatedLabel("salesRequest.deleteError", "Failed to delete sales request"));
         } finally {
             setConfirmDeleteOpen(false);  // Always close dialog
         }
@@ -109,8 +111,8 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
             const updatedSalesRequest = await resetSR(salesRequestId).unwrap();
             toast.success(getTranslatedLabel("salesRequest.form.resetSuccess", "Sales Request Reset Successfully"));
             onSalesRequestUpdated?.(updatedSalesRequest as unknown as SalesRequest);
-        } catch (error) {
-            toast.error(getTranslatedLabel("salesRequest.form.resetError", "Failed to reset sales request"));
+        } catch (err: any) {
+            toast.error(err?.data?.title ?? getTranslatedLabel("salesRequest.form.resetError", "Failed to reset sales request"));
         } finally {
             setConfirmResetOpen(false);
         }
@@ -189,8 +191,9 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
                     <DialogContentText>
                         {getTranslatedLabel('salesRequest.form.deleteConfirmMessage',
                             'Are you sure you want to permanently delete this Sales Request? ' +
-                            'This action will also remove all related payments and accounting entries. ' +
-                            'This cannot be undone.'
+                            'This action will also remove all related payments and accounting entries, ' +
+                            'including the sales commission record for this request and every commission ' +
+                            'payment it generated — even ones already disbursed. This cannot be undone.'
                         )}
                     </DialogContentText>
                 </DialogContent>
@@ -226,8 +229,10 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
                     <DialogContentText>
                         {getTranslatedLabel('salesRequest.form.resetConfirmMessage',
                             'Are you sure you want to reset this Sales Request? ' +
-                            'This will delete all payments and accounting entries generated during approval, ' +
-                            'and set the status back to Created.'
+                            'This will delete all customer payments and accounting entries generated during approval, ' +
+                            'and set the status back to Created. ' +
+                            'If a sales commission has already been approved for this request, the reset is refused — ' +
+                            'reset or delete that commission first.'
                         )}
                     </DialogContentText>
                 </DialogContent>

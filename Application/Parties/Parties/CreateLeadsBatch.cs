@@ -117,14 +117,28 @@ public class CreateLeadsBatch
                     try
                     {
                         // ------------------- Validation -------------------
+                        // Mirrors the lead form: first name, last name, mobile and
+                        // lead source are required; email is optional. Both entry
+                        // points must agree on what a usable lead is.
+                        string? missing = null;
+
                         if (string.IsNullOrWhiteSpace(dto.FirstName))
+                            missing = "First Name is required";
+                        else if (string.IsNullOrWhiteSpace(dto.MiddleName))
+                            missing = "Last Name is required";
+                        else if (string.IsNullOrWhiteSpace(dto.MobileContactNumber))
+                            missing = "Mobile Number is required";
+                        else if (string.IsNullOrWhiteSpace(dto.DataSourceId))
+                            missing = "Lead source is required";
+
+                        if (missing != null)
                         {
                             errors.Add(new BatchLeadError
                             {
                                 Index = i,
                                 FirstName = dto.FirstName,
                                 Email = dto.InfoString,
-                                Reason = "FirstName is required"
+                                Reason = missing
                             });
                             failed++;
                             continue;
@@ -155,7 +169,7 @@ public class CreateLeadsBatch
                             Status = statusEnabled,
                             Description = fullName,
                             LeadTemperatureId = "F",
-                            MainRole = "LEAD_CONTACT",
+                            MainRole = "LEAD",
                             
                             DataSourceId = string.IsNullOrWhiteSpace(dto.DataSourceId)
                                 ? "OTHER"

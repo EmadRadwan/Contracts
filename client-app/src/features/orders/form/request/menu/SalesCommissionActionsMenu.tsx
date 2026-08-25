@@ -22,6 +22,10 @@ interface SalesCommissionActionsMenuProps {
     salesCommissionId: string | undefined;
     currentStatusId: string | undefined;
     disabled: boolean;
+    // Party slots left unassigned on the saved record — they generate no payment on approval, so the
+    // approve dialog names them. Recovering from a premature approval means a reset, which purges
+    // every commission payment for the sales request, including ones already disbursed.
+    unassignedParties?: string[];
     onCommissionApproved?: () => void;
     onCommissionReset?: () => void;
     onCommissionDeleted?: () => void;
@@ -31,6 +35,7 @@ export const SalesCommissionActionsMenu: React.FC<SalesCommissionActionsMenuProp
     salesCommissionId,
     currentStatusId,
     disabled,
+    unassignedParties = [],
     onCommissionApproved,
     onCommissionReset,
     onCommissionDeleted,
@@ -159,6 +164,19 @@ export const SalesCommissionActionsMenu: React.FC<SalesCommissionActionsMenuProp
                             "هل أنت متأكد من اعتماد هذه العمولة؟ سيتم إنشاء مدفوعات العمولة للأطراف المعنية."
                         )}
                     </DialogContentText>
+                    {unassignedParties.length > 0 && (
+                        <DialogContentText sx={{ mt: 2, color: "warning.main" }}>
+                            {getTranslatedLabel(
+                                "salesCommission.form.approveUnassignedWarning",
+                                "الأطراف التالية غير محددة ولن يتم إنشاء دفعات لها"
+                            )}
+                            {`: ${unassignedParties.join("، ")}. `}
+                            {getTranslatedLabel(
+                                "salesCommission.form.approveUnassignedHint",
+                                "لإضافتها بعد الاعتماد يلزم إعادة تعيين العمولة، وهو ما يحذف جميع مدفوعاتها نهائياً."
+                            )}
+                        </DialogContentText>
+                    )}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setConfirmApproveOpen(false)} disabled={isApproving}>

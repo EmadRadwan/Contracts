@@ -63,7 +63,7 @@ public class SalesOpportunityLeadDto
 {
     public string? PartyId { get; set; }
     public string? PartyName { get; set; }
-    public string? RoleTypeId { get; set; }  // e.g., "LEAD_CONTACT", "DECISION_MAKER", "INFLUENCER"
+    public string? RoleTypeId { get; set; }  // defaults to "LEAD"; future: "DECISION_MAKER", "INFLUENCER"
     public string? RoleDescription { get; set; }
     public string? Email { get; set; }
     public string? Phone { get; set; }

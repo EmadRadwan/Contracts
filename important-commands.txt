@@ -205,18 +205,18 @@ docker-compose -f docker-compose.vm.yml up -d --build
 ===========================
 ===========================
 yarn build
-sudo rm -rf erp-contracts
+    sudo rm -rf erp-contracts
  git clone https://github.com/EmadRadwan/Contracts.git erp-contracts
- cd erp-contracts
- sudo find /home/ubuntu/erp-contracts -type f -exec chmod 644 {} +
- sudo find /home/ubuntu/erp-contracts -type d -exec chmod 755 {} +
- 
+     cd erp-contracts
+     sudo find /home/ubuntu/erp-contracts -type f -exec chmod 644 {} +
+     sudo find /home/ubuntu/erp-contracts -type d -exec chmod 755 {} +
+     
  sudo mkdir -p /home/ubuntu/mysql-config/contracts
  echo "[mysqld]" | sudo tee /home/ubuntu/mysql-config/contracts/my.cnf
  echo "bind-address=0.0.0.0" | sudo tee -a /home/ubuntu/mysql-config/contracts/my.cnf
  sudo chmod 644 /home/ubuntu/mysql-config/contracts/my.cnf
  if [ -f docker-compose.vm.yml ]; then
-   sudo docker-compose -f docker-compose.vm.yml down
+       sudo docker-compose -f docker-compose.vm.yml down
  fi
  sudo docker-compose -f docker-compose.vm.yml up -d --build
  ===========================
@@ -244,19 +244,19 @@ cd ~/mysql-backups/contracts-golden
     > ~/mysql-backups/contracts-golden/erp_contracts_no_definer_$(date +%Y-%m-%d_%H-%M-%S).sql
     
     
-    docker exec erp-mysql-contracts \
-          mysqldump -uroot -p"Tmbtc202500" \
-            --databases erp_contracts \
-            --ignore-table=erp_contracts.__EFMigrationsHistory \
-            --routines --triggers --events --single-transaction \
-          | sed -E 's/DEFINER=`[^`]+`@`[^`]+` ?//g; s/DEFINER=[^ ]* ?//g' \
-          > ~/mysql-backups/contracts-golden/erp_contracts_no_definer_$(date +%Y-%m-%d_%H-%M-%S).sql
+        docker exec erp-mysql-contracts \
+              mysqldump -uroot -p"Tmbtc202500" \
+                --databases erp_contracts \
+                --ignore-table=erp_contracts.__EFMigrationsHistory \
+                --routines --triggers --events --single-transaction \
+              | sed -E 's/DEFINER=`[^`]+`@`[^`]+` ?//g; s/DEFINER=[^ ]* ?//g' \
+              > ~/mysql-backups/contracts-golden/erp_contracts_no_definer_$(date +%Y-%m-%d_%H-%M-%S).sql
 
 gzip ~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-02-01_11-35-20.sql
-scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-08-23_14-58-57.sql ~/Desktop/
+scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-08-25_12-45-36.sql ~/Desktop/
 gunzip ~/Desktop/erp_contracts_no_definer_2026-02-01_11-35-20.sql.gz
 
-mysql -u root -p erp_contracts <  erp_contracts_no_definer_2026-08-23_14-58-57.sql
+mysql -u root -p erp_contracts <  erp_contracts_no_definer_2026-08-25_09-12-16.sql
 
 
 Portainer.io:
@@ -344,5 +344,7 @@ erp modernization
 verify trial balance
 commission-reset-workflow
 CRM Module
+
+
 
   

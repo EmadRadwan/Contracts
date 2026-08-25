@@ -1,6 +1,8 @@
 #nullable enable
 using Application.Accounting.Services;
 using Application.Parties.Parties;
+using Application.CRM.Leads.Assignment;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -171,12 +173,14 @@ public class PartiesController : BaseApiController
     }
 
     [HttpPost("createLead", Name = "CreateLead")]
+    [Authorize(Roles = LeadAssignmentConstants.CreateSecurityRole)]
     public async Task<IActionResult> CreateLead(PartyDto2 partyDto)
     {
         return HandleResult(await Mediator.Send(new CreateLead.Command { PartyDto = partyDto }));
     }
 
     [HttpPost("createLeadsBatch", Name = "CreateLeadsBatch")]
+    [Authorize(Roles = LeadAssignmentConstants.CreateSecurityRole)]
     public async Task<IActionResult> CreateLeadsBatch(List<PartyDto2> leads)
     {
         return HandleResult(await Mediator.Send(new CreateLeadsBatch.Command { Leads = leads }));

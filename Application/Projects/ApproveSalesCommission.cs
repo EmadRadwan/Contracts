@@ -127,6 +127,16 @@ public class ApproveSalesCommission
                 if (!string.IsNullOrEmpty(commission.ExternalManagerPartyId) && (commission.ExternalManagerNetAmount ?? commission.ExternalManagerAmount) > 0)
                     payments.Add((commission.ExternalManagerPartyId, commission.ExternalManagerNetAmount ?? commission.ExternalManagerAmount ?? 0, "مدير وسيط", commission.ExternalManagerPercent ?? 0));
 
+                // Party slots are optional at create/update time, but approving a commission is what
+                // generates the payments — approving one where every slot is still unassigned would
+                // produce nothing and silently move the record to APPROVED.
+                if (payments.Count == 0)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result<SalesCommissionDto>.Failure(
+                        "لا يوجد أي طرف مستحق للعمولة — حدد طرفاً واحداً على الأقل بنسبته قبل الاعتماد");
+                }
+
                 foreach (var (partyId, amount, role, percent) in payments)
                 {
                     // Commission payments are paid as whole amounts — round to 0 decimals.

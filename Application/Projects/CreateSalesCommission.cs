@@ -53,9 +53,13 @@ public class CreateSalesCommission
             var projectId = sr.p.ProjectId;
             var isIndirect = dto.SaleTypeId == "COMM_SALE_INDIRECT";
 
-            var partyError = SalesCommissionCalculator.ValidateRequiredParties(dto, isIndirect);
+            // Party slots are optional, but a party and its percentage must be filled in together —
+            // see ValidatePartyPercentPairing for why a lone percentage corrupts the commission reports.
+            var partyError = SalesCommissionCalculator.ValidatePartyPercentPairing(dto, isIndirect);
             if (partyError != null)
                 return Result<SalesCommissionDto>.Failure(partyError);
+
+            SalesCommissionCalculator.ClearUnassignedPartyPercents(dto);
 
             // Derive salePrice and collectedAmount from the database — never trust client input
             var salePrice = sr.s.TotalPrice ?? 0m;

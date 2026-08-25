@@ -32,7 +32,7 @@ import { useNavigate } from "react-router";
 import { Lead } from '../models/lead';
 import FormInput from '../../../app/common/form/FormInput';
 import { MemoizedFormDropDownList } from '../../../app/common/form/MemoizedFormDropDownList';
-import { requiredValidator } from '../../../app/common/form/Validators';
+import { requiredValidator, optionalEmailValidator } from '../../../app/common/form/Validators';
 import CRMMenu from '../menu/CRMMenu';
 import { MemoizedModalFormDropdown } from '../../../app/common/form/ModalFormDropdown';
 
@@ -164,6 +164,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
                                 label={getTranslatedLabel(`${localizationKey}.email`, 'Email Address')}
                                 component={FormInput}
                                 type="email"
+                                validator={optionalEmailValidator}
                                 placeholder="example@company.com"
                             />
                         </Grid>
@@ -195,7 +196,6 @@ const LeadForm: React.FC<LeadFormProps> = ({
                                     data={countries || []}
                                     dataItemKey="geoId"
                                     textField="geoName"
-                                    validator={requiredValidator}
                                 />
                             ) : (
                                 <Field
@@ -205,7 +205,6 @@ const LeadForm: React.FC<LeadFormProps> = ({
                                     dataItemKey="geoId"
                                     textField="geoName"
                                     data={countries || []}
-                                    validator={requiredValidator}
                                 />
                             )}
                         </Grid>
@@ -215,6 +214,7 @@ const LeadForm: React.FC<LeadFormProps> = ({
                                 name="mobileContactNumber"
                                 label={getTranslatedLabel(`${localizationKey}.mobile`, 'Mobile')}
                                 component={FormInput}
+                                validator={requiredValidator}
                                 placeholder="01XXXXXXXXX"
                             />
                         </Grid>

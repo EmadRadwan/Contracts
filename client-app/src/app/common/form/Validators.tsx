@@ -15,6 +15,10 @@ export const termsValidator = (value) => value ? "" : "It's required to agree wi
 export const emailValidator = (value) => !value ?
     "Email field is required." :
     (emailRegex.test(value) ? "" : "Email is not valid format.");
+// Email is optional on leads - blank is fine, but a supplied value must be valid.
+export const optionalEmailValidator = (value) => !value ?
+    "" :
+    (emailRegex.test(value) ? "" : "Email is not valid format.");
 export const nameValidator = (value) => !value ?
     "Full Name is required" :
     value.length < 7 ? "Full Name should be at least 7 characters long." : "";

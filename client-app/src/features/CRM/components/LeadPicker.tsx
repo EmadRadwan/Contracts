@@ -63,7 +63,7 @@ const LeadPicker: React.FC<LeadPickerProps> = ({
                 email: (newValue as LeadLov[])[newValue?.length - 1].email,
                 phone: (newValue as LeadLov[])[newValue?.length - 1].phone,
                 dataSourceId: (newValue as LeadLov[])[newValue?.length - 1].dataSourceId,
-                roleTypeId: 'LEAD_CONTACT'
+                roleTypeId: 'LEAD'
             }]);
         } else {
             const lead = newValue as LeadLov | null;
@@ -74,7 +74,7 @@ const LeadPicker: React.FC<LeadPickerProps> = ({
                     email: lead.email,
                     phone: lead.phone,
                     dataSourceId: lead.dataSourceId,
-                    roleTypeId: 'LEAD_CONTACT'
+                    roleTypeId: 'LEAD'
                 }]);
             } else {
                 onChange([]);
