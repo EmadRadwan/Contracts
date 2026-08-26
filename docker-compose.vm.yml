@@ -1,6 +1,7 @@
 services:
   web:
     container_name: contracts-app
+    restart: unless-stopped
     image: eradwan/contractsapp:1.0.1
     build:
       context: .
@@ -27,6 +28,7 @@ services:
       - erp-contracts-network
   mysql-contracts:
     container_name: erp-mysql-contracts
+    restart: unless-stopped
     image: mysql:latest
     ports:
       - '3308:3306'  # REFACTOR: Use 3308 to avoid port conflict

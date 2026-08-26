@@ -1,0 +1,35 @@
+# Build context for Dockerfile.vm / Dockerfile.local.
+# The image is produced by `dotnet publish ./API/API.csproj` only — there is no
+# SPA build step, because the compiled front-end is committed to API/wwwroot.
+# Everything excluded here was being shipped to the Docker daemon on every build
+# (~1.2 GB of context for ~41 MB of tracked source).
+
+# Git history — the single largest item in the context.
+.git
+.gitignore
+.gitattributes
+
+# React source. NOT needed: API/wwwroot holds the built output that ships.
+client-app/
+
+# Build output; the image rebuilds these itself.
+**/bin/
+**/obj/
+
+# Editor / OS noise
+.vs/
+.vscode/
+.idea/
+.DS_Store
+
+# Repo-root docs, reports and BI artifacts — not part of the application.
+# Root-anchored on purpose: API/wwwroot images must still reach the build.
+/logs/
+/Temps/
+/Power Bi*/
+/*.pdf
+/*.png
+
+# Local-development variants of the container definitions
+Dockerfile.local
+docker-compose.local.yml
