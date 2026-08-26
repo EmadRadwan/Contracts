@@ -909,6 +909,10 @@ public class DataContext : IdentityDbContext<AppUserLogin, ApplicationRole, stri
         public DbSet<GlSubClass2> GlSubClasses2 { get; set; }
         public DbSet<GlAccountCourseLabel> GlAccountCourseLabels { get; set; }
 
+        // Auditing. EntityAuditLogs (declared above) holds the field-level change history;
+        // this holds the command-level activity trail. See Persistence/Auditing/.
+        public DbSet<AuditActivity> AuditActivities { get; set; } = null!;
+
         
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -66667,6 +66671,107 @@ entity.HasIndex(e => e.OperatingExpenseGlAccountId, "WK_EFFRT_OP_EXP_GL");
                                     .IsUnicode(false)
                                     .HasColumnName("SORT_ORDER");
                             });
+
+            // ---------------------------------------------------------------------------
+            // Auditing. Kept here at the end rather than inline with the ported OFBiz mappings
+            // above, so the hand-written audit configuration stays easy to find.
+            // ---------------------------------------------------------------------------
+
+            modelBuilder.Entity<AuditActivity>(entity =>
+            {
+                entity.HasKey(e => e.ActivityId);
+
+                entity.ToTable("AUDIT_ACTIVITY");
+
+                // The three ways this table actually gets read: "what did this user do",
+                // "how is this command behaving", and "what else happened in this request".
+                entity.HasIndex(e => new { e.UserId, e.StartedAt }, "AUDIT_ACTIVITY_USER");
+                entity.HasIndex(e => new { e.RequestName, e.StartedAt }, "AUDIT_ACTIVITY_REQUEST");
+                entity.HasIndex(e => e.CorrelationId, "AUDIT_ACTIVITY_CORRELATION");
+                entity.HasIndex(e => e.StartedAt, "AUDIT_ACTIVITY_STARTED");
+
+                entity.Property(e => e.ActivityId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("ACTIVITY_ID");
+
+                entity.Property(e => e.CorrelationId)
+                    .HasMaxLength(64)
+                    .IsUnicode(false)
+                    .HasColumnName("CORRELATION_ID");
+
+                entity.Property(e => e.UserName)
+                    .HasMaxLength(255)
+                    .HasColumnName("USER_NAME");
+
+                entity.Property(e => e.UserId)
+                    .HasMaxLength(36)
+                    .IsUnicode(false)
+                    .HasColumnName("USER_ID");
+
+                entity.Property(e => e.RequestName)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("REQUEST_NAME");
+
+                entity.Property(e => e.RequestPath)
+                    .HasMaxLength(512)
+                    .HasColumnName("REQUEST_PATH");
+
+                entity.Property(e => e.HttpMethod)
+                    .HasMaxLength(10)
+                    .IsUnicode(false)
+                    .HasColumnName("HTTP_METHOD");
+
+                entity.Property(e => e.ClientIpAddress)
+                    .HasMaxLength(64)
+                    .IsUnicode(false)
+                    .HasColumnName("CLIENT_IP_ADDRESS");
+
+                // Payloads are unbounded in principle, so give them a real TEXT column rather
+                // than a varchar the writer would have to silently shred.
+                entity.Property(e => e.RequestJson)
+                    .HasColumnType("text")
+                    .HasColumnName("REQUEST_JSON");
+
+                entity.Property(e => e.IsSuccess)
+                    .HasColumnName("IS_SUCCESS");
+
+                entity.Property(e => e.ErrorMessage)
+                    .HasMaxLength(1024)
+                    .HasColumnName("ERROR_MESSAGE");
+
+                entity.Property(e => e.ExceptionType)
+                    .HasMaxLength(255)
+                    .IsUnicode(false)
+                    .HasColumnName("EXCEPTION_TYPE");
+
+                entity.Property(e => e.DurationMs)
+                    .HasColumnName("DURATION_MS");
+
+                // datetime(6) so several activities inside one second still sort correctly.
+                entity.Property(e => e.StartedAt)
+                    .HasColumnType("datetime(6)")
+                    .HasColumnName("STARTED_AT");
+
+                entity.Property(e => e.CreatedStamp)
+                    .HasColumnType("datetime")
+                    .HasColumnName("CREATED_STAMP");
+
+                entity.Property(e => e.LastUpdatedStamp)
+                    .HasColumnType("datetime")
+                    .HasColumnName("LAST_UPDATED_STAMP");
+            });
+
+            // ENTITY_AUDIT_LOG ships (from the OFBiz schema) with indexes only on the two TX
+            // stamps, so the per-record history lookup - the query the History tab will run most -
+            // would table-scan. Added here rather than in step 1 to keep that change migration-free.
+            modelBuilder.Entity<EntityAuditLog>(entity =>
+            {
+                entity.HasIndex(e => new { e.ChangedEntityName, e.PkCombinedValueText, e.ChangedDate },
+                    "ENTITY_AUDIT_LOG_RECORD");
+                entity.HasIndex(e => e.ChangedSessionInfo, "ENTITY_AUDIT_LOG_CORRELATION");
+            });
 
             foreach (var foreignKey in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
                 {

@@ -170,18 +170,24 @@ public static class SalesCommissionCalculator
             var extCompanyGross = salePrice * (externalCompanyPercent.Value / 100m) * commissionFactor;
             result.ExternalCompanyGrossAmount = extCompanyGross;
 
-            // VAT exemption and withholding-tax exemption are independent tax statuses — a VAT-exempt
-            // broker is still subject to WHT, and only HasWithholdingTaxExemption removes it. VAT, when
-            // it applies, is embedded in the gross amount, so WHT is deducted from the VAT-exclusive
-            // base; for a VAT-exempt broker nothing is embedded and the gross IS the base.
+            // Both taxes come off what the broker company is actually paid.
+            //
+            // VAT exemption and withholding-tax exemption are independent statuses — a VAT-exempt broker
+            // is still subject to WHT, and only HasWithholdingTaxExemption removes it. VAT, when it
+            // applies, is embedded in the gross, so it is backed out first and WHT is then charged on the
+            // resulting VAT-exclusive base. For a VAT-exempt broker nothing is embedded, the gross IS the
+            // base, and only WHT is deducted.
             var vatRate = vatPercent > 0 ? vatPercent : 14m;
             var baseAmount = hasVatExemption
                 ? extCompanyGross
                 : extCompanyGross * 100m / (100m + vatRate);
 
-            result.ExternalCompanyNetAmount = (!hasWithholdingTaxExemption && withholdingTaxPercent > 0)
-                ? extCompanyGross - baseAmount * (withholdingTaxPercent / 100m)
-                : extCompanyGross;
+            var vatAmount = extCompanyGross - baseAmount;
+            var whtAmount = (!hasWithholdingTaxExemption && withholdingTaxPercent > 0)
+                ? baseAmount * (withholdingTaxPercent / 100m)
+                : 0m;
+
+            result.ExternalCompanyNetAmount = extCompanyGross - vatAmount - whtAmount;
         }
 
         if (externalSalesRepPercent.HasValue)

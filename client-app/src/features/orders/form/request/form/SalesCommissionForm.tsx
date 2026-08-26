@@ -92,7 +92,9 @@ function makePercentRequiredValidator(partySelected: boolean, label: string) {
 // gross IS the base.
 interface TaxBreakdown {
     gross: number;
-    vat: number;   // VAT embedded in the gross — 0 when the party is VAT-exempt or not VAT-liable
+    // VAT embedded in the gross — 0 when the party is VAT-exempt or not VAT-liable. Deducted from the
+    // net along with `wht`, so gross − vat − wht === net and the on-screen lines add up.
+    vat: number;
     wht: number;   // withholding tax actually deducted — 0 when exempt or the rate is 0
     net: number;
 }
@@ -109,7 +111,7 @@ function calcExternalCompanyAmounts(
     const wht = (!hasWithholdingTaxExemption && withholdingTaxPercent > 0)
         ? baseAmount * (withholdingTaxPercent / 100)
         : 0;
-    return { gross, vat, wht, net: gross - wht };
+    return { gross, vat, wht, net: gross - vat - wht };
 }
 
 // External broker's rep/manager net calc — WHT-only, mirrors the backend's ExternalSalesRep/ExternalManager math.
@@ -265,7 +267,7 @@ function ExternalAmountInfo({ label, percent, salePrice, factor, calcAmounts, fi
                     </Typography>
                     {deducted > 0 && (
                         <Typography variant="caption" color="error.main" display="block">
-                            {`ض.الاستقطاع المخصومة: −${formatEGP(deducted)}`}
+                            {`إجمالي المخصوم (ض.ق.م + ض.استقطاع): −${formatEGP(deducted)}`}
                         </Typography>
                     )}
                     {finalNet != null && (
@@ -294,8 +296,8 @@ function ExternalAmountInfo({ label, percent, salePrice, factor, calcAmounts, fi
                     {`${label}: ${percent}% ← إجمالي القيمة الكاملة: ${formatEGP(full.gross)}`}
                 </Typography>
                 {full.vat > 0 && (
-                    <Typography variant="caption" color="text.secondary" display="block">
-                        {`ض.ق.م المضمنة: ${formatEGP(full.vat)}`}
+                    <Typography variant="caption" color="error.main" display="block">
+                        {`ض.ق.م المخصومة: −${formatEGP(full.vat)}`}
                     </Typography>
                 )}
                 {full.wht > 0 && (

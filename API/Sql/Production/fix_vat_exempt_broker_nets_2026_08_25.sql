@@ -1,3 +1,11 @@
+-- ############################################################################################
+-- SUPERSEDED 2026-08-26 by fix_broker_commission_nets_2026_08_26.sql — DO NOT RUN.
+--
+-- This script predates the change that deducts VAT as well as WHT from the broker's net, so its
+-- target values for 11119 and 11116 are no longer correct, and it covers only those two of the
+-- nine approved commissions that need correcting. Kept for history.
+-- ############################################################################################
+
 -- ============================================================================================
 -- Corrects EXT_COMPANY_NET_AMOUNT on the two commissions affected by the VAT-exempt / WHT bug.
 --

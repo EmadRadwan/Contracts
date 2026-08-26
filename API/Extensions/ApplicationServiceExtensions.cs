@@ -25,6 +25,7 @@ using Infrastructure.Contents;
 using Infrastructure.Security;
 using Infrastructure.Pdf;
 using MediatR;
+using Persistence.Auditing;
 using Serilog;
 
 namespace API.Extensions;
@@ -34,7 +35,7 @@ public static class ApplicationServiceExtensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services,
         IConfiguration config)
     {
-        services.AddDbContext<DataContext>(options =>
+        services.AddDbContext<DataContext>((sp, options) =>
         {
             var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             string connStr;
@@ -47,6 +48,10 @@ public static class ApplicationServiceExtensions
             else
                 options.UseMySql(config.GetConnectionString("DefaultConnection"), serverVersion)
                     .LogTo(Console.WriteLine, LogLevel.Information);
+
+            // Writes field-level change history to ENTITY_AUDIT_LOG in the same transaction as
+            // the business data. See Persistence/Auditing/AuditSaveChangesInterceptor.cs.
+            options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>());
         });
         services.AddCors(opt =>
         {
@@ -65,6 +70,9 @@ public static class ApplicationServiceExtensions
 
         services.AddMediatR(typeof(List.Handler).Assembly);
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+        // Registered inside LoggingBehavior so the recorded duration measures the handler
+        // rather than the logging around it. Writes one AUDIT_ACTIVITY row per command.
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuditBehavior<,>));
         services.AddAutoMapper(typeof(MappingProfiles).Assembly);
 
         services.AddMvc().AddJsonOptions(options =>
@@ -75,6 +83,13 @@ public static class ApplicationServiceExtensions
 
         services.AddScoped<IPdfGenerationService, PdfGenerationService>();
         services.AddScoped<IUserAccessor, UserAccessor>();
+
+        // Auditing. IHttpContextAccessor is registered explicitly rather than relying on the
+        // incidental registration UserAccessor has been depending on; the call is idempotent.
+        services.AddHttpContextAccessor();
+        services.AddScoped<IAuditMetadataProvider, HttpAuditMetadataProvider>();
+        services.AddScoped<AuditSaveChangesInterceptor>();
+        services.AddScoped<IAuditActivityWriter, AuditActivityWriter>();
         services.AddScoped<ICommonService, CommonService>();
         services.AddScoped<IGeneralLedgerService, GeneralLedgerService>();
         services.AddScoped<IAcctgTransService, AcctgTransService>();

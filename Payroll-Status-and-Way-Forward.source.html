@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Payroll — Status and Way Forward</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9.4pt; line-height: 1.45; color: #1a1a1a; margin: 0; }
+  h1,h2,h3,h4 { font-family: Georgia, "Times New Roman", serif; margin: 0; }
+  h1 { font-size: 25pt; line-height: 1.15; letter-spacing: -0.4pt; }
+  h2 { font-size: 14pt; margin: 20pt 0 8pt; padding-bottom: 4pt; border-bottom: 1.5pt solid #12395e; color: #12395e; page-break-after: avoid; }
+  h3 { font-size: 11pt; margin: 14pt 0 5pt; color: #12395e; page-break-after: avoid; }
+  h4 { font-size: 9.6pt; margin: 10pt 0 4pt; color: #333; page-break-after: avoid; }
+  p { margin: 0 0 7pt; }
+  ul, ol { margin: 0 0 8pt; padding-left: 16pt; }
+  li { margin-bottom: 3pt; }
+  code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.3pt; background: #f0f2f5; padding: 0.5pt 3pt; border-radius: 2pt; color: #0f2f4d; }
+  pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 7.6pt; background: #f6f7f9; border-left: 2.5pt solid #12395e; padding: 7pt 9pt; margin: 0 0 9pt; white-space: pre-wrap; line-height: 1.4; border-radius: 0 3pt 3pt 0; }
+  table { width: 100%; border-collapse: collapse; margin: 0 0 10pt; font-size: 8.4pt; }
+  th { background: #12395e; color: #fff; text-align: left; padding: 4.5pt 6pt; font-weight: 600; font-size: 8.2pt; }
+  td { padding: 4pt 6pt; border-bottom: 0.5pt solid #d8dde3; vertical-align: top; }
+  tr { page-break-inside: avoid; }
+  tbody tr:nth-child(even) { background: #f7f9fb; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cover { border-bottom: 3pt solid #12395e; padding-bottom: 14pt; margin-bottom: 16pt; }
+  .cover .kicker { font-size: 8.5pt; letter-spacing: 2.2pt; text-transform: uppercase; color: #6b7785; margin-bottom: 8pt; font-family: Helvetica, Arial, sans-serif; }
+  .cover .sub { font-size: 11pt; color: #46525f; margin-top: 8pt; font-style: italic; }
+  .meta { display: flex; margin-top: 14pt; border-top: 0.5pt solid #d8dde3; padding-top: 10pt; }
+  .meta div { flex: 1; border-left: 2pt solid #12395e; padding-left: 7pt; margin-right: 10pt; }
+  .meta .lbl { font-size: 7pt; text-transform: uppercase; letter-spacing: 1pt; color: #6b7785; }
+  .meta .val { font-size: 9pt; font-weight: 600; }
+  .callout { background: #f2f6fa; border-left: 3pt solid #12395e; padding: 8pt 10pt; margin: 0 0 10pt; page-break-inside: avoid; }
+  .warn { background: #fdf4ec; border-left-color: #b5651d; } .warn strong { color: #8f4c12; }
+  .bad { background: #fcf1f1; border-left-color: #a92f2f; } .bad strong { color: #8a2020; }
+  .good { background: #f0f7f0; border-left-color: #2e6b34; } .good strong { color: #24592a; }
+  .callout p:last-child { margin-bottom: 0; }
+  .pill { display: inline-block; font-size: 7pt; font-weight: 700; letter-spacing: 0.5pt; padding: 1.5pt 5pt; border-radius: 8pt; text-transform: uppercase; vertical-align: 1pt; white-space: nowrap; }
+  .p-done { background: #d9ead9; color: #24592a; }
+  .p-high { background: #f7d9d9; color: #8a2020; }
+  .p-med  { background: #fbeacd; color: #8f4c12; }
+  .p-low  { background: #e3e7ec; color: #46525f; }
+  .pagebreak { page-break-before: always; }
+  .toc { columns: 2; column-gap: 22pt; font-size: 8.8pt; }
+  .toc div { margin-bottom: 3pt; break-inside: avoid; }
+  .toc .n { color: #12395e; font-weight: 700; display: inline-block; width: 24pt; }
+  .nb { font-size: 8.2pt; color: #46525f; }
+  .footnote { font-size: 7.8pt; color: #6b7785; font-style: italic; }
+  td.ref { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 7.4pt; color: #46525f; }
+  .step { width: 26pt; text-align: center; color: #12395e; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="kicker">Contracts ERP &middot; Payroll</div>
+  <h1>Payroll<br>Status and Way Forward</h1>
+  <div class="sub">Where the module stands after the June bank transfer failed to post — what actually
+  caused it, the two fixes now in master, the correction the payment still needs, and the ten issues
+  found alongside it.</div>
+  <div class="meta">
+    <div><div class="lbl">Date</div><div class="val">25 August 2026</div></div>
+    <div><div class="lbl">Build</div><div class="val">master @ 32bfe01e</div></div>
+    <div><div class="lbl">Blocked</div><div class="val">Payment 16855 — 322,078</div></div>
+    <div><div class="lbl">Open items</div><div class="val">8 of 10</div></div>
+  </div>
+</div>
+
+<h2>Contents</h2>
+<div class="toc">
+  <div><span class="n">1</span>Summary</div>
+  <div><span class="n">2</span>What failed, and why</div>
+  <div><span class="n">3</span>What has been refactored</div>
+  <div><span class="n">4</span>Clearing payment 16855</div>
+  <div><span class="n">5</span>The workflow question</div>
+  <div><span class="n">6</span>Open issue register</div>
+  <div><span class="n">7</span>Way forward</div>
+  <div><span class="n">8</span>How these figures were verified</div>
+</div>
+
+<h2>1 &nbsp; Summary</h2>
+
+<p>June's bank salary transfer — payment <strong>16855</strong>, <strong>322,078</strong> — cannot be
+moved to <code>PMNT_SENT</code>. It fails with a message about a missing accrued account on party
+<code>276</code>, which is misleading: party 276 is <em>موظفي الشركة</em>, the shared staff party the
+batch addresses its two settlement payments to. It is not a person and has no salary account by design.</p>
+
+<p>The invoice edit that appeared to trigger this was only the last of <strong>three</strong> changes
+that moved out from under a payment created seven weeks earlier. The deeper cause is architectural: an
+aggregate payroll payment records no link to the invoices it settles, so the posting code re-derives
+that set from live master data every time — and any later edit silently changes the answer.</p>
+
+<div class="callout good">
+  <p><strong>Two fixes are in master (commit <code>130429d1</code>) and need no migration.</strong> They
+  stop employee-preference edits from re-partitioning historical runs, and they stop a run payment from
+  being misclassified as an individual one. Together they remove this failure mode for every future run.</p>
+</div>
+
+<div class="callout warn">
+  <p><strong>They do not unblock payment 16855.</strong> The June data is already inconsistent; the code
+  now reports that clearly instead of failing obscurely. The payment still needs the manual correction
+  in section 4.</p>
+</div>
+
+<h2>2 &nbsp; What failed, and why</h2>
+
+<h3>2.1 &nbsp; Three changes, seven weeks apart</h3>
+
+<p>When the batch ran on 5 July it produced two payments, each equal to the sum of the invoices it
+covered. Both were correct at that moment.</p>
+
+<table>
+  <thead><tr><th style="width:15%">When</th><th style="width:47%">What happened</th><th>Effect on the June bank run</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>5 Jul 09:41</td>
+      <td>Batch created 50 June payroll invoices and both settlement payments. Party <strong>155</strong>
+      (احمد عبدالرحمن, 60,000) was <code>BANK_TRANSFER</code> at that moment, so he was part of the bank group.</td>
+      <td class="num">19 employees 262,078<br>+ party 155 60,000<br><strong>= 322,078 ✓ matched</strong></td>
+    </tr>
+    <tr>
+      <td>19 Jul</td>
+      <td>Cash payment <strong>16849</strong> sent and posted — 330,684 across 30 employees. Correct, and unaffected by everything below.</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td>5 Aug 12:21</td>
+      <td>Party 155 was edited and his payroll method changed to <code>CASH</code>. This silently removed
+      him from a bank run that had already been executed and paid for.</td>
+      <td class="num">322,078 → 262,078</td>
+    </tr>
+    <tr>
+      <td>25 Aug 07:18</td>
+      <td>INV1038 (احمد عبد العال, party 169) was reverted to <code>INVOICE_IN_PROCESS</code>, its 2-day
+      absence deduction of 667 removed, and set back to <code>INVOICE_READY</code>.</td>
+      <td class="num">262,078 → 262,745</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>By the time the payment was sent, it was being compared against a run total that had moved twice —
+once by 60,000 and once by 667 — for a net difference of <strong>59,333</strong>.</p>
+
+<h3>2.2 &nbsp; Why the error named party 276</h3>
+
+<p>The posting code decided <em>what kind of payment this is</em> by testing whether its amount still
+equalled the run total:</p>
+
+<pre>bool isAggregateRunSettlement =
+    string.IsNullOrEmpty(payment.OverrideGlAccountId) &amp;&amp; runTotal == paymentAmount;</pre>
+
+<p>That is a classification derived from arithmetic that is recomputed on every attempt. When the
+totals stopped agreeing, a whole-run payment was reclassified as a payment to one individual — so the
+code went looking for an employee salary account on party 276 and, correctly, did not find one.</p>
+
+<div class="callout">
+  <p>The message was accurate about the immediate lookup and useless about the cause. Nothing in it
+  mentioned the run, the totals, or the two edits that moved them.</p>
+</div>
+
+<h2 class="pagebreak">3 &nbsp; What has been refactored</h2>
+
+<p>Three changes, all in commit <code>130429d1</code>. No database migration: the snapshot uses the
+existing <code>INVOICE_ATTRIBUTE</code> table, which was empty and is already cleaned up by both payroll
+delete paths.</p>
+
+<h3>3.1 &nbsp; Each invoice records the method it was run under</h3>
+
+<p><code>BatchCreatePayrollInvoices</code> now writes an <code>InvoiceAttribute</code>
+(<code>PAYROLL_PMT_METHOD</code>) on every payroll invoice as it is created, and
+<code>GeneralLedgerService</code> reads that snapshot when deciding which invoices a payment covers —
+instead of reading the employee's <em>current</em> preference.</p>
+
+<p><strong>What it serves:</strong> a run becomes a historical fact. Changing an employee's payment
+method from cash to bank affects the next run and nothing before it. The 5 August edit that removed
+party 155 from a June run retroactively could not happen again.</p>
+
+<p class="nb">The value is stored verbatim rather than normalised to one of the two methods, and the
+fallback for older invoices keys on the <em>absence of the attribute row</em> rather than on a null
+value. Both details matter: an employee with no preference set belongs to neither payment, and must
+stay excluded rather than defaulting into one and unbalancing the transaction.</p>
+
+<h3>3.2 &nbsp; A payment's identity comes from its recipient, not its arithmetic</h3>
+
+<p>The aggregate test is now:</p>
+
+<pre>bool isAggregateRunSettlement =
+    payment.PartyIdTo == PayrollConstants.StaffPartyId
+    &amp;&amp; string.IsNullOrEmpty(payment.OverrideGlAccountId);</pre>
+
+<p>The <code>runTotal == paymentAmount</code> comparison survives, but demoted from a classification to
+a <em>validation</em> that reports both figures and the difference.</p>
+
+<p><strong>What it serves:</strong> a payment can no longer change what it <em>is</em> because a number
+moved. This is also the marker <code>GetProjectPayroll</code>,
+<code>GetCompanyReport.GetPayroll</code> and <code>Fact_Project_Payroll</code> already use, so the GL
+posting and the reports now agree on the definition rather than each inferring it separately.</p>
+
+<p>The same situation now reports itself:</p>
+
+<pre>Payroll payment 16855 settles the whole BANK_TRANSFER run for 06/2026, but its amount
+no longer matches that run: payment 322078.00 vs run total 262745.00 across 19
+invoice(s), a difference of 59333.00. The run has changed since the payment was
+created (an invoice was edited, or an employee's payroll payment method was changed).
+Correct the payment amount or the invoices so the two agree, then post again.</pre>
+
+<h3>3.3 &nbsp; Named constants and two sharper failures</h3>
+
+<p>A new <code>PayrollConstants</code> class replaces the literals that had to agree across four files
+but were enforced nowhere: the staff party <code>276</code>, the attribute name, and the two method
+identifiers. Two further failures were upgraded from silent or vague to specific:</p>
+
+<ul>
+  <li>An employee missing an <code>ACCOUNTS_PAYABLE</code> account used to log a warning, skip their
+  debit, and then fail the balance guard with bare arithmetic. It now names the employee and invoice.</li>
+  <li>The ad-hoc missing-account error now explains what an ad-hoc payroll payment is expected to look
+  like, instead of stating that an account was not found.</li>
+</ul>
+
+<table>
+  <thead><tr><th style="width:26%">Change</th><th style="width:26%">Where</th><th>What it does <em>not</em> fix</th></tr></thead>
+  <tbody>
+    <tr><td>Run-time method snapshot</td><td class="ref">BatchCreatePayrollInvoices.cs<br>GeneralLedgerService.cs</td><td>Existing invoices have no snapshot and still fall back to the live preference</td></tr>
+    <tr><td>Identity by recipient</td><td class="ref">GeneralLedgerService.cs</td><td>A genuine total mismatch still blocks posting — by design</td></tr>
+    <tr><td>Constants and error text</td><td class="ref">PayrollConstants.cs (new)<br>DeletePayrollInvoices.cs</td><td>Nothing behavioural</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <p><strong>Do not backfill the snapshot from current preferences.</strong> For June that would write
+  <code>CASH</code> for party 155 and bake in the exact defect being fixed. The fallback handles
+  historical invoices correctly; set attributes by hand only where the true run membership is known.</p>
+</div>
+
+<h2>4 &nbsp; Clearing payment 16855</h2>
+
+<p>The underlying problem is that one payment is doing two jobs: settling nineteen bank employees
+<em>and</em> paying one cash employee. Split it.</p>
+
+<table>
+  <thead><tr><th class="step">#</th><th style="width:34%">Action</th><th>Detail</th></tr></thead>
+  <tbody>
+    <tr><td class="step">1</td><td>Restore the 667 on INV1038</td><td>Revert to <code>INVOICE_IN_PROCESS</code>, add the absence item at <strong>2 days</strong> (it computes 667 automatically), set back to <code>INVOICE_READY</code>. The invoice returns to 9,333 and re-posts.</td></tr>
+    <tr><td class="step">2</td><td>Set payment 16855 to <strong>262,078</strong></td><td>Still <code>PMNT_NOT_PAID</code>, so the amount is editable.</td></tr>
+    <tr><td class="step">3</td><td>Create a second payment for the 60,000</td><td>Type <code>PAYROL_PAYMENT</code>, to party <strong>155</strong>, method <code>CIB_CHECKING</code>, effective June. It posts against his own accrued account <code>220008</code>, unpaid since June.</td></tr>
+    <tr><td class="step">4</td><td>Send both</td><td>16855 posts as the run settlement (262,078 = 262,078); the 60,000 posts as an individual payment.</td></tr>
+  </tbody>
+</table>
+
+<table>
+  <thead><tr><th style="width:44%">&nbsp;</th><th class="num" style="width:28%">Now</th><th class="num">After</th></tr></thead>
+  <tbody>
+    <tr><td>INV1038 (احمد عبد العال)</td><td class="num">10,000</td><td class="num">9,333</td></tr>
+    <tr><td>Bank run — 19 employees</td><td class="num">262,745</td><td class="num">262,078</td></tr>
+    <tr><td>Payment 16855</td><td class="num">322,078 &nbsp;✗</td><td class="num">262,078 &nbsp;✓</td></tr>
+    <tr><td>Payment to party 155</td><td class="num">—</td><td class="num">60,000 &nbsp;✓</td></tr>
+    <tr><td>Manual journal entry required</td><td class="num">667</td><td class="num">none</td></tr>
+  </tbody>
+</table>
+
+<h4>Why restore the deduction rather than journal it</h4>
+<p>The validation now requires the run payment to equal the run total. Leaving the deduction off the
+invoice means paying the full 10,000 and clawing 667 back with a journal entry — which leaves the
+employee's account carrying a debit balance and a correction nobody will recall next year. Putting the
+deduction back where it belongs makes everything tie out with no journal entry at all.</p>
+
+<div class="callout warn">
+  <p><strong>Side effect of step 1.</strong> The payroll item editor saves absence as
+  <code>quantity 1, amount 667</code>, whereas the batch saves <code>quantity 2, amount 333.50</code>.
+  The money is identical, but the absence report reads <code>quantity</code> as days — so that employee
+  will show <strong>1 day</strong> instead of 2. If the day count matters on the report, set the item
+  directly as quantity 2 / amount 333.50. This is issue 6 in the register.</p>
+</div>
+
+<h2>5 &nbsp; The workflow question</h2>
+
+<p>The user's position is that after running payroll he should be able to correct an employee's invoice
+and adjust one of the two payments to match. That requirement is legitimate — post-run corrections are
+normal payroll, and refusing them outright is not defensible. What is not safe is the mechanism: a
+hand-typed payment amount alongside a system-derived one gives two sources of truth and no way to tell
+which is stale. Every part of this incident follows from that.</p>
+
+<p>The line worth drawing is at <strong>send</strong>, not at <strong>run</strong>:</p>
+
+<table>
+  <thead><tr><th style="width:30%">Stage</th><th>Rule</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Before the payments are sent</strong><br><span class="nb">both are <code>PMNT_NOT_PAID</code></span></td>
+        <td>Edit any invoice freely. The two payment amounts recompute themselves and are never typed by hand. Nothing is posted yet, so this is completely safe — and it is exactly the flexibility being asked for.</td></tr>
+    <tr><td><strong>After they are sent</strong><br><span class="nb">posted to the GL</span></td>
+        <td>The run is closed. Corrections go on next month's invoice or as a separate payment to that employee. The ad-hoc branch already handles this correctly and is the intended escape hatch.</td></tr>
+  </tbody>
+</table>
+
+<p>One point deserves to be made without accusation: the payment-method change was almost certainly not
+understood to matter. Nothing in the UI indicates that editing an employee's payroll method re-partitions
+runs that have already been executed — because nobody would expect it to. That was a transparency failure
+on the system's side, and section 3.1 closes it.</p>
+
+<div class="callout">
+  <p><strong>Suggested wording for the user.</strong> Yes — you can correct an invoice after running
+  payroll. Do it <em>before</em> sending the two payments and their amounts will update themselves; you
+  will not type them again. Once the payments are sent the month is closed, and a correction goes on the
+  next run or as a separate payment to that employee. Separately: if someone should be paid by bank
+  instead of cash, change it on the employee <em>before</em> running the month — changing it afterwards
+  does not move them between the two payments, it only stops the existing payment from adding up.</p>
+</div>
+
+<h2>6 &nbsp; Open issue register</h2>
+
+<p>Found during a full read of the payroll path — backend, GL posting, frontend, seed data — and verified
+against the local <code>erp_contracts</code> database.</p>
+
+<table>
+  <thead><tr><th style="width:4%">#</th><th style="width:29%">Issue</th><th>Detail</th><th style="width:12%">Status</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>No recorded run membership</td>
+      <td>An aggregate payment records no link to the invoices it settles — no <code>PaymentApplication</code>, no payment group. The set is re-derived on every posting attempt. This is the root of the present incident; 3.1 mitigates it, it does not remove it.</td>
+      <td><span class="pill p-high">High</span></td></tr>
+    <tr><td>2</td><td>Two competing deduction engines</td>
+      <td><code>BatchCreatePayrollInvoices</code> marks advances deducted, then <code>SetInvoiceStatus(READY)</code> fires <code>ApplyPayrollDeductionsToAdvances</code>, which independently sweeps <em>every</em> approved advance dated in the previous month and marks it fully paid — including advances the run never deducted. Different rules, different status constants, same invoice.</td>
+      <td><span class="pill p-high">High</span></td></tr>
+    <tr><td>3</td><td>Invalid schedule status values</td>
+      <td>The batch writes <code>"PAID"</code>, <code>ApplyPayrollDeductionsToAdvances</code> writes <code>"SCHED_PAID"</code>, reverts write <code>"SCHEDULED"</code>. <code>STATUS_ITEM</code> defines <code>SCHED_PENDING / SCHED_DUE / SCHED_PAID / …</code>. The table holds 45 <code>SCHEDULED</code> and 26 <code>PAID</code> — neither is a valid status id.</td>
+      <td><span class="pill p-med">Medium</span></td></tr>
+    <tr><td>4</td><td>Payroll item types missing from seed</td>
+      <td><code>PAYROL_OVERTIME</code>, <code>PAYROL_DD_ABSENCE</code> and <code>PAYROL_DD_ADVANCE</code> exist only in the live database, not in <code>invoice_item_types.json</code>. A fresh environment seeds a payroll module that cannot run.</td>
+      <td><span class="pill p-med">Medium</span></td></tr>
+    <tr><td>5</td><td>Attendance computed only in the browser</td>
+      <td>The fingerprint Excel is parsed entirely client-side. Nothing server-side records the file or how absence days were derived, so a figure cannot be re-audited after the fact.</td>
+      <td><span class="pill p-med">Medium</span></td></tr>
+    <tr><td>6</td><td>Absence days lost on manual edit</td>
+      <td>The payroll item editor saves <code>quantity 1</code> with the full amount; the batch saves <code>quantity = days</code> with the per-day rate. Money agrees, day counts do not — and both absence and payroll reports read <code>quantity</code> as days.</td>
+      <td><span class="pill p-med">Medium</span></td></tr>
+    <tr><td>7</td><td>Hardcoded values</td>
+      <td>Partly addressed by <code>PayrollConstants</code>. Remaining: <code>CIB_CHECKING</code>, <code>EGP</code>, <code>601000</code>, the 30-day month, and the Friday/Saturday weekend.</td>
+      <td><span class="pill p-low">Low</span></td></tr>
+    <tr><td>8</td><td><code>CheckExistingPayrollInvoices</code> flaws</td>
+      <td>Accepts <code>OrganizationPartyId</code> but never applies it, and its month end is <code>monthStart.AddMonths(1)</code> — so the 1st of the next month counts as the current month.</td>
+      <td><span class="pill p-low">Low</span></td></tr>
+    <tr><td>9</td><td>Dead OFBiz heritage</td>
+      <td><code>PayrollPreference</code>, <code>SalaryStepNew</code> and <code>PayGrade</code> are mapped but never queried. <code>PayrollReport.tsx</code> is unreferenced; <code>Temps/ListPayrollData.cs</code> is a superseded v1.</td>
+      <td><span class="pill p-low">Low</span></td></tr>
+    <tr><td>10</td><td>Column naming</td>
+      <td><code>EMPLOYEE_ADVANCE.AdvanceTypeId</code> is an EF-defaulted <code>longtext</code>, unlike every other snake-case column in the schema.</td>
+      <td><span class="pill p-low">Low</span></td></tr>
+  </tbody>
+</table>
+
+<h2>7 &nbsp; Way forward</h2>
+
+<table>
+  <thead><tr><th style="width:12%">Phase</th><th style="width:34%">Work</th><th>Why now</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Now</strong></td>
+      <td>Clear payment 16855 per section 4</td>
+      <td>June's bank salaries are unpaid and one employee's 60,000 has sat in his accrued account since June.</td>
+    </tr>
+    <tr>
+      <td><strong>Next</strong></td>
+      <td>Recompute payment amounts on invoice edit while <code>PMNT_NOT_PAID</code>; make the amount read-only in the UI; refuse the revert-to-<code>IN_PROCESS</code> path once the payment is sent</td>
+      <td>This is the change that actually answers the user's request. It grants the flexibility he wants and removes the hand-typed amount that caused the incident. Highest value per unit of effort.</td>
+    </tr>
+    <tr>
+      <td><strong>Then</strong></td>
+      <td>Record run membership explicitly — link each payroll invoice to the payment that settles it</td>
+      <td>Retires issue 1 and the whole class of failure. Makes an aggregate payment auditable years later instead of reconstructable only by inference.</td>
+    </tr>
+    <tr>
+      <td><strong>After</strong></td>
+      <td>Correctness cleanups: single deduction engine (issue 2), valid status constants with a data fix (3), seed the three item types (4), preserve absence days in the editor (6)</td>
+      <td>Issue 2 can mark an advance repaid that was never deducted — a real money defect, not tidiness. The rest are cheap once the module is being touched.</td>
+    </tr>
+    <tr>
+      <td><strong>Later</strong></td>
+      <td>Move attendance derivation server-side (issue 5); retire dead code and literals (7, 9, 10)</td>
+      <td>Auditability rather than correctness. Worth doing before the next audit cycle, not before the next payroll run.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout good">
+  <p><strong>The shape of the fix is consistent throughout:</strong> stop deriving historical facts from
+  mutable master data. Snapshot what a run was executed against, record what a payment covers, and let
+  the arithmetic validate rather than classify.</p>
+</div>
+
+<h2>8 &nbsp; How these figures were verified</h2>
+
+<p>Every number in this document was read from the local <code>erp_contracts</code> database, not
+inferred from code. The June reconstruction rests on three independent confirmations:</p>
+
+<ul>
+  <li><strong>262,078 + 60,000 = 322,078</strong> — the payment's own comment records exactly this
+  composition, written by hand at the time.</li>
+  <li><strong>262,078 + 667 = 262,745</strong> — the current bank run total, after the absence removal.</li>
+  <li><strong>Cash payment 18786 debited 30 employees, not 31</strong> — party 155 is absent from it,
+  confirming he was in the bank group when the run posted, and his June accrual of 60,000 in GL
+  <code>220008</code> remains uncleared.</li>
+</ul>
+
+<p>Per-invoice totals were computed the same way the application computes them — signed by
+<code>IS_POSITIVE_AMOUNT</code>, <code>quantity × amount</code>, rounded per invoice before summing —
+which is the rounding rule payroll payments depend on.</p>
+
+<pre>SELECT p.PREFERRED_PAYROLL_PMT_METHOD method, COUNT(*) n, ROUND(SUM(t.total),2) run_total
+FROM INVOICE i JOIN PARTY p ON p.PARTY_ID = i.PARTY_ID_FROM
+JOIN (SELECT ii.INVOICE_ID,
+             ROUND(SUM(ii.QUANTITY*ii.AMOUNT*CASE WHEN iit.IS_POSITIVE_AMOUNT=0 THEN -1 ELSE 1 END),2) total
+      FROM INVOICE_ITEM ii JOIN INVOICE_ITEM_TYPE iit USING(INVOICE_ITEM_TYPE_ID)
+      GROUP BY ii.INVOICE_ID) t ON t.INVOICE_ID = i.INVOICE_ID
+WHERE i.INVOICE_TYPE_ID='PAYROL_INVOICE' AND i.PARTY_ID='Company'
+  AND i.INVOICE_DATE BETWEEN '2026-06-01' AND '2026-06-30'
+GROUP BY 1;</pre>
+
+<p class="footnote">Prepared 25 August 2026 against master @ 32bfe01e. Sections 3 and 4 reflect code
+committed in 130429d1; sections 6 and 7 are recommendations, not committed work.</p>
+
+</body>
+</html>
