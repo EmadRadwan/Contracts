@@ -74,6 +74,17 @@ function makePercentCapValidator(
     };
 }
 
+// Caps a single percent field that has no shared allowance — the three external broker rows. The
+// internal rep/manager pairs share a cap and use makePercentCapValidator instead. Mirrors the
+// backend's ValidateAgainstConfiguredRate so the inline message matches the one the server returns.
+function makeCapValidator(maxPct: number | undefined, label: string) {
+    if (maxPct === undefined) return undefined;
+    return (v: any) =>
+        (v ?? 0) > maxPct
+            ? `نسبة ${label} تتجاوز الحد المقرر للمشروع (${maxPct.toFixed(4)}%)`
+            : undefined;
+}
+
 // Mirror of the backend's ValidatePartyPercentPairing: a slot may be left entirely empty, but a party
 // that IS named must carry a percentage — otherwise approval would create no payment for someone the
 // user deliberately assigned. The reverse case (percentage, no party) is not an error here: the
@@ -541,8 +552,12 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                 toast.success(getTranslatedLabel("salesCommission.form.createSuccess", "تم إنشاء العمولة بنجاح"));
             }
             cancelEdit();
-        } catch {
-            toast.error(getTranslatedLabel("salesCommission.form.error", "فشل في حفظ العمولة"));
+        } catch (err: any) {
+            // The handlers return precise, user-facing Arabic reasons (percentage over the project cap,
+            // party/percentage mismatch, ...) which BaseApiController.HandleResult puts in the
+            // ProblemDetails title. Swallowing that behind a generic message leaves the user with no
+            // idea which field to fix — matches how SalesCommissionActionsMenu reports failures.
+            toast.error(err?.data?.title ?? getTranslatedLabel("salesCommission.form.error", "فشل في حفظ العمولة"));
         } finally {
             setButtonFlag(false);
         }
@@ -675,9 +690,13 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                             () => formRenderProps.valueGetter("managerPercent") ?? 0,
                             "المديرين"
                         );
-                        const extValidator = maxExtPct !== undefined
-                            ? (v: any) => (v ?? 0) > maxExtPct ? `الحد الأقصى ${maxExtPct.toFixed(4)}%` : undefined
-                            : undefined;
+                        // All three external caps are enforced client-side. Previously only the broker
+                        // company had one, so an over-cap rep/manager percentage only failed on save.
+                        const extValidator = makeCapValidator(maxExtPct, "الوسيط");
+                        const extRepValidator = makeCapValidator(
+                            activeRate?.externalSalesRepPercent ?? undefined, "مندوب الوسيط");
+                        const extMgrValidator = makeCapValidator(
+                            activeRate?.externalManagerPercent ?? undefined, "مدير الوسيط");
 
                         // Every party slot is optional — the user may not know the manager or the broker yet.
                         const isPartySelected = (fieldName: string) =>
@@ -1090,7 +1109,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         component={FormNumericTextBox}
                                                         min={0} max={100} format="n4"
                                                         disabled={isApproved}
-                                                        validator={validators(makePercentRequiredValidator(extRepSelected, "مندوب الوسيط"))}
+                                                        validator={validators(extRepValidator, makePercentRequiredValidator(extRepSelected, "مندوب الوسيط"))}
                                                     />
                                                 </Grid>
                                                 <Grid item xs={6} md={2}>
@@ -1163,7 +1182,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         component={FormNumericTextBox}
                                                         min={0} max={100} format="n4"
                                                         disabled={isApproved}
-                                                        validator={validators(makePercentRequiredValidator(extMgrSelected, "مدير الوسيط"))}
+                                                        validator={validators(extMgrValidator, makePercentRequiredValidator(extMgrSelected, "مدير الوسيط"))}
                                                     />
                                                 </Grid>
                                                 <Grid item xs={6} md={2}>

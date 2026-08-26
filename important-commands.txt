@@ -206,7 +206,7 @@ docker-compose -f docker-compose.vm.yml up -d --build
 ===========================
 yarn build
 sudo rm -rf erp-contracts
- git clone https://github.com/EmadRadwan/Contracts.git erp-contracts
+     git clone https://github.com/EmadRadwan/Contracts.git erp-contracts
  cd erp-contracts
  sudo find /home/ubuntu/erp-contracts -type f -exec chmod 644 {} +
  sudo find /home/ubuntu/erp-contracts -type d -exec chmod 755 {} +
