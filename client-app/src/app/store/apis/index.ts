@@ -47,3 +47,4 @@ export * from "../apis/manufacturing/bomProductComponentsApi"
 export * from "../apis/manufacturing/costsApi"
 export * from "../apis/manufacturing/workEffortsApi"
 export * from "./users/usersApi"
+export * from "./auditing/auditApi";

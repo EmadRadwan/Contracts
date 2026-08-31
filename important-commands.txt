@@ -205,7 +205,7 @@ docker-compose -f docker-compose.vm.yml up -d --build
 ===========================
 ===========================
 yarn build
-sudo rm -rf erp-contracts
+sudo rm -rf erp-contracts   -> DEPLOY.PDF
 git clone https://github.com/EmadRadwan/Contracts.git erp-contracts
  cd erp-contracts
  sudo find /home/ubuntu/erp-contracts -type f -exec chmod 644 {} +
@@ -253,10 +253,10 @@ cd ~/mysql-backups/contracts-golden
               > ~/mysql-backups/contracts-golden/erp_contracts_no_definer_$(date +%Y-%m-%d_%H-%M-%S).sql
 
 gzip ~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-02-01_11-35-20.sql
-scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-08-26_13-02-24.sql ~/Desktop/
+scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-08-29_15-25-59.sql ~/Desktop/
 gunzip ~/Desktop/erp_contracts_no_definer_2026-02-01_11-35-20.sql.gz
 
-mysql -u root -p erp_contracts <  erp_contracts_no_definer_2026-08-26_08-31-27.sql
+mysql -u root -p erp_contracts <  erp_contracts_no_definer_2026-08-29_15-25-59.sql
 
 
 Portainer.io:
@@ -343,9 +343,13 @@ compare and ->power bi
 erp modernization
 verify trial balance
 commission-reset-workflow
+payroll system
+Oracle cloud
 CRM Module
 ofbiz audit
-payroll system
+Kendo React
+Lead Assignment
+
 
 
 

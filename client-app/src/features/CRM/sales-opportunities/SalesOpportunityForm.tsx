@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Grid, Paper, Box, Typography, Divider, Button } from '@mui/material';
+import { Grid, Paper, Box, Typography, Divider, Button, Alert, AlertTitle } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { Field, Form, FormElement } from '@progress/kendo-react-form';
 import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
@@ -7,6 +7,7 @@ import {
     useFetchOpportunityStagesQuery,
     useCreateOpportunityMutation,
     useUpdateOpportunityMutation,
+    useFetchOpenOpportunitiesByLeadsQuery,
     useAppSelector
 } from '../../../app/store/configureStore';
 import { SalesOpportunity, SalesOpportunityLead } from '../models/salesOpportunity';
@@ -70,6 +71,31 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
         opportunity?.workEffortId || null
     );
+
+    // A lead may legitimately be on several opportunities - one buyer often pursues
+    // more than one unit - so this warns, it does not block. It is here to make the
+    // existing deals visible at the moment of linking, which is the only point where
+    // someone can tell a genuine second deal from an accidental duplicate.
+    const linkedLeadIds = selectedLeads
+        .map((lead) => lead.partyId)
+        .filter((id): id is string => !!id);
+
+    const { data: leadsOtherOpportunities = [] } = useFetchOpenOpportunitiesByLeadsQuery(
+        {
+            leadPartyIds: linkedLeadIds,
+            // Editing an opportunity must not warn about itself.
+            excludeOpportunityId: opportunity?.salesOpportunityId,
+        },
+        { skip: linkedLeadIds.length === 0 }
+    );
+
+    const otherOpportunitiesByLead = leadsOtherOpportunities.reduce<
+        Record<string, typeof leadsOtherOpportunities>
+    >((acc, entry) => {
+        const key = entry.leadName || entry.leadPartyId || '';
+        (acc[key] ||= []).push(entry);
+        return acc;
+    }, {});
 
     const handleLeadsChange = (leads: SalesOpportunityLead[]) => {
         setSelectedLeads(leads);
@@ -290,6 +316,52 @@ const OpportunityForm: React.FC<OpportunityFormProps> = ({
                                             <Typography variant="caption" color="error">
                                                 {leadsError}
                                             </Typography>
+                                        )}
+
+                                        {Object.keys(otherOpportunitiesByLead).length > 0 && (
+                                            <Alert severity="warning" sx={{ mt: 2 }}>
+                                                <AlertTitle>
+                                                    {getTranslatedLabel(
+                                                        `${localizationKey}.duplicateLeadWarningTitle`,
+                                                        'This lead is already on another open opportunity'
+                                                    )}
+                                                </AlertTitle>
+
+                                                {Object.entries(otherOpportunitiesByLead).map(([leadName, entries]) => (
+                                                    <Box key={leadName} sx={{ mb: 1 }}>
+                                                        <Typography variant="body2" fontWeight="bold">
+                                                            {leadName}
+                                                        </Typography>
+                                                        {entries.map((entry) => (
+                                                            <Typography
+                                                                key={entry.salesOpportunityId}
+                                                                variant="body2"
+                                                                component="div"
+                                                            >
+                                                                {'\u2022 '}
+                                                                {entry.opportunityName || `#${entry.salesOpportunityId}`}
+                                                                {' \u2014 '}
+                                                                {entry.stageDescription || entry.opportunityStageId}
+                                                                {entry.productId && (
+                                                                    <>
+                                                                        {' \u00b7 '}
+                                                                        {getTranslatedLabel(`${localizationKey}.form.unit`, 'Unit')}
+                                                                        {' '}
+                                                                        {entry.productId}
+                                                                    </>
+                                                                )}
+                                                            </Typography>
+                                                        ))}
+                                                    </Box>
+                                                ))}
+
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {getTranslatedLabel(
+                                                        `${localizationKey}.duplicateLeadWarningHint`,
+                                                        'This is allowed - one buyer can pursue several units. Continue only if this is a genuinely different deal.'
+                                                    )}
+                                                </Typography>
+                                            </Alert>
                                         )}
                                     </Grid>
                                 </Grid>

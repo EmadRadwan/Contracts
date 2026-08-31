@@ -158,6 +158,7 @@ import LeadsDashboard from "../../features/CRM/leads/LeadsDashboard"
 import MultiAcctgTransEntryForm from "../../features/accounting/transaction/form/MultiAcctgTransEntryForm";
 import UsersList from "../../features/account/users/UsersList";
 import RolesList from "../../features/account/users/RolesList";
+import AuditTrailList from "../../features/auditing/dashboard/AuditTrailList";
 import EmployeeAdvancesList from "../../features/humanResources/dashboard/EmployeeAdvancesList";
 
 const PartyFinancialHistoryWrapper = () => {
@@ -196,6 +197,10 @@ export const routes: RouteObject[] = [
                     {
                         path: "users",
                         element: <UsersList />
+                    },
+                    {
+                        path: "auditTrail",
+                        element: <AuditTrailList />
                     },
                     {
                         path: "roles",

@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // The app config pins types to ["vite/client"], which hides @types/node.
+    // Tests need node (process.env) and the Playwright globals.
+    "types": ["node", "@playwright/test"],
+    "noEmit": true,
+    // Test files legitimately declare helpers they don't always use.
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["**/*.ts"]
+}

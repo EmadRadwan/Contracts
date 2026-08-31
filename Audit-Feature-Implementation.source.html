@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Audit Feature — Implementation Report</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 10.2pt; line-height: 1.55; color: #1a1d21; margin: 0;
+  }
+  h1 { font-size: 24pt; margin: 0 0 4px; letter-spacing: -0.4px; color: #0f172a; }
+  h2 {
+    break-after: avoid;
+    font-size: 14pt; margin: 26px 0 10px; color: #0f172a;
+    border-bottom: 2px solid #2563eb; padding-bottom: 5px;
+    page-break-after: avoid;
+  }
+  h3 { font-size: 11.5pt; margin: 18px 0 6px; color: #1e3a5f; page-break-after: avoid; }
+  h4 { font-size: 10.4pt; margin: 14px 0 4px; color: #334155; page-break-after: avoid; }
+  p { margin: 7px 0; }
+  ul, ol { margin: 7px 0; padding-left: 20px; }
+  li { margin: 3px 0; }
+  code {
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.9pt;
+    background: #f1f5f9; padding: 1px 4px; border-radius: 3px; color: #b91c1c;
+  }
+  pre {
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.2pt;
+    background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #2563eb;
+    padding: 9px 11px; border-radius: 4px; overflow-x: auto; line-height: 1.45;
+    page-break-inside: avoid; margin: 8px 0; white-space: pre-wrap;
+  }
+  pre code { background: none; padding: 0; color: #1e293b; }
+  .cover {
+    border-bottom: 3px solid #2563eb; padding-bottom: 14px; margin-bottom: 6px;
+  }
+  .sub { color: #64748b; font-size: 10.5pt; margin-top: 2px; }
+  .meta { color: #94a3b8; font-size: 8.6pt; margin-top: 10px; }
+  .plain {
+    background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 5px;
+    padding: 9px 12px; margin: 10px 0; page-break-inside: avoid;
+  }
+  .plain .lbl {
+    font-weight: 700; color: #1d4ed8; font-size: 8.4pt;
+    text-transform: uppercase; letter-spacing: 0.7px; display: block; margin-bottom: 3px;
+  }
+  .warn {
+    background: #fff7ed; border: 1px solid #fed7aa; border-radius: 5px;
+    padding: 9px 12px; margin: 10px 0; page-break-inside: avoid;
+  }
+  .warn .lbl {
+    font-weight: 700; color: #c2410c; font-size: 8.4pt;
+    text-transform: uppercase; letter-spacing: 0.7px; display: block; margin-bottom: 3px;
+  }
+  .good {
+    background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 5px;
+    padding: 9px 12px; margin: 10px 0; page-break-inside: avoid;
+  }
+  .good .lbl {
+    font-weight: 700; color: #15803d; font-size: 8.4pt;
+    text-transform: uppercase; letter-spacing: 0.7px; display: block; margin-bottom: 3px;
+  }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 9pt; }
+  tr { page-break-inside: avoid; }
+  thead { display: table-header-group; }
+  th {
+    background: #1e3a5f; color: #fff; text-align: left; padding: 6px 8px;
+    font-weight: 600; font-size: 8.6pt;
+  }
+  td { border-bottom: 1px solid #e2e8f0; padding: 5px 8px; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.2pt; }
+  .ok { color: #15803d; font-weight: 700; }
+  .no { color: #b91c1c; font-weight: 700; }
+  .pagebreak { page-break-before: always; }
+  pre.allowbreak { page-break-inside: auto; }
+  .fignote { color: #64748b; font-size: 8.4pt; text-align: center; margin-top: 4px; }
+  figure { margin: 14px 0; page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>Audit Feature</h1>
+  <div class="sub">Design, implementation and test report — Contracts ERP</div>
+  <div class="meta">Backend: ASP.NET Core 8 / EF Core 8 / MediatR &nbsp;·&nbsp; Database: MySQL 8.0.40 &nbsp;·&nbsp; August 2026</div>
+</div>
+
+<h2>1. The problem this solves</h2>
+
+<p>When something goes wrong in the ERP, there is currently no way to answer two questions that
+always come up first:</p>
+
+<ol>
+  <li><strong>What was the user actually doing?</strong> — which screen, which action, with what input.</li>
+  <li><strong>What changed in the database, and who changed it?</strong> — which field, from what value to what value.</li>
+</ol>
+
+<p>Three properties of the codebase combine to make this genuinely invisible:</p>
+
+<table>
+  <tr><th style="width:34%">Property</th><th>Consequence</th></tr>
+  <tr>
+    <td><strong>Handlers return <code>Result&lt;T&gt;</code> instead of throwing</strong></td>
+    <td>A failed operation looks like an ordinary successful return to everything upstream. No exception, no stack trace, nothing in the error log.</td>
+  </tr>
+  <tr>
+    <td><strong>Serilog runs at <code>MinimumLevel.Warning()</code></strong></td>
+    <td>Normal activity — the actions that <em>precede</em> a problem — is never written down at all.</td>
+  </tr>
+  <tr>
+    <td><strong>Logs are 7-day rolling text files on the VM</strong></td>
+    <td>Even when something is logged, it cannot be queried, filtered, or joined to the business tables.</td>
+  </tr>
+</table>
+
+<p>This is not hypothetical. The comment block already sitting at the top of
+<code>Application/Core/LoggingBehavior.cs</code> records a real incident: <code>ResetProjectCertificate</code>
+silently orphaned certificate 233-0026's invoices (INV1362 / INV1363) <em>with zero trace in logs</em>.
+That behaviour was added to close half the gap — it logs failed results. This feature closes the other half:
+what those failures actually did to the data.</p>
+
+<h2>2. What was already in the codebase</h2>
+
+<p>Because the schema was ported from Apache OFBiz, the audit tables already existed and were already
+mapped into <code>DataContext</code>. They had simply never been connected to anything.</p>
+
+<table>
+  <tr><th>Table</th><th>Mapped at</th><th>Rows before this work</th></tr>
+  <tr><td class="mono">ENTITY_AUDIT_LOG</td><td class="mono">DataContext.cs:13888</td><td class="no">0</td></tr>
+  <tr><td class="mono">VISIT / SERVER_HIT</td><td class="mono">DataContext.cs:61715 / 51886</td><td class="no">0</td></tr>
+  <tr><td class="mono">USER_LOGIN_HISTORY</td><td class="mono">DataContext.cs:60908</td><td class="no">0</td></tr>
+</table>
+
+<p>This mattered a great deal for delivery: it meant the first half of the feature could ship
+<strong>with no database migration at all</strong>, writing into a table that was already there.</p>
+
+<h2>3. The design, in plain terms</h2>
+
+<p>The feature is built as two independent layers that record different things, tied together by a
+single shared key.</p>
+
+<div class="plain">
+  <span class="lbl">In plain terms</span>
+  Think of a warehouse. <strong>Layer&nbsp;A is the door camera</strong> — it records that Emad walked in at
+  14:32, what he was carrying, and whether he came back out successfully. <strong>Layer&nbsp;B is the
+  stock sheet</strong> — it records that shelf 12 went from 40 units to 38. Neither one is enough on
+  its own. The camera does not tell you what moved; the stock sheet does not tell you who moved it or why.
+  The <strong>correlation ID</strong> is the timestamp that lets you line the two up.
+</div>
+
+<figure>
+<svg viewBox="0 0 720 300" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+  <rect x="270" y="8" width="180" height="34" rx="6" fill="#1e3a5f"/>
+  <text x="360" y="30" fill="#fff" font-size="13" text-anchor="middle" font-weight="600">User clicks a button</text>
+  <line x1="360" y1="42" x2="360" y2="66" stroke="#64748b" stroke-width="2"/>
+  <polygon points="360,74 355,64 365,64" fill="#64748b"/>
+
+  <rect x="250" y="74" width="220" height="34" rx="6" fill="#2563eb"/>
+  <text x="360" y="96" fill="#fff" font-size="12.5" text-anchor="middle" font-weight="600">AuditBehavior (MediatR)</text>
+
+  <line x1="250" y1="91" x2="150" y2="91" stroke="#2563eb" stroke-width="2"/>
+  <polygon points="142,91 152,86 152,96" fill="#2563eb"/>
+  <rect x="10" y="70" width="132" height="44" rx="6" fill="#dbeafe" stroke="#2563eb"/>
+  <text x="76" y="88" fill="#1e3a5f" font-size="11" text-anchor="middle" font-weight="700">AUDIT_ACTIVITY</text>
+  <text x="76" y="103" fill="#475569" font-size="9.5" text-anchor="middle">who / what / outcome</text>
+
+  <line x1="360" y1="108" x2="360" y2="134" stroke="#64748b" stroke-width="2"/>
+  <polygon points="360,142 355,132 365,132" fill="#64748b"/>
+  <rect x="272" y="142" width="176" height="32" rx="6" fill="#475569"/>
+  <text x="360" y="163" fill="#fff" font-size="12" text-anchor="middle">Handler does the work</text>
+
+  <line x1="360" y1="174" x2="360" y2="198" stroke="#64748b" stroke-width="2"/>
+  <polygon points="360,206 355,196 365,196" fill="#64748b"/>
+  <rect x="240" y="206" width="240" height="34" rx="6" fill="#0f766e"/>
+  <text x="360" y="228" fill="#fff" font-size="12.5" text-anchor="middle" font-weight="600">AuditSaveChangesInterceptor</text>
+
+  <line x1="480" y1="223" x2="578" y2="223" stroke="#0f766e" stroke-width="2"/>
+  <polygon points="586,223 576,218 576,228" fill="#0f766e"/>
+  <rect x="586" y="202" width="128" height="44" rx="6" fill="#ccfbf1" stroke="#0f766e"/>
+  <text x="650" y="220" fill="#134e4a" font-size="10.5" text-anchor="middle" font-weight="700">ENTITY_AUDIT_LOG</text>
+  <text x="650" y="235" fill="#475569" font-size="9.5" text-anchor="middle">field: old → new</text>
+
+  <rect x="180" y="262" width="360" height="30" rx="15" fill="#fef3c7" stroke="#d97706"/>
+  <text x="360" y="282" fill="#92400e" font-size="11" text-anchor="middle" font-weight="700">
+    joined by CorrelationId (HttpContext.TraceIdentifier)
+  </text>
+  <line x1="76" y1="114" x2="76" y2="277" stroke="#d97706" stroke-width="1.6" stroke-dasharray="4,3"/>
+  <line x1="76" y1="277" x2="180" y2="277" stroke="#d97706" stroke-width="1.6" stroke-dasharray="4,3"/>
+  <line x1="650" y1="246" x2="650" y2="277" stroke="#d97706" stroke-width="1.6" stroke-dasharray="4,3"/>
+  <line x1="650" y1="277" x2="540" y2="277" stroke="#d97706" stroke-width="1.6" stroke-dasharray="4,3"/>
+</svg>
+<div class="fignote">One user action flows through both layers; the correlation ID stitches the two records together.</div>
+</figure>
+
+<h2>4. The concepts, explained simply</h2>
+
+<h3>4.1 A MediatR "pipeline behavior"</h3>
+<p>Every command in this system travels through MediatR to reach its handler. A <em>pipeline behavior</em>
+is code that wraps every one of those trips — it runs before the handler, calls the handler, and runs
+again afterwards.</p>
+<div class="plain">
+  <span class="lbl">In plain terms</span>
+  It is a receptionist sitting in front of 610 offices. Every visitor passes the desk on the way in and
+  on the way out, so the receptionist can write down who arrived, what they asked for, how long they took
+  and whether they left happy — without any of the 610 offices needing to change.
+</div>
+<p>The codebase already had one (<code>LoggingBehavior</code>), which proved the interception point works.
+The new <code>AuditBehavior</code> is registered right next to it.</p>
+
+<h3>4.2 An EF Core "SaveChanges interceptor" and the ChangeTracker</h3>
+<p>Entity Framework keeps a <em>ChangeTracker</em>: an in-memory record of every object it has loaded and
+what has been altered on it. When <code>SaveChangesAsync()</code> is called, EF consults that tracker to
+work out which SQL statements to emit. An <em>interceptor</em> lets us run code at that exact moment.</p>
+<div class="plain">
+  <span class="lbl">In plain terms</span>
+  EF already knows "this invoice's status was <code>APPROVED</code> and is about to become
+  <code>CANCELLED</code>" — it has to know, in order to write the UPDATE. The interceptor simply asks for
+  that list a fraction of a second before it is thrown away, and writes it down.
+</div>
+<p>This is why the change log can capture the <strong>old</strong> value. Once the UPDATE runs, the previous
+value is gone forever — the interceptor is the last moment it exists.</p>
+
+<h3>4.3 Why one layer is transactional and the other deliberately is not</h3>
+<p>A database transaction is all-or-nothing: if any part fails, everything inside it is undone.</p>
+<ul>
+  <li><strong>The change log joins the business transaction.</strong> If the operation rolls back, its audit
+  rows roll back too. This is correct — the log must never claim a change that did not actually happen.</li>
+  <li><strong>The activity log deliberately stays outside it,</strong> on its own database connection. If it
+  shared the transaction, a command that failed and rolled back would erase its own audit record — losing
+  exactly the evidence worth having.</li>
+</ul>
+<div class="warn">
+  <span class="lbl">Why this is the single most important detail</span>
+  Successes are not the interesting case. The whole feature exists because of an operation that went wrong.
+  If the record of a failure disappears along with the failure, the feature is worthless.
+</div>
+
+<h3>4.4 The correlation ID</h3>
+<p>ASP.NET assigns every HTTP request a <code>TraceIdentifier</code> — a short string like
+<code>0HNO3HFAAMIPS:00000005</code>. It was already in use: <code>ExceptionMiddleware</code> returns it to the
+user as the error ID, and Serilog writes it as <code>{RequestId}</code>. Both audit layers now stamp the same
+value on their rows, so an error a user reports, the log line, the action taken and the rows it changed all
+line up on one key.</p>
+
+<h2>5. Layer 1 — the change log</h2>
+
+<p>Records <em>what changed in the database</em>, into the pre-existing <code>ENTITY_AUDIT_LOG</code> table.
+No migration required.</p>
+
+<h3>5.1 Where the code lives</h3>
+<table>
+  <tr><th style="width:42%">File</th><th>Role</th></tr>
+  <tr><td class="mono">Persistence/Auditing/AuditSaveChangesInterceptor.cs</td><td>Reads the ChangeTracker and writes the rows</td></tr>
+  <tr><td class="mono">Persistence/Auditing/AuditedEntities.cs</td><td>The whitelist and field-exclusion rules</td></tr>
+  <tr><td class="mono">Persistence/Auditing/IAuditMetadataProvider.cs</td><td>Abstraction for "who / which request"</td></tr>
+  <tr><td class="mono">Infrastructure/Security/HttpAuditMetadataProvider.cs</td><td>Supplies that from the live HTTP request</td></tr>
+</table>
+
+<h3>5.2 A layering constraint that shaped the design</h3>
+<p>The project references run <em>Infrastructure → Application → Persistence → Domain</em>. The capture code
+must live in <code>Persistence</code> (it needs the ChangeTracker), but the identity of the signed-in user
+lives in <code>Application.Interfaces.IUserAccessor</code> — which <code>Persistence</code> cannot see without
+creating a circular reference.</p>
+<p>Solution: a small interface declared <em>inside</em> Persistence, implemented up in Infrastructure where
+the HTTP context is available. This is also why an EF <strong>interceptor</strong> was chosen over overriding
+<code>DataContext.SaveChangesAsync</code> — it needs no constructor changes to a <code>DbContext</code> with 884
+<code>DbSet</code>s and a parameterless constructor used by the migration tooling.</p>
+
+<h3>5.3 The recording rule</h3>
+<div class="plain">
+  <span class="lbl">One rule governs everything</span>
+  <strong>Log what you cannot recover from the live table.</strong>
+</div>
+<table>
+  <tr><th style="width:18%">Operation</th><th style="width:30%">What is written</th><th>Why</th></tr>
+  <tr><td><strong>Modified</strong></td><td>One row per genuinely changed field</td><td>The <em>old</em> value is about to be lost forever</td></tr>
+  <tr><td><strong>Deleted</strong></td><td>A <code>*DELETE*</code> marker plus a full field snapshot</td><td>The entire row is about to vanish</td></tr>
+  <tr><td><strong>Added</strong></td><td>A single <code>*CREATE*</code> marker</td><td>The values are still readable in the table itself — a column-by-column dump would be pure volume</td></tr>
+</table>
+
+<h3>5.4 The core of the interceptor</h3>
+<pre><code>case EntityState.Modified:
+    foreach (var prop in entry.Properties)
+    {
+        if (!prop.IsModified) continue;
+        if (AuditedEntities.IsIgnoredField(prop.Metadata.Name)) continue;
+
+        var oldValue = Format(prop.OriginalValue);
+        var newValue = Format(prop.CurrentValue);
+
+        // Handlers that do `Entry(x).State = Modified` mark every property
+        // dirty whether or not it changed, so compare before emitting.
+        if (string.Equals(oldValue, newValue, StringComparison.Ordinal)) continue;
+
+        rows.Add(NewRow(entityName, prop.Metadata.Name, pkText,
+            oldValue, newValue, now, changedBy, correlationId));
+    }
+    break;</code></pre>
+
+<div class="good">
+  <span class="lbl">Why that comparison matters</span>
+  Several handlers in this codebase set <code>Entry(x).State = EntityState.Modified</code>, which marks
+  <em>every</em> column dirty regardless of whether it changed. Without the old-vs-new comparison, editing one
+  field on a payment would have written ~30 rows instead of 1. Live testing confirmed it writes exactly 1.
+</div>
+
+<h3>5.5 The whitelist</h3>
+<p>The model has roughly 868 entities carrying <code>LastUpdatedStamp</code>. Auditing all of them
+field-by-field would bury the signal and grow the table faster than anyone could read it. Instead a
+deliberate whitelist — one file, one place to edit. It now holds <strong>22 entities in two groups</strong>.</p>
+
+<h4>Transactional — what happened</h4>
+<pre><code>"OrderHeader", "OrderItem", "OrderItemBilling",     // order to cash
+"Invoice", "InvoiceItem",                            // billing
+"Payment", "PaymentApplication",                     // money movement
+"AcctgTran", "AcctgTransEntry",                      // general ledger
+"WorkEffort",                                        // projects
+"SalesCommission", "SalesRequest",                   // commissions
+"InventoryItem", "InventoryItemDetail"               // stock</code></pre>
+
+<h4>Master and reference data — how it is interpreted</h4>
+<pre><code>"Party", "PartyGlAccount",                                        // payroll + GL attribution
+"GlAccount", "GlSubClass", "GlSubClass2", "GlAccountCourseLabel", // GL classification
+"CustomTimePeriod",                                               // accounting periods
+"InvoiceAttribute"                                                // payroll method snapshot</code></pre>
+
+<div class="plain">
+  <span class="lbl">Why the second group exists</span>
+  The first group records <em>what happened</em>. The second records changes to the settings that
+  decide <em>how it is interpreted</em> — and in several past incidents a field edited today silently
+  changed what an already-closed period reported. That is a harder class of problem than a bad
+  transaction, because nothing in the transaction itself looks wrong.
+</div>
+
+<p>The second group was not guessed at. It came from reviewing the actual incident history of this
+system, and each entry earns its place:</p>
+
+<table>
+  <tr><th style="width:26%">Entity</th><th>The incident behind it</th></tr>
+  <tr>
+    <td><strong>Party</strong></td>
+    <td>Two fields with outsized reach. <code>PreferredPayrollPaymentMethodId</code> was flipped for one
+    employee, which retroactively removed him from an <em>already-executed</em> payroll run — a payment
+    of 322,078 could then no longer post against a re-derived run total of 262,745.
+    <code>GlAccountIdAdvancedPayment</code> decides which GL account payroll debits, and is why a large
+    share of payroll never reaches the P&amp;L.</td>
+  </tr>
+  <tr><td><strong>PartyGlAccount</strong></td><td>The accrued ACCOUNTS_PAYABLE that payroll posting resolves against — directly in the path of the fix for the same incident.</td></tr>
+  <tr>
+    <td><strong>GlAccount</strong> and the classification hierarchy</td>
+    <td>Roughly 210 manual <code>UPDATE</code> statements exist against <code>GL_ACCOUNT</code> in
+    <code>API/Sql</code> — more than every other table combined. Classification drives the trial balance,
+    every report and all of Power BI.</td>
+  </tr>
+  <tr><td><strong>CustomTimePeriod</strong></td><td>Six rows, rarely touched — but opening or closing a period changes what every balance inside it includes. Effectively free to audit.</td></tr>
+  <tr><td><strong>InvoiceAttribute</strong></td><td>Holds the <code>PAYROLL_PMT_METHOD</code> snapshot that exists <em>specifically</em> to stop payroll history being rewritten. Worth auditing the safety mechanism itself.</td></tr>
+</table>
+
+<div class="warn">
+  <span class="lbl">An honest limit on the GL entries</span>
+  Most of those 210 <code>GL_ACCOUNT</code> corrections were made by running SQL by hand, which bypasses
+  the application entirely — the change log will never see them. Auditing <code>GlAccount</code> captures
+  edits made <em>through the app</em>, which is the case you cannot otherwise reconstruct. It is not a
+  complete history of that table.
+</div>
+
+<p>Four fields are always excluded (<code>LastUpdatedStamp</code>, <code>LastUpdatedTxStamp</code>,
+<code>CreatedStamp</code>, <code>CreatedTxStamp</code>) because they change on virtually every write and
+would roughly double the row count while adding nothing. Any field whose name contains
+<em>password</em>, <em>token</em>, <em>secret</em> or <em>apikey</em> is also skipped, and the same check
+redacts command payloads — so the two layers can never disagree about what counts as a secret.</p>
+
+<h3>5.6 Reusing the OFBiz columns</h3>
+<p><code>ENTITY_AUDIT_LOG</code> came with two free text columns that fit exactly what was needed, which is
+why this layer needed no schema change:</p>
+<table>
+  <tr><th style="width:36%">Column</th><th>Now holds</th></tr>
+  <tr><td class="mono">CHANGED_BY_INFO</td><td><code>Emad (3bb4e859-1157-4cc7-81b5-10f419359a41)</code> — name <em>and</em> ID, because display names can change later</td></tr>
+  <tr><td class="mono">CHANGED_SESSION_INFO</td><td>The correlation ID</td></tr>
+</table>
+
+<h2>6. Layer 2 — the activity log</h2>
+
+<p>Records <em>what the user asked for</em>, into a new <code>AUDIT_ACTIVITY</code> table.</p>
+
+<h3>6.1 Where the code lives</h3>
+<table>
+  <tr><th style="width:42%">File</th><th>Role</th></tr>
+  <tr><td class="mono">Domain/AuditActivity.cs</td><td>The entity</td></tr>
+  <tr><td class="mono">Application/Core/AuditBehavior.cs</td><td>The MediatR pipeline behavior</td></tr>
+  <tr><td class="mono">Application/Core/AuditActivityWriter.cs</td><td>Writes on its own DbContext</td></tr>
+  <tr><td class="mono">Application/Core/IAuditableRequest.cs</td><td>Opt-in marker for non-command requests</td></tr>
+</table>
+
+<h3>6.2 Commands only</h3>
+<p>Of roughly 610 request types, about two thirds are queries that change nothing. Auditing them would
+multiply volume for almost no diagnostic value. The filter uses the codebase's own naming convention:</p>
+<pre><code>private static bool ComputeIsAudited()
+{
+    var type = typeof(TRequest);
+
+    if (typeof(IAuditableRequest).IsAssignableFrom(type)) return true;
+
+    return type.Name.Equals("Command", StringComparison.Ordinal)
+           || type.Name.EndsWith("Command", StringComparison.Ordinal);
+}</code></pre>
+<p>That matches the 218 nested <code>Command</code> classes plus a handful using a PascalCase suffix. The
+result is cached per closed generic type, so the reflection runs once per request type rather than on
+every dispatch.</p>
+
+<h3>6.3 Capturing the outcome correctly</h3>
+<p>Because handlers return failures rather than throwing, the behavior must unwrap the result — otherwise
+the trail would mark every single call a success:</p>
+<pre><code>var response = await next();
+
+// Handlers return failed Results rather than throwing (see CLAUDE.md), so a failure
+// looks like an ordinary return. Unwrap it or the trail would call every call a success.
+if (response is IResult { IsSuccess: false } failed)
+{
+    activity.IsSuccess = false;
+    activity.ErrorMessage = Truncate(failed.ErrorMessage, MaxErrorMessageLength);
+}
+else
+{
+    activity.IsSuccess = true;
+}</code></pre>
+<p>Three distinct outcomes are recorded: success, a failed <code>Result</code> (<code>ExceptionType</code>
+stays null), and a thrown exception (<code>ExceptionType</code> populated, exception re-thrown unchanged).</p>
+
+<h3>6.4 The write happens in a <code>finally</code></h3>
+<pre><code>finally
+{
+    stopwatch.Stop();
+    activity.DurationMs = (int)Math.Min(stopwatch.ElapsedMilliseconds, int.MaxValue);
+
+    // Runs on the success path, the failed-Result path and the thrown-exception path.
+    // The writer owns its own DataContext, so this row survives a rolled-back command.
+    await _writer.WriteAsync(activity, cancellationToken);
+}</code></pre>
+<p>The writer builds a short-lived <code>DataContext</code> from the DI-registered options and passes
+<code>CancellationToken.None</code> — when a client disconnects mid-request the record is still worth
+having. Any failure inside the writer is caught and logged: losing an audit row is survivable, failing a
+business request because auditing failed is not.</p>
+
+<h3>6.5 Payload capture and redaction</h3>
+<p>The command's input is serialized to JSON and stored. Registration and password-change commands travel
+through this same pipeline, so redaction is not optional — the payload is walked recursively and any
+property whose name looks like a credential is replaced with <code>***REDACTED***</code>. Serialization
+uses <code>ReferenceHandler.IgnoreCycles</code> and <code>MaxDepth = 16</code>; commands carrying file
+streams that cannot be serialized store a marker instead of dropping the row.</p>
+
+<h2>7. Database changes</h2>
+
+<p>One migration, <code>20260826085724_AddAuditActivity</code>. It is purely additive — no drops, no data
+movement:</p>
+<pre class="allowbreak"><code>CREATE TABLE `AUDIT_ACTIVITY` (
+    `ACTIVITY_ID` varchar(36) NOT NULL,
+    `CORRELATION_ID` varchar(64) NULL,
+    `USER_NAME` varchar(255) NULL,
+    `USER_ID` varchar(36) NULL,
+    `REQUEST_NAME` varchar(255) NULL,
+    `REQUEST_PATH` varchar(512) NULL,
+    `HTTP_METHOD` varchar(10) NULL,
+    `CLIENT_IP_ADDRESS` varchar(64) NULL,
+    `REQUEST_JSON` text NULL,
+    `IS_SUCCESS` tinyint(1) NOT NULL,
+    `ERROR_MESSAGE` varchar(1024) NULL,
+    `EXCEPTION_TYPE` varchar(255) NULL,
+    `DURATION_MS` int NULL,
+    `STARTED_AT` datetime(6) NOT NULL,
+    `CREATED_STAMP` datetime NULL,
+    `LAST_UPDATED_STAMP` datetime NULL,
+    CONSTRAINT `PK_AUDIT_ACTIVITY` PRIMARY KEY (`ACTIVITY_ID`)
+);
+
+CREATE INDEX `AUDIT_ACTIVITY_USER`        ON `AUDIT_ACTIVITY` (`USER_ID`, `STARTED_AT`);
+CREATE INDEX `AUDIT_ACTIVITY_REQUEST`     ON `AUDIT_ACTIVITY` (`REQUEST_NAME`, `STARTED_AT`);
+CREATE INDEX `AUDIT_ACTIVITY_CORRELATION` ON `AUDIT_ACTIVITY` (`CORRELATION_ID`);
+CREATE INDEX `AUDIT_ACTIVITY_STARTED`     ON `AUDIT_ACTIVITY` (`STARTED_AT`);
+
+CREATE INDEX `ENTITY_AUDIT_LOG_CORRELATION` ON `ENTITY_AUDIT_LOG` (`CHANGED_SESSION_INFO`);
+CREATE INDEX `ENTITY_AUDIT_LOG_RECORD`      ON `ENTITY_AUDIT_LOG`
+    (`CHANGED_ENTITY_NAME`, `PK_COMBINED_VALUE_TEXT`, `CHANGED_DATE`);</code></pre>
+
+<p><code>STARTED_AT</code> uses <code>datetime(6)</code> so several actions within the same second still sort
+correctly. The two <code>ENTITY_AUDIT_LOG</code> indexes were added because the OFBiz schema shipped with
+indexes only on the transaction stamps — the per-record history lookup, the query the History tab runs
+most, would otherwise scan the whole table. Key length was checked: ~2,045 bytes against InnoDB's
+3,072-byte limit on a <code>Dynamic</code> row format.</p>
+
+<div class="warn">
+  <span class="lbl">Important operational note</span>
+  <code>API/Program.cs:194</code> calls <code>context.Database.MigrateAsync()</code> at startup. Deploying
+  <strong>is</strong> applying the migration — there is no separate approval step.
+</div>
+
+<h2>8. Configuration and the kill switch</h2>
+
+<p>Both capture layers check a single flag before doing any work — the interceptor before touching the
+ChangeTracker, the behavior before serializing anything. With it off, the entire feature costs one boolean
+check per command.</p>
+
+<p><code>API/appsettings.Production.json</code>:</p>
+<pre><code>"Auditing": {
+  "Enabled": false,
+  "Retention": {
+    "Enabled": true,
+    "ActivityDays": 365,
+    "ChangeLogDays": 730,
+    "RunAtHourUtc": 2,
+    "BatchSize": 5000
+  }
+}</code></pre>
+
+<p><code>docker-compose.vm.yml</code> — an environment variable that <em>overrides</em> the appsettings value:</p>
+<pre><code>Auditing__Enabled: "${Auditing_Enabled:-false}"</code></pre>
+
+<div class="plain">
+  <span class="lbl">Why both</span>
+  The appsettings file is baked into the Docker image, so changing it means a rebuild and redeploy. The
+  environment variable turns that into a restart — which matters most in the case where auditing is
+  misbehaving in production and you want it off quickly.
+</div>
+
+<p><strong>Development defaults to on</strong>; <strong>production ships off.</strong></p>
+
+<h2>9. Retention</h2>
+
+<p>Without a purge the feature is a slow leak: <code>ENTITY_AUDIT_LOG</code> grows with every field change
+on every whitelisted entity, forever. Adding a purge once the table holds tens of millions of rows is
+considerably more painful than having one from the start — which is why it exists <em>before</em> auditing
+is switched on in production rather than after.</p>
+
+<p><code>Infrastructure/Auditing/AuditRetentionService.cs</code> is a <code>BackgroundService</code> (the
+first in this codebase) that trims both tables daily.</p>
+
+<h3>9.1 Three deliberate choices</h3>
+<table>
+  <tr><th style="width:30%">Choice</th><th>Reason</th></tr>
+  <tr>
+    <td><strong>Deletes run as batched raw SQL</strong></td>
+    <td>A tracked delete of a million rows would exhaust memory; raw SQL does not re-enter the audit
+    interceptor; and <code>LIMIT</code> keeps each statement's lock window short so a purge cannot stall
+    live traffic.</td>
+  </tr>
+  <tr>
+    <td><strong><code>keepDays &lt;= 0</code> means "keep forever"</strong></td>
+    <td>The failure mode of a retention job is data loss, so it fails toward keeping. A mistyped config
+    value cannot empty an audit table.</td>
+  </tr>
+  <tr>
+    <td><strong>Its own enable flag</strong></td>
+    <td>Independent of <code>Auditing:Enabled</code> — capture may be off while an existing backlog still
+    needs trimming.</td>
+  </tr>
+</table>
+
+<p>It also runs once about five minutes after startup, not only at the scheduled hour: a container
+restarting more than once a day would otherwise never reach 02:00.</p>
+
+<h3>9.2 Making the purge visible</h3>
+<p>Serilog's floor is <code>Warning</code> <em>and</em> both sinks carry their own <code>Warning</code>
+restriction, so an <code>Information</code> log would have been discarded twice over. Rather than lowering
+the global level and dragging every other Info log into the main log, the purge gets a
+<code>MinimumLevel.Override</code> plus a dedicated sub-logger sink:</p>
+<pre><code>.MinimumLevel.Override("Infrastructure.Auditing", LogEventLevel.Information)
+.WriteTo.Logger(lc =&gt; lc
+    .Filter.ByIncludingOnly(Matching.FromSource("Infrastructure.Auditing"))
+    .WriteTo.File(
+        Path.Combine(logDirectory, "audit-retention.log"),
+        LogEventLevel.Information,
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 30))</code></pre>
+<p>A job that deletes millions of rows should leave a record; it should not drag everything else with it.</p>
+
+<h2>10. The read UI</h2>
+
+<p>The data existing is not the same as anyone using it. Two surfaces make the trail reachable.</p>
+
+<h3>10.1 Endpoints</h3>
+<p>Two OData entity sets, following the codebase's existing list-view convention. Both return
+<code>IQueryable</code>, so filtering, sorting and paging are pushed into SQL and nothing is materialised:</p>
+<table>
+  <tr><th style="width:46%">File</th><th>Role</th></tr>
+  <tr><td class="mono">Application/Auditing/AuditActivityRecord.cs</td><td>Projection, <code>[Key] ActivityId</code></td></tr>
+  <tr><td class="mono">Application/Auditing/EntityAuditLogRecord.cs</td><td>Projection, <code>[Key] AuditHistorySeqId</code></td></tr>
+  <tr><td class="mono">Application/Auditing/ListAuditActivities.cs</td><td>CQRS query</td></tr>
+  <tr><td class="mono">Application/Auditing/ListEntityAuditLogs.cs</td><td>CQRS query</td></tr>
+  <tr><td class="mono">API/Controllers/Auditing/*RecordsController.cs</td><td>Two <code>BaseODataController&lt;T&gt;</code> controllers</td></tr>
+</table>
+
+<h3>10.2 The Audit Trail screen</h3>
+<p><code>client-app/src/features/auditing/dashboard/AuditTrailList.tsx</code> — a filterable, sortable,
+paged grid over <code>AUDIT_ACTIVITY</code>: timestamp, user, action, outcome, duration, path, error, IP.</p>
+
+<div class="good">
+  <span class="lbl">The part that matters</span>
+  Rows <strong>expand</strong> to show the field-level changes that action produced, fetched by correlation
+  ID. That is the pivot from "who pressed what" to "what actually moved" — the entire point of the
+  two-layer design, reduced to one click. When an action produced no field changes, the expanded row shows
+  the redacted request payload instead.
+</div>
+
+<p>Durations of three seconds or more render in orange. That is what surfaced an 11-second GL posting
+during testing.</p>
+
+<h3>10.3 The per-record History tab</h3>
+<p><code>client-app/src/features/auditing/components/RecordHistory.tsx</code> renders
+<em>field: old ← new, by whom, when</em> for a single business record, with <code>*CREATE*</code> and
+<code>*DELETE*</code> markers shown as readable lines rather than empty value pairs.</p>
+
+<p>It is wired into the payment form, following that container's existing pattern — the Actions menu opens
+it in a <code>ModalContainer</code>, exactly as Transactions and Payment Applications already work:</p>
+<pre><code>&lt;RecordHistory entityName="Payment" pkText={`PaymentId=${payment.paymentId}`} /&gt;</code></pre>
+
+<div class="warn">
+  <span class="lbl">One detail that must be exact</span>
+  <code>pkText</code> has to match <code>PK_COMBINED_VALUE_TEXT</code> byte-for-byte
+  (<code>"&lt;PkPropertyName&gt;=&lt;value&gt;"</code>). Get it wrong and the tab renders "no changes
+  recorded" rather than an error — a silent failure. The format was confirmed against a real row, not
+  assumed.
+</div>
+
+<p>Access is gated on the existing <code>Admin</code> role, reached from the signed-in user menu. Per the
+frontend conventions this is a UX gate, not a security boundary — there is no backend role enforcement
+anywhere in this codebase.</p>
+
+<h2>11. What the live testing proved</h2>
+
+<p>Tested against the running development server, driving the real Arabic UI in Chrome, with every result
+verified directly in MySQL.</p>
+
+<table>
+  <tr><th style="width:28%">Command</th><th style="width:9%">OK</th><th style="width:12%">Duration</th><th style="width:13%">Change rows</th><th>What it proved</th></tr>
+  <tr><td class="mono">UpdatePayment</td><td class="ok">yes</td><td>5679 ms</td><td>1</td><td>Field-level capture; unchanged fields correctly suppressed</td></tr>
+  <tr><td class="mono">UpdatePayment</td><td class="no">no</td><td>211 ms</td><td>0</td><td>Failed <code>Result</code> captured with its message; no phantom change rows</td></tr>
+  <tr><td class="mono">SetPaymentStatus</td><td class="ok">yes</td><td>11137 ms</td><td>5</td><td>Full GL posting captured</td></tr>
+  <tr><td class="mono">UpdateGlAccount</td><td class="ok">yes</td><td>2925 ms</td><td>1</td><td>Master-data whitelist entries fire correctly</td></tr>
+</table>
+
+<h3>11.1 The correlation join, end to end</h3>
+<pre><code>Activity : UpdatePayment.Command   by Emad   correlation 0HNO3HFAAMIPS:00000005
+Change   : Payment / PaymentId=O17827 / PaymentRefNum : '' → AUDIT-TEST-1
+           changed by  Emad (3bb4e859-1157-4cc7-81b5-10f419359a41)
+           correlation 0HNO3HFAAMIPS:00000005</code></pre>
+
+<h3>11.2 Volume — the number that matters</h3>
+<p>A real double-entry GL posting produced exactly <strong>five rows</strong>:</p>
+<pre><code>AcctgTran        AcctgTransId=20899                        *CREATE*
+AcctgTransEntry  AcctgTransId=20899::AcctgTransEntrySeqId=1 *CREATE*
+AcctgTransEntry  AcctgTransId=20899::AcctgTransEntrySeqId=2 *CREATE*
+Payment          PaymentId=O17827  StatusId          PMNT_NOT_PAID → PMNT_SENT
+Payment          PaymentId=O17827  ApprovedByPartyId NULL → 26</code></pre>
+<p>Confirmed against the database: 1 new <code>ACCTG_TRANS</code>, 2 new <code>ACCTG_TRANS_ENTRY</code>. The
+cost is <strong>N ledger lines → N+1 marker rows, plus one row per genuinely changed field</strong>. A
+40-line posting would cost roughly 45 rows.</p>
+
+<h3>11.3 The retention job</h3>
+<pre><code>18:28:49  Audit retention active: AUDIT_ACTIVITY 365d, ENTITY_AUDIT_LOG 730d, daily at 02:00 UTC
+18:33:50  Audit purge found nothing older than the retention window
+18:33:50  Next audit purge in 10.4 hours</code></pre>
+<p>The first line alone proves the chain: it compiled, the hosted service registered and started, the
+config bound, and the dedicated sink works — an <code>Information</code> event reached its own file while
+the global floor stayed at <code>Warning</code>. The startup purge then fired exactly five minutes in and
+scheduled the next run.</p>
+
+<h3>11.4 Other results</h3>
+<ul>
+  <li><strong>Redaction:</strong> zero payloads containing credential-like text without <code>REDACTED</code>.</li>
+  <li><strong><code>SaveChanges</code> count safety:</strong> around 12 handlers branch on the row count
+  returned by <code>SaveChangesAsync</code>, which audit rows inflate. Every one uses <code>&gt; 0</code>
+  or <code>&lt;= 0</code>, and audit rows only ever appear alongside business rows — so a save can never go
+  from zero to non-zero. Verified in code and then in practice.</li>
+</ul>
+
+<div class="good">
+  <span class="lbl">A gap the testing caught before deployment</span>
+  The first live test showed <code>UpdateSalesCommission</code> rewriting a commission with <strong>zero</strong>
+  field-level rows. Not a bug — <code>SalesCommission</code> simply was not on the whitelist. The original
+  list was drawn around order-to-cash and the ledger, while the entity at the centre of the problems
+  actually being investigated was invisible. That discovery is what prompted the whitelist review in §5.5.
+</div>
+
+<div class="warn">
+  <span class="lbl">A performance finding the feature surfaced on its own</span>
+  <code>SetPaymentStatus</code> took <strong>11.1 seconds</strong> for a two-line GL posting;
+  <code>UpdatePayment</code> took 5.7 s on first hit then 211 ms. The pattern points to first-hit EF query
+  compilation against the 66,000-line model, which would be a one-off per query shape per restart — but
+  11 s is long even for that, and the production VM runs on a single pinned CPU. Worth investigating; not
+  yet diagnosed.
+</div>
+
+<h2>12. Known limitations</h2>
+
+<table>
+  <tr><th style="width:30%">Limitation</th><th>Detail</th></tr>
+  <tr>
+    <td><strong>Bulk operations bypass the change log</strong></td>
+    <td>There are ~70 <code>ExecuteUpdate</code> / <code>ExecuteDelete</code> / raw-SQL call sites. These
+    never touch the ChangeTracker, so the interceptor cannot see them — including
+    <code>ResetPayment</code> and <code>DeletePayrollInvoices</code>, the destructive operations most worth
+    recording. The activity layer still records that the command ran and its outcome, but not which rows
+    changed. <strong>Open decision.</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Error-path latency amplification</strong></td>
+    <td>The writer awaits a database write inside a <code>finally</code>. If a command failed
+    <em>because</em> the database is unhealthy, the audit write must also time out before the error
+    returns — adding delay during an incident. A queued or fire-and-forget write would fix it.</td>
+  </tr>
+  <tr>
+    <td><strong>Hand-run SQL is invisible</strong></td>
+    <td>Corrections applied directly to the database — the normal way GL classification is fixed here —
+    bypass the application and leave no audit trace.</td>
+  </tr>
+  <tr><td><strong>No automated tests</strong></td><td>Verified manually end to end; nothing guards against regression.</td></tr>
+</table>
+
+<h2>13. Status and what comes next</h2>
+
+<p>Capture, retention and the read UI are all built. The feature is safe to deploy in its current state
+because it ships dormant behind the flag.</p>
+
+<h4>Remaining</h4>
+<ol>
+  <li><strong>Test the OFF path.</strong> All testing so far ran with auditing on; production ships off.
+  That exact configuration has not yet been exercised.</li>
+  <li><strong>Decide what to do about the bulk-operation blind spot</strong> — accept and document, or
+  convert the highest-risk delete sites to record an explicit audit row.</li>
+  <li><strong>Consider automated tests</strong> around the interceptor's comparison logic, which is the
+  part most likely to regress silently.</li>
+</ol>
+
+<h4>Useful queries</h4>
+<pre><code>-- What has this user been doing?
+SELECT STARTED_AT, USER_NAME, REQUEST_NAME, IS_SUCCESS, DURATION_MS, ERROR_MESSAGE
+FROM AUDIT_ACTIVITY ORDER BY STARTED_AT DESC LIMIT 50;
+
+-- History of one record
+SELECT CHANGED_DATE, CHANGED_BY_INFO, CHANGED_FIELD_NAME, OLD_VALUE_TEXT, NEW_VALUE_TEXT
+FROM ENTITY_AUDIT_LOG
+WHERE CHANGED_ENTITY_NAME = 'Invoice' AND PK_COMBINED_VALUE_TEXT = 'InvoiceId=INV1362'
+ORDER BY CHANGED_DATE;
+
+-- From a reported error ID straight to what it changed
+SELECT a.REQUEST_NAME, a.USER_NAME, e.CHANGED_ENTITY_NAME,
+       e.PK_COMBINED_VALUE_TEXT, e.CHANGED_FIELD_NAME, e.OLD_VALUE_TEXT, e.NEW_VALUE_TEXT
+FROM AUDIT_ACTIVITY a
+LEFT JOIN ENTITY_AUDIT_LOG e ON e.CHANGED_SESSION_INFO = a.CORRELATION_ID
+WHERE a.CORRELATION_ID = '&lt;trace id from the error&gt;';</code></pre>
+
+<h2>14. File manifest</h2>
+
+<h4>Backend</h4>
+<table>
+  <tr><th style="width:52%">File</th><th style="width:14%">Status</th><th>Purpose</th></tr>
+  <tr><td class="mono">Domain/AuditActivity.cs</td><td>new</td><td>Activity entity</td></tr>
+  <tr><td class="mono">Application/Core/AuditBehavior.cs</td><td>new</td><td>MediatR pipeline behavior</td></tr>
+  <tr><td class="mono">Application/Core/AuditActivityWriter.cs</td><td>new</td><td>Non-transactional writer</td></tr>
+  <tr><td class="mono">Application/Core/IAuditActivityWriter.cs</td><td>new</td><td>Writer abstraction</td></tr>
+  <tr><td class="mono">Application/Core/IAuditableRequest.cs</td><td>new</td><td>Opt-in marker</td></tr>
+  <tr><td class="mono">Application/Auditing/AuditActivityRecord.cs</td><td>new</td><td>OData projection</td></tr>
+  <tr><td class="mono">Application/Auditing/EntityAuditLogRecord.cs</td><td>new</td><td>OData projection</td></tr>
+  <tr><td class="mono">Application/Auditing/ListAuditActivities.cs</td><td>new</td><td>OData query</td></tr>
+  <tr><td class="mono">Application/Auditing/ListEntityAuditLogs.cs</td><td>new</td><td>OData query</td></tr>
+  <tr><td class="mono">Persistence/Auditing/AuditSaveChangesInterceptor.cs</td><td>new</td><td>Change-log capture</td></tr>
+  <tr><td class="mono">Persistence/Auditing/AuditedEntities.cs</td><td>new</td><td>Whitelist and exclusions</td></tr>
+  <tr><td class="mono">Persistence/Auditing/IAuditMetadataProvider.cs</td><td>new</td><td>Actor / correlation abstraction</td></tr>
+  <tr><td class="mono">Infrastructure/Security/HttpAuditMetadataProvider.cs</td><td>new</td><td>HTTP implementation</td></tr>
+  <tr><td class="mono">Infrastructure/Auditing/AuditRetentionService.cs</td><td>new</td><td>Daily purge</td></tr>
+  <tr><td class="mono">Infrastructure/Auditing/AuditRetentionOptions.cs</td><td>new</td><td>Retention settings</td></tr>
+  <tr><td class="mono">API/Controllers/Auditing/AuditActivityRecordsController.cs</td><td>new</td><td>OData endpoint</td></tr>
+  <tr><td class="mono">API/Controllers/Auditing/EntityAuditLogRecordsController.cs</td><td>new</td><td>OData endpoint</td></tr>
+  <tr><td class="mono">Persistence/Migrations/20260826085724_AddAuditActivity.cs</td><td>new</td><td>Table and indexes</td></tr>
+  <tr><td class="mono">Persistence/DataContext.cs</td><td>modified</td><td><code>DbSet</code>, mapping, extra indexes</td></tr>
+  <tr><td class="mono">API/Extensions/ApplicationServiceExtensions.cs</td><td>modified</td><td>DI registration</td></tr>
+  <tr><td class="mono">API/Program.cs</td><td>modified</td><td>OData sets, retention log sink</td></tr>
+  <tr><td class="mono">API/appsettings.Production.json</td><td>modified</td><td>Kill switch, retention</td></tr>
+  <tr><td class="mono">docker-compose.vm.yml</td><td>modified</td><td>Environment override</td></tr>
+</table>
+
+<h4>Frontend</h4>
+<table>
+  <tr><th style="width:52%">File</th><th style="width:14%">Status</th><th>Purpose</th></tr>
+  <tr><td class="mono">features/auditing/dashboard/AuditTrailList.tsx</td><td>new</td><td>Audit Trail screen</td></tr>
+  <tr><td class="mono">features/auditing/components/RecordHistory.tsx</td><td>new</td><td>Per-record History</td></tr>
+  <tr><td class="mono">app/store/apis/auditing/auditApi.ts</td><td>new</td><td>RTK Query endpoints</td></tr>
+  <tr><td class="mono">app/models/auditing/auditActivity.ts</td><td>new</td><td>TS model</td></tr>
+  <tr><td class="mono">app/models/auditing/entityAuditLog.ts</td><td>new</td><td>TS model</td></tr>
+  <tr><td class="mono">app/store/configureStore.ts</td><td>modified</td><td>Store registration</td></tr>
+  <tr><td class="mono">app/router/Routes.tsx</td><td>modified</td><td><code>/auditTrail</code> route</td></tr>
+  <tr><td class="mono">app/layout/SignedInMenu.tsx</td><td>modified</td><td>Admin menu entry</td></tr>
+  <tr><td class="mono">app/common/messages/ar.json</td><td>modified</td><td>27 Arabic labels</td></tr>
+  <tr><td class="mono">features/accounting/payment/form/PaymentForm.tsx</td><td>modified</td><td>History modal</td></tr>
+  <tr><td class="mono">features/accounting/payment/form/PaymentActions.tsx</td><td>modified</td><td>History menu item</td></tr>
+</table>
+
+<p class="meta" style="margin-top:22px; border-top:1px solid #e2e8f0; padding-top:8px;">
+Contracts ERP — Audit Feature Implementation Report. Prepared August 2026.
+</p>
+
+</body>
+</html>

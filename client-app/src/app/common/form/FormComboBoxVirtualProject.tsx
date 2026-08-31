@@ -50,14 +50,16 @@ export const FormComboBoxVirtualProject = (fieldRenderProps: FieldRenderProps) =
     const errorId = showValidationMessage ? `${id}_error` : "";
     const labelId = label ? `${id}_label` : "";
 
-    // REFACTOR: Simplified focus/blur handlers (unchanged)
+    // Optional-called: this component is also used directly (outside a Kendo
+    // <Field>), e.g. in AddActionsModal, where onFocus/onBlur are not supplied.
+    // Calling them unguarded threw on focus and stopped the dropdown opening.
     const handleOnFocus = React.useCallback(() => {
-        onFocus();
+        onFocus?.();
         setFocused(true);
     }, [onFocus]);
 
     const handleOnBlur = React.useCallback(() => {
-        onBlur();
+        onBlur?.();
         setFocused(false);
     }, [onBlur]);
 

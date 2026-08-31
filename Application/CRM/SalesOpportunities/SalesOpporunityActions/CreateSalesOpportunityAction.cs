@@ -142,12 +142,21 @@ public class CreateSalesOpportunityAction
                     if (doneDealStage == null)
                         return Result<SalesOpportunityActionDto>.Failure("Stage 'SOSTG_CLOSED_WON' not found");
 
+                    // Same rule as the stage-change path: a unit can only be won
+                    // once. Note this path reserves the ACTION's product, which is
+                    // not necessarily the opportunity's, so it is checked on its own.
+                    var conflict = await UnitReservationGuard.CheckAsync(
+                        _context, dto.ProductId, opportunity.SalesOpportunityId, ct);
+
+                    if (conflict != null)
+                        return Result<SalesOpportunityActionDto>.Failure(conflict);
+
                     var apartment = await _context.Products
                         .FirstOrDefaultAsync(p => p.ProductId == dto.ProductId, ct);
 
                     if (apartment != null)
                     {
-                        apartment.ApartmentStatusId = "APARTMENT_RESERVED";
+                        apartment.ApartmentStatusId = UnitReservationGuard.ReservedStatusId;
                     }
 
                     opportunity.IsWon = true;

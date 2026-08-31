@@ -1,0 +1,13 @@
+<component name="ProjectRunConfigurationManager">
+    <configuration default="false" name="Playwright - UI mode" type="js.build_tools.npm" nameIsGenerated="false">
+        <package-json value="$PROJECT_DIR$/client-app/package.json"/>
+        <command value="run"/>
+        <scripts>
+            <script value="test:e2e:ui"/>
+        </scripts>
+        <node-interpreter value="project"/>
+        <package-manager value="$PROJECT_DIR$/client-app/node_modules/yarn/bin/yarn.js"/>
+        <envs/>
+        <method v="2"/>
+    </configuration>
+</component>

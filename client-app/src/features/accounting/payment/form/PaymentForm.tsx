@@ -24,6 +24,7 @@ import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import EditPaymentApplications from "./EditPaymentApplications";
 import {setCustomerId} from "../../../orders/slice/sharedOrderUiSlice";
 import CreatePartyModalForm from "../../../parties/form/CreatePartyModalForm";
+import RecordHistory from "../../../auditing/components/RecordHistory";
 
 // Props interface for the PaymentForm component
 interface Props {
@@ -126,6 +127,7 @@ export default function PaymentForm({
 
     const [showNewCustomer, setShowNewCustomer] = useState(false);
     const [showTransactionsList, setShowTransactionsList] = useState(false);
+    const [showHistory, setShowHistory] = useState(false);
     const [showPaymentApplicationsList, setShowPaymentApplicationsList] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const formRef = useRef<any>(null);
@@ -183,6 +185,8 @@ export default function PaymentForm({
         } else if (action === "outgoing") {
             dispatch(setPaymentType(2));
             dispatch(setFormEditMode(1));
+        } else if (action === "history") {
+            setShowHistory(true);
         } else if (action === "transactions") {
             setShowTransactionsList(true);
         } else if (action === "applications") {
@@ -370,6 +374,21 @@ export default function PaymentForm({
                         <PaymentTransactionsList
                             onClose={() => setShowTransactionsList(false)}
                             paymentId={payment?.paymentId || ""}
+                        />
+                    </ModalContainer>
+                )}
+
+                {showHistory && payment?.paymentId && (
+                    <ModalContainer
+                        show={showHistory}
+                        onClose={() => setShowHistory(false)}
+                        width={950}
+                    >
+                        {/* pkText must match exactly what AuditSaveChangesInterceptor writes
+                            into PK_COMBINED_VALUE_TEXT: "<PkPropertyName>=<value>". */}
+                        <RecordHistory
+                            entityName="Payment"
+                            pkText={`PaymentId=${payment.paymentId}`}
                         />
                     </ModalContainer>
                 )}

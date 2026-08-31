@@ -10,7 +10,8 @@ import {
     SalesOpportunityAction,
     OpportunityMeetingType,
     OpportunityMeetingLocation,
-    SalesOpportunityHistory
+    SalesOpportunityHistory,
+    LeadOpenOpportunity
 } from "../../../../features/CRM/models/salesOpportunity";
 
 /**
@@ -76,6 +77,26 @@ const salesOpportunitiesApi = createApi({
                     method: "GET",
                 }),
                 providesTags: [{ type: "OpportunityStage", id: "LIST" }],
+            }),
+
+            // Advisory: open opportunities the given leads are already on, so the
+            // form can warn before a duplicate is created. Not cached against a tag
+            // because it must reflect the moment the lead is picked.
+            fetchOpenOpportunitiesByLeads: builder.query<
+                LeadOpenOpportunity[],
+                { leadPartyIds: string[]; excludeOpportunityId?: string }
+            >({
+                query: ({ leadPartyIds, excludeOpportunityId }) => {
+                    const searchParams = new URLSearchParams();
+                    leadPartyIds.forEach((id) => searchParams.append('leadPartyIds', id));
+                    if (excludeOpportunityId) searchParams.append('excludeOpportunityId', excludeOpportunityId);
+
+                    return {
+                        url: `/salesOpportunities/open-by-leads?${searchParams.toString()}`,
+                        method: "GET",
+                    };
+                },
+                providesTags: [{ type: "SalesOpportunity", id: "LIST" }],
             }),
 
             fetchActionTypes: builder.query<OpportunityAction[], void>({
@@ -188,7 +209,8 @@ export const {
     useUpdateOpportunityMutation,
     useUpdateOpportunityStageMutation,
     useFetchMeetingTypesQuery,
-    useFetchMeetingLocationsQuery
+    useFetchMeetingLocationsQuery,
+    useFetchOpenOpportunitiesByLeadsQuery
 } = salesOpportunitiesApi;
 
 export { salesOpportunitiesApi };

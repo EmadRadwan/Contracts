@@ -26,6 +26,8 @@ import {
   Paper,
   Chip,
   Alert,
+  CircularProgress,
+  LinearProgress,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -66,6 +68,34 @@ const DATA_SOURCE_MAP: Record<string, string> = {
   other: 'OTHER',
 };
 
+/**
+ * Excel stores 01005556677 typed into a General cell as the NUMBER 1005556677 -
+ * the leading zero is gone before the file ever reaches us, and String() on the
+ * way out cannot bring it back. Only a cell that arrived as a number can have
+ * lost one, so repair those and leave text cells exactly as they were typed.
+ *
+ * 10 digits starting with 1 is the local mobile shape with its zero stripped
+ * (the lead form's own placeholder is 01XXXXXXXXX). Anything else is left alone
+ * rather than guessed at.
+ */
+const restoreMobileLeadingZero = (value: any): string => {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'number') {
+    const digits = String(value);
+    return digits.length === 10 && digits.startsWith('1') ? `0${digits}` : digits;
+  }
+  return String(value).trim();
+};
+
+/**
+ * Applied once when the sheet is loaded, not on save, so the grid shows the
+ * number that will actually be stored and the user can correct it first.
+ */
+const normalizeImportedRow = (row: any) => ({
+  ...row,
+  'Mobile Number': restoreMobileLeadingZero(row['Mobile Number']),
+});
+
 const mapRowToDto = (row: any) => ({
   firstName: row['First Name'] ?? '',
   middleName: row['Last Name'] ?? '',
@@ -83,11 +113,30 @@ const mapRowToDto = (row: any) => ({
   geoId: row['Country'] ?? '',
 });
 
+/**
+ * The grid columns come straight from the spreadsheet's header row, so without
+ * this they stay English even in Arabic. Any header not listed - an extra column
+ * the user happens to have - keeps its own text, which is the only sensible
+ * fallback for a name we do not know.
+ */
+const COLUMN_LABEL_KEYS: Record<string, string> = {
+  'First Name': 'firstName',
+  'Last Name': 'lastName',
+  'Title': 'personalTitle',
+  'Email': 'email',
+  'Mobile Number': 'mobileNumber',
+  'Lead source': 'leadSource',
+  'Address1': 'address1',
+  'Address2': 'address2',
+  'City': 'city',
+  'Country': 'country',
+};
+
 const localizationKey = 'crm.leads.imported';
 
 const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onClose }) => {
   const { getTranslatedLabel } = useTranslationHelper();
-  const [gridData, setGridData] = useState(data);
+  const [gridData, setGridData] = useState(() => data.map(normalizeImportedRow));
   const [dataState, setDataState] = useState<State>({ skip: 0, take: 30 });
   const [createBatchLeads, { isLoading: isSaving }] = useCreateLeadsBatchMutation();
   const [batchResult, setBatchResult] = useState<BatchCreateLeadsResult | null>(null);
@@ -142,6 +191,7 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
         <IconButton
           size="small"
           color="error"
+          disabled={isSaving}
           onClick={() => {
             const newData = gridData.filter((_, i) => i !== props.dataIndex);
             setGridData(newData);
@@ -174,8 +224,13 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
     );
   };
 
+  const columnTitle = (col: string) => {
+    const key = COLUMN_LABEL_KEYS[col.trim()];
+    return key ? getTranslatedLabel(`${localizationKey}.column.${key}`, col) : col;
+  };
+
   const editableColumns = columns.map((col) => (
-    <Column key={col} field={col} title={col} editor="text" cell={MyEditCell} />
+    <Column key={col} field={col} title={columnTitle(col)} editor="text" cell={MyEditCell} />
   ));
 
   return (
@@ -193,15 +248,30 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
               onClick={handleSave}
               disabled={isSaving}
             >
-              <AddIcon sx={{ ml: language === "ar" ? 0.5 : 0, mr: language === "ar" ? 0 : 0.5 }} />
+              {isSaving ? (
+                <CircularProgress
+                  size={16}
+                  color="inherit"
+                  sx={{ ml: language === "ar" ? 0.5 : 0, mr: language === "ar" ? 0 : 0.5 }}
+                />
+              ) : (
+                <AddIcon sx={{ ml: language === "ar" ? 0.5 : 0, mr: language === "ar" ? 0 : 0.5 }} />
+              )}
               {isSaving
                 ? getTranslatedLabel(`${localizationKey}.saving`, 'Saving...')
                 : getTranslatedLabel(`${localizationKey}.save`, 'Save')}
             </Button>
-            <Button variant="outlined" onClick={onClose}>
+            {/* Closing mid-save would abandon an import that is still running. */}
+            <Button variant="outlined" onClick={onClose} disabled={isSaving}>
               {getTranslatedLabel(`${localizationKey}.close`, 'Close')}
             </Button>
           </Box>
+        </Box>
+
+        {/* A whole sheet can take a while; the bar says the import is running.
+            Fixed height so its appearance never shifts the grid. */}
+        <Box sx={{ height: 4, mb: 1 }}>
+          {isSaving && <LinearProgress />}
         </Box>
 
         {failedIndices.size > 0 && (

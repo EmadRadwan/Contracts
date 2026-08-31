@@ -46,6 +46,10 @@ public class LeadRecord
     public string? OrganizationName { get; set; }
     public string? LeadTemperatureId { get; set; }
 
+    // Broker behind an INDIRECT lead - current AGENT relationship (null when none)
+    public string? BrokerPartyId { get; set; }
+    public string? BrokerName { get; set; }
+
     // Assignment - current LEAD_OWNER relationship (null when unassigned)
     public string? OwnerPartyId { get; set; }
     public string? OwnerName { get; set; }

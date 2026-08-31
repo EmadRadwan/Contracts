@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Application.Core;
 using Application.Interfaces;
 using Domain;
@@ -36,8 +37,28 @@ public class CreateLeadsBatch
         public string Reason { get; init; } = string.Empty;
     }
 
+    /// <summary>
+    /// A lead already in the database that holds one of the contacts being imported.
+    /// </summary>
+    public record ExistingLeadRow
+    {
+        public string Value { get; init; } = string.Empty;
+        public string PartyId { get; init; } = string.Empty;
+        public string? Name { get; init; }
+
+        public string Describe() =>
+            string.IsNullOrWhiteSpace(Name) ? $"Lead {PartyId}" : $"{Name} ({PartyId})";
+    }
+
     public class Handler : IRequestHandler<Command, Result<BatchCreateLeadsResult>>
     {
+        /// <summary>
+        /// The shape optionalEmailValidator accepts on the single lead form, anchored
+        /// so a value cannot pass by merely containing an address somewhere inside it.
+        /// </summary>
+        private static readonly Regex EmailPattern =
+            new(@"^\S+@\S+\.\S+$", RegexOptions.Compiled);
+
         private readonly DataContext _context;
         private readonly IUserAccessor _userAccessor;
         private readonly IUtilityService _utilityService;
@@ -95,6 +116,28 @@ public class CreateLeadsBatch
                     }.Contains(x.ContactMechPurposeTypeId))
                     .ToDictionaryAsync(x => x.ContactMechPurposeTypeId, ct);
 
+                // Country resolution table. PostalAddress.CountryGeoId is a foreign
+                // key (POST_ADDR_CGEO) and this batch saves once, after the loop -
+                // so an unknown country cannot be caught by the per-row try/catch
+                // below. It would take the whole import down, valid rows included.
+                // Resolving (and rejecting) up front is what keeps a bad cell a
+                // row-level failure.
+                var countries = await _context.Geos
+                    .Where(g => g.GeoTypeId == "COUNTRY")
+                    .Select(g => new { g.GeoId, g.GeoName, g.GeoCode, g.Abbreviation })
+                    .ToListAsync(ct);
+
+                // Spreadsheets carry country names far more often than geo ids, so
+                // accept either. Ids are loaded first: an id always beats another
+                // country's name if the two ever collide.
+                var countryLookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var c in countries)
+                    countryLookup.TryAdd(c.GeoId.Trim(), c.GeoId);
+                foreach (var c in countries)
+                    foreach (var alias in new[] { c.GeoCode, c.Abbreviation, c.GeoName })
+                        if (!string.IsNullOrWhiteSpace(alias))
+                            countryLookup.TryAdd(alias.Trim(), c.GeoId);
+
                 // Detect duplicate emails within the batch
                 var emailsInBatch = dtoList
                     .Where(d => !string.IsNullOrWhiteSpace(d.InfoString))
@@ -103,6 +146,72 @@ public class CreateLeadsBatch
                     .Where(g => g.Count() > 1)
                     .Select(g => g.Key)
                     .ToHashSet();
+
+                // ... and duplicate mobile numbers, which the single-lead path also
+                // treats as identifying.
+                var mobilesInBatch = dtoList
+                    .Where(d => !string.IsNullOrWhiteSpace(d.MobileContactNumber))
+                    .Select(d => d.MobileContactNumber!.Trim())
+                    .GroupBy(m => m)
+                    .Where(g => g.Count() > 1)
+                    .Select(g => g.Key)
+                    .ToHashSet();
+
+                // Leads that ALREADY EXIST with one of the contacts in this file.
+                // CreateLead (single) has always refused these; the batch used to
+                // import them happily, so re-uploading a file duplicated everyone.
+                // Two queries for the whole batch, not two per row.
+                var batchEmails = dtoList
+                    .Where(d => !string.IsNullOrWhiteSpace(d.InfoString))
+                    .Select(d => d.InfoString!.Trim())
+                    .Distinct()
+                    .ToList();
+
+                var batchMobiles = dtoList
+                    .Where(d => !string.IsNullOrWhiteSpace(d.MobileContactNumber))
+                    .Select(d => d.MobileContactNumber!.Trim())
+                    .Distinct()
+                    .ToList();
+
+                // Comparison is left to the column collation, exactly as the single
+                // create does - no ToLower() on the column, so the index still works.
+                var existingEmailRows = batchEmails.Count == 0
+                    ? new List<ExistingLeadRow>()
+                    : await _context.PartyContactMeches
+                        .Where(pcm => pcm.ContactMech.ContactMechTypeId == "EMAIL_ADDRESS"
+                                   && pcm.ContactMech.InfoString != null
+                                   && batchEmails.Contains(pcm.ContactMech.InfoString)
+                                   && pcm.Party.PartyRoles.Any(r => r.RoleType.RoleTypeId == "LEAD"))
+                        .Select(pcm => new ExistingLeadRow
+                        {
+                            Value = pcm.ContactMech.InfoString!,
+                            PartyId = pcm.PartyId,
+                            Name = pcm.Party.Description
+                        })
+                        .ToListAsync(ct);
+
+                var existingMobileRows = batchMobiles.Count == 0
+                    ? new List<ExistingLeadRow>()
+                    : await _context.PartyContactMeches
+                        .Where(pcm => pcm.ContactMech.TelecomNumber != null
+                                   && pcm.ContactMech.TelecomNumber.ContactNumber != null
+                                   && batchMobiles.Contains(pcm.ContactMech.TelecomNumber.ContactNumber)
+                                   && pcm.Party.PartyRoles.Any(r => r.RoleType.RoleTypeId == "LEAD"))
+                        .Select(pcm => new ExistingLeadRow
+                        {
+                            Value = pcm.ContactMech.TelecomNumber!.ContactNumber!,
+                            PartyId = pcm.PartyId,
+                            Name = pcm.Party.Description
+                        })
+                        .ToListAsync(ct);
+
+                var existingByEmail = existingEmailRows
+                    .GroupBy(x => x.Value.Trim().ToLower())
+                    .ToDictionary(g => g.Key, g => g.First());
+
+                var existingByMobile = existingMobileRows
+                    .GroupBy(x => x.Value.Trim())
+                    .ToDictionary(g => g.Key, g => g.First());
 
                 // ==================== MUTABLE COUNTERS ====================
                 int successful = 0;
@@ -145,6 +254,24 @@ public class CreateLeadsBatch
                         }
 
                         var email = dto.InfoString?.Trim().ToLower();
+
+                        // Email stays optional, but a supplied one has to be usable -
+                        // the single form has always enforced this and the import
+                        // did not, so nonsense addresses went straight into
+                        // ContactMech rows typed EMAIL_ADDRESS.
+                        if (!string.IsNullOrWhiteSpace(email) && !EmailPattern.IsMatch(email))
+                        {
+                            errors.Add(new BatchLeadError
+                            {
+                                Index = i,
+                                FirstName = dto.FirstName,
+                                Email = dto.InfoString,
+                                Reason = "Email is not a valid format"
+                            });
+                            failed++;
+                            continue;
+                        }
+
                         if (!string.IsNullOrWhiteSpace(email) && emailsInBatch.Contains(email))
                         {
                             errors.Add(new BatchLeadError
@@ -156,6 +283,71 @@ public class CreateLeadsBatch
                             });
                             failed++;
                             continue;
+                        }
+
+                        var mobile = dto.MobileContactNumber?.Trim();
+                        if (!string.IsNullOrWhiteSpace(mobile) && mobilesInBatch.Contains(mobile))
+                        {
+                            errors.Add(new BatchLeadError
+                            {
+                                Index = i,
+                                FirstName = dto.FirstName,
+                                Email = dto.InfoString,
+                                Reason = "Duplicate mobile number in batch"
+                            });
+                            failed++;
+                            continue;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(email) &&
+                            existingByEmail.TryGetValue(email, out var emailOwner))
+                        {
+                            errors.Add(new BatchLeadError
+                            {
+                                Index = i,
+                                FirstName = dto.FirstName,
+                                Email = dto.InfoString,
+                                Reason = $"{emailOwner.Describe()} already has this email address"
+                            });
+                            failed++;
+                            continue;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(mobile) &&
+                            existingByMobile.TryGetValue(mobile, out var mobileOwner))
+                        {
+                            errors.Add(new BatchLeadError
+                            {
+                                Index = i,
+                                FirstName = dto.FirstName,
+                                Email = dto.InfoString,
+                                Reason = $"{mobileOwner.Describe()} already has this mobile number"
+                            });
+                            failed++;
+                            continue;
+                        }
+
+                        // Resolve the country before anything is written. Validated
+                        // whenever a value is supplied, even on rows with no address
+                        // line - so a whole column of country names is reported at
+                        // once instead of row by row as addresses happen to appear.
+                        string? countryGeoId = null;
+                        if (!string.IsNullOrWhiteSpace(dto.GeoId))
+                        {
+                            if (!countryLookup.TryGetValue(dto.GeoId.Trim(), out var resolvedCountry))
+                            {
+                                errors.Add(new BatchLeadError
+                                {
+                                    Index = i,
+                                    FirstName = dto.FirstName,
+                                    Email = dto.InfoString,
+                                    Reason = $"Country '{dto.GeoId.Trim()}' is not a known country"
+                                });
+                                failed++;
+                                continue;
+                            }
+
+                            countryGeoId = resolvedCountry;
                         }
 
                         // ------------------- Create Party -------------------
@@ -314,7 +506,7 @@ public class CreateLeadsBatch
                                 Address1 = dto.Address1,
                                 Address2 = dto.Address2,
                                 City = dto.City,
-                                CountryGeoId = dto.GeoId,
+                                CountryGeoId = countryGeoId,
                                 CreatedStamp = stamp,
                                 LastUpdatedStamp = stamp
                             });

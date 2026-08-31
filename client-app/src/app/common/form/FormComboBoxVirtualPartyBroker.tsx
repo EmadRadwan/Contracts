@@ -22,6 +22,10 @@ export const FormComboBoxVirtualPartyBroker = (fieldRenderProps: FieldRenderProp
         wrapperStyle,
         value,
         onChange,
+        // Optional: lets a caller inside a MUI Dialog anchor the popup to the
+        // modal, the same way the sales-rep combo is handled there. Undefined
+        // everywhere else, so full-page usage is unchanged.
+        popupSettings,
 
     } = fieldRenderProps;
     const editorRef = React.useRef(null);
@@ -245,6 +249,7 @@ export const FormComboBoxVirtualPartyBroker = (fieldRenderProps: FieldRenderProp
                     total: total,
                 }), [total])}
                 onPageChange={pageChange}
+                popupSettings={popupSettings}
                 //style={{width: "200px"}}
             />
             {

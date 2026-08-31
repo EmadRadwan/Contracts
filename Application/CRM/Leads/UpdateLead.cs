@@ -64,6 +64,148 @@ public class UpdateLead
                 if (party == null)
                     return Result<LeadDto>.Failure("Lead not found");
 
+                // ---------------------
+                // DUPLICATE CHECK
+                // ---------------------
+                // Create (Parties/CreateLead) refuses to make a second lead with
+                // the same email or mobile; an edit must not be able to sneak one
+                // in through the back door. Same two probes, minus this lead.
+                Party? conflictingParty = null;
+                string? matchedField = null;
+                string? matchedValue = null;
+
+                if (!string.IsNullOrWhiteSpace(dto.Email))
+                {
+                    conflictingParty = await _context.ContactMeches
+                        .Where(cm =>
+                            cm.InfoString == dto.Email &&
+                            cm.ContactMechType.ContactMechTypeId == "EMAIL_ADDRESS")
+                        .SelectMany(cm => cm.PartyContactMeches)
+                        .Select(pcm => pcm.Party)
+                        .Where(p => p.PartyId != dto.PartyId &&
+                                    p.PartyRoles.Any(r => r.RoleType.RoleTypeId == "LEAD"))
+                        .FirstOrDefaultAsync(ct);
+
+                    if (conflictingParty != null)
+                    {
+                        matchedField = "EMAIL";
+                        matchedValue = dto.Email;
+                    }
+                }
+
+                if (conflictingParty == null && !string.IsNullOrWhiteSpace(dto.MobilePhone))
+                {
+                    conflictingParty = await _context.TelecomNumbers
+                        .Where(t => t.ContactNumber == dto.MobilePhone)
+                        .Select(t => t.ContactMech)
+                        .SelectMany(cm => cm.PartyContactMeches)
+                        .Select(pcm => pcm.Party)
+                        .Where(p => p.PartyId != dto.PartyId &&
+                                    p.PartyRoles.Any(r => r.RoleType.RoleTypeId == "LEAD"))
+                        .FirstOrDefaultAsync(ct);
+
+                    if (conflictingParty != null)
+                    {
+                        matchedField = "MOBILE";
+                        matchedValue = dto.MobilePhone;
+                    }
+                }
+
+                // Mirrors the create side: this is not an error, it is a pointer
+                // to the lead that already holds these details, so the UI can
+                // offer to open it.
+                if (conflictingParty != null)
+                {
+                    await transaction.RollbackAsync(ct);
+
+                    var conflictingPerson = await _context.Persons
+                        .FirstOrDefaultAsync(p => p.PartyId == conflictingParty.PartyId, ct);
+
+                    return Result<LeadDto>.Success(new LeadDto
+                    {
+                        PartyId = conflictingParty.PartyId,
+                        FirstName = conflictingPerson?.FirstName,
+                        LastName = conflictingPerson?.MiddleName,
+                        FullName = conflictingParty.Description,
+                        IsAlreadyCreated = true,
+                        DuplicateMatchedField = matchedField,
+                        DuplicateMatchedValue = matchedValue
+                    });
+                }
+
+                // ---------------------
+                // BROKER (INDIRECT only)
+                // ---------------------
+                // Enforced on edit as well as create, so a legacy indirect lead
+                // with no broker gets one the first time anybody touches it.
+                Party? broker = null;
+                if (LeadBrokerConstants.RequiresBroker(dto.DataSourceId))
+                {
+                    if (string.IsNullOrWhiteSpace(dto.BrokerPartyId))
+                        return Result<LeadDto>.Failure("A broker is required when the lead source is Indirect");
+
+                    broker = await _context.Parties
+                        .FirstOrDefaultAsync(p => p.PartyId == dto.BrokerPartyId, ct);
+
+                    if (broker == null)
+                        return Result<LeadDto>.Failure($"Broker '{dto.BrokerPartyId}' not found");
+
+                    // PARTY_RELATIONSHIP has FKs on (PartyId, RoleTypeId) at both
+                    // ends, so the broker must genuinely hold BROKER.
+                    var isBroker = await _context.PartyRoles.AnyAsync(
+                        pr => pr.PartyId == dto.BrokerPartyId
+                           && pr.RoleTypeId == LeadBrokerConstants.BrokerRoleTypeId, ct);
+
+                    if (!isBroker)
+                        return Result<LeadDto>.Failure(
+                            $"Party '{dto.BrokerPartyId}' is not a Broker and cannot be credited with a lead");
+                }
+
+                // The open broker link, if there is one.
+                var currentBrokerLink = await _context.PartyRelationships
+                    .FirstOrDefaultAsync(pr =>
+                        pr.PartyIdTo == dto.PartyId
+                        && pr.PartyRelationshipTypeId == LeadBrokerConstants.RelationshipTypeId
+                        && pr.RoleTypeIdFrom == LeadBrokerConstants.BrokerRoleTypeId
+                        && pr.ThruDate == null, ct);
+
+                if (broker == null)
+                {
+                    // Source moved away from Indirect - the old credit no longer
+                    // applies, but it is closed rather than deleted so the history
+                    // of who brought the lead in survives.
+                    if (currentBrokerLink != null)
+                    {
+                        currentBrokerLink.ThruDate = stamp;
+                        currentBrokerLink.LastUpdatedStamp = stamp;
+                        currentBrokerLink.LastUpdatedTxStamp = stamp;
+                    }
+                }
+                else if (currentBrokerLink == null || currentBrokerLink.PartyIdFrom != broker.PartyId)
+                {
+                    if (currentBrokerLink != null)
+                    {
+                        currentBrokerLink.ThruDate = stamp;
+                        currentBrokerLink.LastUpdatedStamp = stamp;
+                        currentBrokerLink.LastUpdatedTxStamp = stamp;
+                    }
+
+                    _context.PartyRelationships.Add(new PartyRelationship
+                    {
+                        PartyIdFrom = broker.PartyId,
+                        RoleTypeIdFrom = LeadBrokerConstants.BrokerRoleTypeId,
+                        PartyIdTo = party.PartyId,
+                        RoleTypeIdTo = LeadBrokerConstants.LeadRoleTypeId,
+                        PartyRelationshipTypeId = LeadBrokerConstants.RelationshipTypeId,
+                        FromDate = stamp,
+                        ThruDate = null,
+                        CreatedStamp = stamp,
+                        LastUpdatedStamp = stamp,
+                        CreatedTxStamp = stamp,
+                        LastUpdatedTxStamp = stamp
+                    });
+                }
+
                 // Split FullName into FirstName and LastName
                 var fullName = dto.FullName ?? "";
                 var nameParts = fullName.Split(' ', 2);
@@ -237,6 +379,8 @@ public class UpdateLead
                     DataSourceId = dto.DataSourceId,
                     StatusId = party.Status?.StatusId,
                     StatusDescription = party.Status?.Description,
+                    BrokerPartyId = broker?.PartyId,
+                    BrokerName = broker?.Description,
                     CreatedStamp = party.CreatedStamp
                 };
 

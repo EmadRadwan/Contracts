@@ -18,6 +18,8 @@ import {
     TableHead,
     TableRow,
     Paper,
+    CircularProgress,
+    LinearProgress,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { toast } from 'react-toastify';
@@ -123,6 +125,12 @@ const BulkAssignLeadsModal: React.FC<BulkAssignLeadsModalProps> = ({
                 </IconButton>
             </DialogTitle>
 
+            {/* Bulk assignment can take a few seconds for a large selection -
+                the bar tells the user the dialog is working. */}
+            <Box sx={{ height: 4 }}>
+                {isLoading && <LinearProgress />}
+            </Box>
+
             <DialogContent sx={{ pt: 3 }}>
                 {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -189,6 +197,7 @@ const BulkAssignLeadsModal: React.FC<BulkAssignLeadsModalProps> = ({
                                 value={selectedRep}
                                 label={getTranslatedLabel(`${localizationKey}.newOwner`, 'Assign to *')}
                                 disabled={isLoading}
+                                popupSettings={{ appendTo: document.querySelector('.MuiModal-root') as HTMLElement }}
                                 onChange={(e: any) => {
                                     setSelectedRep(e.value || null);
                                     setError(null);
@@ -225,8 +234,11 @@ const BulkAssignLeadsModal: React.FC<BulkAssignLeadsModalProps> = ({
                             variant="contained"
                             onClick={handleAssign}
                             disabled={!selectedRep || isLoading || leadPartyIds.length === 0}
+                            startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : undefined}
                         >
-                            {getTranslatedLabel(`${localizationKey}.assign`, 'Assign')}
+                            {isLoading
+                                ? getTranslatedLabel(`${localizationKey}.assigning`, 'Assigning...')
+                                : getTranslatedLabel(`${localizationKey}.assign`, 'Assign')}
                         </Button>
                     </>
                 )}

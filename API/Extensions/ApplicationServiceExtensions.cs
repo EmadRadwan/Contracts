@@ -21,6 +21,7 @@ using Application.Services;
 using Application.Shipments;
 using Application.WorkEfforts;
 using FluentValidation;
+using Infrastructure.Auditing;
 using Infrastructure.Contents;
 using Infrastructure.Security;
 using Infrastructure.Pdf;
@@ -90,6 +91,9 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IAuditMetadataProvider, HttpAuditMetadataProvider>();
         services.AddScoped<AuditSaveChangesInterceptor>();
         services.AddScoped<IAuditActivityWriter, AuditActivityWriter>();
+        // Daily purge of the two audit tables. Has its own enable flag under
+        // Auditing:Retention, independent of whether capture is switched on.
+        services.AddHostedService<AuditRetentionService>();
         services.AddScoped<ICommonService, CommonService>();
         services.AddScoped<IGeneralLedgerService, GeneralLedgerService>();
         services.AddScoped<IAcctgTransService, AcctgTransService>();

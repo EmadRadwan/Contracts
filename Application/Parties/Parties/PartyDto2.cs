@@ -67,6 +67,18 @@ public class PartyDto2
     public TimeSpan? AttendanceStartsAt { get; set; }
     public decimal? VacationBalance { get; set; }
 
+    /// <summary>
+    /// The broker company that brought this lead in. Required when DataSourceId
+    /// is INDIRECT, meaningless otherwise.
+    /// </summary>
+    public string? BrokerPartyId { get; set; }
+    public string? BrokerName { get; set; }
+
     // for error feedback
     public bool? IsAlreadyCreated {get; set;}
+
+    // Which field matched an existing lead, so the UI can name it instead of
+    // just saying "duplicate": "EMAIL" or "MOBILE", plus the offending value.
+    public string? DuplicateMatchedField { get; set; }
+    public string? DuplicateMatchedValue { get; set; }
 }

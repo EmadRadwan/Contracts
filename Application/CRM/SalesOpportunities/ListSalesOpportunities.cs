@@ -156,21 +156,42 @@ public class ListSalesOpportunities
             return Result<List<SalesOpportunityDto>>.Success(result);
         }
 
+        /// <summary>
+        /// The display name for a party on a board card.
+        ///
+        /// Party.Description holds the whole name in one column - that is the
+        /// convention across the app - so it is preferred over reassembling the
+        /// PERSON parts. Rebuilding from the parts got this wrong in both
+        /// directions: it dropped MIDDLE_NAME (16 parties carry one, so an
+        /// imported lead showed only its first name), and where FIRST_NAME
+        /// already held the whole name it appended LAST_NAME again and repeated
+        /// a fragment.
+        /// </summary>
         private static string GetPartyName(Domain.Party? party)
         {
             if (party == null) return "";
 
+            if (!string.IsNullOrWhiteSpace(party.Description))
+                return party.Description.Trim();
+
+            // Fallbacks for parties with no description. All three name parts,
+            // not just two.
             if (party.Person != null)
             {
-                return $"{party.Person.FirstName} {party.Person.LastName}".Trim();
+                var name = string.Join(" ", new[]
+                {
+                    party.Person.FirstName,
+                    party.Person.MiddleName,
+                    party.Person.LastName
+                }.Where(part => !string.IsNullOrWhiteSpace(part)));
+
+                if (!string.IsNullOrWhiteSpace(name)) return name;
             }
 
-            if (party.PartyGroup != null)
-            {
-                return party.PartyGroup.GroupName ?? "";
-            }
+            if (!string.IsNullOrWhiteSpace(party.PartyGroup?.GroupName))
+                return party.PartyGroup.GroupName.Trim();
 
-            return party.Description ?? party.PartyId;
+            return party.PartyId;
         }
     }
 }

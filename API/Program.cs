@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using API.Controllers.Accounting.Transactions;
 using API.Controllers.HumanResources;
@@ -32,6 +32,7 @@ using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
+using Application.Auditing;
 using Serilog;
 using Serilog.Enrichers.ExceptionProperties;
 using Serilog.Events;
@@ -56,6 +57,19 @@ Log.Logger = new LoggerConfiguration()
         outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3} T{ThreadId} R{RequestId}] {Message:lj}{NewLine}{Exception}",
         rollingInterval: RollingInterval.Day,
         retainedFileCountLimit: 7) // Keep 7 days of logs
+    // The audit retention purge reports at Information, which the Warning floor and both sink
+    // restrictions above would swallow. Give it its own file instead of lowering the global level:
+    // a job that deletes millions of rows should leave a record, but it should not drag every
+    // other Info log into the main log with it.
+    .MinimumLevel.Override("Infrastructure.Auditing", LogEventLevel.Information)
+    .WriteTo.Logger(lc => lc
+        .Filter.ByIncludingOnly(Matching.FromSource("Infrastructure.Auditing"))
+        .WriteTo.File(
+            Path.Combine(logDirectory, "audit-retention.log"),
+            LogEventLevel.Information,
+            outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss}] {Message:lj}{NewLine}{Exception}",
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: 30))
     .MinimumLevel.Warning() // REFACTOR: Set global minimum to Warning to filter out Info logs
     .CreateLogger();
 
@@ -238,6 +252,10 @@ static IEdmModel GetEdmModel()
     modelBuilder.EntitySet<InternalAccountingOrganizationRecord>("InternalAccountingOrganizationRecord");
     modelBuilder.EntitySet<OrganizationGlAccountRecord>("OrganizationGlAccountRecord");
     modelBuilder.EntitySet<GlAccountTypeDefaultRecord>("GlAccountTypeDefaultRecord");
+
+    // Auditing — see Persistence/Auditing/ and Application/Auditing/.
+    modelBuilder.EntitySet<AuditActivityRecord>("AuditActivityRecords");
+    modelBuilder.EntitySet<EntityAuditLogRecord>("EntityAuditLogRecords");
     modelBuilder.EntitySet<AccountingTransactionRecord>("AccountingTransactionRecord");
     modelBuilder.EntitySet<AccountingTransactionEntryRecord>("AccountingTransactionEntryRecord");
     modelBuilder.EntitySet<WorkEffortReservationSummaryRecord>("WorkEffortReservationSummaryRecord");

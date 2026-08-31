@@ -119,6 +119,26 @@ public class ListLeads
 
                     LeadTemperatureId = p.LeadTemperatureId,
 
+                    // Broker behind an indirect lead - the open AGENT relationship
+                    // from a BROKER. Projected here so the edit form can prefill it
+                    // (it is required to save, so making the user re-pick it on
+                    // every edit would be punishing).
+                    BrokerPartyId = _context.PartyRelationships
+                        .Where(pr => pr.PartyIdTo == p.PartyId
+                                  && pr.PartyRelationshipTypeId == LeadBrokerConstants.RelationshipTypeId
+                                  && pr.RoleTypeIdFrom == LeadBrokerConstants.BrokerRoleTypeId
+                                  && pr.ThruDate == null)
+                        .Select(pr => pr.PartyIdFrom)
+                        .FirstOrDefault(),
+
+                    BrokerName = (from pr in _context.PartyRelationships
+                                  join b in _context.Parties on pr.PartyIdFrom equals b.PartyId
+                                  where pr.PartyIdTo == p.PartyId
+                                     && pr.PartyRelationshipTypeId == LeadBrokerConstants.RelationshipTypeId
+                                     && pr.RoleTypeIdFrom == LeadBrokerConstants.BrokerRoleTypeId
+                                     && pr.ThruDate == null
+                                  select b.Description).FirstOrDefault(),
+
                     // Current owner - the open LEAD_OWNER relationship, if any.
                     // Kept inside the IQueryable so OData can sort and filter on
                     // owner server-side rather than per-page.

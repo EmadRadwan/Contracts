@@ -207,6 +207,16 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                         {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.applications`, "Payment Applications")}
                     </MenuItem>
                 )}
+
+                {/* Field-level change history for this payment, from ENTITY_AUDIT_LOG.
+                    Gated on Admin to match the Audit Trail screen; loosen if accountants need it. */}
+                {payment?.paymentId && (
+                    <Can perform="Admin">
+                        <MenuItem onClick={() => onMenuSelect('history')}>
+                            {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.history`, "سجل التغييرات")}
+                        </MenuItem>
+                    </Can>
+                )}
             </Menu>
 
             <Dialog

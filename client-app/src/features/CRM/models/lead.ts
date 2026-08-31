@@ -52,6 +52,20 @@ export interface Lead {
     ownerPartyId?: string;
     ownerName?: string;
     assignedDate?: string;
+
+    // Broker behind an INDIRECT lead. The form holds this as the combo's
+    // {fromPartyId, fromPartyName} object and unwraps it on submit; the API
+    // sends and receives a plain id.
+    brokerPartyId?: any;
+    brokerName?: string;
+
+    // Duplicate feedback. When isAlreadyCreated is true, the payload describes
+    // the EXISTING lead that already holds these contact details - not the one
+    // that was being saved. Create and update both answer in this shape.
+    isAlreadyCreated?: boolean;
+    duplicateMatchedField?: 'EMAIL' | 'MOBILE';
+    duplicateMatchedValue?: string;
+    description?: string;   // create returns the existing lead's name here
 }
 
 /**

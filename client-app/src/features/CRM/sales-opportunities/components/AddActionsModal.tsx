@@ -17,8 +17,15 @@ import {
     Avatar,
     Tabs,
     Tab,
+    Grid,
 } from '@mui/material';
-import { Person as PersonIcon, History as HistoryIcon, Assignment as AssignmentIcon } from '@mui/icons-material';
+import {
+    Person as PersonIcon,
+    History as HistoryIcon,
+    Assignment as AssignmentIcon,
+    LocationCity as ProjectIcon,
+    Apartment as UnitIcon,
+} from '@mui/icons-material';
 import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper';
 import { OpportunityMeetingLocation, OpportunityMeetingType, SalesOpportunity, SalesOpportunityAction } from '../../models/salesOpportunity';
 import {
@@ -168,6 +175,27 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
 
     const isActionDisabled = opportunity.isClosed || opportunity.isWon
 
+    // Who the deal is with, which is what identifies it to a salesperson - the
+    // opportunity id means nothing to them. Falls back through the deal's own
+    // name to the id so the header is never empty. `leads` is optional-chained:
+    // an opportunity with no linked lead rows would otherwise throw here.
+    const headerName =
+        opportunity.leads?.[0]?.partyName?.trim() ||
+        opportunity.opportunityName?.trim() ||
+        opportunity.salesOpportunityId ||
+        '';
+
+    // More than one lead on the deal - name the first and count the rest.
+    const otherLeadCount = Math.max((opportunity.leads?.length ?? 0) - 1, 0);
+
+    // What the deal is actually for. The project falls back to its id because
+    // WORK_EFFORT_NAME is frequently null - the readable name lives in
+    // PROJECT_NAME, which the API already prefers. The unit is shown by id
+    // rather than name: "A1-01" is what people quote to each other, not
+    // "Apartment A1-01".
+    const projectLabel = opportunity.workEffortName?.trim() || opportunity.workEffortId?.trim();
+    const unitLabel = opportunity.productId?.trim();
+
     return (
         <Modal
             open={open}
@@ -182,7 +210,8 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
                     top: '50%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    width: 580,
+                    width: 720,
+                    maxWidth: '95vw',
                     maxHeight: '95vh',
                     bgcolor: 'background.paper',
                     borderRadius: 2,
@@ -193,8 +222,47 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
                 {/* Header */}
                 <Box sx={{ p: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Typography variant="h6" fontWeight="bold" sx={{ textAlign: 'center' }}>
-                        {getTranslatedLabel(`${localizationKey}.title`, 'Sales Opporunity: {0}').replace("{0}", opportunity.salesOpportunityId || "")}
+                        {headerName}
+                        {otherLeadCount > 0 && (
+                            <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                                {getTranslatedLabel(`${localizationKey}.moreLeads`, '+{0} more')
+                                    .replace('{0}', String(otherLeadCount))}
+                            </Typography>
+                        )}
                     </Typography>
+
+                    {/* What the deal is for. Only rendered when there is something to
+                        show, so an opportunity with no project or unit keeps a clean
+                        one-line header rather than an empty band. */}
+                    {(projectLabel || unitLabel) && (
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            justifyContent="center"
+                            sx={{ mt: 1.5 }}
+                            dir={language === 'ar' ? 'rtl' : 'ltr'}
+                        >
+                            {projectLabel && (
+                                <Chip
+                                    icon={<ProjectIcon />}
+                                    label={projectLabel}
+                                    size="small"
+                                    color="primary"
+                                    sx={{ fontWeight: 600 }}
+                                />
+                            )}
+                            {unitLabel && (
+                                <Chip
+                                    icon={<UnitIcon />}
+                                    label={unitLabel}
+                                    size="small"
+                                    color="success"
+                                    // The unit id is always latin even in Arabic.
+                                    sx={{ fontWeight: 600, direction: 'ltr' }}
+                                />
+                            )}
+                        </Stack>
+                    )}
                 </Box>
 
                 {/* Tabs */}
@@ -219,10 +287,19 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
                 </Tabs>
                 <TabPanel value={activeTab} index={0}>
 
-                    {/* Form Section - Fixed height, not scrollable */}
-                    <Box sx={{ p: 3 }}>
+                    {/* Form Section. Two columns: the short selects pair up so that
+                        picking Meeting - which reveals four extra fields - does not
+                        push the Save button below the fold. */}
+                    <Box sx={{ p: 3, pb: 2 }}>
+                      {/* The theme carries direction: "rtl" but nothing sets dir on the
+                          DOM, so a flex row stays left-to-right and the first field
+                          lands on the left. In Arabic that puts the Date ahead of the
+                          Next Action it depends on - hence dir here, as on the Tabs
+                          and the Selects. */}
+                      <Grid container spacing={2} dir={language === 'ar' ? 'rtl' : 'ltr'}>
                         {/* Next Action */}
-                        <FormControl fullWidth sx={{ mb: 3 }}>
+                        <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth>
                             <InputLabel>{getTranslatedLabel(`${localizationKey}.nextAction`, 'Next Action')}</InputLabel>
                             <Select
                                 value={nextAction}
@@ -242,10 +319,13 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
                                 )}
                             </Select>
                         </FormControl>
+                        </Grid>
 
-                        {/* Cancel Reason */}
+                        {/* Cancel Reason - never shown at the same time as the date,
+                            so both claim the same half of the row. */}
                         {hasCancelReasonField && (
-                            <FormControl fullWidth sx={{ mb: 3 }}>
+                            <Grid item xs={12} sm={6}>
+                            <FormControl fullWidth>
                                 <InputLabel>{getTranslatedLabel(`${localizationKey}.cancelReason`, 'Cancel Reason *')}</InputLabel>
                                 <Select
                                     value={cancelReason}
@@ -265,10 +345,12 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
                                     )}
                                 </Select>
                             </FormControl>
+                            </Grid>
                         )}
 
                         {/* Action Date */}
                         {hasDateField && (
+                            <Grid item xs={12} sm={6}>
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
                                 <DateTimePicker
                                     label={getTranslatedLabel(`${localizationKey}.stageDate`, 'Next Action Date')}
@@ -280,17 +362,17 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
                                     slotProps={{
                                         textField: {
                                             fullWidth: true,
-                                            sx: { mb: 3 },
                                             required: true,
                                         },
                                     }}
                                 />
                             </LocalizationProvider>
+                            </Grid>
                         )}
 
                         {isUnitRelated && (
                             <>
-                                <Box sx={{ mb: 3 }}>
+                                <Grid item xs={12} sm={6}>
                                     <FormComboBoxVirtualProject
                                         value={selectedProject}
                                         label={getTranslatedLabel("projects.certificate.form.project", "Project")}
@@ -306,9 +388,9 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
                                             setSelectedUnit(null); // clear unit when project changes
                                         }}
                                     />
-                                </Box>
+                                </Grid>
 
-                                <Box sx={{ mb: 3 }}>
+                                <Grid item xs={12} sm={6}>
                                     <FormSimpleComboBoxVirtualApartmentsByProject
                                         value={selectedUnit}
                                         label={getTranslatedLabel(`${localizationKey}.unit`, 'Unit')}
@@ -319,13 +401,14 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
                                             setSelectedUnit({ apartmentId: e.value?.apartmentId, apartmentName: e.value?.apartmentName });
                                         }}
                                     />
-                                </Box>
+                                </Grid>
                             </>
                         )}
 
                         {hasMeetingDropdownsAndNote && (
                             <>
-                                <FormControl fullWidth sx={{ mb: 3 }}>
+                                <Grid item xs={12} sm={6}>
+                                <FormControl fullWidth>
                                     <InputLabel>{getTranslatedLabel(`${localizationKey}.meetingType`, 'Meeting Type *')}</InputLabel>
                                     <Select
                                         value={meetingType}
@@ -345,7 +428,10 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
                                         )}
                                     </Select>
                                 </FormControl>
-                                <FormControl fullWidth sx={{ mb: 3 }}>
+                                </Grid>
+
+                                <Grid item xs={12} sm={6}>
+                                <FormControl fullWidth>
                                     <InputLabel>{getTranslatedLabel(`${localizationKey}.meetingLocation`, 'Meeting Location *')}</InputLabel>
                                     <Select
                                         value={meetingLocation}
@@ -365,20 +451,25 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
                                         )}
                                     </Select>
                                 </FormControl>
+                                </Grid>
 
-                                {/* Comment */}
+                                {/* Note. minRows/maxRows instead of a fixed 4 rows: it
+                                    starts small and grows with what is typed, so the
+                                    empty state costs two lines rather than four. */}
+                                <Grid item xs={12}>
                                 <TextField
                                     fullWidth
                                     label={getTranslatedLabel(`${localizationKey}.note`, 'Note')}
                                     multiline
-                                    rows={4}
+                                    minRows={2}
+                                    maxRows={6}
                                     value={note}
                                     disabled={isActionDisabled}
                                     onChange={(e) => setNote(e.target.value)}
                                     placeholder={getTranslatedLabel(`${localizationKey}.notePlaceholder`, 'Note...')}
-                                    sx={{ mb: 3 }}
                                     dir={language === "ar" ? "rtl" : "ltr"}
                                 />
+                                </Grid>
                             </>
 
                         )}
@@ -386,20 +477,23 @@ const AddActionsModal: React.FC<AddActionModalProps> = ({ open, onClose, opportu
 
 
                         {/* Comment */}
+                        <Grid item xs={12}>
                         <TextField
                             fullWidth
                             label={getTranslatedLabel(`${localizationKey}.comment`, 'Comment')}
                             multiline
-                            rows={4}
+                            minRows={2}
+                            maxRows={6}
                             disabled={isActionDisabled}
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
                             placeholder={getTranslatedLabel(`${localizationKey}.commentPlaceholder`, 'Write your comment here...')}
-                            sx={{ mb: 3 }}
                         />
+                        </Grid>
+                      </Grid>
 
                         {/* Action Buttons */}
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
                             <Button variant="outlined" onClick={onClose}>
                                 {getTranslatedLabel(`${localizationKey}.cancel`, 'Cancel')}
                             </Button>

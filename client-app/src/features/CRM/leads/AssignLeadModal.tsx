@@ -14,6 +14,8 @@ import {
     Divider,
     Stack,
     Card,
+    CircularProgress,
+    LinearProgress,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
@@ -140,6 +142,13 @@ const AssignLeadModal: React.FC<AssignLeadModalProps> = ({ open, onClose, lead }
                 </IconButton>
             </DialogTitle>
 
+            {/* Determinate progress is impossible here, so an indeterminate bar
+                pinned under the title tells the user the dialog is busy without
+                shifting any layout. */}
+            <Box sx={{ height: 4 }}>
+                {isProcessing && <LinearProgress />}
+            </Box>
+
             <DialogContent sx={{ pt: 3 }}>
                 {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -175,6 +184,7 @@ const AssignLeadModal: React.FC<AssignLeadModalProps> = ({ open, onClose, lead }
                         value={selectedRep}
                         label={getTranslatedLabel(`${localizationKey}.newOwner`, 'Assign to *')}
                         disabled={isProcessing}
+                        popupSettings={{ appendTo: document.querySelector('.MuiModal-root') as HTMLElement }}
                         onChange={(e: any) => {
                             setSelectedRep(e.value || null);
                             setError(null);
@@ -263,8 +273,15 @@ const AssignLeadModal: React.FC<AssignLeadModalProps> = ({ open, onClose, lead }
                 {/* Unassign is only meaningful when the lead currently has an owner */}
                 <Box>
                     {isReassign && (
-                        <Button color="error" onClick={handleUnassign} disabled={isProcessing}>
-                            {getTranslatedLabel(`${localizationKey}.unassign`, 'Unassign')}
+                        <Button
+                            color="error"
+                            onClick={handleUnassign}
+                            disabled={isProcessing}
+                            startIcon={unassigning ? <CircularProgress size={16} color="inherit" /> : undefined}
+                        >
+                            {unassigning
+                                ? getTranslatedLabel(`${localizationKey}.unassigning`, 'Unassigning...')
+                                : getTranslatedLabel(`${localizationKey}.unassign`, 'Unassign')}
                         </Button>
                     )}
                 </Box>
@@ -277,10 +294,13 @@ const AssignLeadModal: React.FC<AssignLeadModalProps> = ({ open, onClose, lead }
                         variant="contained"
                         onClick={handleAssign}
                         disabled={!selectedRep || isProcessing}
+                        startIcon={assigning ? <CircularProgress size={16} color="inherit" /> : undefined}
                     >
-                        {isReassign
-                            ? getTranslatedLabel(`${localizationKey}.reassign`, 'Reassign')
-                            : getTranslatedLabel(`${localizationKey}.assign`, 'Assign')}
+                        {assigning
+                            ? getTranslatedLabel(`${localizationKey}.assigning`, 'Assigning...')
+                            : isReassign
+                                ? getTranslatedLabel(`${localizationKey}.reassign`, 'Reassign')
+                                : getTranslatedLabel(`${localizationKey}.assign`, 'Assign')}
                     </Button>
                 </Box>
             </DialogActions>

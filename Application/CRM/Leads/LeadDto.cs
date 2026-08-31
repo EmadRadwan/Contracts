@@ -53,6 +53,17 @@ public class LeadDto
     public string? OwnerPartyId { get; set; }
     public string? OwnerName { get; set; }
     public DateTime? AssignedDate { get; set; }
+
+    // Broker behind an INDIRECT lead - the open AGENT relationship, if any.
+    public string? BrokerPartyId { get; set; }
+    public string? BrokerName { get; set; }
+
+    // Duplicate feedback. When true the payload describes the EXISTING lead that
+    // already holds the contact details, not the lead that was being saved -
+    // same contract as PartyDto2 on the create side, so one UI handles both.
+    public bool? IsAlreadyCreated { get; set; }
+    public string? DuplicateMatchedField { get; set; }   // "EMAIL" or "MOBILE"
+    public string? DuplicateMatchedValue { get; set; }
 }
 
 /// <summary>

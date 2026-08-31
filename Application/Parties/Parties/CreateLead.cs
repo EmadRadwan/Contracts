@@ -5,6 +5,8 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 
+using LeadBrokerConstants = Application.CRM.Leads.LeadBrokerConstants;
+
 namespace Application.Parties.Parties;
 
 public class CreateLead
@@ -70,6 +72,8 @@ public class CreateLead
                 // ---------------------
 
                 Party? existingParty = null;
+                string? matchedField = null;
+                string? matchedValue = null;
 
                 if (!string.IsNullOrWhiteSpace(dto.InfoString))
                 {
@@ -81,6 +85,12 @@ public class CreateLead
                         .Select(pcm => pcm.Party)
                         .Where(p => p.PartyRoles.Any(r => r.RoleType.RoleTypeId == "LEAD"))
                         .FirstOrDefaultAsync(ct);
+
+                    if (existingParty != null)
+                    {
+                        matchedField = "EMAIL";
+                        matchedValue = dto.InfoString;
+                    }
                 }
 
                 if (existingParty == null && !string.IsNullOrWhiteSpace(dto.MobileContactNumber))
@@ -92,6 +102,12 @@ public class CreateLead
                         .Select(pcm => pcm.Party)
                         .Where(p => p.PartyRoles.Any(r => r.RoleType.RoleTypeId == "LEAD"))
                         .FirstOrDefaultAsync(ct);
+
+                    if (existingParty != null)
+                    {
+                        matchedField = "MOBILE";
+                        matchedValue = dto.MobileContactNumber;
+                    }
                 }
 
                 if (existingParty != null)
@@ -108,8 +124,48 @@ public class CreateLead
                         MiddleName = existingPerson?.MiddleName,
                         Description = existingParty.Description,
                         PartyTypeDescription = "Lead",
-                        IsAlreadyCreated = true
+                        IsAlreadyCreated = true,
+                        DuplicateMatchedField = matchedField,
+                        DuplicateMatchedValue = matchedValue
                     });
+                }
+
+                // ---------------------
+                // BROKER (INDIRECT only)
+                // ---------------------
+                // An indirect lead came through an outside company, so we have to
+                // know which one - the commission side downstream depends on it.
+                Party? broker = null;
+                if (LeadBrokerConstants.RequiresBroker(dto.DataSourceId))
+                {
+                    if (string.IsNullOrWhiteSpace(dto.BrokerPartyId))
+                    {
+                        await transaction.RollbackAsync(ct);
+                        return Result<PartyDto2>.Failure("A broker is required when the lead source is Indirect");
+                    }
+
+                    broker = await _context.Parties
+                        .FirstOrDefaultAsync(p => p.PartyId == dto.BrokerPartyId, ct);
+
+                    if (broker == null)
+                    {
+                        await transaction.RollbackAsync(ct);
+                        return Result<PartyDto2>.Failure($"Broker '{dto.BrokerPartyId}' not found");
+                    }
+
+                    // PARTY_RELATIONSHIP has FKs on (PartyId, RoleTypeId) at both
+                    // ends, so the broker must genuinely hold BROKER - we do not
+                    // create the role implicitly.
+                    var isBroker = await _context.PartyRoles.AnyAsync(
+                        pr => pr.PartyId == dto.BrokerPartyId
+                           && pr.RoleTypeId == LeadBrokerConstants.BrokerRoleTypeId, ct);
+
+                    if (!isBroker)
+                    {
+                        await transaction.RollbackAsync(ct);
+                        return Result<PartyDto2>.Failure(
+                            $"Party '{dto.BrokerPartyId}' is not a Broker and cannot be credited with a lead");
+                    }
                 }
 
                 var partyId = (await _utilityService.GetNextSequence("Party")).ToString();
@@ -149,13 +205,33 @@ public class CreateLead
                 });
 
                 // Role
-                _context.PartyRoles.Add(new PartyRole
+                var leadRole = new PartyRole
                 {
                     Party = party,
                     RoleType = roleTypeLead,
                     CreatedStamp = stamp,
                     LastUpdatedStamp = stamp
-                });
+                };
+                _context.PartyRoles.Add(leadRole);
+
+                // Link the broker. The TO side is set through the navigation, not
+                // the raw ids, so EF inserts this after the PartyRole it depends on.
+                if (broker != null)
+                {
+                    _context.PartyRelationships.Add(new PartyRelationship
+                    {
+                        PartyIdFrom = broker.PartyId,
+                        RoleTypeIdFrom = LeadBrokerConstants.BrokerRoleTypeId,
+                        PartyRoleNavigation = leadRole,
+                        PartyRelationshipTypeId = LeadBrokerConstants.RelationshipTypeId,
+                        FromDate = stamp,
+                        ThruDate = null,
+                        CreatedStamp = stamp,
+                        LastUpdatedStamp = stamp,
+                        CreatedTxStamp = stamp,
+                        LastUpdatedTxStamp = stamp
+                    });
+                }
 
                 // Status history
                 _context.PartyStatuses.Add(new PartyStatus
@@ -333,7 +409,9 @@ public class CreateLead
                     FirstName = dto.FirstName,
                     MiddleName = dto.MiddleName,
                     Description = fullName,
-                    PartyTypeDescription = "Lead"
+                    PartyTypeDescription = "Lead",
+                    BrokerPartyId = broker?.PartyId,
+                    BrokerName = broker?.Description
                 });
             }
             catch (Exception ex)

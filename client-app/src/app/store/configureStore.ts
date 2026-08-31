@@ -1,3 +1,4 @@
+import { setStore } from "./storeRef";
 import {configureStore} from "@reduxjs/toolkit";
 import {TypedUseSelectorHook, useDispatch, useSelector} from "react-redux";
 import {accountSlice} from "../../features/account/accountSlice";
@@ -17,6 +18,7 @@ import {supplierProductSlice} from "../../features/catalog/slice/productSupplier
 import {quantitySlice} from "../../features/catalog/slice/quantitySlice";
 import {inventoryItemSlice} from "../../features/facilities/slice/inventoryItemSlice";
 import {
+    auditApi,
     availableProductPromotionsApi,
     internalAccountingOrganizationsApi,
     orderAdjustmentsApi,
@@ -275,6 +277,7 @@ export const store = configureStore({
         [quotePromoProductDiscountApi.reducerPath]:
         quotePromoProductDiscountApi.reducer,
         [paymentMethodTypesApi.reducerPath]: paymentMethodTypesApi.reducer,
+        [auditApi.reducerPath]: auditApi.reducer,
         [productCategoriesApi.reducerPath]: productCategoriesApi.reducer,
         [productAssociationTypesApi.reducerPath]:
         productAssociationTypesApi.reducer,
@@ -379,6 +382,7 @@ export const store = configureStore({
             .concat(productPromosApi.middleware)
             .concat(productCategoriesApi.middleware)
             .concat(paymentMethodTypesApi.middleware)
+            .concat(auditApi.middleware)
             .concat(productAssociationTypesApi.middleware)
             .concat(productAssociationsApi.middleware)
             .concat(invoicesApi.middleware)
@@ -435,6 +439,10 @@ export const store = configureStore({
     },
     devTools: devToolsConfig,
 });
+
+// Register the store for modules that cannot import it directly without
+// creating a cycle (see storeRef.ts). Must run immediately after creation.
+setStore(store);
 setupListeners(store.dispatch);
 
 export {useFetchProductCategoriesQuery} from "./apis/productCategoriesApi";
@@ -633,6 +641,7 @@ export {useFetchSalesOrderTaxAdjustmentsQuery} from "./apis/salesOrderTaxAdjustm
 export {useFetchQuoteTaxAdjustmentsQuery} from "./apis/quote/quoteTaxAdjustmentsApi";
 
 export * from "./apis/paymentMethodTypesApi";
+export * from "./apis/auditing/auditApi";
 
 export {useFetchOrderAdjustmentTypesQuery} from "./apis/orderAdjustmentTypesApi";
 

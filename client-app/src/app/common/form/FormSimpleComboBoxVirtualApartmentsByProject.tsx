@@ -249,8 +249,10 @@ export const FormSimpleComboBoxVirtualApartmentsByProject = (fieldRenderProps: F
     const errorId = showValidationMessage ? `${id}_error` : "";
     const labelId = label ? `${id}_label` : "";
 
-    const handleOnFocus = React.useCallback(() => { onFocus(); setFocused(true); }, [onFocus]);
-    const handleOnBlur  = React.useCallback(() => { onBlur();  setFocused(false); }, [onBlur]);
+    // Optional-called - see FormComboBoxVirtualProject: used directly in
+    // AddActionsModal, where onFocus/onBlur are undefined.
+    const handleOnFocus = React.useCallback(() => { onFocus?.(); setFocused(true); }, [onFocus]);
+    const handleOnBlur  = React.useCallback(() => { onBlur?.();  setFocused(false); }, [onBlur]);
 
     return (
         <>

@@ -7,9 +7,11 @@ import {
     GridCellProps
 } from '@progress/kendo-react-grid';
 import { State, process } from '@progress/kendo-data-query';
-import { Grid, Typography, Chip, Box, Checkbox } from '@mui/material';
+import { Grid, Typography, Chip, Box, Checkbox, Link, Tooltip } from '@mui/material';
 import Button from '@mui/material/Button';
 import PersonIcon from '@mui/icons-material/Person';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import PhoneIphoneOutlinedIcon from '@mui/icons-material/PhoneIphoneOutlined';
 import { useTranslationHelper } from '../../../app/hooks/useTranslationHelper';
 import { useFetchLeadsQuery, useAppSelector } from '../../../app/store/configureStore';
 import { Lead } from '../models/lead';
@@ -138,15 +140,29 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
         );
     };
 
-    // Custom cell for email
+    // Email / phone are actionable, so they are styled as links and carry a
+    // leading icon - inheriting the row colour made them look like plain text
+    // and nobody discovered they were clickable.
     const EmailCell = (props: GridCellProps) => {
         const email = props.dataItem.email;
         return (
             <td className={props.className} style={props.style}>
                 {email ? (
-                    <a href={`mailto:${email}`} style={{ color: 'inherit' }}>
-                        {email}
-                    </a>
+                    <Tooltip title={getTranslatedLabel(`${localizationKey}.emailTooltip`, 'Send an email')}>
+                        <Link
+                            href={`mailto:${email}`}
+                            // Web mail clients open in their own tab; a native
+                            // client ignores the target and just takes the URL.
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            underline="hover"
+                            color="primary"
+                            sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+                        >
+                            <EmailOutlinedIcon fontSize="small" />
+                            {email}
+                        </Link>
+                    </Tooltip>
                 ) : (
                     <Typography variant="caption" color="text.disabled">-</Typography>
                 )}
@@ -160,9 +176,17 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
         return (
             <td className={props.className} style={props.style}>
                 {phone ? (
-                    <a href={`tel:${phone}`} style={{ color: 'inherit' }}>
-                        {phone}
-                    </a>
+                    <Tooltip title={getTranslatedLabel(`${localizationKey}.phoneTooltip`, 'Call this number')}>
+                        <Link
+                            href={`tel:${phone}`}
+                            underline="hover"
+                            color="primary"
+                            sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, direction: 'ltr' }}
+                        >
+                            <PhoneIphoneOutlinedIcon fontSize="small" />
+                            {phone}
+                        </Link>
+                    </Tooltip>
                 ) : (
                     <Typography variant="caption" color="text.disabled">-</Typography>
                 )}

@@ -469,5 +469,6 @@ client-app/yarn.lock
 # Playwright
 /client-app/test-results/
 /client-app/playwright-report/
+/client-app/e2e/.auth/
 /client-app/blob-report/
 /client-app/playwright/.cache/

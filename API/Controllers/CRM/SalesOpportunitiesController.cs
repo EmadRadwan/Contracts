@@ -40,6 +40,24 @@ public class SalesOpportunitiesController : BaseApiController
     }
 
     /// <summary>
+    /// Open opportunities already linked to the given leads. Advisory only - a lead
+    /// may belong to several opportunities; this lets the UI say so before a second
+    /// one is created by mistake.
+    /// </summary>
+    [HttpGet("open-by-leads")]
+    public async Task<IActionResult> GetOpenOpportunitiesByLeads(
+        [FromQuery] List<string> leadPartyIds,
+        [FromQuery] string? excludeOpportunityId)
+    {
+        return HandleResult(await Mediator.Send(new ListOpenOpportunitiesByLead.Query
+        {
+            LeadPartyIds = leadPartyIds ?? new List<string>(),
+            ExcludeOpportunityId = excludeOpportunityId,
+            Language = GetLanguage()
+        }));
+    }
+
+    /// <summary>
     /// Get all opportunity stages for pipeline/board view.
     /// </summary>
     [HttpGet("stages")]

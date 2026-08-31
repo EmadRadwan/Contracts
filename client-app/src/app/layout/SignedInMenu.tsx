@@ -51,6 +51,12 @@ export default function SignedInMenu() {
                         navigate('/users');
                     }}>{getTranslatedLabel("menu.userManagement", "User Management")}</MenuItem>
                 </Can>
+                <Can perform="Admin">
+                    <MenuItem onClick={() => {
+                        handleClose();
+                        navigate('/auditTrail');
+                    }}>{getTranslatedLabel("menu.auditTrail", "سجل نشاط المستخدمين")}</MenuItem>
+                </Can>
             </Menu>
         </>
     );

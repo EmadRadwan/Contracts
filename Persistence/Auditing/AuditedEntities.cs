@@ -40,9 +40,51 @@ public static class AuditedEntities
         // Projects / work
         "WorkEffort",
 
+        // Commissions. Added after a dev test showed UpdateSalesCommission rewriting a
+        // commission's nets with no field-level trace — the exact class of problem this
+        // feature exists to explain.
+        "SalesCommission",
+        "SalesRequest",
+
         // Stock
         "InventoryItem",
-        "InventoryItemDetail"
+        "InventoryItemDetail",
+
+        // -------------------------------------------------------------------------------
+        // Master and reference data.
+        //
+        // Everything above records what happened. The entries below record changes to the
+        // settings that decide how it is interpreted — and in several past incidents a field
+        // edited today silently changed what an already-closed period reported.
+        // -------------------------------------------------------------------------------
+
+        // Party carries two fields with outsized reach:
+        //   PreferredPayrollPaymentMethodId — flipping it retroactively removed an employee
+        //     from an already-executed payroll run, so payment 16855 could no longer post
+        //     (322,078 against a re-derived run total of 262,745).
+        //   GlAccountIdAdvancedPayment — decides which GL account payroll debits, and is why
+        //     a large share of payroll never reaches the P&L.
+        "Party",
+
+        // The accrued ACCOUNTS_PAYABLE that payroll posting resolves against.
+        "PartyGlAccount",
+
+        // GL classification drives the trial balance, every report and all of Power BI, and is
+        // by far the most hand-corrected area in API/Sql.
+        // NOTE: those corrections are run as raw SQL, which bypasses the ChangeTracker
+        // entirely — this captures edits made through the application only.
+        "GlAccount",
+        "GlSubClass",
+        "GlSubClass2",
+        "GlAccountCourseLabel",
+
+        // Six rows, rarely touched — but opening or closing a period changes what every
+        // balance inside it includes.
+        "CustomTimePeriod",
+
+        // Holds the PAYROLL_PMT_METHOD snapshot (commit 130429d1) that exists specifically to
+        // stop payroll history being rewritten. Worth auditing the safety mechanism itself.
+        "InvoiceAttribute"
     };
 
     /// <summary>

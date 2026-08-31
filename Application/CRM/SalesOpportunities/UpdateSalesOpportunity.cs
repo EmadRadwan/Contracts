@@ -71,7 +71,25 @@ public class UpdateSalesOpportunity
                 if (dto.WorkEffortId != null)
                     opportunity.WorkEffortId = dto.WorkEffortId;
                 if (dto.ProductId != null)
+                {
+                    // Moving an already-won opportunity onto a different unit would
+                    // otherwise slip past the check below, which only runs on a stage
+                    // change. Guard the swap itself.
+                    if (dto.ProductId != opportunity.ProductId
+                        && opportunity.OpportunityStageId == UnitReservationGuard.ClosedWonStageId)
+                    {
+                        var swapConflict = await UnitReservationGuard.CheckAsync(
+                            _context, dto.ProductId, opportunity.SalesOpportunityId, ct);
+
+                        if (swapConflict != null)
+                        {
+                            await transaction.RollbackAsync(ct);
+                            return Result<SalesOpportunityDto>.Failure(swapConflict);
+                        }
+                    }
+
                     opportunity.ProductId = dto.ProductId;
+                }
                 if (dto.OpportunityName != null)
                     opportunity.OpportunityName = dto.OpportunityName;
                 if (dto.Description != null)
@@ -114,13 +132,25 @@ public class UpdateSalesOpportunity
                         ? $"Stage changed to {newStage.Description}"
                         : "Opportunity updated";
 
-                    if (newStage.OpportunityStageId == "SOSTG_CLOSED_WON")
+                    if (newStage.OpportunityStageId == UnitReservationGuard.ClosedWonStageId)
                     {
+                        // A unit can only be won once - two leads winning the same
+                        // apartment is a conflict with a real customer, not a
+                        // reporting nuisance.
+                        var conflict = await UnitReservationGuard.CheckAsync(
+                            _context, opportunity.ProductId, opportunity.SalesOpportunityId, ct);
+
+                        if (conflict != null)
+                        {
+                            await transaction.RollbackAsync(ct);
+                            return Result<SalesOpportunityDto>.Failure(conflict);
+                        }
+
                         var apartment = await _context.Products
                         .FirstOrDefaultAsync(p => p.ProductId == opportunity.ProductId, ct);
 
                         if (apartment != null)
-                            apartment.ApartmentStatusId = "APARTMENT_RESERVED";
+                            apartment.ApartmentStatusId = UnitReservationGuard.ReservedStatusId;
 
                         opportunity.IsWon = true;
                         opportunity.IsClosed = true;

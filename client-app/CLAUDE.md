@@ -141,9 +141,31 @@ Then render inside the `xs={1}` grid column as shown in the Actions Menu layout 
 
 ---
 
-## Role-Based Access Control (Frontend-Only)
+## Role-Based Access Control
 
-Roles are plain strings (ASP.NET Identity `ApplicationRole.Name`). **There is no backend authorization** — no controller uses `[Authorize(Roles=...)]`; the global filter only requires an authenticated user. All role gating below is a frontend UX concern, not a security boundary.
+Roles are plain strings (ASP.NET Identity `ApplicationRole.Name`).
+
+**Frontend gating is the default, and it is UX only — not a security boundary.** The global filter
+(`Program.cs`) requires an authenticated user and nothing more, so for most endpoints any signed-in user
+can call the API directly regardless of what the UI shows them. Assume this when reasoning about what a
+role actually protects.
+
+**A small number of endpoints are enforced server-side** with `[Authorize(Roles=...)]`. These are the
+exception, not the rule:
+
+| Endpoint(s) | Role |
+|---|---|
+| `LeadsController` — create / edit / assign (6 actions) | `CRM_Leads_Create`, `CRM_Leads_Edit`, `CRM_Leads_Assign` (see `LeadAssignmentConstants`) |
+| `PartiesController` — 2 lead-related actions | `CRM_Leads_Create` |
+| `AuditActivityRecordsController`, `EntityAuditLogRecordsController` | `Admin` |
+
+Role claims travel on the JWT as `ClaimTypes.Role` (`TokenService`), and nothing overrides
+`RoleClaimType` or the inbound claim map — so `[Authorize(Roles=...)]` works as written. Adding it to a
+controller is a valid way to make a gate real; the audit endpoints did so because a leak there is not
+scoped to one module, it exposes what every user did across the system.
+
+When you add server-side enforcement, keep the role string identical to the one the UI checks with
+`<Can perform="...">`, or the menu and the API will disagree.
 
 ### Two gating layers per module
 Most modules use **two separate role strings**, not one:

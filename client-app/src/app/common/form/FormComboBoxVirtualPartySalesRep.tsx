@@ -22,6 +22,9 @@ export const FormComboBoxVirtualPartySalesRep = (fieldRenderProps: FieldRenderPr
         wrapperStyle,
         value,
         onChange,
+        // Lets a caller render the popup inside a MUI Dialog; without it the
+        // Kendo popup is portalled to body and never appears above the modal.
+        popupSettings,
 
     } = fieldRenderProps;
     const editorRef = React.useRef(null);
@@ -68,9 +71,12 @@ export const FormComboBoxVirtualPartySalesRep = (fieldRenderProps: FieldRenderPr
     const labelId = label ? `${id}_label` : '';
 
 
+    // Optional-called: this component is also used directly (outside a Kendo
+    // <Field>), where onFocus/onBlur are not supplied. Calling them unguarded
+    // threw on focus and stopped the dropdown from ever opening.
     const handleOnFocus = React.useCallback(
         () => {
-            onFocus();
+            onFocus?.();
             setFocused(true);
         },
         [onFocus]
@@ -78,7 +84,7 @@ export const FormComboBoxVirtualPartySalesRep = (fieldRenderProps: FieldRenderPr
 
     const handleOnBlur = React.useCallback(
         () => {
-            onBlur();
+            onBlur?.();
             setFocused(false);
         },
         [onBlur]
@@ -245,6 +251,7 @@ export const FormComboBoxVirtualPartySalesRep = (fieldRenderProps: FieldRenderPr
                     total: total,
                 }), [total])}
                 onPageChange={pageChange}
+                popupSettings={popupSettings}
                 //style={{width: "200px"}}
             />
             {

@@ -2,7 +2,7 @@ import { Party } from "../models/party/party";
 import { toast } from "react-toastify";
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { User, UserFormValues } from "../models/party/user";
-import { store } from "../store/configureStore";
+import { getStore } from "../store/storeRef";
 import { ProductType } from "../models/product/productType";
 import { Product, ProductLov, ServiceLov } from "../models/product/product";
 import { ProductPriceType } from "../models/product/productPriceType";
@@ -37,9 +37,23 @@ axios.defaults.withCredentials = true;
 const responseBody = (response: AxiosResponse) => response.data;
 
 axios.interceptors.request.use((config) => {
-    const token = store.getState().account.user?.token;
-    const lang = store.getState().localization.language;
-    if (lang) config.headers['Accept-Language'] = `${lang}`
+    // Resolved lazily: agent.ts sits inside configureStore's import graph, so a
+    // direct `import { store }` binding is never populated here. Reading it at
+    // call time via storeRef avoids the cycle. Falls back to the persisted
+    // session so a request still carries its token if the store is not ready.
+    const state = getStore()?.getState();
+
+    let token: string | undefined = state?.account?.user?.token;
+    if (!token) {
+        try {
+            token = JSON.parse(localStorage.getItem("user") ?? "null")?.token;
+        } catch {
+            token = undefined;
+        }
+    }
+
+    const lang = state?.localization?.language;
+    if (lang) config.headers['Accept-Language'] = `${lang}`;
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
 });

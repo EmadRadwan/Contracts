@@ -177,3 +177,18 @@ export interface SalesOpportunityHistory {
   createdTxStamp?: string | null;
   lastUpdatedTxStamp?: string | null;
 }
+/**
+ * An open opportunity a lead is already linked to. Advisory only - a lead may
+ * legitimately be on several opportunities (one buyer, several units).
+ */
+export interface LeadOpenOpportunity {
+    leadPartyId?: string;
+    leadName?: string;
+    salesOpportunityId?: string;
+    opportunityName?: string;
+    opportunityStageId?: string;
+    stageDescription?: string;
+    productId?: string;
+    estimatedAmount?: number;
+    estimatedCloseDate?: string;
+}

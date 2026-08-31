@@ -68,14 +68,20 @@ const leadsApi = createApi({
                 providesTags: [{ type: "Lead", id: "LOV" }],
             }),
 
-            // Create a new lead
+            // Create a new lead.
+            // A duplicate comes back as a 200 describing the EXISTING lead, so it
+            // looks like a success to RTK Query - but nothing was written, and
+            // invalidating would refetch the list for no reason.
             createLead: builder.mutation<Lead, Lead>({
                 query: (lead) => ({
                     url: `/parties/createLead`,
                     method: "POST",
                     body: lead,
                 }),
-                invalidatesTags: [{ type: "Lead", id: "LIST" }, { type: "Lead", id: "LOV" }],
+                invalidatesTags: (result) =>
+                    result?.isAlreadyCreated
+                        ? []
+                        : [{ type: "Lead", id: "LIST" }, { type: "Lead", id: "LOV" }],
             }),
 
             createLeadsBatch: builder.mutation<Lead, Lead[]>({
@@ -138,18 +144,23 @@ const leadsApi = createApi({
                 ],
             }),
 
-            // Update an existing lead
+            // Update an existing lead.
+            // Same duplicate caveat as createLead: the edit was refused, so the
+            // cache is still accurate and there is nothing to invalidate.
             updateLead: builder.mutation<Lead, { id: string; lead: Lead }>({
                 query: ({ id, lead }) => ({
                     url: `/leads/${id}`,
                     method: "PUT",
                     body: lead,
                 }),
-                invalidatesTags: (result, error, { id }) => [
-                    { type: "Lead", id },
-                    { type: "Lead", id: "LIST" },
-                    { type: "Lead", id: "LOV" },
-                ],
+                invalidatesTags: (result, error, { id }) =>
+                    result?.isAlreadyCreated
+                        ? []
+                        : [
+                            { type: "Lead", id },
+                            { type: "Lead", id: "LIST" },
+                            { type: "Lead", id: "LOV" },
+                        ],
             }),
         };
     },

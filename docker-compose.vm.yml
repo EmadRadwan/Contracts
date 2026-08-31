@@ -17,6 +17,9 @@ services:
       Kestrel_Certificate_Password_Contracts: ${Kestrel_Certificate_Password_Contracts:-Tmbtc202500}
       SendGridKey: ${SendGridKey_Contracts:-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}
       SERILOG_LOG_PATH: "/app/logs"
+      # Audit feature kill switch. Overrides appsettings.Production.json, so it can be
+      # flipped with a restart instead of a rebuild+redeploy.
+      Auditing__Enabled: "${Auditing_Enabled:-true}"
     volumes:
       - /home/ubuntu/.aspnet/https/contracts:/root/.aspnet/https/contracts:rw
       - /home/ubuntu/.aspnet/DataProtection-Keys:/root/.aspnet/DataProtection-Keys:rw 
