@@ -5,6 +5,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
+    "@ericblade/quagga2": "^1.12.1",
     "@floating-ui/react": "^0.26.28",
     "@fortune-sheet/react": "^1.0.4",
     "@mantine/core": "^9.0.2",
@@ -157,6 +158,7 @@
     "@types/uuid": "^9.0.7",
     "@typescript-eslint/eslint-plugin": "^6.12.0",
     "@typescript-eslint/parser": "^6.12.0",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@welldone-software/why-did-you-render": "^10.0.1",
     "prettier": "3.1.0",
     "prop-types": "^15.8.1",

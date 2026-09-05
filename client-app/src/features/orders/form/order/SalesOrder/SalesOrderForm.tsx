@@ -55,7 +55,14 @@ import {nonDeletedOrderItemsSelector} from "../../../slice/orderSelectors";
 import {toast} from "react-toastify";
 import { useRecalculateTaxesMutation} from "../../../../../app/store/apis/accounting/taxApi";
 import {debounce} from "lodash";
-
+import {
+    FormSection,
+    OrderHeaderSection,
+    CustomerInformationSection,
+    OrderItemsSection,
+    OrderSummarySection,
+} from "./sections";
+import AccountingMenu from "../../../../accounting/invoice/menu/AccountingMenu";
 
 interface Props {
     selectedOrder?: any;
@@ -413,7 +420,7 @@ export default function SalesOrderForm({
                     />
                 </ModalContainer>
             )}
-            <OrderMenu selectedMenuItem={"/orders"}/>
+            <AccountingMenu selectedMenuItem={"/orders"} />
             <RibbonContainer>
                 <Paper
                     dir={language === "ar" ? "rtl" : "ltr"}
@@ -422,65 +429,17 @@ export default function SalesOrderForm({
                         language === "ar" ? "k-rtl" : ""
                     }`}
                 >
-                    <Grid
-                        container
-                        // spacing={2}
-                        alignItems={"center"}
-                        sx={{position: "relative"}}
-                    >
-                        <Grid item xs={10}>
-                            <Box display="flex" justifyContent="space-between">
-                                <Typography
-                                    sx={{
-                                        fontWeight: "bold",
-                                        paddingLeft: 3,
-                                        fontSize: "18px",
-                                        color: formEditMode === 1 ? "green" : "black",
-                                    }}
-                                    variant="h6"
-                                >
-                                    {" "}
-                                    {order && order?.orderId
-                                        ? `${getTranslatedLabel(`${localizationKey}.orderNo`, 'Sales Order No: ')} ${order?.orderId}`
-                                        : `${getTranslatedLabel(`${localizationKey}.new`, "New Sales Order")}`}
-                                </Typography>
-                            </Box>
-                        </Grid>
-
-                        <Grid item xs={1}>
-                            <Menu onSelect={handleMenuSelect}>
-                                <MenuItem
-                                    text={getTranslatedLabel("general.actions", "Actions")}
-                                >
-                                    <MenuItem text={getTranslatedLabel(`${localizationKey}.actions.new`, "New Order")}
-                                              data='new'/>
-                                    {formEditMode === 3 && showQuickShip && (
-                                        <MenuItem
-                                        text={getTranslatedLabel(`${localizationKey}.actions.ship`, "Quick Ship Order")}
-                                        data='ship'/>
-                                    )}
-                                </MenuItem>
-                            </Menu>
-                        </Grid>
-
-                        <Grid item xs={1}>
-                            {formEditMode > 1 && (
-                                <Ribbon
-                                    side={language === "ar" ? "left" : "right"}
-                                    type="corner"
-                                    size="large"
-                                    withStripes
-                                    backgroundColor={status.backgroundColor}
-                                    color={status.foreColor}
-                                    fontFamily="sans-serif"
-                                >
-                                    <Typography variant="h4" sx={{fontSize: language === "ar" ? "1.1rem" : "0.9rem"}}>
-                                        {order.statusDescription}
-                                    </Typography>
-                                </Ribbon>
-                            )}
-                        </Grid>
-                    </Grid>
+                    <Box sx={{ p: 3 }}>
+                        <OrderHeaderSection
+                            order={order}
+                            formEditMode={formEditMode}
+                            status={status}
+                            language={language}
+                            handleMenuSelect={handleMenuSelect}
+                            showQuickShip={showQuickShip}
+                            getTranslatedLabel={getTranslatedLabel}
+                        />
+                    </Box>
 
                     <Form
                         ref={formRef}
@@ -494,283 +453,44 @@ export default function SalesOrderForm({
                         render={(formRenderProps: FormRenderProps) => (
                             <FormElement>
                                 <fieldset className={"k-form-fieldset"}>
-                                    <Grid
-                                        container
-                                        alignItems={"start"}
-                                        justifyContent="flex-start"
-                                        spacing={1}
-                                    >
-                                        <Grid
-                                            container
-                                            spacing={1}
-                                            alignItems="center"
-                                            justifyContent={"flex-start"}
-                                            xs={12}
-                                            item
-                                            sx={{paddingLeft: 3}}
-                                        >
-                                            <Grid item container xs={9} spacing={2}>
-                                                <Grid
-                                                    container
-                                                    item
-                                                    xs={12}
-                                                    alignItems={"flex-end"}
-                                                    spacing={2}
-                                                >
-                                                    <Grid
-                                                        item
-                                                        xs={3}
-                                                        sx={{paddingTop: "0 !important"}}
-                                                        className={
-                                                            formEditMode > 2 ? "grid-disabled" : "grid-normal"
-                                                        }
-                                                    >
-                                                        <Field
-                                                            id={"fromPartyId"}
-                                                            name={"fromPartyId"}
-                                                            label={
-                                                                getTranslatedLabel(`${localizationKey}.customer`, "Customer")
-                                                            }
-                                                            component={FormComboBoxVirtualCustomer}
-                                                            autoComplete={"off"}
-                                                            disabled={formEditMode > 1}
-                                                            onChange={onCustomerChange}
-                                                            validator={requiredValidator}
-                                                        />
-                                                    </Grid>
-                                                    <Grid item xs={2}>
-                                                        <Button
-                                                            color={"secondary"}
-                                                            onClick={() => {
-                                                                setShowNewCustomer(true);
-                                                            }}
-                                                            variant="outlined"
-                                                            disabled={formEditMode > 1}
-                                                        >
-                                                            {getTranslatedLabel(`${localizationKey}.new-customer`, "New Customer")}
-                                                        </Button>
-                                                    </Grid>
-                                                    <Grid item xs={2}>
-                                                        <Field
-                                                            id="currencyUomId"
-                                                            name="currencyUomId"
-                                                            component={MemoizedFormDropDownList2}
-                                                            data={currencies ?? []}
-                                                            label={getTranslatedLabel(`${localizationKey}.currency`, "Currency")}
-                                                            dataItemKey={"currencyUomId"}
-                                                            disabled={formEditMode > 1}
-                                                            textField={"description"}
-                                                        />
-                                                    </Grid>
-                                                    {formEditMode === 1 && (
-                                                        <Grid item xs={3}>
-                                                            <Field
-                                                                id={"addTax"}
-                                                                name={"addTax"}
-                                                                label={getTranslatedLabel(`${localizationKey}.addTax`, "Add Tax")}
-                                                                component={MemoizedFormCheckBox}
-                                                                onChange={(e: any) => {
-                                                                    dispatch(setAddTax(e.value));
-                                                                }}
-                                                                disabled={isTaxLoading}
-                                                            />
-                                                            {isTaxLoading && (
-                                                                <Typography variant="caption" color="textSecondary">
-                                                                    Calculating Tax...
-                                                                </Typography>
-                                                            )}
-                                                        </Grid>
-                                                    )}
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, p: 2 }}>
+                                        <CustomerInformationSection
+                                            formRenderProps={formRenderProps}
+                                            formEditMode={formEditMode}
+                                            onCustomerChange={onCustomerChange}
+                                            showNewCustomer={showNewCustomer}
+                                            setShowNewCustomer={setShowNewCustomer}
+                                            currencies={currencies}
+                                            isTaxLoading={isTaxLoading}
+                                            getTranslatedLabel={getTranslatedLabel}
+                                        />
 
-                                                    {/*{agreements &&
-                                                        agreements?.length > 0 &&
-                                                        customerId !== undefined && (
-                                                            <Grid item xs={3}>
-                                                                <Field
-                                                                    id="agreementId"
-                                                                    name="agreementId"
-                                                                    label={getTranslatedLabel(`${localizationKey}.agreement`, "Agreement")}
-                                                                    component={MemoizedFormDropDownList2}
-                                                                    data={agreements ?? []}
-                                                                    disabled={formEditMode > 1}
-                                                                    dataItemKey={"agreementId"}
-                                                                    textField={"description"}
-                                                                />
-                                                            </Grid>
-                                                        )} */}
-                                                </Grid>
-                                                <Grid container item xs={12} spacing={2}>
-                                                    <Grid
-                                                        item
-                                                        xs={3}
-                                                        className={
-                                                            formEditMode > 2 ? "grid-disabled" : "grid-normal"
-                                                        }
-                                                    >
-                                                        <Field
-                                                            id={"customerRemarks"}
-                                                            name={"customerRemarks"}
-                                                            label={getTranslatedLabel(`${localizationKey}.customer-remarks`, "Customer Remarks")}
-                                                            component={FormTextArea}
-                                                            autoComplete={"off"}
-                                                            disabled={formEditMode > 2}
-                                                        />
-                                                    </Grid>
-                                                    <Grid
-                                                        item
-                                                        xs={3}
-                                                        className={
-                                                            formEditMode > 2 ? "grid-disabled" : "grid-normal"
-                                                        }
-                                                    >
-                                                        <Field
-                                                            id={"internalRemarks"}
-                                                            name={"internalRemarks"}
-                                                            label={getTranslatedLabel(`${localizationKey}.internal-remarks`, "Internal Remarks")}
-                                                            component={FormTextArea}
-                                                            autoComplete={"off"}
-                                                            disabled={formEditMode > 2}
-                                                        />
-                                                    </Grid>
-
-
-                                                </Grid>
+                                        <Grid container spacing={3}>
+                                            <Grid item xs={12} md={6}>
+                                                <OrderItemsSection
+                                                    memoizedSalesOrderItemsList={memoizedSalesOrderItemsList}
+                                                    formEditMode={formEditMode}
+                                                    getTranslatedLabel={getTranslatedLabel}
+                                                />
                                             </Grid>
 
-                                            <Grid
-                                                item
-                                                container
-                                                xs={3}
-                                                spacing={2}
-                                                alignItems="flex-end"
-                                            >
-                                                {memoizedOrderTotals}
+                                            <Grid item xs={12} md={6}>
+                                                <OrderSummarySection
+                                                    memoizedOrderTotals={memoizedOrderTotals}
+                                                    formRenderProps={formRenderProps}
+                                                    formEditMode={formEditMode}
+                                                    invoiceId={invoiceId}
+                                                    paymentId={paymentId}
+                                                    finalPaymentMethodTypes={finalPaymentMethodTypes}
+                                                    paymentMethodLabel={paymentMethodLabel}
+                                                    isOrderApprovedOrBillingAccountPresent={isOrderApprovedOrBillingAccountPresent}
+                                                    billingAccount={billingAccount}
+                                                    getTranslatedLabel={getTranslatedLabel}
+                                                />
                                             </Grid>
                                         </Grid>
 
-                                        <Grid
-                                            container
-                                            item
-                                            alignItems={"center"}
-                                            sx={{ml: 2, mt: 3}}
-                                        >
-                                            <Grid item xs={10}>
-                                                {memoizedSalesOrderItemsList}
-                                            </Grid>
-
-
-                                            <Grid
-                                                item
-                                                container
-                                                xs={2}
-                                                justifyContent={"flex-start"}
-                                                direction={"column"}
-                                            >
-                                               
-                                                {formEditMode < 3 ? (
-                                                    // Render the Payment Method Type radio group (editable)
-                                                    <Grid item xs={3}>
-                                                        <Field
-                                                            id={"paymentMethodTypeId"}
-                                                            name={"paymentMethodTypeId"}
-                                                            label={getTranslatedLabel(`${localizationKey}.pmt`, "Payment Method Type")}
-                                                            component={FormRadioGroup}
-                                                            disabled={formEditMode > 2}
-                                                            layout={"vertical"}
-                                                            data={finalPaymentMethodTypes || []}
-                                                            onChange={() => {
-                                                                // Clear other payment-related fields
-                                                                formRenderProps.onChange("billingAccountId", {
-                                                                    value: null,
-                                                                });
-                                                            }}
-                                                        />
-                                                    </Grid>
-                                                ) : (
-                                                    // Render a simple text display of the Payment Method
-                                                    <Grid item xs={12} sx={{mb: 1}}>
-                                                        <Typography variant="subtitle1" sx={{fontWeight: "bold"}}>
-                                                            {getTranslatedLabel(
-                                                                `${localizationKey}.pmt`,
-                                                                "Payment Method"
-                                                            )}
-                                                        </Typography>
-                                                        <Typography variant="body1">
-                                                            {paymentMethodLabel || "N/A"}
-                                                        </Typography>
-                                                    </Grid>
-                                                )}
-
-                                                {invoiceId && formEditMode != 1 && (
-                                                    <Grid item xs={12} md={6}>
-                                                        <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-                                                            {getTranslatedLabel("general.invoiceNo", "Invoice No:")}
-                                                        </Typography>
-                                                        <Typography variant="body1">
-                                                            <Link to={`/invoices/${invoiceId}`} state={{}}>
-                                                                {invoiceId}
-                                                            </Link>
-                                                        </Typography>
-                                                    </Grid>
-                                                )}
-
-                                                {/* Payment No. */}
-                                                {paymentId && formEditMode != 1 && (
-                                                    <Grid item xs={12} md={6}>
-                                                        <Typography variant="subtitle1" sx={{fontWeight: "bold"}}>
-                                                            {getTranslatedLabel("general.paymentNo", "Payment No:")}
-                                                        </Typography>
-                                                        <Typography variant="body1">
-                                                            <NavLink to="/payments"
-                                                                     state={{selectedPaymentId: paymentId}}>
-                                                                {paymentId}
-                                                            </NavLink>
-                                                        </Typography>
-                                                    </Grid>
-                                                )}
-
-
-                                                {isOrderApprovedOrBillingAccountPresent && (
-                                                    <Grid item xs={12}>
-                                                        <Button
-                                                            ref={popoverAnchor}
-                                                            variant="contained"
-                                                            color="primary"
-                                                            onClick={() => setShowPopover(!showPopover)}
-                                                            sx={{mt: 2}}
-                                                        >
-                                                            Show Billing Account Balance
-                                                        </Button>
-                                                        <Popover show={showPopover} anchor={popoverAnchor.current}
-                                                                 position="bottom">
-                                                            <Box p={2} width={250}>
-                                                                {billingAccount?.map((ba: any) => (
-                                                                    <Box key={ba.billingAccountId} sx={{mb: 1}}>
-                                                                        <Typography variant="subtitle1"
-                                                                                    sx={{fontWeight: "bold"}}>
-                                                                            Account Limit:
-                                                                        </Typography>
-                                                                        <Typography variant="body1">
-                                                                            {ba.accountLimit.toLocaleString()} {ba.accountCurrencyUomId}
-                                                                        </Typography>
-
-                                                                        <Typography variant="subtitle1"
-                                                                                    sx={{fontWeight: "bold", mt: 1}}>
-                                                                            Account Balance:
-                                                                        </Typography>
-                                                                        <Typography variant="body1">
-                                                                            {ba.accountBalance.toLocaleString()} {ba.accountCurrencyUomId}
-                                                                        </Typography>
-                                                                    </Box>
-                                                                ))}
-                                                            </Box>
-                                                        </Popover>
-                                                    </Grid>
-                                                )}
-                                            </Grid>
-                                        </Grid>
-
-                                        <Grid container spacing={1}>
+                                        <Grid container spacing={1} sx={{ mt: 2 }}>
                                             <Grid item xs={1}>
                                                 <Button
                                                     sx={{m: 1}}
@@ -814,7 +534,7 @@ export default function SalesOrderForm({
                                             <LoadingComponent
                                                 message={getTranslatedLabel(`${localizationKey}.processing`, "Processing Order...")}/>
                                         )}
-                                    </Grid>
+                                    </Box>
                                 </fieldset>
                             </FormElement>
                         )}
