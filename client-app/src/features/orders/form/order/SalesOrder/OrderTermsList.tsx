@@ -17,6 +17,7 @@ import OrderTermForm from './OrderTermForm';
 import { OrderTerm } from '../../../../../app/models/order/orderTerm';
 import { useTranslationHelper } from '../../../../../app/hooks/useTranslationHelper';
 import { selectAdjustedOrderTerms } from '../../../slice/orderSelectors';
+import '../../../../../app/common/grid/grid.styles.css';
 
 interface OrderTermsListProps {
     onClose: () => void
@@ -86,7 +87,7 @@ const OrderTermsList = ({onClose, orderId}: OrderTermsListProps) => {
         <Grid container padding={2} columnSpacing={1}>
             <Grid container>
                 <div className="div-container">
-                <KendoGrid className="main-grid"
+                <KendoGrid className="main-grid kendo-grid-styled"
                 style={{height: "60vh", width: 770}}
                     data={orderBy(selectedOrderTerms ?? [], sort).slice(page.skip, page.take + page.skip)}
                     sortable={true}
