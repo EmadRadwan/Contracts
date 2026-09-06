@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, Box } from '@mui/material';
+import { Grid, Box, Typography } from '@mui/material';
 import { Field, FormRenderProps } from '@progress/kendo-react-form';
 import Button from '@mui/material/Button';
 import { FormComboBoxVirtualCustomer } from '../../../../../../app/common/form/FormComboBoxVirtualCustomer';
@@ -19,6 +19,7 @@ interface CustomerInformationSectionProps {
     setShowNewCustomer: (show: boolean) => void;
     currencies?: any[];
     isTaxLoading?: boolean;
+    onAddTaxChange: (value: boolean) => void;
     getTranslatedLabel: (key: string, defaultValue: string) => string;
 }
 
@@ -30,6 +31,7 @@ export const CustomerInformationSection: React.FC<CustomerInformationSectionProp
     setShowNewCustomer,
     currencies = [],
     isTaxLoading = false,
+    onAddTaxChange,
     getTranslatedLabel,
 }) => {
     const localizationKey = 'order.so.form';
@@ -114,8 +116,14 @@ export const CustomerInformationSection: React.FC<CustomerInformationSectionProp
                                         name="addTax"
                                         label={getTranslatedLabel(`${localizationKey}.addTax`, 'Add Tax')}
                                         component={MemoizedFormCheckBox}
+                                        onChange={(e: any) => onAddTaxChange(e.value)}
                                         disabled={isTaxLoading}
                                     />
+                                    {isTaxLoading && (
+                                        <Typography variant="caption" color="textSecondary" sx={{ ml: 1 }}>
+                                            {getTranslatedLabel(`${localizationKey}.calculatingTax`, 'Calculating Tax...')}
+                                        </Typography>
+                                    )}
                                 </Box>
                             </Grid>
                         )}

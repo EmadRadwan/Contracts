@@ -462,6 +462,7 @@ export default function SalesOrderForm({
                                             setShowNewCustomer={setShowNewCustomer}
                                             currencies={currencies}
                                             isTaxLoading={isTaxLoading}
+                                            onAddTaxChange={(value: boolean) => dispatch(setAddTax(value))}
                                             getTranslatedLabel={getTranslatedLabel}
                                         />
 
