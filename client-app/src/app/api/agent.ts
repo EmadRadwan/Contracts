@@ -31,7 +31,19 @@ import { VehicleContent } from "../models/content/vehicleContent";
 import { VehicleLov } from "../models/service/vehicle";
 import { Invoice } from "../models/accounting/invoice";
 
-axios.defaults.baseURL = import.meta.env.VITE_API_URL;
+// Determine API URL based on current domain and protocol
+const getApiUrl = () => {
+    const envUrl = import.meta.env.VITE_API_URL;
+    // If accessing via IP address (phone), replace localhost with the IP
+    if (envUrl && window.location.hostname !== 'localhost' && envUrl.includes('localhost')) {
+        const apiUrl = envUrl.replace('localhost', window.location.hostname);
+        // Also update protocol to match current page (HTTP or HTTPS)
+        return apiUrl.replace(/^https?:/, window.location.protocol);
+    }
+    return envUrl;
+};
+
+axios.defaults.baseURL = getApiUrl();
 axios.defaults.withCredentials = true;
 
 const responseBody = (response: AxiosResponse) => response.data;

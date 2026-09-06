@@ -344,14 +344,47 @@
       }
     }
   },
+  "installmentCalculator": {
+    "open": "حساب سعر المتر بالتقسيط",
+    "title": "حاسبة سعر المتر بالتقسيط (PV-Based)",
+    "subtitle": "احسب السعر الاسمي للمتر بالتقسيط بحيث تكون قيمته الحالية مساوية لسعر الكاش",
+    "cashPricePerM2": "سعر الكاش لكل م²",
+    "durationYears": "المدة بالسنوات",
+    "annualDiscountRate": "معدل الخصم السنوي",
+    "installmentsPerYear": "عدد الأقساط في السنة",
+    "downPaymentPercentage": "نسبة المقدم %",
+    "close": "إغلاق",
+    "calculate": "حساب",
+    "calculationSuccess": "تم الحساب بنجاح",
+    "calculationError": "فشل في حساب سعر التقسيط",
+    "infoMessage": "الدقة المستندة إلى نموذج PV الرياضي",
+    "results": {
+      "title": "نتائج الحساب",
+      "installmentPricePerM2": "سعر التقسيط لكل م²"
+    }
+  },
   "salesRequest": {
     "form": {
       "new": "طلب مبيعات جديد",
       "new2": "طلب مبيعات",
+      "defaultAdvance": "المقدم الافتراضي",
+      "maintenanceDeposit": "دفعة الصيانة",
+      "change": "تغيير",
+      "productDetails": "تفاصيل المنتج",
+      "productDetailsDesc": "تحديد الأصل العقاري وتعيين جدول المعاملات",
+      "assetSpecifications": "مواصفات الأصل",
+      "assetSpecificationsDesc": "الأبعاد الفيزيائية وحسابات المساحة للوحدة المختارة",
+      "financialTerms": "الشروط المالية",
+      "financialTermsDesc": "تحديد هيكل التسعير والأقساط والودائع المطلوبة",
+      "customerInfo": "معلومات العميل والملاحظات",
+      "customerInfoDesc": "تفاصيل المشتري القانوني وسياق المعاملة الإضافية",
       "saleDate": "تاريخ البيع *",
       "product": "الوحدة",
+      "productSelection": "اختيار المنتج",
+      "projectCode": "رمز المشروع",
       "from": "العميل *",
       "employee": "موظف المبيعات *",
+      "assignedEmployee": "الموظف المعين",
       "project": "المشروع",
       "apartmentM2": "مساحة الشقة (م²)",
       "gardenM2": "مساحة الحديقة (م²)",
@@ -393,6 +426,11 @@
       "notification": {
         "datesUpdated": "تم تحديث تواريخ جدول السداد بناءً على تاريخ القسط الأول أو المدة الجديدة. يرجى الحفظ لتثبيت التغييرات.",
         "planApplied": "تم تطبيق جدول السداد وتحديث المقدم"
+      },
+      "defaults": {
+        "title": "نسب الحساب الافتراضية",
+        "advance": "دفعة المقدم الافتراضية (%)",
+        "maintenance": "وديعة الصيانة الافتراضية (%)"
       },
       "dateUpdateHint": "التغييرات ستحدث تواريخ جدول السداد فوراً",
       "actions": "الإجراءات",
@@ -454,7 +492,8 @@
       "pricePerM2": "السعر / م²",
       "project": "المشروع",
       "isChequesDelivered": "الشيكات مسلمة",
-      "comments": "التعليقات"
+      "comments": "التعليقات",
+      "commission": "عمولة"
     },
     "report": {
       "daterange": {
@@ -472,6 +511,11 @@
       "reserveRequests": "استمارات الحجز",
       "commissionRates": "معدلات العمولة",
       "salesCommissions": "عمولات المبيعات"
+    },
+    "status": {
+      "created": "تم الإنشاء",
+      "approved": "معتمد",
+      "unknown": "غير معروف"
     },
     "paymentPlan": {
       "title": "جدول السداد",

@@ -22,6 +22,7 @@ import {
 import { setUiOrderAdjustments } from "../../slice/orderAdjustmentsUiSlice";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
+import "../../../../app/common/grid/grid.styles.css";
 
 interface Props {
   onClose: () => void;
@@ -164,7 +165,7 @@ export default function OrderAdjustmentsList({ onClose }: Props) {
         <Grid container>
           <div className="div-container">
             <KendoGrid
-              className="main-grid"
+              className="main-grid kendo-grid-styled"
               style={{ height: "300px" }}
               data={orderBy(
                 uiOrderAdjustments ? uiOrderAdjustments : [],

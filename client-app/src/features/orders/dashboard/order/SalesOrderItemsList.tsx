@@ -33,6 +33,7 @@ import OrderTermsList from "../../form/order/SalesOrder/OrderTermsList";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
 import store from "../../../../app/store/store";
 import {SalesOrderItemFormBarcodeMemo} from "../../form/order/SalesOrder/SalesOrderItemFormBarcode";
+import "../../../../app/common/grid/grid.styles.css";
 
 interface Props {
     orderFormEditMode: number
@@ -439,9 +440,8 @@ export default function SalesOrderItemsList({orderFormEditMode, orderId}: Props)
                     </Grid>
                 </Grid>
             ) : (
-            <Grid container columnSpacing={1} direction={"column"} alignItems="flex-start" sx={{mt: 1}}>
-                
-                    <KendoGrid className="main-grid" style={{height: "40vh"}}
+            <div style={{ width: '100%', overflowX: 'auto' }}>
+                    <KendoGrid className="main-grid kendo-grid-styled" style={{height: "40vh", minWidth: '100%'}}
                                data={orderBy(adjustedOrderItems ? adjustedOrderItems : [], sort).slice(page.skip, page.take + page.skip)}
                                sortable={true}
                                sort={sort}
@@ -455,9 +455,9 @@ export default function SalesOrderItemsList({orderFormEditMode, orderId}: Props)
                                onPageChange={pageChange}
                     >
                         <GridToolbar>
-                            <Grid container direction={"row"} justifyContent={"space-between"} alignItems="center">
+                            <Grid container direction={"row"} justifyContent={"space-between"} alignItems="center" sx={{flexWrap: {xs: 'wrap', md: 'nowrap'}, gap: {xs: 1, md: 0}}}>
                                 <Grid item>
-                                    <Grid container direction="row" alignItems="center" spacing={2}>
+                                    <Grid container direction="row" alignItems="center" spacing={2} sx={{flexWrap: {xs: 'wrap', md: 'nowrap'}}}>
                                         <Grid item>
                                             <FormControlLabel
                                                 control={
@@ -480,46 +480,48 @@ export default function SalesOrderItemsList({orderFormEditMode, orderId}: Props)
                                                 }}
                                                 variant="outlined"
                                                 disabled={customerId === undefined || orderFormEditMode > 3}
+                                                sx={{ whiteSpace: 'nowrap' }}
                                             >
                                                 {getTranslatedLabel(`${localizationKey}.add`, "Add Product")}
                                             </Button>
                                         </Grid>
                                     </Grid>
                                 </Grid>
-                                <Grid item rowSpacing={3}>
+                                <Grid item sx={{display: 'flex', gap: 1, flexWrap: {xs: 'wrap', md: 'nowrap'}}}>
                                     <Button
                                         color="secondary"
-                                        sx={{ marginX: 2 }}
                                         onClick={() => setShowList(true)}
                                         variant="outlined"
                                         disabled={orderSTotal === 0}
+                                        sx={{ whiteSpace: 'nowrap' }}
                                     >
                                         {getTranslatedLabel(`${localizationKey}.adj`, "Order Adjustments")}
                                     </Button>
                                     <Button
                                         onClick={() => setShowTermsModal(true)}
                                         variant="outlined"
+                                        sx={{ whiteSpace: 'nowrap' }}
                                     >
                                         {getTranslatedLabel(`${localizationKey}.terms`, "Order Terms")}
                                     </Button>
                                 </Grid>
                             </Grid>
                         </GridToolbar>
-                        <Column field="productName" title={getTranslatedLabel(`${localizationKey}.product`, "Product")} cell={orderItemCell} width={300}/>
-                        <Column field="productId" title={getTranslatedLabel(`${localizationKey}.orderItem`,"ProductId")} width={110}/>
+                        <Column field="productName" title={getTranslatedLabel(`${localizationKey}.product`, "Product")} cell={orderItemCell} />
+                        <Column field="productId" title={getTranslatedLabel(`${localizationKey}.orderItem`,"ProductId")} />
                         <Column field="orderItemSeqId" title={getTranslatedLabel(`${localizationKey}.orderItem`,"orderItemSeqId")} width={0}/>
                         <Column
                             field="quantity"
                             title={getTranslatedLabel(`${localizationKey}.quantity`, "Quantity")}
-                            width={120}
+                            
                             cell={QuantityCell}
-                        /> <Column field="quantity" title={getTranslatedLabel(`${localizationKey}.quantity`,"Quantity")} width={120}/>
-                        <Column cell={ItemDiscountCommandCell} title={getTranslatedLabel(`${localizationKey}.discount`,"Discounts/Tax")} width={170}/>
-                        <Column field="subTotal" cell={SubtotalDisplayCell} title={getTranslatedLabel(`${localizationKey}.total`,"Item Total")} width={120} format="{0:c}"/>
-                        <Column cell={CommandCell} width="100px"/>
+                        /> <Column field="quantity" title={getTranslatedLabel(`${localizationKey}.quantity`,"Quantity")} />
+                        <Column cell={ItemDiscountCommandCell} title={getTranslatedLabel(`${localizationKey}.discount`,"Discounts/Tax")} />
+                        <Column field="subTotal" cell={SubtotalDisplayCell} title={getTranslatedLabel(`${localizationKey}.total`,"Item Total")}  format="{0:c}"/>
+                        <Column cell={CommandCell} />
 
                     </KendoGrid>
-            </Grid>
+            </div>
             )}
         </>
 

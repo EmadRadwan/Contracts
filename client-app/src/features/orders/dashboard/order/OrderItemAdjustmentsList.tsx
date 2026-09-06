@@ -20,6 +20,7 @@ import {setUiOrderAdjustments} from "../../slice/orderAdjustmentsUiSlice";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
 import {setNeedsTaxRecalculation} from "../../slice/sharedOrderUiSlice";
+import "../../../../app/common/grid/grid.styles.css";
 
 //todo: product name font size to be adjusted based on text length
 //todo: Add ajustment button to be displayed only if user has permission to add adjustment
@@ -171,7 +172,7 @@ function OrderItemAdjustmentsList({
                 
             </Grid>
             <Grid item xs={12}>
-                <KendoGrid className="main-grid" style={{height: "400px"}}
+                <KendoGrid className="main-grid kendo-grid-styled" style={{height: "400px"}}
                            data={orderBy(uiOrderItemAdjustments ? uiOrderItemAdjustments : [], sort).slice(page.skip, page.take + page.skip)}
                            sortable={true}
                            sort={sort}

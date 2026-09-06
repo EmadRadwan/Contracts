@@ -1,8 +1,9 @@
-import React, {ReactNode} from 'react';
+import React, { ReactNode } from 'react';
 import Modal from '@mui/material/Modal';
 import Backdrop from '@mui/material/Backdrop';
 import Box from '@mui/material/Box';
-import {animated, useSpring} from '@react-spring/web';
+import { animated, useSpring } from '@react-spring/web';
+import { useAppSelector } from '../../store/configureStore';
 
 interface FadeProps {
     children: React.ReactElement;
@@ -14,10 +15,10 @@ interface FadeProps {
 }
 
 const Fade = React.forwardRef<HTMLDivElement, FadeProps>(function Fade(props, ref) {
-    const {children, in: open, onClick, onEnter, onExited, ownerState, ...other} = props;
+    const { children, in: open, onClick, onEnter, onExited, ownerState, ...other } = props;
     const style = useSpring({
-        from: {opacity: 0},
-        to: {opacity: open ? 1 : 0},
+        from: { opacity: 0 },
+        to: { opacity: open ? 1 : 0 },
         onStart: () => {
             if (open && onEnter) {
                 onEnter(null as any, true);
@@ -32,7 +33,7 @@ const Fade = React.forwardRef<HTMLDivElement, FadeProps>(function Fade(props, re
 
     return (
         <animated.div ref={ref} style={style} {...other}>
-            {React.cloneElement(children, {onClick})}
+            {React.cloneElement(children, { onClick })}
         </animated.div>
     );
 });
@@ -49,14 +50,17 @@ interface ModalContainerProps {
 
 
 const ModalContainer: React.FC<ModalContainerProps> = ({
-                                                           show,
-                                                           onClose,
-                                                           children,
-                                                           width = '95vw',              // Default to 95% of viewport
-                                                           maxWidth = 1680,             // Good upper limit (prevents it from being too stretched)
-                                                           dir = 'rtl',
-                                                           lang,
-                                                       }) => {
+    show,
+    onClose,
+    children,
+    width = '95vw',              // Default to 95% of viewport
+    maxWidth = 1680,             // Good upper limit (prevents it from being too stretched)
+    // dir = 'rtl',
+    lang,
+}) => {
+
+    const language = useAppSelector((state) => state.localization.language);
+    const dir = language === 'ar' ? 'rtl' : 'ltr'; // Determine direction based on language
 
     const effectiveLang = lang || (dir === 'rtl' ? 'ar' : 'en');
     const style = {
@@ -90,13 +94,13 @@ const ModalContainer: React.FC<ModalContainerProps> = ({
             open={show}
             onClose={onClose}
             closeAfterTransition
-            slots={{backdrop: Backdrop}}
+            slots={{ backdrop: Backdrop }}
             slotProps={{
                 backdrop: {
                     TransitionComponent: Fade,
                 },
             }}
-            sx={{zIndex: 99}}
+            sx={{ zIndex: 99 }}
         >
             <Fade in={show}>
                 <Box

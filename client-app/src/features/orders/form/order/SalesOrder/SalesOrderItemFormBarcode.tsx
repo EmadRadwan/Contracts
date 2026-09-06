@@ -9,10 +9,11 @@ import * as React from 'react';
 import LoadingButton from "@mui/lab/LoadingButton";
 import { setProductId } from "../../../slice/sharedOrderUiSlice";
 import { useAppDispatch } from "../../../../../app/store/configureStore";
-import { Typography, TextField } from "@mui/material";
+import { Typography, TextField, Box, ToggleButton, ToggleButtonGroup, Card, CardContent } from "@mui/material";
 import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
 import { useGetProductDetailsQuery, useGetProductPriceQuery } from "../../../../../app/store/apis";
 import { toast } from "react-toastify";
+import Quagga from "@ericblade/quagga2";
 
 interface Props {
     orderItem?: any;
@@ -34,6 +35,10 @@ function SalesOrderItemFormBarcode({
     const [isBarcodeLoading, setIsBarcodeLoading] = React.useState(false);
     const [barcodeToQuery, setBarcodeToQuery] = React.useState("");
     const isProcessingRef = React.useRef(false);
+    const [inputMode, setInputMode] = React.useState<'manual' | 'camera'>('manual');
+    const [cameraActive, setCameraActive] = React.useState(false);
+    const cameraRef = React.useRef<HTMLVideoElement | null>(null);
+    const [detectedBarcode, setDetectedBarcode] = React.useState<string>('');
     // REFACTOR: Use ref to store formRenderProps for programmatic access
     // Purpose: Enable programmatic updates and submission for barcode-driven form.
     // Why: Allows setting quantity and productId then submitting after barcode scan.
@@ -188,6 +193,77 @@ function SalesOrderItemFormBarcode({
         dispatch(setProductId(orderItem.productId.productId));
     }
 
+    // Initialize and manage camera for barcode scanning
+    React.useEffect(() => {
+        if (!cameraActive || !cameraRef.current) return;
+
+        const initCamera = async () => {
+            try {
+                Quagga.init(
+                    {
+                        inputStream: {
+                            name: "Live",
+                            type: "LiveStream",
+                            target: cameraRef.current,
+                            constraints: {
+                                width: { min: 640 },
+                                height: { min: 480 },
+                                facingMode: "environment",
+                            },
+                        },
+                        decoder: {
+                            readers: [
+                                "code_128_reader",
+                                "ean_reader",
+                                "ean_8_reader",
+                                "upc_reader",
+                                "upc_e_reader",
+                                "codabar_reader",
+                                "code_39_reader",
+                                "code_39_vin_reader",
+                                "code_93_reader",
+                                "i2of5_reader",
+                                "2of5_reader",
+                            ],
+                        },
+                    },
+                    (err: any) => {
+                        if (err) {
+                            console.error("Quagga init error:", err);
+                            toast.error(getTranslatedLabel("barcode.cameraError", "Camera initialization failed"));
+                            setCameraActive(false);
+                        } else {
+                            Quagga.start();
+                            Quagga.onDetected(handleBarcodeDetected);
+                        }
+                    }
+                );
+            } catch (error) {
+                console.error("Camera error:", error);
+                toast.error(getTranslatedLabel("barcode.cameraPermissionDenied", "Camera permission denied"));
+                setCameraActive(false);
+            }
+        };
+
+        initCamera();
+
+        return () => {
+            Quagga.stop();
+            Quagga.offDetected(handleBarcodeDetected);
+        };
+    }, [cameraActive]);
+
+    const handleBarcodeDetected = (result: any) => {
+        if (result.codeResult && result.codeResult.code) {
+            const code = result.codeResult.code;
+            setDetectedBarcode(code);
+            setBarcode(code);
+            setBarcodeToQuery(code);
+            setCameraActive(false);
+            toast.success(getTranslatedLabel("barcode.detected", `Barcode detected: ${code}`));
+        }
+    };
+
     const productValidator = (values: any): KeyValue<string> | undefined => {
         console.log("Validating product form with values:", values);
         const msgQuantityGreaterThanATP: KeyValue<string> = {
@@ -262,24 +338,100 @@ function SalesOrderItemFormBarcode({
                             )}
 
                             <fieldset className={"k-form-fieldset"}>
-                                <Grid container spacing={2} alignItems={"flex-end"}>
-                                    <Grid item xs={6}>
-                                        <TextField
-                                            fullWidth
-                                            label={getTranslatedLabel(`${localizationKey}.barcode`, "Enter Product ID")}
-                                            value={barcode}
-                                            onChange={(e) => setBarcode(e.target.value)}
-                                            inputRef={barcodeInputRef}
-                                            disabled={editMode === 2 || isBarcodeLoading}
-                                            onKeyPress={(e) => {
-                                                if (e.key === "Enter") {
-                                                    handleBarcodeScan();
-                                                }
-                                            }}
-                                            autoFocus
-                                        />
+                                {/* Input Mode Toggle */}
+                                <Box sx={{ mb: 3 }}>
+                                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                        {getTranslatedLabel(`${localizationKey}.inputMode`, "Input Mode")}
+                                    </Typography>
+                                    <ToggleButtonGroup
+                                        value={inputMode}
+                                        exclusive
+                                        onChange={(e: any) => {
+                                            setInputMode(e.target.value);
+                                            if (e.target.value === 'manual') {
+                                                setCameraActive(false);
+                                                barcodeInputRef.current?.focus();
+                                            }
+                                        }}
+                                        disabled={editMode === 2}
+                                        fullWidth
+                                    >
+                                        <ToggleButton value="manual" aria-label="manual input">
+                                            {getTranslatedLabel(`${localizationKey}.manual`, "Manual Input")}
+                                        </ToggleButton>
+                                        <ToggleButton value="camera" aria-label="camera scan">
+                                            {getTranslatedLabel(`${localizationKey}.cameraScanner`, "Camera Scanner")}
+                                        </ToggleButton>
+                                    </ToggleButtonGroup>
+                                </Box>
+
+                                {/* Manual Input Mode */}
+                                {inputMode === 'manual' && (
+                                    <Grid container spacing={2} alignItems={"flex-end"} sx={{ mb: 3 }}>
+                                        <Grid item xs={12}>
+                                            <TextField
+                                                fullWidth
+                                                label={getTranslatedLabel(`${localizationKey}.barcode`, "Enter Product ID / Barcode")}
+                                                value={barcode}
+                                                onChange={(e) => setBarcode(e.target.value)}
+                                                inputRef={barcodeInputRef}
+                                                disabled={editMode === 2 || isBarcodeLoading}
+                                                onKeyPress={(e) => {
+                                                    if (e.key === "Enter") {
+                                                        handleBarcodeScan();
+                                                    }
+                                                }}
+                                                autoFocus
+                                                placeholder={getTranslatedLabel(`${localizationKey}.barcodePlaceholder`, "Type barcode or product ID and press Enter")}
+                                            />
+                                        </Grid>
                                     </Grid>
-                                </Grid>
+                                )}
+
+                                {/* Camera Scanner Mode */}
+                                {inputMode === 'camera' && (
+                                    <Card sx={{ mb: 3 }}>
+                                        <CardContent>
+                                            {!cameraActive ? (
+                                                <Box sx={{ textAlign: 'center', py: 2 }}>
+                                                    <Button
+                                                        variant="contained"
+                                                        onClick={() => setCameraActive(true)}
+                                                        disabled={editMode === 2}
+                                                        sx={{ mb: 2 }}
+                                                    >
+                                                        {getTranslatedLabel(`${localizationKey}.startCamera`, "Start Camera")}
+                                                    </Button>
+                                                    <Typography variant="body2" color="textSecondary">
+                                                        {getTranslatedLabel(`${localizationKey}.cameraHelp`, "Click to open camera and scan barcode")}
+                                                    </Typography>
+                                                </Box>
+                                            ) : (
+                                                <Box sx={{ textAlign: 'center' }}>
+                                                    <video
+                                                        ref={cameraRef}
+                                                        style={{
+                                                            width: '100%',
+                                                            maxWidth: '400px',
+                                                            borderRadius: '8px',
+                                                            marginBottom: '16px',
+                                                        }}
+                                                    />
+                                                    <Button
+                                                        variant="outlined"
+                                                        color="error"
+                                                        onClick={() => setCameraActive(false)}
+                                                    >
+                                                        {getTranslatedLabel(`${localizationKey}.stopCamera`, "Stop Camera")}
+                                                    </Button>
+                                                    <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                                                        {getTranslatedLabel(`${localizationKey}.scannerActive`, "Point camera at barcode...")}
+                                                    </Typography>
+                                                </Box>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                )}
 
                                 {productPromotions &&
                                     productPromotions.length > 0 &&

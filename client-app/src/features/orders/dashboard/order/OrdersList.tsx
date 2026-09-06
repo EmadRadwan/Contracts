@@ -25,6 +25,8 @@ import { ColumnMenuOrderTypeFilter } from "../ColumnMenu";
 import { resetUiOrderItems, setUiOrderItems } from "../../slice/orderItemsUiSlice";
 import { resetUiOrderAdjustments, setUiOrderAdjustments } from "../../slice/orderAdjustmentsUiSlice";
 import AccountingMenu from "../../../accounting/invoice/menu/AccountingMenu";
+import { TextFilterCell, DateFilterCell, NumericFilterCell } from "../../../../app/common/grid";
+import "../../../../app/common/grid/grid.styles.css";
 
 interface OrdersListProps {
     orderType: 'SALES_ORDER' | 'PURCHASE_ORDER';
@@ -177,6 +179,7 @@ export default function OrdersList({ orderType }: OrdersListProps) {
                     <Grid item xs={12}>
                         <div className="div-container">
                             <KendoGrid
+                                className="kendo-grid-styled"
                                 style={{ height: '65vh' }}
                                 resizable={true}
                                 filterable={true}
@@ -204,34 +207,51 @@ export default function OrdersList({ orderType }: OrdersListProps) {
                                     width={150}
                                     locked={!show}
                                     cell={OrderDescriptionCell}
+                                    filterable={true}
+                                    filter="text"
+                                    filterCell={TextFilterCell}
                                 />
                                 <Column
                                     field="orderTypeDescription"
                                     title={getTranslatedLabel("order.list.type", "Type")}
                                     columnMenu={ColumnMenuOrderTypeFilter}
+                                    filterable={false}
                                 />
                                 <Column
                                     field="fromPartyName"
                                     title={getTranslatedLabel("order.list.customer", "Customer")}
+                                    filterable={true}
+                                    filter="text"
+                                    filterCell={TextFilterCell}
                                 />
                                 <Column
                                     field="grandTotal"
                                     title={getTranslatedLabel("order.list.amount", "Amount")}
-                                    width={130}
+                                    
                                     filter={"numeric"}
+                                    filterable={true}
+                                    filterCell={NumericFilterCell}
                                 />
                                 <Column
                                     field="currencyUomDescription"
                                     title={getTranslatedLabel("order.list.currency", "Currency")}
+                                    filterable={false}
+                                    width={130}
                                 />
                                 <Column
                                     field="orderDate"
                                     title={getTranslatedLabel("order.list.orderDate", "Order Date")}
                                     format="{0: dd/MM/yyyy}"
+                                    filterable={true}
+                                    filter="date"
+                                    filterCell={DateFilterCell}
                                 />
                                 <Column
                                     field="statusDescription"
                                     title={getTranslatedLabel("order.list.status", "Status")}
+                                    filterable={true}
+                                    filter="text"
+                                    filterCell={TextFilterCell}
                                 />
                             </KendoGrid>
                             {isFetching && (

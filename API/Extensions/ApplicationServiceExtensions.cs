@@ -62,7 +62,10 @@ public static class ApplicationServiceExtensions
                     .AllowAnyMethod()
                     .AllowAnyHeader()
                     .AllowCredentials()
-                    .WithOrigins("http://localhost:3000");
+                    .WithOrigins(
+                        "http://localhost:3000",
+                        "http://192.168.1.2:3000"
+                    );
             });
         });
 
