@@ -126,6 +126,7 @@ public class CreateSalesCommission
                     ExternalCompanyPercent = isIndirect ? dto.ExternalCompanyPercent : null,
                     ExternalCompanyGrossAmount = isIndirect ? amounts.ExternalCompanyGrossAmount : null,
                     ExternalCompanyNetAmount = isIndirect ? amounts.ExternalCompanyNetAmount : null,
+                    ExtCompanyTaxInvoiceRaised = isIndirect && dto.ExtCompanyTaxInvoiceRaised,
                     ExternalSalesRepPartyId = isIndirect ? dto.ExternalSalesRepPartyId : null,
                     ExternalSalesRepPercent = isIndirect ? dto.ExternalSalesRepPercent : null,
                     ExternalSalesRepAmount = isIndirect ? amounts.ExternalSalesRepAmount : null,
@@ -138,7 +139,6 @@ public class CreateSalesCommission
                     ExternalManagerNetAmount = isIndirect ? amounts.ExternalManagerNetAmount : null,
                     HasExternalManagerWithholdingTaxExemption = isIndirect && dto.HasExternalManagerWithholdingTaxExemption,
                     ExternalManagerNationalId = isIndirect ? dto.ExternalManagerNationalId : null,
-                    HasVatExemption = dto.HasVatExemption,
                     HasWithholdingTaxExemption = dto.HasWithholdingTaxExemption,
                     VatPercent = dto.VatPercent,
                     WithholdingTaxPercent = dto.WithholdingTaxPercent,
@@ -162,6 +162,7 @@ public class CreateSalesCommission
                 dto.Manager2Amount = commission.Manager2Amount;
                 dto.Manager2NetAmount = commission.Manager2NetAmount;
                 dto.ExternalCompanyGrossAmount = commission.ExternalCompanyGrossAmount;
+                dto.ExternalCompanyVatAmount = amounts.ExternalCompanyVatAmount;
                 dto.ExternalCompanyNetAmount = commission.ExternalCompanyNetAmount;
                 dto.ExternalSalesRepAmount = commission.ExternalSalesRepAmount;
                 dto.ExternalSalesRepNetAmount = commission.ExternalSalesRepNetAmount;

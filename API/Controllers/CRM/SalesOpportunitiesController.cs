@@ -142,7 +142,10 @@ public class SalesOpportunitiesController : BaseApiController
         opportunity.SalesOpportunityId = id;
         return HandleResult(await Mediator.Send(new UpdateSalesOpportunity.Command
         {
-            Opportunity = opportunity
+            Opportunity = opportunity,
+            // The form posts every field it owns, so a null Project or Unit here
+            // is a deliberate clear rather than an omission.
+            IsFullUpdate = true
         }));
     }
 

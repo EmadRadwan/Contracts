@@ -97,32 +97,37 @@ function makePercentRequiredValidator(partySelected: boolean, label: string) {
 }
 
 // External broker net calc — mirrors SalesCommissionCalculator.CalculateAmountsCore's external
-// company VAT/WHT math on the backend. The two exemptions are independent: a VAT-exempt broker is
-// still subject to WHT, and only hasWithholdingTaxExemption removes it. VAT, when it applies, is
-// embedded in the gross amount, so WHT comes off the VAT-exclusive base; with no VAT embedded the
-// gross IS the base.
+// company VAT/WHT math on the backend. Three independent switches:
+//   taxInvoiceRaised           — رفع الفاتورة الضريبية. Raised (تم رفعها) means the VAT is paid over
+//                                to the broker; outstanding (لم ترفع) means it is withheld.
+//   hasWithholdingTaxExemption — removes the withholding tax.
+// Withholding is always charged on the VAT-exclusive base regardless of the other two.
 interface TaxBreakdown {
     gross: number;
-    // VAT embedded in the gross — 0 when the party is VAT-exempt or not VAT-liable. Deducted from the
-    // net along with `wht`, so gross − vat − wht === net and the on-screen lines add up.
+    // VAT embedded in the gross — 0 when the party is VAT-exempt or not VAT-liable. Always shown, the
+    // way the users' sheet shows its الضريبة 14% column, but only subtracted from `net` when
+    // `vatDeducted` is true (i.e. the tax invoice is still outstanding).
     vat: number;
+    vatDeducted: boolean;
     wht: number;   // withholding tax actually deducted — 0 when exempt or the rate is 0
     net: number;
 }
 
 function calcExternalCompanyAmounts(
     salePrice: number, percent: number, factor: number,
-    hasVatExemption: boolean, vatPercent: number,
+    taxInvoiceRaised: boolean, vatPercent: number,
     hasWithholdingTaxExemption: boolean, withholdingTaxPercent: number
 ): TaxBreakdown {
     const gross = salePrice * percent / 100 * factor;
     const vatRate = vatPercent > 0 ? vatPercent : 14;
-    const baseAmount = hasVatExemption ? gross : gross * 100 / (100 + vatRate);
+    // A broker commission always carries VAT, so the base is always the VAT-exclusive figure.
+    const baseAmount = gross * 100 / (100 + vatRate);
     const vat = gross - baseAmount;
     const wht = (!hasWithholdingTaxExemption && withholdingTaxPercent > 0)
         ? baseAmount * (withholdingTaxPercent / 100)
         : 0;
-    return { gross, vat, wht, net: gross - vat - wht };
+    // The VAT only leaves the broker's payment while the tax invoice is outstanding.
+    return { gross, vat, vatDeducted: !taxInvoiceRaised, wht, net: taxInvoiceRaised ? gross - wht : gross - wht - vat };
 }
 
 // External broker's rep/manager net calc — WHT-only, mirrors the backend's ExternalSalesRep/ExternalManager math.
@@ -130,7 +135,7 @@ function calcExternalCompanyAmounts(
 function calcWhtOnlyAmounts(salePrice: number, percent: number, factor: number, hasExemption: boolean, withholdingTaxPercent: number): TaxBreakdown {
     const gross = salePrice * percent / 100 * factor;
     const wht = (!hasExemption && withholdingTaxPercent > 0) ? gross * (withholdingTaxPercent / 100) : 0;
-    return { gross, vat: 0, wht, net: gross - wht };
+    return { gross, vat: 0, vatDeducted: false, wht, net: gross - wht };
 }
 
 interface Props {
@@ -278,7 +283,7 @@ function ExternalAmountInfo({ label, percent, salePrice, factor, calcAmounts, fi
                     </Typography>
                     {deducted > 0 && (
                         <Typography variant="caption" color="error.main" display="block">
-                            {`إجمالي المخصوم (ض.ق.م + ض.استقطاع): −${formatEGP(deducted)}`}
+                            {`إجمالي المخصوم: −${formatEGP(deducted)}`}
                         </Typography>
                     )}
                     {finalNet != null && (
@@ -306,11 +311,15 @@ function ExternalAmountInfo({ label, percent, salePrice, factor, calcAmounts, fi
                 <Typography variant="body2" color="text.secondary">
                     {`${label}: ${percent}% ← إجمالي القيمة الكاملة: ${formatEGP(full.gross)}`}
                 </Typography>
-                {full.vat > 0 && (
+                {full.vat > 0 && (full.vatDeducted ? (
                     <Typography variant="caption" color="error.main" display="block">
                         {`ض.ق.م المخصومة: −${formatEGP(full.vat)}`}
                     </Typography>
-                )}
+                ) : (
+                    <Typography variant="caption" color="text.secondary" display="block">
+                        {`ض.ق.م (تم رفع الفاتورة — تُصرف للوسيط): ${formatEGP(full.vat)}`}
+                    </Typography>
+                ))}
                 {full.wht > 0 && (
                     <Typography variant="caption" color="error.main" display="block">
                         {`ض.الاستقطاع المخصومة: −${formatEGP(full.wht)}`}
@@ -336,8 +345,8 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
     const [buttonFlag, setButtonFlag] = useState(false);
     const [hasTwoSalesReps, setHasTwoSalesReps] = useState(false);
     const [hasTwoManagers, setHasTwoManagers] = useState(false);
-    const [hasVatExemption, setHasVatExemption] = useState(false);
     const [hasWithholdingTaxExemption, setHasWithholdingTaxExemption] = useState(false);
+    const [taxInvoiceRaised, setTaxInvoiceRaised] = useState(false);
     const [hasExternalSalesRepWhtExemption, setHasExternalSalesRepWhtExemption] = useState(false);
     const [hasExternalManagerWhtExemption, setHasExternalManagerWhtExemption] = useState(false);
     const [quickCreate, setQuickCreate] = useState<QuickCreateState>({ open: false, role: "SALES_REP", fieldName: "" });
@@ -382,14 +391,14 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
         if (activeCommission) {
             setHasTwoSalesReps(!!activeCommission.salesRep2PartyId);
             setHasTwoManagers(!!activeCommission.manager2PartyId);
-            setHasVatExemption(activeCommission.hasVatExemption ?? false);
+            setTaxInvoiceRaised(activeCommission.extCompanyTaxInvoiceRaised ?? false);
             setHasWithholdingTaxExemption(activeCommission.hasWithholdingTaxExemption ?? false);
             setHasExternalSalesRepWhtExemption(activeCommission.hasExternalSalesRepWithholdingTaxExemption ?? false);
             setHasExternalManagerWhtExemption(activeCommission.hasExternalManagerWithholdingTaxExemption ?? false);
         } else {
             setHasTwoSalesReps(false);
             setHasTwoManagers(false);
-            setHasVatExemption(false);
+            setTaxInvoiceRaised(false);
             setHasWithholdingTaxExemption(false);
             setHasExternalSalesRepWhtExemption(false);
             setHasExternalManagerWhtExemption(false);
@@ -532,10 +541,8 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
             externalManagerPercent: isIndirect ? pct(data.externalManagerParty, data.externalManagerPercent) : null,
             hasExternalManagerWithholdingTaxExemption: isIndirect ? hasExternalManagerWhtExemption : false,
             externalManagerNationalId: isIndirect ? (data.externalManagerNationalId ?? null) : null,
-            hasVatExemption: isIndirect ? hasVatExemption : false,
+            extCompanyTaxInvoiceRaised: isIndirect ? taxInvoiceRaised : false,
             hasWithholdingTaxExemption: isIndirect ? hasWithholdingTaxExemption : false,
-            // Not zeroed by hasVatExemption: that flag is the single source of truth for the exemption,
-            // and zeroing the rate made the reloaded field read 0% while the calc fell back to 14%.
             vatPercent: isIndirect ? (data.vatPercent ?? 14) : 0,
             // Not zeroed by hasWithholdingTaxExemption: this rate also drives the external
             // sales rep / manager net calc, gated independently by their own exemption flags.
@@ -981,18 +988,6 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                     <FormControlLabel
                                                         control={
                                                             <Checkbox
-                                                                checked={hasVatExemption}
-                                                                onChange={(e) => setHasVatExemption(e.target.checked)}
-                                                                disabled={isApproved}
-                                                            />
-                                                        }
-                                                        label={getTranslatedLabel("salesCommission.form.hasVatExemption", "إعفاء من ضريبة القيمة المضافة")}
-                                                    />
-                                                </Grid>
-                                                <Grid item>
-                                                    <FormControlLabel
-                                                        control={
-                                                            <Checkbox
                                                                 checked={hasWithholdingTaxExemption}
                                                                 onChange={(e) => setHasWithholdingTaxExemption(e.target.checked)}
                                                                 disabled={isApproved}
@@ -1001,18 +996,28 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         label={getTranslatedLabel("salesCommission.form.hasWithholdingTaxExemption", "إعفاء من ضريبة الاستقطاع")}
                                                     />
                                                 </Grid>
-                                                {!hasVatExemption && (
-                                                    <Grid item xs={6} md={2}>
-                                                        <Field
-                                                            id="vatPercent"
-                                                            name="vatPercent"
-                                                            label={getTranslatedLabel("salesCommission.form.vatPercent", "نسبة ضريبة القيمة المضافة %")}
-                                                            component={FormNumericTextBox}
-                                                            min={0} max={100} format="n2"
-                                                            disabled={isApproved}
-                                                        />
-                                                    </Grid>
-                                                )}
+                                                <Grid item>
+                                                    <FormControlLabel
+                                                        control={
+                                                            <Checkbox
+                                                                checked={taxInvoiceRaised}
+                                                                onChange={(e) => setTaxInvoiceRaised(e.target.checked)}
+                                                                disabled={isApproved}
+                                                            />
+                                                        }
+                                                        label={getTranslatedLabel("salesCommission.form.taxInvoiceRaised", "تم رفع الفاتورة الضريبية")}
+                                                    />
+                                                </Grid>
+                                                <Grid item xs={6} md={2}>
+                                                    <Field
+                                                        id="vatPercent"
+                                                        name="vatPercent"
+                                                        label={getTranslatedLabel("salesCommission.form.vatPercent", "نسبة ضريبة القيمة المضافة %")}
+                                                        component={FormNumericTextBox}
+                                                        min={0} max={100} format="n2"
+                                                        disabled={isApproved}
+                                                    />
+                                                </Grid>
                                                 <Grid item xs={6} md={2}>
                                                     <Field
                                                         id="withholdingTaxPercent"
@@ -1067,7 +1072,8 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                     factor={factor}
                                                     calcAmounts={(sp, pct, f) => calcExternalCompanyAmounts(
                                                         sp, pct, f,
-                                                        hasVatExemption, formRenderProps.valueGetter("vatPercent") ?? 14,
+                                                        taxInvoiceRaised,
+                                                        formRenderProps.valueGetter("vatPercent") ?? 14,
                                                         hasWithholdingTaxExemption, formRenderProps.valueGetter("withholdingTaxPercent") ?? 5
                                                     )}
                                                     partySelected={extCompanySelected}

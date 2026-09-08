@@ -472,3 +472,12 @@ client-app/yarn.lock
 /client-app/e2e/.auth/
 /client-app/blob-report/
 /client-app/playwright/.cache/
+
+# Power BI project — now lives in its own repo (github.com/EmadRadwan/Power-Bi),
+# cloned to ~/Documents/ERP/PowerBI-Colden. Historic dated folders and the
+# hand-made archives should never re-enter this repository.
+Power Bi Colden*/
+Power bi *.zip
+Power Bi Colden*.zip
+power bi error.jpeg
+Power Bi Enhancement Ideas.txt

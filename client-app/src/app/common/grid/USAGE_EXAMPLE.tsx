@@ -47,10 +47,10 @@ export function GridStylingExample() {
             <p>This example demonstrates the common grid styling and filter components.</p>
 
             <KendoGrid
-                className="kendo-grid-styled"  {/* ← Apply the styling class */}
+                className="kendo-grid-styled"  /* ← Apply the styling class */
                 style={{ height: '400px' }}
                 resizable={true}
-                filterable={true}  {/* ← Enable filtering */}
+                filterable={true}  /* ← Enable filtering */
                 sortable={true}
                 pageable={true}
                 {...dataState}
@@ -70,7 +70,7 @@ export function GridStylingExample() {
                     width={150}
                     filterable={true}
                     filter="text"
-                    filterCell={TextFilterCell}  {/* ← Custom text filter */}
+                    filterCell={TextFilterCell}  /* ← Custom text filter */
                 />
 
                 {/* Text Filter Example */}
@@ -79,7 +79,7 @@ export function GridStylingExample() {
                     title="Name"
                     filterable={true}
                     filter="text"
-                    filterCell={TextFilterCell}  {/* ← Custom text filter */}
+                    filterCell={TextFilterCell}  /* ← Custom text filter */
                 />
 
                 {/* Date Filter Example */}
@@ -89,7 +89,7 @@ export function GridStylingExample() {
                     format="{0: dd/MM/yyyy}"
                     filterable={true}
                     filter="date"
-                    filterCell={DateFilterCell}  {/* ← Custom date filter with operators */}
+                    filterCell={DateFilterCell}  /* ← Custom date filter with operators */
                 />
 
                 {/* Numeric Filter Example */}
@@ -98,7 +98,7 @@ export function GridStylingExample() {
                     title="Amount"
                     filterable={true}
                     filter="numeric"
-                    filterCell={NumericFilterCell}  {/* ← Custom numeric filter with operators */}
+                    filterCell={NumericFilterCell}  /* ← Custom numeric filter with operators */
                 />
 
                 {/* Text Filter with Status */}
@@ -107,7 +107,7 @@ export function GridStylingExample() {
                     title="Status"
                     filterable={true}
                     filter="text"
-                    filterCell={TextFilterCell}  {/* ← Custom text filter */}
+                    filterCell={TextFilterCell}  /* ← Custom text filter */
                 />
             </KendoGrid>
 
@@ -115,9 +115,9 @@ export function GridStylingExample() {
                 <h3>Implementation Notes</h3>
                 <ul>
                     <li><code>className="kendo-grid-styled"</code> applies the CSS styling</li>
-                    <li><code>filterCell={TextFilterCell}</code> uses text-only filters (no dropdown)</li>
-                    <li><code>filterCell={DateFilterCell}</code> uses date picker with operator dropdown</li>
-                    <li><code>filterCell={NumericFilterCell}</code> uses number input with operator dropdown</li>
+                    <li><code>{'filterCell={TextFilterCell}'}</code> uses text-only filters (no dropdown)</li>
+                    <li><code>{'filterCell={DateFilterCell}'}</code> uses date picker with operator dropdown</li>
+                    <li><code>{'filterCell={NumericFilterCell}'}</code> uses number input with operator dropdown</li>
                     <li>All filter cells have a clear button to reset the filter</li>
                 </ul>
             </div>

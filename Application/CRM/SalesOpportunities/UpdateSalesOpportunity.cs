@@ -18,6 +18,14 @@ public class UpdateSalesOpportunity
     public record Command : IRequest<Result<SalesOpportunityDto>>
     {
         public SalesOpportunityDto Opportunity { get; init; } = null!;
+
+        /// <summary>
+        /// True when the payload is a complete form save, in which case a null
+        /// Project or Unit means the user cleared the field and it is applied.
+        /// False for the stage-only PATCH, whose sparse DTO carries neither and
+        /// must not wipe them.
+        /// </summary>
+        public bool IsFullUpdate { get; init; }
     }
 
     public class CommandValidator : AbstractValidator<Command>
@@ -65,17 +73,37 @@ public class UpdateSalesOpportunity
                 // Check if stage changed (important for history)
                 var stageChanged = opportunity.OpportunityStageId != dto.OpportunityStageId;
 
-                // Only update these fields if they are explicitly provided.
-                // The stage-only PATCH endpoint reuses this command with a sparse DTO,
-                // so every assignment must stay null-guarded.
-                if (dto.WorkEffortId != null)
+                // Project and Unit are the two fields a user can deliberately
+                // CLEAR on the form, so a null has to mean two different things
+                // depending on who is calling:
+                //   full form save  -> null means "the user emptied this field"
+                //   stage-only PATCH -> null means "not supplied", leave it alone
+                // Everything below this block stays null-guarded, because the
+                // form never sends those fields at all.
+                if (request.IsFullUpdate || dto.WorkEffortId != null)
                     opportunity.WorkEffortId = dto.WorkEffortId;
-                if (dto.ProductId != null)
+
+                if (request.IsFullUpdate || dto.ProductId != null)
                 {
+                    // A won deal must keep its unit. Clearing it would leave the
+                    // opportunity won against nothing while the apartment stays
+                    // reserved to it - the reservation is only ever released by
+                    // reopening or cancelling the deal.
+                    if (dto.ProductId == null
+                        && opportunity.ProductId != null
+                        && opportunity.OpportunityStageId == UnitReservationGuard.ClosedWonStageId)
+                    {
+                        await transaction.RollbackAsync(ct);
+                        return Result<SalesOpportunityDto>.Failure(
+                            $"Unit '{opportunity.ProductId}' cannot be removed from a won opportunity. " +
+                            "Reopen or cancel the opportunity first.");
+                    }
+
                     // Moving an already-won opportunity onto a different unit would
                     // otherwise slip past the check below, which only runs on a stage
                     // change. Guard the swap itself.
-                    if (dto.ProductId != opportunity.ProductId
+                    if (dto.ProductId != null
+                        && dto.ProductId != opportunity.ProductId
                         && opportunity.OpportunityStageId == UnitReservationGuard.ClosedWonStageId)
                     {
                         var swapConflict = await UnitReservationGuard.CheckAsync(

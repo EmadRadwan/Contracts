@@ -59,6 +59,36 @@ public class UpdateEmployee
                 party.Person.LastUpdatedStamp = stamp;
             }
 
+            // A party may reach this handler without ever having been created as an employee — e.g.
+            // a customer whose MainRole was later flipped to EMPLOYEE via UpdateMainRole, which does
+            // not provision anything else. The Employment and PartyGlAccount rows created below both
+            // FK to PARTY_ROLE (PARTY_ID, ROLE_TYPE_ID = 'EMPLOYEE'); without this row those inserts
+            // fail with a DbUpdateException and the whole save rolls back. CreateEmployee always adds
+            // it, so mirror that here.
+            var hasEmployeeRole = await _context.PartyRoles
+                .AnyAsync(pr => pr.PartyId == party.PartyId && pr.RoleTypeId == "EMPLOYEE", cancellationToken);
+
+            if (!hasEmployeeRole)
+            {
+                var roleTypeEmployee = await _context.RoleTypes.SingleOrDefaultAsync(
+                    x => x.RoleTypeId == "EMPLOYEE", cancellationToken);
+
+                if (roleTypeEmployee == null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Result<PartyDto2>.Failure(
+                        "Required employee role type 'EMPLOYEE' is missing in the database.");
+                }
+
+                _context.PartyRoles.Add(new PartyRole
+                {
+                    Party = party,
+                    RoleType = roleTypeEmployee,
+                    CreatedStamp = stamp,
+                    LastUpdatedStamp = stamp
+                });
+            }
+
             var telcomNumberQuery = from prty in _context.Parties
                 join pcm in _context.PartyContactMeches on prty.PartyId equals pcm.PartyId
                 join cm in _context.ContactMeches on pcm.ContactMechId equals cm.ContactMechId

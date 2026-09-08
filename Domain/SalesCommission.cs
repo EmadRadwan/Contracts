@@ -87,10 +87,21 @@ public class SalesCommission
 
     // -----------------------------------------------------------------
     // Tax configuration (applies to external company invoice)
-    // HasVatExemption        = true  → skip the ×100/114 split; pay gross as-is
-    // HasWithholdingTaxExemption = true  → do not deduct withholding from net
+    //
+    // Three independent switches, matching the client's own workbook:
+    //   ExtCompanyTaxInvoiceRaised = true  → the broker has issued their tax invoice
+    //                                        (رفع الفاتورة الضريبية = تم رفعها), so the VAT is theirs
+    //                                        to remit and we pay it over to them.
+    //                              = false → invoice not issued yet (لم ترفع), so the VAT is withheld
+    //                                        until it is.
+    //   HasWithholdingTaxExemption = true  → do not deduct withholding from net
     // -----------------------------------------------------------------
+    // DEPRECATED 2026-09-08. There is no VAT exemption in this business — a broker commission always
+    // carries VAT. The checkbox that wrote this was mislabelled from the start and has been removed;
+    // the real question it was being used for is ExtCompanyTaxInvoiceRaised below. The column is kept
+    // so historic rows are not rewritten, but nothing reads it. Do not reintroduce it into the maths.
     public bool HasVatExemption { get; set; }
+    public bool ExtCompanyTaxInvoiceRaised { get; set; }
     public bool HasWithholdingTaxExemption { get; set; }
     public decimal VatPercent { get; set; }
     public decimal WithholdingTaxPercent { get; set; }

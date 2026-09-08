@@ -113,6 +113,7 @@ public class UpdateSalesCommission
                 commission.ExternalCompanyPercent = isIndirect ? dto.ExternalCompanyPercent : null;
                 commission.ExternalCompanyGrossAmount = isIndirect ? amounts.ExternalCompanyGrossAmount : null;
                 commission.ExternalCompanyNetAmount = isIndirect ? amounts.ExternalCompanyNetAmount : null;
+                commission.ExtCompanyTaxInvoiceRaised = isIndirect && dto.ExtCompanyTaxInvoiceRaised;
                 commission.ExternalSalesRepPartyId = isIndirect ? dto.ExternalSalesRepPartyId : null;
                 commission.ExternalSalesRepPercent = isIndirect ? dto.ExternalSalesRepPercent : null;
                 commission.ExternalSalesRepAmount = isIndirect ? amounts.ExternalSalesRepAmount : null;
@@ -125,7 +126,6 @@ public class UpdateSalesCommission
                 commission.ExternalManagerNetAmount = isIndirect ? amounts.ExternalManagerNetAmount : null;
                 commission.HasExternalManagerWithholdingTaxExemption = isIndirect && dto.HasExternalManagerWithholdingTaxExemption;
                 commission.ExternalManagerNationalId = isIndirect ? dto.ExternalManagerNationalId : null;
-                commission.HasVatExemption = dto.HasVatExemption;
                 commission.HasWithholdingTaxExemption = dto.HasWithholdingTaxExemption;
                 commission.VatPercent = dto.VatPercent;
                 commission.WithholdingTaxPercent = dto.WithholdingTaxPercent;
@@ -147,6 +147,7 @@ public class UpdateSalesCommission
                 dto.Manager2Amount = commission.Manager2Amount;
                 dto.Manager2NetAmount = commission.Manager2NetAmount;
                 dto.ExternalCompanyGrossAmount = commission.ExternalCompanyGrossAmount;
+                dto.ExternalCompanyVatAmount = amounts.ExternalCompanyVatAmount;
                 dto.ExternalCompanyNetAmount = commission.ExternalCompanyNetAmount;
                 dto.ExternalSalesRepAmount = commission.ExternalSalesRepAmount;
                 dto.ExternalSalesRepNetAmount = commission.ExternalSalesRepNetAmount;

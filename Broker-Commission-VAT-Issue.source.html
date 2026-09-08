@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Broker Commission — The Simple Version</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Helvetica Neue", Arial, sans-serif; color:#1a1a1a; font-size:11.5pt; line-height:1.58; margin:0; }
+  .ar { font-family:"Geeza Pro","Al Bayan",Arial,sans-serif; direction:rtl; unicode-bidi:embed; }
+  h1 { font-size:22pt; margin:0 0 2mm; }
+  .sub { color:#666; font-size:11pt; margin:0 0 6mm; }
+  h2 { font-size:14.5pt; margin:6mm 0 2.5mm; }
+  p { margin:0 0 2.8mm; }
+  .big { font-size:13.5pt; }
+
+  .card { background:#f4f4f2; border-radius:5px; padding:4mm 5mm; margin:0 0 4mm; }
+  .card p:last-child { margin-bottom:0; }
+
+  .two { display:flex; gap:5mm; margin:3mm 0 4mm; }
+  .box { flex:1; border:2px solid #ddd; border-radius:5px; padding:4mm 5mm; }
+  .box.a { border-color:#5a8a5a; background:#f4faf4; }
+  .box.b { border-color:#c8863a; background:#fdf7f0; }
+  .box h3 { margin:0 0 2mm; font-size:12pt; }
+  .box .q { font-size:10.5pt; color:#555; margin-bottom:3mm; }
+  .money { font-family:Menlo,monospace; font-size:11pt; line-height:1.9; }
+  .money .lbl { display:inline-block; min-width:34mm; }
+  .money .tot { border-top:1.5px solid #333; display:inline-block; padding-top:1mm; margin-top:1mm; font-weight:700; }
+
+  table { width:100%; border-collapse:collapse; margin:3mm 0 5mm; font-size:11pt; }
+  th,td { padding:2.5mm 3mm; text-align:left; border-bottom:1px solid #ddd; }
+  th { background:#1a1a1a; color:#fff; font-size:10.5pt; }
+  td.n { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .good { color:#3a7a3a; font-weight:700; }
+  .bad  { color:#a8342a; font-weight:700; }
+
+  ol.steps { padding-left:6mm; margin:0 0 4mm; }
+  ol.steps li { margin-bottom:2.5mm; }
+  .done { color:#3a7a3a; font-weight:700; }
+  .todo { color:#a8342a; font-weight:700; }
+  h2 { break-after:avoid; }
+  .two, table, .card { break-inside:avoid; }
+</style>
+</head>
+<body>
+
+<h1>The broker commission problem</h1>
+<p class="sub">Explained as simply as possible · 7 September 2026</p>
+
+<div class="card">
+  <p class="big"><b>The short version:</b> when we pay a broker, sometimes we hand them the tax money
+  and sometimes we keep it. It depends on one thing — <b>did the broker give us their tax
+  invoice?</b></p>
+  <p class="big">Our app had no box to record that answer, so it had to guess. It guessed right for
+  some commissions and wrong for others.</p>
+</div>
+
+<h2>1. Two taxes, and they behave differently</h2>
+<p>Say we owe a broker <b>104,800</b> for selling an apartment. That number has two taxes wrapped up in it.</p>
+
+<p><b>The 14% tax</b> <span class="ar">(ضريبة القيمة المضافة)</span> — this money is <i>not</i> ours
+and <i>not</i> really the broker's. It belongs to the government. The only question is who hands it
+over.</p>
+
+<p><b>The 5% tax</b> <span class="ar">(ضريبة الاستقطاع)</span> — we always keep this and give it to
+the government ourselves. Every time. No exceptions. This one is easy.</p>
+
+<h2>2. So the only real question is about the 14%</h2>
+
+<p class="big"><b>Did the broker give us their tax invoice?</b> <span class="ar">(رفع الفاتورة الضريبية)</span></p>
+
+<div class="two">
+  <div class="box a">
+    <h3>Yes, they gave it to us</h3>
+    <p class="q"><span class="ar">تم رفعها</span></p>
+    <p>Then we hand them the 14% too. They will pass it to the government themselves.</p>
+    <p class="money">
+      <span class="lbl">We owe</span>104,800<br>
+      <span class="lbl">Take the 5%</span>− 4,596<br>
+      <span class="lbl tot">They get</span> <span class="tot">100,204</span>
+    </p>
+  </div>
+  <div class="box b">
+    <h3>No, not yet</h3>
+    <p class="q"><span class="ar">لم ترفع</span></p>
+    <p>Then we hold the 14% back until they bring it. We can't hand over tax money with no invoice.</p>
+    <p class="money">
+      <span class="lbl">We owe</span>104,800<br>
+      <span class="lbl">Take the 5%</span>− 4,596<br>
+      <span class="lbl">Hold the 14%</span>− 12,870<br>
+      <span class="lbl tot">They get</span> <span class="tot">87,333</span>
+    </p>
+  </div>
+</div>
+
+<p>Same broker, same 104,800, and a difference of <b>12,870</b> — decided entirely by whether a piece
+of paper arrived.</p>
+
+<h2>3. What went wrong</h2>
+
+<p>The app had <b>no box</b> for that question. So it always applied the same answer to everybody.</p>
+
+<p>First we told it "always hand over the 14%". That was right for some commissions and wrong for
+others. Then we told it "always hold the 14% back". Same problem, just reversed. There was no single
+answer that could be right, because the correct answer changes from one commission to the next.</p>
+
+<div class="card">
+  <p><b>That is why this was so confusing.</b> Every time we checked a commission, the app looked
+  either correct or broken depending on which one we happened to open. Nobody was misreading
+  anything — the app simply could not tell the two situations apart.</p>
+</div>
+
+<h2>4. What we did</h2>
+<p>We added the missing box to the screen: <b><span class="ar">تم رفع الفاتورة الضريبية</span></b>.
+Now the app asks instead of guessing, and it gets every commission right.</p>
+
+<h2>5. Where the 10 commissions stand</h2>
+<table>
+  <tr><th>How many</th><th>What was wrong</th><th>Fixed?</th></tr>
+  <tr><td class="n">2</td><td>Nothing — the app already had these right</td><td class="good">nothing to do</td></tr>
+  <tr><td class="n">3</td><td>Wrong amount saved</td><td class="good">corrected</td></tr>
+  <tr><td class="n">5</td><td>Right amount, but the new box was blank</td><td class="good">box ticked</td></tr>
+</table>
+
+<div class="card">
+  <p class="big"><b>The good news: nobody was paid the wrong amount.</b> Every commission that needed
+  correcting still had its payment sitting unpaid, so we fixed the numbers before any money moved.
+  Nothing needs to be recovered from any broker.</p>
+</div>
+
+<h2>6. What is left</h2>
+<ol class="steps">
+  <li><span class="done">Done</span> — the code, and all the data on the test system.</li>
+  <li><span class="todo">To do</span> — put the change on the live system, run the data script, and
+      correct two payment amounts by hand.</li>
+</ol>
+
+<p>After that, the app and your users' Excel sheet will agree on every single commission, down to
+the last pound.</p>
+
+</body>
+</html>

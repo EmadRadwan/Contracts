@@ -2,6 +2,7 @@
 using Application.Core;
 using Application.Interfaces;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Persistence;
 using Domain; // assuming Party is in Domain
 
@@ -40,9 +41,40 @@ namespace Application.Parties.Parties
                 if (!allowedRoles.Contains(request.MainRole))
                     return Result<Unit>.Failure("Invalid main role");
 
-                // Update only MainRole and timestamp
+                var stamp = DateTime.UtcNow;
+
+                // Update MainRole and timestamp
                 party.MainRole = request.MainRole;
-                party.LastUpdatedStamp = DateTime.UtcNow;
+                party.LastUpdatedStamp = stamp;
+
+                // Flipping MainRole to EMPLOYEE previously left the party without an EMPLOYEE
+                // PARTY_ROLE row, so a later save through UpdateEmployee failed its Employment /
+                // PartyGlAccount FKs with a DbUpdateException. Provision the role here so the party
+                // is a real employee, not just labelled one.
+                if (request.MainRole == "EMPLOYEE")
+                {
+                    var hasEmployeeRole = await _context.PartyRoles.AnyAsync(
+                        pr => pr.PartyId == party.PartyId && pr.RoleTypeId == "EMPLOYEE",
+                        cancellationToken);
+
+                    if (!hasEmployeeRole)
+                    {
+                        var roleTypeEmployee = await _context.RoleTypes.SingleOrDefaultAsync(
+                            x => x.RoleTypeId == "EMPLOYEE", cancellationToken);
+
+                        if (roleTypeEmployee == null)
+                            return Result<Unit>.Failure(
+                                "Required employee role type 'EMPLOYEE' is missing in the database.");
+
+                        _context.PartyRoles.Add(new PartyRole
+                        {
+                            Party = party,
+                            RoleType = roleTypeEmployee,
+                            CreatedStamp = stamp,
+                            LastUpdatedStamp = stamp
+                        });
+                    }
+                }
 
                 var success = await _context.SaveChangesAsync(cancellationToken) > 0;
 

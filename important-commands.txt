@@ -229,6 +229,20 @@ git clone https://github.com/EmadRadwan/Contracts.git erp-contracts
 scp ubuntu@129.146.22.240:/home/ubuntu/logs/contracts/\*.log .
 scp ubuntu@129.146.22.240:/home/ubuntu/logs/contracts/logfile20251007.log .
 
+### Refresh local dev DB from prod — ONE COMMAND (replaces all the manual steps below)
+cd ~/Documents/ERP/Contracts
+./scripts/refresh-local-db-from-prod.sh            # dump prod -> wipe local -> import, one y/N prompt
+./scripts/refresh-local-db-from-prod.sh --yes      # no prompt
+./scripts/refresh-local-db-from-prod.sh --download-only   # just fetch the .sql.gz, don't touch local
+./scripts/refresh-local-db-from-prod.sh --file ~/mysql-backups/contracts-golden/FILE.sql.gz  # load existing dump
+./scripts/refresh-local-db-from-prod.sh --no-truncate     # import without truncating first
+./scripts/refresh-local-db-from-prod.sh --help
+# Streams the dump straight over ssh (gzip on the wire) into ~/mysql-backups/contracts-golden/ —
+# no temp file on prod, no separate scp, no filename to copy. Validates the dump (valid gzip +
+# "Dump completed" footer) BEFORE truncating local. Passwords baked in; script is in git-ignored scripts/.
+
+--- Manual steps (what the script automates) -------------------------------------
+
 MySQL production export:
 mkdir -p ~/mysql-backups/contracts-golden
 cd ~/mysql-backups/contracts-golden
@@ -253,10 +267,10 @@ cd ~/mysql-backups/contracts-golden
               > ~/mysql-backups/contracts-golden/erp_contracts_no_definer_$(date +%Y-%m-%d_%H-%M-%S).sql
 
 gzip ~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-02-01_11-35-20.sql
-scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-08-29_15-25-59.sql ~/Desktop/
+scp ubuntu@129.146.22.240:~/mysql-backups/contracts-golden/erp_contracts_no_definer_2026-09-03_10-48-26.sql ~/Desktop/
 gunzip ~/Desktop/erp_contracts_no_definer_2026-02-01_11-35-20.sql.gz
 
-mysql -u root -p erp_contracts <  erp_contracts_no_definer_2026-08-29_15-25-59.sql
+mysql -u root -p erp_contracts <  erp_contracts_no_definer_2026-09-03_10-48-26.sql
 
 
 Portainer.io:
@@ -349,6 +363,8 @@ CRM Module
 ofbiz audit
 Kendo React
 Lead Assignment
+erp modernization demo
+
 
 
 

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>How Sales Commission Is Calculated</title>
+<style>
+  @page { size: A4; margin: 14mm 13mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    color: #1a1a1a; font-size: 10.5pt; line-height: 1.5; margin: 0;
+  }
+  .ar { font-family: "Geeza Pro", "Al Bayan", "Arial", sans-serif; direction: rtl; unicode-bidi: embed; }
+  h1 { font-size: 19pt; margin: 0 0 2mm; letter-spacing: -0.2px; }
+  .sub { color: #666; font-size: 10pt; margin: 0 0 7mm; }
+  h2 {
+    font-size: 13pt; margin: 8mm 0 3mm; padding-bottom: 1.5mm;
+    border-bottom: 2px solid #1a1a1a;
+  }
+  h3 { font-size: 11pt; margin: 5mm 0 2mm; }
+  p { margin: 0 0 3mm; }
+  .lead { background: #f4f4f2; padding: 4mm 5mm; border-radius: 3px; margin-bottom: 5mm; }
+  .lead ol { margin: 0; padding-right: 0; padding-left: 5mm; }
+  .lead li { margin-bottom: 1.5mm; }
+
+  table { width: 100%; border-collapse: collapse; margin: 3mm 0 4mm; font-size: 9.5pt; }
+  th, td { padding: 2mm 3mm; text-align: left; border-bottom: 1px solid #ddd; }
+  th { background: #1a1a1a; color: #fff; font-weight: 600; font-size: 9pt; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.total td { font-weight: 700; border-top: 2px solid #1a1a1a; border-bottom: none; }
+
+  .two { display: flex; gap: 5mm; }
+  .col { flex: 1; border: 1px solid #ccc; border-radius: 3px; overflow: hidden; }
+  .col > .hd { padding: 2mm 3mm; font-weight: 700; font-size: 10pt; color: #fff; }
+  .sheet .hd { background: #5b7c99; }
+  .app   .hd { background: #8a6a4a; }
+  .col table { margin: 0; }
+  .col th { background: #f0f0ee; color: #333; }
+  .col td, .col th { font-size: 9pt; }
+
+  .steps { counter-reset: s; margin: 0 0 4mm; padding: 0; list-style: none; }
+  .steps li {
+    counter-increment: s; position: relative; padding-left: 9mm; margin-bottom: 3mm;
+  }
+  .steps li::before {
+    content: counter(s); position: absolute; left: 0; top: 0;
+    width: 6mm; height: 6mm; border-radius: 50%; background: #1a1a1a; color: #fff;
+    font-size: 8.5pt; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+  .formula {
+    font-family: "SF Mono", Menlo, monospace; font-size: 9.5pt;
+    background: #f4f4f2; padding: 2mm 3mm; border-radius: 3px; display: inline-block;
+    margin: 1mm 0;
+  }
+  .note {
+    border-left: 3px solid #c8a04a; background: #fdf9f0;
+    padding: 3mm 4mm; margin: 4mm 0; font-size: 10pt;
+  }
+  .note.ok { border-left-color: #5a8a5a; background: #f2f8f2; }
+  .note > b:first-child { display: block; margin-bottom: 1mm; font-size: 10.5pt; }
+  .diff { color: #a8342a; font-weight: 700; }
+  .same { color: #4a7a4a; font-weight: 700; }
+  h2, h3 { break-after: avoid; }
+  table, .two, .note, .steps { break-inside: avoid; }
+  .foot { margin-top: 6mm; padding-top: 2mm; border-top: 1px solid #ddd; color: #777; font-size: 8.5pt; }
+</style>
+</head>
+<body>
+
+<h1>How Sales Commission Is Calculated</h1>
+<p class="sub">The Excel sheet vs. the ERP — what matches, what doesn't, and what actually affects money.<br>Golden Land · 7 September 2026</p>
+
+<div class="lead">
+  <p style="margin-bottom:2mm"><b>Every commission answers three questions in order:</b></p>
+  <ol>
+    <li><b>How much is earned?</b> &nbsp;Sale price × the person's percentage.</li>
+    <li><b>How much is payable right now?</b> &nbsp;Depends on how much the customer has paid so far.</li>
+    <li><b>How much after tax?</b> &nbsp;<i>Brokers only.</i> Internal staff have no tax deducted.</li>
+  </ol>
+  <p style="margin:2mm 0 0">The sheet and the app agree on <b>question 1</b>. They differ on <b>question 2</b>. Only the app does <b>question 3</b> at all.</p>
+</div>
+
+<h2>Part A — Internal staff (sales rep &amp; manager)</h2>
+
+<h3>Question 1: how much is earned — both agree</h3>
+<p class="formula">commission = sale price × percentage</p>
+<p>For unit A-104 in سوا: sale price 4,416,774. The rep gets 0.5%, the manager 0.25%.</p>
+<table>
+  <tr><th>Person</th><th>%</th><th style="text-align:right">Commission earned</th></tr>
+  <tr><td>Sales rep <span class="ar">(المندوب)</span></td><td>0.5%</td><td class="num">22,084</td></tr>
+  <tr><td>Manager <span class="ar">(المدير)</span></td><td>0.25%</td><td class="num">11,042</td></tr>
+</table>
+
+<h3>Question 2: how much is payable now — <span class="diff">they differ</span></h3>
+<p>Both scale the commission by how much the customer has collected so far, as a % of the sale price. But they use different bands:</p>
+
+<div class="two">
+  <div class="col sheet">
+    <div class="hd">The Excel sheet</div>
+    <table>
+      <tr><th>Collected</th><th style="text-align:right">Pay</th></tr>
+      <tr><td>under 5%</td><td class="num">0%</td></tr>
+      <tr><td>5% – 7.5%</td><td class="num">75%</td></tr>
+      <tr><td>7.5% and above</td><td class="num">100%</td></tr>
+    </table>
+  </div>
+  <div class="col app">
+    <div class="hd">The ERP app</div>
+    <table>
+      <tr><th>Collected</th><th style="text-align:right">Pay</th></tr>
+      <tr><td>under 5% (7.5% if indirect)</td><td class="num">0%</td></tr>
+      <tr><td>up to 10%</td><td class="num">50%</td></tr>
+      <tr><td>10% and above</td><td class="num">100%</td></tr>
+    </table>
+  </div>
+</div>
+
+<p>Unit A-104 has collected 441,677 of 4,416,774 = <b>9.99999%</b>.</p>
+<table>
+  <tr><th>&nbsp;</th><th style="text-align:right">Sheet</th><th style="text-align:right">App shows</th></tr>
+  <tr><td>Band reached</td><td class="num">above 7.5% → pay 100%</td><td class="num">just under 10% → pay 50%</td></tr>
+  <tr><td>Sales rep <span class="ar">(المندوب)</span></td><td class="num">22,084</td><td class="num">11,042</td></tr>
+  <tr><td>Manager <span class="ar">(المدير)</span></td><td class="num">11,042</td><td class="num">5,521</td></tr>
+</table>
+
+<div class="note ok">
+  <b>But no one has ever been underpaid by this.</b>
+  The 50% only affects the preview line <span class="ar">«المستحق الآن»</span> on a commission that is still <i>pending</i>.
+  The moment you press <span class="ar">اعتماد</span>, the app ignores the band completely and creates the payment for the
+  <b>full 100%</b> — 22,084, the same as the sheet. So this is a screen-vs-sheet mismatch, not a money mismatch.
+</div>
+
+<h2>Part B — Brokers: the tax steps (app only)</h2>
+
+<p>The Excel sheet has no broker tax calculation anywhere — it only covers internal staff. Everything below exists only in the app.</p>
+
+<h3>Two different taxes, two separate checkboxes</h3>
+<table>
+  <tr><th>Tax</th><th>What it means</th><th>Turned off by</th></tr>
+  <tr>
+    <td><b>VAT</b> <span class="ar">(ض.ق.م)</span> 14%</td>
+    <td>Already <i>inside</i> the broker's gross amount, so it is backed out first.</td>
+    <td class="ar">إعفاء من ضريبة القيمة المضافة</td>
+  </tr>
+  <tr>
+    <td><b>Withholding</b> <span class="ar">(ض.استقطاع)</span> 5%</td>
+    <td>Charged on the amount left after VAT is removed.</td>
+    <td class="ar">إعفاء من ضريبة الاستقطاع</td>
+  </tr>
+</table>
+
+<p><b>The two are independent.</b> A broker can be exempt from VAT and still pay withholding tax. Ticking one box does not switch off the other.</p>
+
+<h3>Worked example — the broker on unit A-104</h3>
+<ol class="steps">
+  <li><b>Gross:</b> 4,416,774 × 3.5% = <b>154,587</b></li>
+  <li><b>Strip out the VAT</b> that is already inside it:<br>
+      <span class="formula">154,587 ÷ 1.14 = 135,603</span><br>
+      so the VAT portion is 154,587 − 135,603 = <b>18,984</b></li>
+  <li><b>Withholding is 5% of that stripped amount:</b><br>
+      <span class="formula">135,603 × 5% = 6,780</span></li>
+  <li><b>Net paid to the broker:</b><br>
+      <span class="formula">154,587 − 18,984 − 6,780 = 128,823</span></li>
+</ol>
+
+<table>
+  <tr><th>Line on screen</th><th style="text-align:right">Amount</th></tr>
+  <tr><td class="ar">إجمالي القيمة الكاملة</td><td class="num">154,587</td></tr>
+  <tr><td class="ar">ض.ق.م المخصومة</td><td class="num">− 18,984</td></tr>
+  <tr><td class="ar">ض.الاستقطاع المخصومة</td><td class="num">− 6,780</td></tr>
+  <tr class="total"><td class="ar">صافي القيمة الكاملة</td><td class="num">128,823</td></tr>
+</table>
+
+<h3>If the broker is VAT-exempt</h3>
+<p>Step 2 is skipped — there is no VAT inside the amount, so the gross <i>is</i> the base. Withholding is then charged on the full gross:</p>
+<p class="formula">154,587 − 0 − (154,587 × 5%) = 146,858</p>
+<p>This is the part that was <b>wrong before 25 August</b>: a VAT exemption used to switch off the withholding tax too, so the broker was paid the whole 154,587.</p>
+
+<h3>The broker's own rep and manager</h3>
+<p>They are individuals, not companies — no VAT is involved. Only withholding applies, on the full amount:</p>
+<p class="formula">44,168 − (44,168 × 5%) = 41,959</p>
+
+<h2>Summary</h2>
+<table>
+  <tr><th>Step</th><th>Sheet</th><th>App</th><th>Same?</th></tr>
+  <tr><td>Commission earned (price × %)</td><td>yes</td><td>yes</td><td class="same">match</td></tr>
+  <tr><td>Collection bands</td><td>5% / 7.5%, pays 75%</td><td>5–7.5% / 10%, pays 50%</td><td class="diff">differ</td></tr>
+  <tr><td>Amount actually paid on approval</td><td>100%</td><td>100%</td><td class="same">match</td></tr>
+  <tr><td>Broker VAT &amp; withholding</td><td>not covered</td><td>yes</td><td>—</td></tr>
+</table>
+
+<div class="note">
+  <b>The one open decision</b>
+  The app currently <b>deducts VAT from what the broker is paid</b>, so the company keeps it. The alternative — the more usual treatment — is to pay the broker the full VAT-inclusive amount and let them remit the VAT themselves, deducting only withholding. On unit A-104 that is the difference between paying the broker <b>128,823</b> and <b>147,807</b>. Worth confirming with whoever owns the tax treatment.
+</div>
+
+<p class="foot">Figures throughout are from commission 11117 (unit A-104, project سوا), rounded to whole EGP.</p>
+
+</body>
+</html>

@@ -47,3 +47,5 @@ GRANT SELECT ON Dim_gl_account TO 'powerbi_user'@'%';
 GRANT USAGE ON *.* TO 'powerbi_user'@'%';
 
 FLUSH PRIVILEGES;
+
+GRANT SELECT ON Fact_NonProject_Payroll TO 'powerbi_user'@'%'; -- added 2026-09-04 alongside the semantic model's Fact_NonProject_Payroll table. Same reason as the line above: without it Power Query reports "The key didn't match any rows in the table" because the catalogue lookup, not the read, is what fails. Run this line alone; re-running the whole script DROPs and recreates the user.

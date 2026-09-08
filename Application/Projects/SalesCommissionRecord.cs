@@ -47,7 +47,9 @@ public class SalesCommissionRecord
     public string? ExternalCompanyName { get; set; }
     public decimal? ExternalCompanyPercent { get; set; }
     public decimal? ExternalCompanyGrossAmount { get; set; }
+    public decimal? ExternalCompanyVatAmount { get; set; }
     public decimal? ExternalCompanyNetAmount { get; set; }
+    public bool ExtCompanyTaxInvoiceRaised { get; set; }
 
     public string? ExternalSalesRepPartyId { get; set; }
     public string? ExternalSalesRepName { get; set; }
@@ -65,7 +67,6 @@ public class SalesCommissionRecord
     public bool HasExternalManagerWithholdingTaxExemption { get; set; }
     public string? ExternalManagerNationalId { get; set; }
 
-    public bool HasVatExemption { get; set; }
     public bool HasWithholdingTaxExemption { get; set; }
     public decimal VatPercent { get; set; }
     public decimal WithholdingTaxPercent { get; set; }

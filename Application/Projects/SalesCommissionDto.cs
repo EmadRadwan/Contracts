@@ -47,7 +47,11 @@ public class SalesCommissionDto
     public string? ExternalCompanyName { get; set; }
     public decimal? ExternalCompanyPercent { get; set; }
     public decimal? ExternalCompanyGrossAmount { get; set; }
+    public decimal? ExternalCompanyVatAmount { get; set; }
     public decimal? ExternalCompanyNetAmount { get; set; }
+    // رفع الفاتورة الضريبية — true = تم رفعها (VAT paid over to the broker),
+    // false = لم ترفع (VAT withheld until they issue one).
+    public bool ExtCompanyTaxInvoiceRaised { get; set; }
 
     // External broker's sales rep — INDIRECT only
     public string? ExternalSalesRepPartyId { get; set; }
@@ -68,7 +72,6 @@ public class SalesCommissionDto
     public string? ExternalManagerNationalId { get; set; }
 
     // Tax flags
-    public bool HasVatExemption { get; set; }
     public bool HasWithholdingTaxExemption { get; set; }
     public decimal VatPercent { get; set; }
     public decimal WithholdingTaxPercent { get; set; }

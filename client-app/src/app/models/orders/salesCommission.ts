@@ -39,7 +39,11 @@ export interface SalesCommission {
     externalCompanyName?: string | null;
     externalCompanyPercent?: number | null;
     externalCompanyGrossAmount?: number | null;
+    externalCompanyVatAmount?: number | null;
     externalCompanyNetAmount?: number | null;
+    // رفع الفاتورة الضريبية — true = تم رفعها (VAT paid over to the broker),
+    // false = لم ترفع (VAT withheld until the invoice is issued).
+    extCompanyTaxInvoiceRaised?: boolean;
 
     externalSalesRepPartyId?: string | null;
     externalSalesRepName?: string | null;
@@ -57,7 +61,6 @@ export interface SalesCommission {
     hasExternalManagerWithholdingTaxExemption: boolean;
     externalManagerNationalId?: string | null;
 
-    hasVatExemption: boolean;
     hasWithholdingTaxExemption: boolean;
     vatPercent: number;
     withholdingTaxPercent: number;

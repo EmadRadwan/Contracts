@@ -443,10 +443,10 @@ export default function SalesCommissionsList() {
                         width={180}
                     />
                     <Column
-                        field="hasVatExemption"
-                        title={getTranslatedLabel("salesCommission.list.hasVatExemption", "إعفاء ض.ق.م")}
+                        field="extCompanyTaxInvoiceRaised"
+                        title={getTranslatedLabel("salesCommission.list.taxInvoiceRaised", "رفع الفاتورة الضريبية")}
                         cell={BooleanCell}
-                        width={130}
+                        width={150}
                         filterable={false}
                         sortable={false}
                     />

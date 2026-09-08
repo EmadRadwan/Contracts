@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>كيف تُحتسب عمولات المبيعات</title>
+<style>
+  @page { size: A4; margin: 14mm 13mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Geeza Pro", "Al Bayan", "Damascus", Arial, sans-serif;
+    color: #1a1a1a; font-size: 11pt; line-height: 1.75; margin: 0; direction: rtl;
+  }
+  .en { direction: ltr; unicode-bidi: embed; display: inline-block; }
+  h1 { font-size: 20pt; margin: 0 0 2mm; }
+  .sub { color: #666; font-size: 10.5pt; margin: 0 0 7mm; line-height: 1.6; }
+  h2 { font-size: 14pt; margin: 8mm 0 3mm; padding-bottom: 1.5mm; border-bottom: 2px solid #1a1a1a; }
+  h3 { font-size: 12pt; margin: 5mm 0 2mm; }
+  p { margin: 0 0 3mm; }
+
+  .lead { background: #f4f4f2; padding: 4mm 5mm; border-radius: 3px; margin-bottom: 5mm; }
+  .lead ol { margin: 0; padding-right: 6mm; padding-left: 0; }
+  .lead li { margin-bottom: 1.5mm; }
+
+  table { width: 100%; border-collapse: collapse; margin: 3mm 0 4mm; font-size: 10pt; }
+  th, td { padding: 2mm 3mm; text-align: right; border-bottom: 1px solid #ddd; }
+  th { background: #1a1a1a; color: #fff; font-weight: 600; font-size: 9.5pt; }
+  td.num, th.num { text-align: left; font-variant-numeric: tabular-nums; white-space: nowrap; direction: ltr; }
+  tr.total td { font-weight: 700; border-top: 2px solid #1a1a1a; border-bottom: none; }
+
+  .two { display: flex; gap: 5mm; }
+  .col { flex: 1; border: 1px solid #ccc; border-radius: 3px; overflow: hidden; }
+  .col > .hd { padding: 2mm 3mm; font-weight: 700; font-size: 10.5pt; color: #fff; }
+  .sheet .hd { background: #5b7c99; }
+  .app   .hd { background: #8a6a4a; }
+  .col table { margin: 0; }
+  .col th { background: #f0f0ee; color: #333; }
+  .col td, .col th { font-size: 9.5pt; }
+
+  .steps { counter-reset: s; margin: 0 0 4mm; padding: 0; list-style: none; }
+  .steps li { counter-increment: s; position: relative; padding-right: 9mm; margin-bottom: 3mm; }
+  .steps li::before {
+    content: counter(s); position: absolute; right: 0; top: 1mm;
+    width: 6mm; height: 6mm; border-radius: 50%; background: #1a1a1a; color: #fff;
+    font-size: 9pt; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+  .formula {
+    font-family: Menlo, monospace; font-size: 10pt; direction: ltr;
+    background: #f4f4f2; padding: 1.5mm 3mm; border-radius: 3px; display: inline-block; margin: 1mm 0;
+  }
+  .note { border-right: 3px solid #c8a04a; background: #fdf9f0; padding: 3mm 4mm; margin: 4mm 0; }
+  .note.ok  { border-right-color: #5a8a5a; background: #f2f8f2; }
+  .note.hot { border-right-color: #a8342a; background: #fdf3f2; }
+  .note > b:first-child { display: block; margin-bottom: 1mm; }
+  .diff { color: #a8342a; font-weight: 700; }
+  .same { color: #4a7a4a; font-weight: 700; }
+  h2, h3 { break-after: avoid; }
+  table, .two, .note, .steps { break-inside: avoid; }
+  .foot { margin-top: 6mm; padding-top: 2mm; border-top: 1px solid #ddd; color: #777; font-size: 9pt; }
+</style>
+</head>
+<body>
+
+<h1>كيف تُحتسب عمولات المبيعات</h1>
+<p class="sub">مقارنة بين ملف الإكسل والنظام — ما يتطابق، وما يختلف، وما يؤثر فعلياً على المبالغ المصروفة.<br>
+جولدن لاند · 7 سبتمبر 2026</p>
+
+<div class="lead">
+  <p style="margin-bottom:2mm"><b>كل عمولة تمر بثلاث خطوات بالترتيب:</b></p>
+  <ol>
+    <li><b>كم المبلغ المستحق؟</b> سعر البيع × نسبة الطرف.</li>
+    <li><b>كم يُصرف الآن؟</b> حسب ما تم تحصيله من العميل حتى الآن.</li>
+    <li><b>كم بعد خصم الضرائب؟</b> <i>للوسطاء فقط.</i> الموظفون الداخليون لا تُخصم منهم ضرائب.</li>
+  </ol>
+  <p style="margin:2mm 0 0">الملف والنظام <b>متطابقان في الخطوة الأولى</b>، و<b>مختلفان في الخطوة الثانية</b>،
+  و<b>الخطوة الثالثة موجودة في النظام فقط</b>.</p>
+</div>
+
+<h2>أولاً — العمولات الداخلية (المندوب والمدير)</h2>
+
+<h3>الخطوة 1: المبلغ المستحق — <span class="same">متطابق</span></h3>
+<p class="formula" style="font-family:inherit;direction:rtl;font-weight:700">العمولة = سعر البيع × النسبة</p>
+<p>مثال: الوحدة <span class="en">A-104</span> بمشروع سوا، سعر البيع <span class="en">4,416,774</span>. المندوب 0.5% والمدير 0.25%.</p>
+<table>
+  <tr><th>الطرف</th><th>النسبة</th><th class="num">العمولة المستحقة</th></tr>
+  <tr><td>المندوب</td><td>0.5%</td><td class="num">22,084</td></tr>
+  <tr><td>المدير</td><td>0.25%</td><td class="num">11,042</td></tr>
+</table>
+
+<h3>الخطوة 2: كم يُصرف الآن — <span class="diff">مختلف</span></h3>
+<p>كلاهما يخفّض المبلغ حسب نسبة التحصيل من العميل، لكن بشرائح مختلفة:</p>
+
+<div class="two">
+  <div class="col sheet">
+    <div class="hd">ملف الإكسل</div>
+    <table>
+      <tr><th>نسبة التحصيل</th><th class="num">يُصرف</th></tr>
+      <tr><td>أقل من 5%</td><td class="num">0%</td></tr>
+      <tr><td>من 5% إلى 7.5%</td><td class="num">75%</td></tr>
+      <tr><td>7.5% فأكثر</td><td class="num">100%</td></tr>
+    </table>
+  </div>
+  <div class="col app">
+    <div class="hd">النظام</div>
+    <table>
+      <tr><th>نسبة التحصيل</th><th class="num">يُعرض</th></tr>
+      <tr><td>أقل من 5% (أو 7.5% للبيع غير المباشر)</td><td class="num">0%</td></tr>
+      <tr><td>أقل من 10%</td><td class="num">50%</td></tr>
+      <tr><td>10% فأكثر</td><td class="num">100%</td></tr>
+    </table>
+  </div>
+</div>
+
+<p>الوحدة <span class="en">A-104</span> تم تحصيل <span class="en">441,677</span> من <span class="en">4,416,774</span> أي <b>9.99999%</b>:</p>
+<table>
+  <tr><th>&nbsp;</th><th class="num">ملف الإكسل</th><th class="num">النظام يعرض</th></tr>
+  <tr><td>الشريحة</td><td class="num">فوق 7.5% ← 100%</td><td class="num">أقل من 10% ← 50%</td></tr>
+  <tr><td>المندوب</td><td class="num">22,084</td><td class="num">11,042</td></tr>
+  <tr><td>المدير</td><td class="num">11,042</td><td class="num">5,521</td></tr>
+</table>
+
+<div class="note ok">
+  <b>لكن لم يُصرف لأحد مبلغ ناقص بسبب هذا الاختلاف.</b>
+  نسبة الـ 50% تؤثر فقط على سطر المعاينة «المستحق الآن» في العمولة التي ما زالت <i>قيد الانتظار</i>.
+  وبمجرد الضغط على «اعتماد» يتجاهل النظام الشريحة تماماً وينشئ الدفعة بالمبلغ <b>الكامل 100%</b> —
+  أي <span class="en">22,084</span>، نفس رقم الملف. فالاختلاف في العرض على الشاشة فقط، وليس في المبالغ المصروفة.
+</div>
+
+<h2>ثانياً — الوسطاء: خطوات الضريبة (في النظام فقط)</h2>
+<p>ملف الإكسل لا يحتوي على أي حساب لضرائب الوسطاء — فهو يغطي الموظفين الداخليين فقط. كل ما يلي موجود في النظام وحده.</p>
+
+<h3>ضريبتان مختلفتان، ولكل منهما مربع اختيار مستقل</h3>
+<table>
+  <tr><th>الضريبة</th><th>المقصود بها</th><th>يُلغيها</th></tr>
+  <tr>
+    <td><b>ض.ق.م</b> 14%</td>
+    <td>مضمَّنة أصلاً داخل مبلغ الوسيط الإجمالي، لذا تُستخرج منه أولاً.</td>
+    <td>إعفاء من ضريبة القيمة المضافة</td>
+  </tr>
+  <tr>
+    <td><b>ض.الاستقطاع</b> 5%</td>
+    <td>تُحتسب على المبلغ المتبقي بعد استخراج ض.ق.م.</td>
+    <td>إعفاء من ضريبة الاستقطاع</td>
+  </tr>
+</table>
+<p><b>الضريبتان مستقلتان تماماً.</b> يمكن أن يكون الوسيط معفياً من ض.ق.م ومع ذلك تُخصم منه ض.الاستقطاع.
+تفعيل أحد الإعفاءين لا يُلغي الآخر.</p>
+
+<h3>مثال محلول — وسيط الوحدة <span class="en">A-104</span></h3>
+<ol class="steps">
+  <li><b>الإجمالي:</b> <span class="en">4,416,774 × 3.5% = 154,587</span></li>
+  <li><b>استخراج ض.ق.م المضمَّنة:</b><br>
+      <span class="formula">154,587 ÷ 1.14 = 135,603</span><br>
+      إذاً قيمة ض.ق.م = <span class="en">154,587 − 135,603 = 18,984</span></li>
+  <li><b>ض.الاستقطاع = 5% من المبلغ بعد استخراج ض.ق.م:</b><br>
+      <span class="formula">135,603 × 5% = 6,780</span></li>
+  <li><b>الصافي المصروف للوسيط:</b><br>
+      <span class="formula">154,587 − 18,984 − 6,780 = 128,823</span></li>
+</ol>
+
+<table>
+  <tr><th>السطر كما يظهر على الشاشة</th><th class="num">المبلغ</th></tr>
+  <tr><td>إجمالي القيمة الكاملة</td><td class="num">154,587</td></tr>
+  <tr><td>ض.ق.م المخصومة</td><td class="num">− 18,984</td></tr>
+  <tr><td>ض.الاستقطاع المخصومة</td><td class="num">− 6,780</td></tr>
+  <tr class="total"><td>صافي القيمة الكاملة</td><td class="num">128,823</td></tr>
+</table>
+
+<h3>إذا كان الوسيط معفياً من ض.ق.م</h3>
+<p>تُلغى الخطوة الثانية — لا توجد ض.ق.م داخل المبلغ، فيكون الإجمالي هو الأساس، وتُحسب ض.الاستقطاع على كامل الإجمالي:</p>
+<p class="formula">154,587 − 0 − (154,587 × 5%) = 146,858</p>
+<p>هذا هو الخطأ الذي كان قائماً <b>قبل 25 أغسطس</b>: الإعفاء من ض.ق.م كان يُلغي ض.الاستقطاع أيضاً، فيُصرف للوسيط كامل الـ <span class="en">154,587</span>.</p>
+
+<h3>مندوب ومدير الوسيط</h3>
+<p>أشخاص طبيعيون وليسوا شركات، فلا تنطبق عليهم ض.ق.م — تُخصم ض.الاستقطاع فقط من كامل المبلغ:</p>
+<p class="formula">44,168 − (44,168 × 5%) = 41,959</p>
+
+<h2>ثالثاً — إجابة على سؤالين</h2>
+
+<h3 style="color:#a8342a">1. نعم، تم تعديل نسب العمولة لمشروعين</h3>
+<p>في <b>29 أغسطس 2026</b> تم رفع نسبة <b>مندوب الوسيط</b> من 1% إلى <b>1.5%</b> في مشروعين:</p>
+<table>
+  <tr><th>المشروع</th><th>نوع البيع</th><th class="num">نسبة مندوب الوسيط</th><th class="num">تاريخ التعديل</th></tr>
+  <tr><td>سوا</td><td>بيع غير مباشر</td><td class="num">من 1% إلى 1.5%</td><td class="num">29/08 17:56</td></tr>
+  <tr><td>نسيم</td><td>بيع غير مباشر</td><td class="num">من 1% إلى 1.5%</td><td class="num">29/08 17:55</td></tr>
+</table>
+<p>باقي الإعدادات (4 سجلات) لم تُمس منذ إنشائها. وهذا التعديل يفسّر رسالة الخطأ التي ظهرت للمستخدم يوم
+<b>26 أغسطس</b> عند محاولته الحفظ أربع مرات: كان يُدخل 1.5% بينما الحد المقرر وقتها 1%، فرفض النظام الحفظ.
+وبعد رفع الحد يوم 29 أغسطس تم الحفظ والاعتماد مباشرة (الساعة 17:57).</p>
+
+<h3 style="color:#4a7a4a">2. الدفعات تُنشأ بالمبلغ الكامل، وليس حسب التحصيل</h3>
+<p>عند الاعتماد يتجاهل النظام نسبة التحصيل تماماً ويصرف لكل طرف مستحقه <b>كاملاً</b>.
+الدليل من عمولة <span class="en">11117</span> ونسبة تحصيلها 10% (أي شريحة الـ 50% في المعاينة):</p>
+<table>
+  <tr><th>الطرف</th><th class="num">المستحق كاملاً</th><th class="num">لو صُرف حسب التحصيل</th><th class="num">الدفعة الفعلية</th></tr>
+  <tr><td>المندوب</td><td class="num">22,084</td><td class="num">11,042</td><td class="num"><b>22,084</b></td></tr>
+  <tr><td>المدير</td><td class="num">11,042</td><td class="num">5,521</td><td class="num"><b>11,042</b></td></tr>
+  <tr><td>شركة الوسيط (بعد الضرائب)</td><td class="num">128,823</td><td class="num">64,411</td><td class="num"><b>128,823</b></td></tr>
+  <tr><td>مندوب الوسيط (بعد ض.الاستقطاع)</td><td class="num">62,939</td><td class="num">31,470</td><td class="num"><b>62,939</b></td></tr>
+</table>
+<p>الدفعات الأربع الفعلية أرقامها <span class="en">O17839</span> و<span class="en">O17840</span> و<span class="en">O17841</span> و<span class="en">O17842</span> — جميعها بالمبلغ الكامل.</p>
+
+<h2>الخلاصة</h2>
+<table>
+  <tr><th>الخطوة</th><th>ملف الإكسل</th><th>النظام</th><th>متطابق؟</th></tr>
+  <tr><td>المبلغ المستحق (السعر × النسبة)</td><td>نعم</td><td>نعم</td><td class="same">متطابق</td></tr>
+  <tr><td>شرائح التحصيل</td><td>5% / 7.5% ويصرف 75%</td><td>5–7.5% / 10% ويعرض 50%</td><td class="diff">مختلف</td></tr>
+  <tr><td>المبلغ المصروف فعلياً عند الاعتماد</td><td>100%</td><td>100%</td><td class="same">متطابق</td></tr>
+  <tr><td>ضرائب الوسطاء</td><td>غير موجود</td><td>نعم</td><td>—</td></tr>
+</table>
+
+<div class="note hot">
+  <b>قرار واحد ما زال مفتوحاً</b>
+  النظام حالياً <b>يخصم ض.ق.م من المبلغ المصروف للوسيط</b>، أي أن الشركة تحتفظ بها. والبديل — وهو المعتاد —
+  أن يُصرف للوسيط المبلغ شاملاً ض.ق.م ليتولى هو توريدها، مع خصم ض.الاستقطاع فقط.
+  الفرق في الوحدة <span class="en">A-104</span> بين صرف <b><span class="en">128,823</span></b>
+  و<b><span class="en">147,807</span></b>. يُستحسن مراجعة ذلك مع المسؤول عن المعالجة الضريبية.
+</div>
+
+<p class="foot">جميع الأرقام مأخوذة من العمولة رقم <span class="en">11117</span> (الوحدة <span class="en">A-104</span>، مشروع سوا)، مقرّبة لأقرب جنيه.</p>
+
+</body>
+</html>

@@ -109,6 +109,7 @@ public static class SalesCommissionCalculator
         public decimal? SalesRep2Amount { get; set; }
         public decimal? Manager2Amount { get; set; }
         public decimal? ExternalCompanyGrossAmount { get; set; }
+        public decimal? ExternalCompanyVatAmount { get; set; }
         public decimal? ExternalCompanyNetAmount { get; set; }
         public decimal? ExternalSalesRepAmount { get; set; }
         public decimal? ExternalSalesRepNetAmount { get; set; }
@@ -122,7 +123,7 @@ public static class SalesCommissionCalculator
             dto.SalesRepPercent, dto.ManagerPercent,
             dto.SalesRep2Percent, dto.Manager2Percent,
             dto.ExternalCompanyPercent, dto.ExternalSalesRepPercent, dto.ExternalManagerPercent,
-            dto.HasVatExemption, dto.VatPercent,
+            dto.ExtCompanyTaxInvoiceRaised, dto.VatPercent,
             dto.HasWithholdingTaxExemption, dto.WithholdingTaxPercent,
             dto.HasExternalSalesRepWithholdingTaxExemption, dto.HasExternalManagerWithholdingTaxExemption,
             salePrice, commissionFactor, isIndirect);
@@ -134,7 +135,7 @@ public static class SalesCommissionCalculator
             commission.SalesRepPercent, commission.ManagerPercent,
             commission.SalesRep2Percent, commission.Manager2Percent,
             commission.ExternalCompanyPercent, commission.ExternalSalesRepPercent, commission.ExternalManagerPercent,
-            commission.HasVatExemption, commission.VatPercent,
+            commission.ExtCompanyTaxInvoiceRaised, commission.VatPercent,
             commission.HasWithholdingTaxExemption, commission.WithholdingTaxPercent,
             commission.HasExternalSalesRepWithholdingTaxExemption, commission.HasExternalManagerWithholdingTaxExemption,
             commission.SalePrice, 1m, isIndirect);
@@ -143,7 +144,7 @@ public static class SalesCommissionCalculator
         decimal salesRepPercent, decimal managerPercent,
         decimal? salesRep2Percent, decimal? manager2Percent,
         decimal? externalCompanyPercent, decimal? externalSalesRepPercent, decimal? externalManagerPercent,
-        bool hasVatExemption, decimal vatPercent,
+        bool extCompanyTaxInvoiceRaised, decimal vatPercent,
         bool hasWithholdingTaxExemption, decimal withholdingTaxPercent,
         bool hasExternalSalesRepWithholdingTaxExemption, bool hasExternalManagerWithholdingTaxExemption,
         decimal salePrice, decimal commissionFactor, bool isIndirect)
@@ -170,24 +171,31 @@ public static class SalesCommissionCalculator
             var extCompanyGross = salePrice * (externalCompanyPercent.Value / 100m) * commissionFactor;
             result.ExternalCompanyGrossAmount = extCompanyGross;
 
-            // Both taxes come off what the broker company is actually paid.
+            // Mirrors the client's workbook (sheet "CO 2"), where صافي المستحق = M − Q − O.
             //
-            // VAT exemption and withholding-tax exemption are independent statuses — a VAT-exempt broker
-            // is still subject to WHT, and only HasWithholdingTaxExemption removes it. VAT, when it
-            // applies, is embedded in the gross, so it is backed out first and WHT is then charged on the
-            // resulting VAT-exclusive base. For a VAT-exempt broker nothing is embedded, the gross IS the
-            // base, and only WHT is deducted.
+            // Withholding is ALWAYS charged on the VAT-exclusive amount (their "اصل العمولة بدون
+            // الضريبة"). What varies is whether the VAT itself is handed over:
+            //
+            //   رفع الفاتورة الضريبية = تم رفعها  →  net = gross − wht
+            //       the broker issued a tax invoice, so the VAT is theirs to remit and we pay it over.
+            //   رفع الفاتورة الضريبية = لم ترفع   →  net = gross − wht − vat
+            //       no invoice yet, so the VAT is held back until they issue one.
+            //
+            // There is no such thing as a VAT-exempt broker here: the commission amount always carries
+            // VAT, so the base is always the VAT-exclusive figure. Both taxes are charged on that base,
+            // exactly as the workbook's اصل العمولة بدون الضريبة column does.
             var vatRate = vatPercent > 0 ? vatPercent : 14m;
-            var baseAmount = hasVatExemption
-                ? extCompanyGross
-                : extCompanyGross * 100m / (100m + vatRate);
+            var baseAmount = extCompanyGross * 100m / (100m + vatRate);
 
             var vatAmount = extCompanyGross - baseAmount;
             var whtAmount = (!hasWithholdingTaxExemption && withholdingTaxPercent > 0)
                 ? baseAmount * (withholdingTaxPercent / 100m)
                 : 0m;
 
-            result.ExternalCompanyNetAmount = extCompanyGross - vatAmount - whtAmount;
+            result.ExternalCompanyVatAmount = vatAmount;
+            result.ExternalCompanyNetAmount = extCompanyTaxInvoiceRaised
+                ? extCompanyGross - whtAmount
+                : extCompanyGross - whtAmount - vatAmount;
         }
 
         if (externalSalesRepPercent.HasValue)

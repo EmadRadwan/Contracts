@@ -29029,6 +29029,7 @@ entity.Property(e => e.GlSubAccountCourseLabelId)
 
                 // Tax flags
                 entity.Property(e => e.HasVatExemption).HasColumnName("HAS_VAT_EXEMPTION");
+                entity.Property(e => e.ExtCompanyTaxInvoiceRaised).HasColumnName("EXT_COMPANY_TAX_INVOICE_RAISED");
                 entity.Property(e => e.HasWithholdingTaxExemption).HasColumnName("HAS_WITHHOLDING_TAX_EXEMPTION");
                 entity.Property(e => e.VatPercent)
                       .HasColumnType("decimal(8,4)").HasColumnName("VAT_PERCENT");
