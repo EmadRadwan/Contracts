@@ -101,13 +101,13 @@ export default function RecordHistory({entityName, pkText, height = "45vh"}: Pro
             />
             <Column
                 title={getTranslatedLabel("audit.history.change", "التغيير")}
-                cell={ValueCell}
+                cells={{ data: ValueCell }}
                 width={300}
             />
             <Column
                 field="changedByInfo"
                 title={getTranslatedLabel("audit.history.by", "بواسطة")}
-                cell={ByCell}
+                cells={{ data: ByCell }}
                 width={150}
             />
         </KendoGrid>

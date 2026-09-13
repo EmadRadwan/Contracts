@@ -110,7 +110,7 @@ const GlVarianceReason = () => {
                     width={300}
                 />
                 <Column field="glAccountId" title="Gl Account" width={350} />
-                <Column cell={CommandCell} width="auto" />
+                <Column cells={{ data: CommandCell }} width="auto" />
 
               </KendoGrid>
             </div>

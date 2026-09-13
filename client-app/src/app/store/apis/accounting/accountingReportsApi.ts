@@ -73,6 +73,18 @@ const accountingReportsApi = createApi({
                 // Context: Use when report must reflect real-time backend state
                 keepUnusedDataFor: 0,
             }),
+            fetchTrialBalanceByLevelReport: builder.query<
+                any,
+                { customTimePeriodId: string; organizationPartyId: string }
+                >({
+                query: ({ customTimePeriodId, organizationPartyId }) => {
+                    return {
+                        url: `/trialBalance/${organizationPartyId}/${customTimePeriodId}/getTrialBalanceByLevelReport`,
+                        method: "GET",
+                    };
+                },
+                keepUnusedDataFor: 0,
+            }),
             fetchTransactionTotalsReport: builder.query<any,
                 {
                     organizationPartyId: string;
@@ -257,6 +269,7 @@ const accountingReportsApi = createApi({
 
 export const {
     useLazyFetchTrialBalanceReportQuery,
+    useLazyFetchTrialBalanceByLevelReportQuery,
     useFetchTransactionTotalsReportQuery,
     useFetchIncomeStatementReportQuery,
     useLazyFetchIncomeStatementReportQuery,

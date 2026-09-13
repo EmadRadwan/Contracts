@@ -1,0 +1,546 @@
+import ExcelJS from 'exceljs';
+import { ProjectReportDto } from '../../../app/store/apis/projectsApi';
+
+/**
+ * Builds the multi-sheet project-report workbook from a ProjectReportDto.
+ *
+ * Pure — no React, no component state. The dialog (ProjectReportExcel.tsx) and, later, the
+ * in-app report screen both call this so there is exactly one Excel implementation.
+ *
+ * Summary totals are read from `data.summary` (computed server-side in
+ * GetProjectReport / ProjectReportSummaryDto.Build) — this module never re-sums the sections,
+ * so the summary sheet, the screen and any PDF export cannot drift.
+ */
+export interface ProjectReportWorkbookOptions {
+    projectName: string;
+    /** Pre-formatted period label for sheet titles, e.g. "2026-01-01_to_2026-09-10" or "All_Data". */
+    expensesPeriod: string;
+    revenuesPeriod: string;
+    salesPeriod: string;
+}
+
+const utils = {
+    safeString: (v: any) => (v == null || typeof v === 'object') ? '' : String(v).trim(),
+    rtlEmbed: (t: string) => /\p{Script=Arabic}/u.test(t) ? `\u202B${t}` : t,
+    formatNumber: (v: number | undefined | null, dec = 2) =>
+        v == null ? 0 : Number(v).toLocaleString('en-US', {
+            minimumFractionDigits: dec,
+            maximumFractionDigits: dec
+        }),
+    formatDate: (d: string | Date | undefined | null) => {
+        if (!d) return '';
+        const date = new Date(d);
+        return isNaN(date.getTime()) ? '' : date.toLocaleDateString('en-GB');
+    },
+};
+
+export async function buildProjectReportWorkbook(
+    data: ProjectReportDto,
+    opts: ProjectReportWorkbookOptions
+) {
+    const projectName = opts.projectName;
+    const expPeriod = opts.expensesPeriod;
+    const revPeriod = opts.revenuesPeriod;
+    const salPeriod = opts.salesPeriod;
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Golden Land System';
+    workbook.created = new Date();
+
+    let logoBuffer: ArrayBuffer | null = null;
+    try {
+        const resp = await fetch('/goldenlandlogo.jpg');
+        if (resp.ok) logoBuffer = await resp.blob().then(b => b.arrayBuffer());
+    } catch (e) {
+        console.warn('Logo not found:', e);
+    }
+
+    // ---------- helpers ----------
+    const expenseNet = (e: any) => e.netCertifiedAmount ??
+        ((e.grossAmount || 0) - (e.discountAmount || 0) - (e.deductionsAmount || 0) - (e.insuranceAmount || 0));
+
+    // Adds the logo (if any) + a coloured title row; returns the next free row index.
+    const addSheetHeader = (ws: ExcelJS.Worksheet, title: string, lastCol: number, fill: string) => {
+        let r = 1;
+        if (logoBuffer) {
+            const imageId = workbook.addImage({ buffer: logoBuffer, extension: 'jpeg' });
+            ws.addImage(imageId, { tl: { col: 0, row: 0 }, ext: { width: 140, height: 90 } });
+            ws.getRow(1).height = 70;
+            r = 6;
+        } else {
+            ws.getCell('A1').value = 'Golden Land';
+            ws.getCell('A1').font = { name: 'Amiri', size: 18, bold: true };
+            r = 3;
+        }
+        const t = ws.getCell(`A${r}`);
+        t.value = utils.rtlEmbed(title);
+        t.font = { name: 'Amiri', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+        t.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill } };
+        t.alignment = { horizontal: 'center', vertical: 'middle' };
+        ws.mergeCells(r, 1, r, lastCol);
+        ws.getRow(r).height = 45;
+        return r + 2;
+    };
+
+    // Generic "payment-style" block on its OWN sheet (own header/autofilter/total so the
+    // user can sort & filter each block independently). amountCol is 1-based.
+    const addPaymentSheet = (
+        sheetName: string, title: string, titleFill: string, headerFill: string, altFill: string,
+        headers: string[], items: any[], rowMapper: (x: any) => any[], amountCol: number, widths: number[]
+    ) => {
+        const ws = workbook.addWorksheet(sheetName);
+        ws.views = [{ rightToLeft: true }];
+        ws.pageSetup = { orientation: 'landscape', paperSize: 9 };
+        addSheetHeader(ws, title, headers.length, titleFill);
+
+        const headerRow = ws.addRow(headers.map(h => utils.rtlEmbed(h)));
+        headerRow.font = { name: 'Amiri', size: 11, bold: true };
+        headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: headerFill } };
+        headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        const dataStart = headerRow.number + 1;
+        items.forEach((it, idx) => {
+            const row = ws.addRow(rowMapper(it));
+            const c = row.getCell(amountCol);
+            c.numFmt = '#,##0.00';
+            c.alignment = { horizontal: 'right' };
+            if (idx % 2 === 1) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: altFill } };
+        });
+        const dataEnd = ws.rowCount;
+
+        const amountLetter = ws.getColumn(amountCol).letter;
+        const totalArr: any[] = headers.map(() => '');
+        totalArr[amountCol - 2] = utils.rtlEmbed('الإجمالي');
+        totalArr[amountCol - 1] = { formula: `SUBTOTAL(109,${amountLetter}${dataStart}:${amountLetter}${dataEnd})` };
+        const totalRow = ws.addRow(totalArr);
+        totalRow.font = { name: 'Amiri', size: 12, bold: true };
+        totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: headerFill } };
+        totalRow.getCell(amountCol).numFmt = '#,##0.00';
+        totalRow.getCell(amountCol).alignment = { horizontal: 'right' };
+
+        ws.autoFilter = { from: { row: headerRow.number, column: 1 }, to: { row: dataEnd, column: headers.length } };
+        ws.columns.forEach((col, i) => (col.width = widths[i] || 15));
+        return ws;
+    };
+
+    // ---------- data partitions still needed for the detail sheets ----------
+    // Maintenance deposit is custodial, not project revenue — it gets its own sheet.
+    const isMaintenance = (r: any) =>
+        r.paymentTypeId === 'RECEIPT_MAINTENANCE_AMOUNT' || r.revenueCategory === 'Maintenance Deposit';
+    const agreedRevenues = (data.revenues || []).filter(r => !isMaintenance(r));
+    const maintenanceRevenues = (data.revenues || []).filter(isMaintenance);
+    const commissions = data.paidCommissions || [];
+
+    // Summary totals come from the server (ProjectReportDto.Summary). This module never re-sums.
+    const s = data.summary;
+    if (!s) {
+        throw new Error('التقرير لا يحتوي على ملخص محسوب من الخادم. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
+    }
+
+    // ====================== SUMMARY SHEET (first) ======================
+    const wsSum = workbook.addWorksheet('ملخص التقرير');
+    wsSum.views = [{ rightToLeft: true }];
+    addSheetHeader(wsSum, `${projectName} - الثروة الخضراء - ملخص التقرير`, 4, 'FF1E40AF');
+
+    const sumSection = (label: string, fill: string) => {
+        const row = wsSum.addRow([utils.rtlEmbed(label), '']);
+        wsSum.mergeCells(row.number, 1, row.number, 4);
+        row.font = { name: 'Amiri', size: 13, bold: true, color: { argb: 'FFFFFFFF' } };
+        row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill } };
+        row.alignment = { horizontal: 'center', vertical: 'middle' };
+        row.height = 26;
+    };
+    const sumLine = (label: string, value: number, o: { bold?: boolean; fill?: string; int?: boolean } = {}) => {
+        const row = wsSum.addRow([utils.rtlEmbed(label), value]);
+        row.font = { name: 'Amiri', size: 12, bold: !!o.bold };
+        if (o.fill) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: o.fill } };
+        const v = row.getCell(2);
+        v.numFmt = o.int ? '#,##0' : '#,##0.00';
+        v.alignment = { horizontal: 'right' };
+        v.font = { name: 'Amiri', size: 12, bold: !!o.bold };
+    };
+
+    sumSection('المصاريف', 'FF1E40AF');
+    sumLine('المستخلصات', s.certificateExpenses);
+    sumLine('الدفعات المباشرة', s.directPayments);
+    sumLine('قيود محاسبية', s.accountingTransactions);
+    sumLine('رواتب المشروع', s.projectPayroll);
+    sumLine('المصاريف التشغيلية', s.operatingExpenses);
+    sumLine('إجمالي مصاريف المشروع', s.totalProjectExpenses, { bold: true, fill: 'FFBFDBFE' });
+    wsSum.addRow([]);
+
+    sumSection('الإيرادات', 'FF065F46');
+    sumLine('الإيراد المتفق عليه', s.revenueScheduled);
+    sumLine('المحصل', s.revenueCollected);
+    sumLine('المتبقي', s.revenueOutstanding);
+    wsSum.addRow([]);
+
+    sumSection('وديعة الصيانة', 'FF0F766E');
+    sumLine('إجمالي مبلغ الصيانة', s.maintenanceScheduled);
+    sumLine('مبالغ الصيانة المحصلة', s.maintenanceCollected);
+    sumLine('مبالغ الصيانة المتبقية', s.maintenanceOutstanding);
+    wsSum.addRow([]);
+
+    sumSection('مبيعات الوحدات', 'FF0D9488');
+    sumLine('عدد الوحدات المباعة', s.unitsSold, { int: true });
+    sumLine('إجمالي قيمة المبيعات', s.unitsSoldValue);
+    sumLine('إجمالي المقدمات المحصلة', s.unitsAdvanceCollected);
+    sumLine('عدد الوحدات المتاحة', s.unitsAvailable, { int: true });
+    wsSum.addRow([]);
+
+    sumSection('العمولات', 'FFB45309');
+    sumLine('عدد دفعات العمولة', s.commissionPaymentCount, { int: true });
+    sumLine('إجمالي العمولات المدفوعة', s.commissionsPaid);
+    sumLine('إجمالي العمولات المستحقة', s.commissionsPending);
+    sumLine('إجمالي العمولات', s.commissionsPaid + s.commissionsPending, { bold: true, fill: 'FFFDE9C8' });
+    wsSum.addRow([]);
+
+    sumSection('مبلغ الإدارة', 'FF1E40AF');
+    const excludedLabel = s.mgmtExcludedBuildings.length
+        ? ` (عدا ${s.mgmtExcludedBuildings.join('، ')})`
+        : '';
+    sumLine(`الإيراد المتفق عليه${excludedLabel}`, s.mgmtFeeBase);
+    sumLine(`نسبة الإدارة (${s.mgmtFeePercent}%)`, s.mgmtFee);
+    sumLine('يُخصم: المصاريف التشغيلية', -s.operatingExpenses);
+    sumLine('صافي مبلغ الإدارة المتبقي', s.mgmtFeeNet, { bold: true, fill: 'FFBFDBFE' });
+    wsSum.addRow([]);
+
+    sumSection('الصافي', 'FF7C3AED');
+    sumLine('صافي (المحصل من العملاء - مصاريف المشروع)', s.netAfterExpenses, { bold: true, fill: 'FFEDE9FE' });
+    sumLine('الصافي بعد خصم العمولات المدفوعة', s.netAfterPaidCommissions, { bold: true, fill: 'FFEDE9FE' });
+    wsSum.getColumn(1).width = 46;
+    wsSum.getColumn(2).width = 24;
+    wsSum.getColumn(3).width = 4;
+    wsSum.getColumn(4).width = 4;
+
+    // ====================== CERTIFICATE EXPENSES SHEET ======================
+    const wsExp = workbook.addWorksheet('المصاريف - المستخلصات');
+    wsExp.views = [{ rightToLeft: true }];
+    wsExp.pageSetup = { orientation: 'landscape', paperSize: 9 };
+    addSheetHeader(wsExp, `${projectName} - الثروة الخضراء - المستخلصات (${expPeriod})`, 15, 'FF1E40AF');
+
+    // Column order per client request, matching the "الترتيب المطلوب" sheet they provided
+    // (Project_Report_نسيم..._20260101.xlsx): date/description/party/net up front, ids and
+    // amounts follow. Kept as one array so header row, data rows, widths and the net-column
+    // total/formula can never drift out of sync when the order changes again.
+    const expColumnDefs: { header: string; width: number; numeric?: boolean; get: (exp: any) => any }[] = [
+        { header: 'التاريخ', width: 14, get: exp => utils.formatDate(exp.expenseDate) },
+        { header: 'وصف البند', width: 45, get: exp => utils.safeString(exp.itemDescription) },
+        { header: 'اسم الطرف', width: 32, get: exp => utils.safeString(exp.partyName || exp.partyId) },
+        { header: 'صافي المعتمد', width: 20, numeric: true, get: exp => expenseNet(exp) },
+        { header: 'رقم الدفعة', width: 16, get: exp => utils.safeString(exp.paymentId) },
+        { header: 'رقم الشهادة', width: 18, get: exp => utils.safeString(exp.certificateNumber) },
+        { header: 'المنتج/الخدمة', width: 28, get: exp => utils.safeString(exp.productName || exp.productId) },
+        { header: 'النوع', width: 25, get: exp => utils.safeString(exp.certificateTypeArabic || exp.certificateType) },
+        { header: 'الوصف', width: 38, get: exp => utils.safeString(exp.certificateDescription) },
+        { header: 'الكمية', width: 12, numeric: true, get: exp => exp.quantity || 1 },
+        { header: 'السعر', width: 16, numeric: true, get: exp => exp.unitRate || 0 },
+        { header: 'الإجمالي', width: 18, numeric: true, get: exp => exp.grossAmount || 0 },
+        { header: 'الخصم', width: 16, numeric: true, get: exp => exp.discountAmount || 0 },
+        { header: 'الاستقطاعات', width: 16, numeric: true, get: exp => exp.deductionsAmount || 0 },
+        { header: 'التأمين', width: 16, numeric: true, get: exp => exp.insuranceAmount || 0 }
+    ];
+    const netColIndex = expColumnDefs.findIndex(c => c.header === 'صافي المعتمد') + 1; // 1-based
+
+    const headerRow = wsExp.addRow(expColumnDefs.map(c => utils.rtlEmbed(c.header)));
+    headerRow.font = { name: 'Amiri', size: 11, bold: true };
+    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
+    headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    const dataStartRow = headerRow.number + 1;
+    data.expenses.forEach((exp, idx) => {
+        const row = wsExp.addRow(expColumnDefs.map(c => c.get(exp)));
+        expColumnDefs.forEach((c, i) => {
+            if (!c.numeric) return;
+            const cell = row.getCell(i + 1);
+            cell.numFmt = '#,##0.00';
+            cell.alignment = { horizontal: 'right' };
+        });
+        if (idx % 2 === 1) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+    });
+    const dataEndRow = wsExp.rowCount;
+
+    const netColLetter = wsExp.getColumn(netColIndex).letter;
+    const totalArr: any[] = expColumnDefs.map(() => '');
+    totalArr[netColIndex - 2] = utils.rtlEmbed('الإجمالي الكلي');
+    totalArr[netColIndex - 1] = { formula: `SUBTOTAL(109,${netColLetter}${dataStartRow}:${netColLetter}${dataEndRow})` };
+    const totalRow = wsExp.addRow(totalArr);
+    totalRow.font = { name: 'Amiri', size: 12, bold: true };
+    totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBFDBFE' } };
+    totalRow.getCell(netColIndex).numFmt = '#,##0.00';
+    totalRow.getCell(netColIndex).alignment = { horizontal: 'right' };
+
+    wsExp.autoFilter = { from: { row: headerRow.number, column: 1 }, to: { row: dataEndRow, column: expColumnDefs.length } };
+    // @ts-ignore  disable filter buttons on numeric columns
+    wsExp.autoFilter.columns = expColumnDefs.map(c => (c.numeric ? { showButton: false } : {}));
+    wsExp.columns.forEach((col, i) => (col.width = expColumnDefs[i]?.width || 15));
+
+    // ====================== DIRECT PAYMENTS SHEET ======================
+    if (data.directPayments && data.directPayments.length > 0) {
+        addPaymentSheet(
+            'الدفعات المباشرة',
+            `${projectName} - الدفعات المباشرة (${expPeriod})`,
+            'FF10B981', 'FFD1FAE5', 'FFF0FDF4',
+            ['رقم الدفعة', 'النوع', 'من طرف', 'إلى طرف', 'الحالة', 'التاريخ', 'المبلغ', 'رقم المرجع',
+                'طريقة الدفع', 'الشيك', 'تاريخ الشيك', 'مركز التكلفة', 'ملاحظات'],
+            data.directPayments,
+            (p: any) => [
+                utils.safeString(p.paymentId), utils.safeString(p.paymentTypeDescription),
+                utils.safeString(p.partyIdFromName), utils.safeString(p.partyIdToName),
+                utils.safeString(p.dueStatusArabic || p.statusDescription), utils.formatDate(p.effectiveDate),
+                p.amount || 0, utils.safeString(p.paymentRefNum || ''),
+                utils.safeString(p.paymentMethodTypeDescription), utils.safeString(p.chequeNumber),
+                utils.formatDate(p.chequeDate), utils.safeString(p.costCenterDescription), utils.safeString(p.comments)
+            ],
+            7, [18, 20, 32, 32, 18, 14, 18, 18, 20, 16, 16, 25, 45]
+        );
+    }
+
+    // ====================== ACCOUNTING TRANSACTIONS SHEET ======================
+    if (data.accountingTransactions && data.accountingTransactions.length > 0) {
+        addPaymentSheet(
+            'قيود محاسبية',
+            `${projectName} - قيود محاسبية (${expPeriod})`,
+            'FF6366F1', 'FFE0E7FF', 'FFF5F3FF',
+            ['رقم القيد', 'النوع', 'من طرف', 'إلى طرف', 'الحالة', 'التاريخ', 'المبلغ', 'رقم المرجع', 'ملاحظات'],
+            data.accountingTransactions,
+            (t: any) => [
+                utils.safeString(t.paymentId), utils.safeString(t.paymentTypeDescription),
+                utils.safeString(t.partyIdFromName), utils.safeString(t.partyIdToName),
+                utils.safeString(t.dueStatusArabic || t.statusDescription), utils.formatDate(t.effectiveDate),
+                t.amount || 0, utils.safeString(t.paymentRefNum || ''), utils.safeString(t.comments)
+            ],
+            7, [20, 22, 28, 28, 18, 14, 18, 18, 45]
+        );
+    }
+
+    // ====================== PROJECT PAYROLL SHEET ======================
+    if (data.payroll && data.payroll.length > 0) {
+        addPaymentSheet(
+            'رواتب المشروع',
+            `${projectName} - رواتب المشروع (${expPeriod})`,
+            'FF0D9488', 'FFCCFBF1', 'FFF0FDFA',
+            ['رقم القيد', 'النوع', 'الموظف', 'المشروع', 'الحالة', 'التاريخ', 'المبلغ', 'ملاحظات'],
+            data.payroll,
+            (p: any) => [
+                utils.safeString(p.paymentId), utils.safeString(p.paymentTypeDescription),
+                utils.safeString(p.partyIdFromName), utils.safeString(p.partyIdToName),
+                utils.safeString(p.dueStatusArabic || p.statusDescription), utils.formatDate(p.effectiveDate),
+                p.amount || 0, utils.safeString(p.comments)
+            ],
+            7, [22, 22, 28, 28, 18, 14, 18, 45]
+        );
+    }
+
+    // ====================== OPERATING EXPENSES SHEET ======================
+    if (data.operatingExpenses && data.operatingExpenses.length > 0) {
+        addPaymentSheet(
+            'المصاريف التشغيلية',
+            `${projectName} - الثروة الخضراء - المصاريف التشغيلية (${expPeriod})`,
+            'FF6366F1', 'FFE0E7FF', 'FFF5F3FF',
+            ['رقم الدفعة', 'النوع', 'من طرف', 'إلى طرف', 'الحالة', 'التاريخ', 'المبلغ', 'رقم المرجع',
+                'طريقة الدفع', 'الشيك', 'تاريخ الشيك', 'مركز التكلفة', 'ملاحظات'],
+            data.operatingExpenses,
+            (p: any) => [
+                utils.safeString(p.paymentId), utils.safeString(p.paymentTypeDescription),
+                utils.safeString(p.partyIdFromName), utils.safeString(p.partyIdToName),
+                utils.safeString(p.dueStatusArabic || p.statusDescription), utils.formatDate(p.effectiveDate),
+                p.amount || 0, utils.safeString(p.paymentRefNum || ''),
+                utils.safeString(p.paymentMethodTypeDescription), utils.safeString(p.chequeNumber),
+                utils.formatDate(p.chequeDate), utils.safeString(p.costCenterDescription), utils.safeString(p.comments)
+            ],
+            7, [18, 20, 32, 32, 18, 14, 18, 18, 20, 16, 16, 25, 45]
+        );
+    }
+
+    // ====================== REVENUES SHEETS ======================
+    // Agreed revenue (advance + installments) and the maintenance deposit are shown on their
+    // own sheets so each carries its own total; maintenance is custodial, not project revenue.
+    const revHeaders = [
+        'رقم الدفعة', 'السنة', 'الربع', 'المبنى', 'الوحدة', 'العميل', 'الفئة', 'الإيراد المتفق عليه',
+        'المحصل', 'المتبقي', 'الحالة', 'شريحة التأخير', 'حالة الاستحقاق', 'تاريخ الاستحقاق',
+        'مستحق اليوم', 'مستحق خلال أسبوع', 'مستحق خلال شهر', 'متأخر'
+    ];
+    const revWidths = [16, 10, 10, 14, 14, 32, 20, 20, 18, 18, 16, 24, 25, 16, 16, 18, 18, 12];
+
+    const addRevenueSheet = (sheetName: string, title: string, rows: any[], amountHeader: string) => {
+        const ws = workbook.addWorksheet(sheetName);
+        ws.views = [{ rightToLeft: true }];
+        const headers = revHeaders.slice();
+        headers[7] = amountHeader;
+        addSheetHeader(ws, title, headers.length, 'FF1E40AF');
+
+        const hRow = ws.addRow(headers.map(h => utils.rtlEmbed(h)));
+        hRow.font = { name: 'Amiri', size: 11, bold: true };
+        hRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
+        hRow.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        const dataStart = hRow.number + 1;
+        rows.forEach((rev: any) => {
+            const row = ws.addRow([
+                rev.paymentId, rev.year, rev.quarter, rev.buildingNumber, rev.apartmentId,
+                utils.safeString(rev.customerName), utils.safeString(rev.revenueCategory),
+                rev.scheduledAmount || 0, rev.collectedAmount || 0, rev.outstandingAmount || 0,
+                utils.safeString(rev.paymentStatus), utils.safeString(rev.overdueBucket),
+                utils.safeString(rev.dueStatusArabic), utils.formatDate(rev.dueDate),
+                utils.safeString(rev.deservedToday), utils.safeString(rev.deservedWithinWeek),
+                utils.safeString(rev.deservedWithinMonth), utils.safeString(rev.lateDue)
+            ]);
+            [8, 9, 10].forEach(col => {
+                const cell = row.getCell(col);
+                cell.numFmt = '#,##0.00';
+                cell.alignment = { horizontal: 'right' };
+            });
+        });
+        const dataEnd = ws.rowCount;
+
+        const tRow = ws.addRow([
+            '', '', '', '', '', '', 'الإجمالي',
+            { formula: `SUBTOTAL(109,H${dataStart}:H${dataEnd})` },
+            { formula: `SUBTOTAL(109,I${dataStart}:I${dataEnd})` },
+            { formula: `SUBTOTAL(109,J${dataStart}:J${dataEnd})` },
+            '', '', '', '', '', '', '', ''
+        ]);
+        tRow.font = { name: 'Amiri', size: 12, bold: true };
+        tRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBFDBFE' } };
+        for (let i = 8; i <= 10; i++) tRow.getCell(i).numFmt = '#,##0.00';
+
+        ws.autoFilter = { from: { row: hRow.number, column: 1 }, to: { row: dataEnd, column: headers.length } };
+        // @ts-ignore  disable filter buttons on numeric columns
+        ws.autoFilter.columns = [
+            {}, { showButton: false }, { showButton: false }, {}, {}, {}, {},
+            { showButton: false }, { showButton: false }, { showButton: false },
+            {}, {}, {}, {}, {}, {}, {}, {}
+        ];
+        ws.columns.forEach((col, i) => (col.width = revWidths[i] || 15));
+    };
+
+    addRevenueSheet('الإيرادات', `${projectName} - الثروة الخضراء - الإيرادات (${revPeriod})`,
+        agreedRevenues, 'الإيراد المتفق عليه');
+    if (maintenanceRevenues.length > 0) {
+        addRevenueSheet('وديعة الصيانة', `${projectName} - الثروة الخضراء - وديعة الصيانة (${revPeriod})`,
+            maintenanceRevenues, 'المجدول');
+    }
+
+    // ====================== APARTMENT SALES SHEET ======================
+    if (data.apartmentSales && data.apartmentSales.length > 0) {
+        const NOT_SOLD_FILL = 'FFFCE8B2';   // light amber = available/reserved, not sold
+        const NOT_SOLD_TEXT = 'FF8A6D00';
+
+        const wsSales = workbook.addWorksheet('مبيعات الوحدات');
+        wsSales.views = [{ rightToLeft: true }];
+
+        const salesTitleCell = wsSales.getCell('A1');
+        salesTitleCell.value = utils.rtlEmbed(`${projectName} - الثروة الخضراء - مبيعات الوحدات (${salPeriod})`);
+        salesTitleCell.font = { name: 'Amiri', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+        salesTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0D9488' } }; // Teal
+        salesTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        wsSales.mergeCells('A1:Q1');
+        wsSales.getRow(1).height = 30;
+
+        // Legend explaining the amber (not-sold) rows.
+        wsSales.getCell('A2').value = utils.rtlEmbed('الصفوف الكهرمانية = وحدات بدون طلب بيع (متاحة/محجوزة)، غير مباعة.');
+        wsSales.mergeCells('A2:Q2');
+        wsSales.getRow(2).font = { name: 'Amiri', size: 10, italic: true, color: { argb: NOT_SOLD_TEXT } };
+        wsSales.getRow(2).alignment = { horizontal: 'center', vertical: 'middle' };
+
+        const salesHeaders = [
+            'رقم الطلب', 'الوحدة', 'المبنى', 'الطابق', 'العميل', 'الموظف', 'الحالة', 'حالة الوحدة',
+            'تاريخ البيع', 'الإجمالي', 'المقدم', 'وديعة الصيانة', 'مساحة الوحدة', 'مساحة الحديقة',
+            'سعر المتر', 'المشروع', 'ملاحظات'
+        ];
+        const salesHeaderRow = wsSales.addRow(salesHeaders.map(h => utils.rtlEmbed(h)));
+        salesHeaderRow.font = { name: 'Amiri', size: 11, bold: true };
+        salesHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCCFBF1' } }; // Light Teal
+        salesHeaderRow.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        const salesDataStartRow = salesHeaderRow.number + 1;
+
+        data.apartmentSales.forEach((sr: any) => {
+            const isSold = !!sr.isSold;
+            const row = wsSales.addRow([
+                utils.safeString(sr.salesRequestId),
+                utils.safeString(sr.apartmentName),
+                utils.safeString(sr.buildingNumber),
+                utils.safeString(sr.floorNumber),
+                utils.safeString(sr.fromPartyName),
+                utils.safeString(sr.employeeName),
+                utils.safeString(sr.statusDescription),
+                utils.safeString(sr.apartmentStatusDescription),
+                isSold ? utils.formatDate(sr.saleDate) : '',
+                isSold ? (sr.totalPrice ?? 0) : '',
+                isSold ? (sr.advancePayment ?? 0) : '',
+                isSold ? (sr.maintenanceDeposit ?? 0) : '',
+                sr.apartmentSpaceM2 ?? 0,
+                sr.gardenSpaceM2 ?? 0,
+                sr.apartmentPricePerM2 ?? 0,
+                utils.safeString(sr.projectName),
+                utils.safeString(sr.comments),
+            ]);
+            row.font = { name: 'Amiri', size: 10 };
+            row.alignment = { horizontal: 'right', wrapText: true };
+            [10, 11, 12, 13, 14, 15].forEach(col => {
+                row.getCell(col).numFmt = '#,##0.00';
+                row.getCell(col).alignment = { horizontal: 'right' };
+            });
+
+            if (!isSold) {
+                row.eachCell({ includeEmpty: true }, cell => {
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: NOT_SOLD_FILL } };
+                });
+                row.getCell(7).font = { name: 'Amiri', size: 10, bold: true, color: { argb: NOT_SOLD_TEXT } };
+            }
+        });
+
+        const salesDataEndRow = wsSales.rowCount;
+
+        const salesTotalRow = wsSales.addRow([
+            '', '', '', '', '', '', 'الإجمالي', '', '',
+            { formula: `SUBTOTAL(109,J${salesDataStartRow}:J${salesDataEndRow})` },
+            { formula: `SUBTOTAL(109,K${salesDataStartRow}:K${salesDataEndRow})` },
+            { formula: `SUBTOTAL(109,L${salesDataStartRow}:L${salesDataEndRow})` },
+            { formula: `SUBTOTAL(109,M${salesDataStartRow}:M${salesDataEndRow})` },
+            { formula: `SUBTOTAL(109,N${salesDataStartRow}:N${salesDataEndRow})` },
+            '', '', ''
+        ]);
+        salesTotalRow.font = { name: 'Amiri', size: 12, bold: true };
+        salesTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF99F6E4' } };
+        [10, 11, 12, 13, 14].forEach(col => salesTotalRow.getCell(col).numFmt = '#,##0.00');
+
+        wsSales.autoFilter = {
+            from: { row: salesHeaderRow.number, column: 1 },
+            to: { row: salesDataEndRow, column: 17 }
+        };
+
+        const salesWidths = [15, 22, 16, 16, 22, 22, 18, 16, 14, 15, 15, 16, 18, 18, 16, 22, 32];
+        wsSales.columns.forEach((col, i) => col.width = salesWidths[i] || 15);
+    }
+
+    // ====================== PAID COMMISSIONS SHEET ======================
+    // One row per commission payee-payment. Filterable by commission number, sales-request
+    // number, unit, building, payee, amount and status (paid vs. still owed).
+    if (commissions.length > 0) {
+        addPaymentSheet(
+            'العمولات المدفوعة',
+            `${projectName} - الثروة الخضراء - العمولات المدفوعة (${expPeriod})`,
+            'FFB45309', 'FFFDE9C8', 'FFFEF6E7',
+            ['رقم العمولة', 'رقم طلب البيع', 'الوحدة', 'المبنى', 'المستفيد', 'المبلغ', 'حالة الدفع',
+                'حالة العمولة', 'طريقة الدفع', 'التاريخ', 'رقم الشيك', 'ملاحظات'],
+            commissions,
+            (c: any) => [
+                utils.safeString(c.salesCommissionId), utils.safeString(c.salesRequestId),
+                utils.safeString(c.apartmentName), utils.safeString(c.buildingNumber),
+                utils.safeString(c.payeeName || c.payeePartyId),
+                c.amount || 0,
+                utils.safeString(c.paymentStatusArabic),
+                utils.safeString(c.commissionStatusArabic),
+                utils.safeString(c.paymentMethodTypeArabic),
+                utils.formatDate(c.effectiveDate), utils.safeString(c.chequeNumber),
+                utils.safeString(c.comments)
+            ],
+            6, [16, 16, 26, 12, 30, 16, 18, 18, 18, 14, 16, 55]
+        );
+    }
+
+    return await workbook.xlsx.writeBuffer();
+}

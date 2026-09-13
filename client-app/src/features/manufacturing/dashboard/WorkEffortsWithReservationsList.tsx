@@ -82,7 +82,7 @@ function WorkEffortsWithReservationsList() {
                                 {...dataState}
                                 onDataStateChange={dataStateChange}
                             >
-                                <Column field="reservationWorkEffortId" title="Reservation ID" cell={WorkEffortIdCell} width={120} />
+                                <Column field="reservationWorkEffortId" title="Reservation ID" cells={{ data: WorkEffortIdCell }} width={120} />
                                 <Column field="productionRunWorkEffortId" title="Production Run ID" width={150} />
                                 <Column field="productionRunName" title="Production Run Name" width={250} />
                                 <Column field="facilityName" title="Facility" width={150} />

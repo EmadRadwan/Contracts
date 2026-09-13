@@ -565,7 +565,7 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
                             <Column
                                 field="invoiceId"
                                 title={getTranslatedLabel('party.financial.history.grid.invoiceId', 'Invoice ID')}
-                                cell={InvoiceIdCell}
+                                cells={{ data: InvoiceIdCell }}
                                 width={150}
                             />
                             <Column
@@ -582,25 +582,25 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
                             <Column
                                 field="total"
                                 title={getTranslatedLabel('party.financial.history.grid.total', 'Total')}
-                                cell={CurrencyCell}
+                                cells={{ data: CurrencyCell }}
                                 width={120}
                             />
                             <Column
                                 field="amountApplied"
                                 title={getTranslatedLabel('party.financial.history.grid.applied', 'Applied')}
-                                cell={CurrencyCell}
+                                cells={{ data: CurrencyCell }}
                                 width={120}
                             />
                             <Column
                                 field="amountToApply"
                                 title={getTranslatedLabel('party.financial.history.grid.toApply', 'To Apply')}
-                                cell={CurrencyCell}
+                                cells={{ data: CurrencyCell }}
                                 width={120}
                             />
                             <Column
                                 field="paymentId"
                                 title={getTranslatedLabel('party.financial.history.grid.paymentId', 'Payment ID')}
-                                cell={PaymentIdCell}
+                                cells={{ data: PaymentIdCell }}
                                 width={150}
                             />
                             <Column
@@ -612,7 +612,7 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
                             <Column
                                 field="paymentAmount"
                                 title={getTranslatedLabel('party.financial.history.grid.payAmount', 'Pay Amount')}
-                                cell={CurrencyCell}
+                                cells={{ data: CurrencyCell }}
                                 width={120}
                             />
                         </KendoGrid>
@@ -626,7 +626,7 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
                             <Column
                                 field="invoiceId"
                                 title={getTranslatedLabel('party.financial.history.grid.invoiceId', 'Invoice ID')}
-                                cell={InvoiceIdCell}
+                                cells={{ data: InvoiceIdCell }}
                                 width={150}
                             />
                             <Column
@@ -643,13 +643,13 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
                             <Column
                                 field="amount"
                                 title={getTranslatedLabel('party.financial.history.grid.amount', 'Amount')}
-                                cell={CurrencyCell}
+                                cells={{ data: CurrencyCell }}
                                 width={120}
                             />
                             <Column
                                 field="unappliedAmount"
                                 title={getTranslatedLabel('party.financial.history.grid.unapplied', 'Unapplied')}
-                                cell={CurrencyCell}
+                                cells={{ data: CurrencyCell }}
                                 width={120}
                             />
                         </KendoGrid>
@@ -663,7 +663,7 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
                             <Column
                                 field="paymentId"
                                 title={getTranslatedLabel('party.financial.history.grid.paymentId', 'Payment ID')}
-                                cell={PaymentIdCell}
+                                cells={{ data: PaymentIdCell }}
                                 width={150}
                             />
                             <Column
@@ -680,13 +680,13 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
                             <Column
                                 field="amount"
                                 title={getTranslatedLabel('party.financial.history.grid.amount', 'Amount')}
-                                cell={CurrencyCell}
+                                cells={{ data: CurrencyCell }}
                                 width={120}
                             />
                             <Column
                                 field="unappliedAmount"
                                 title={getTranslatedLabel('party.financial.history.grid.unapplied', 'Unapplied')}
-                                cell={CurrencyCell}
+                                cells={{ data: CurrencyCell }}
                                 width={120}
                             />
                         </KendoGrid>
@@ -705,13 +705,13 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
                             <Column
                                 field="accountLimit"
                                 title={getTranslatedLabel('party.financial.history.grid.limit', 'Limit')}
-                                cell={CurrencyCell}
+                                cells={{ data: CurrencyCell }}
                                 width={120}
                             />
                             <Column
                                 field="accountBalance"
                                 title={getTranslatedLabel('party.financial.history.grid.balance', 'Balance')}
-                                cell={CurrencyCell}
+                                cells={{ data: CurrencyCell }}
                                 width={120}
                             />
                             <Column

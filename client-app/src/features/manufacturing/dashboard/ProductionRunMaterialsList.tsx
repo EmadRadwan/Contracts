@@ -193,7 +193,7 @@ export default function ProductionRunMaterialsList({
                       "Issued"
                   )}
                   width={100}
-                  cell={IssuedQuantityCell}
+                  cells={{ data: IssuedQuantityCell }}
               />
             </KendoGrid>
         )}

@@ -182,7 +182,7 @@ export default function SalesCommissionsList() {
                     <Column
                         field="salesCommissionId"
                         title={getTranslatedLabel("salesCommission.list.id", "رقم العمولة")}
-                        cell={CommissionIdCell}
+                        cells={{ data: CommissionIdCell }}
                         width={160}
                         locked
                     />
@@ -204,13 +204,13 @@ export default function SalesCommissionsList() {
                     <Column
                         field="saleTypeId"
                         title={getTranslatedLabel("salesCommission.list.saleType", "نوع البيع")}
-                        cell={SaleTypeCell}
+                        cells={{ data: SaleTypeCell }}
                         width={180}
                     />
                     <Column
                         field="statusId"
                         title={getTranslatedLabel("salesCommission.list.status", "الحالة")}
-                        cell={StatusCell}
+                        cells={{ data: StatusCell }}
                         width={140}
                     />
                     <Column
@@ -393,7 +393,7 @@ export default function SalesCommissionsList() {
                     <Column
                         field="hasExternalSalesRepWithholdingTaxExemption"
                         title={getTranslatedLabel("salesCommission.list.hasExternalSalesRepWhtExemption", "إعفاء ض.استقطاع مندوب الوسيط")}
-                        cell={BooleanCell}
+                        cells={{ data: BooleanCell }}
                         width={170}
                         filterable={false}
                         sortable={false}
@@ -432,7 +432,7 @@ export default function SalesCommissionsList() {
                     <Column
                         field="hasExternalManagerWithholdingTaxExemption"
                         title={getTranslatedLabel("salesCommission.list.hasExternalManagerWhtExemption", "إعفاء ض.استقطاع مدير الوسيط")}
-                        cell={BooleanCell}
+                        cells={{ data: BooleanCell }}
                         width={170}
                         filterable={false}
                         sortable={false}
@@ -445,7 +445,7 @@ export default function SalesCommissionsList() {
                     <Column
                         field="extCompanyTaxInvoiceRaised"
                         title={getTranslatedLabel("salesCommission.list.taxInvoiceRaised", "رفع الفاتورة الضريبية")}
-                        cell={BooleanCell}
+                        cells={{ data: BooleanCell }}
                         width={150}
                         filterable={false}
                         sortable={false}
@@ -453,7 +453,7 @@ export default function SalesCommissionsList() {
                     <Column
                         field="hasWithholdingTaxExemption"
                         title={getTranslatedLabel("salesCommission.list.hasWithholdingTaxExemption", "إعفاء ض.استقطاع")}
-                        cell={BooleanCell}
+                        cells={{ data: BooleanCell }}
                         width={150}
                         filterable={false}
                         sortable={false}
@@ -479,7 +479,7 @@ export default function SalesCommissionsList() {
                     />
                     <Column
                         title={getTranslatedLabel("salesCommission.list.actions", "إجراءات")}
-                        cell={ActionsCell}
+                        cells={{ data: ActionsCell }}
                         width={140}
                         filterable={false}
                         sortable={false}

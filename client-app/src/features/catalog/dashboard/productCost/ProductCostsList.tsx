@@ -307,7 +307,7 @@ export default function ProductCostsList() {
                         </Grid>
                       </Grid>
                     </GridToolbar>
-                    <Column field="costComponentId" cell={CostComponentCell} title={getTranslatedLabel(`${localizationKey}.costComponentId`, "Cost Component Id")} width={600} />
+                    <Column field="costComponentId" cells={{ data: CostComponentCell }} title={getTranslatedLabel(`${localizationKey}.costComponentId`, "Cost Component Id")} width={600} />
                     <Column field="cost" title={getTranslatedLabel(`${localizationKey}.cost`, "Cost")} format="{0:n2}" filter={"numeric"} />
                     <Column field="costUomId" title={getTranslatedLabel(`${localizationKey}.costUom`, "Cost UOM")} />
                     <Column field="fromDate" title={getTranslatedLabel(`${localizationKey}.fromDate`, "From Date")} format="{0: dd/MM/yyyy}" />

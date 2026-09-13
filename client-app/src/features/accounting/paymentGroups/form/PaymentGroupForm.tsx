@@ -286,7 +286,7 @@ export default function PaymentGroupForm({
                         <Column
                             field="paymentId"
                             title={getTranslatedLabel(`${localizationKeyList}.paymentId`, "Payment Number")}
-                            cell={PaymentDescriptionCell}
+                            cells={{ data: PaymentDescriptionCell }}
                             locked={true}
                         />
                         <Column

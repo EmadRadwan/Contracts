@@ -826,6 +826,7 @@
           "createTxn": "Create an Accounting Transaction",
           "unposted": "Un-posted Accounting Transactions",
           "trial": "Trial Balance",
+          "trialByLevel": "Trial Balance By Level",
           "income": "Income Statement",
           "balanceSheet": "Balance Sheet",
           "menu": {
@@ -842,6 +843,7 @@
         "title": "Select a report to display",
         "menu": {
           "trial-balance": "Trial Balance",
+          "trial-balance-by-level": "Trial Balance By Level",
           "transaction-totals": "Transaction Totals",
           "income-statement": "Income Statement",
           "cash-flow-statement": "Cash Flow Statement",
@@ -870,6 +872,24 @@
           "loading": "Loading Report Data...",
           "debits": "Debits total: ",
           "credits": "Credits total: "
+        },
+        "trial-balance-by-level": {
+          "title": "Trial Balance By Level For: ",
+          "accountCode": "Account Code",
+          "accountName": "Account Name",
+          "level": "Level",
+          "openingBalance": "Opening Balance",
+          "postedDebits": "Debit",
+          "postedCredits": "Credit",
+          "endingBalance": "Ending Balance",
+          "loading": "Loading Report Data...",
+          "debits": "Debits total: ",
+          "credits": "Credits total: ",
+          "levelFilter": "Level",
+          "allLevels": "All Levels",
+          "excel": "Export Excel",
+          "exportPdf": "Export PDF",
+          "totals": "Totals"
         },
         "transaction-totals": {
           "list": {

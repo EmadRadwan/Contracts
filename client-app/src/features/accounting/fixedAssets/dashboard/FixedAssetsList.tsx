@@ -123,7 +123,7 @@ function FixedAssetsList() {
 
 
                                 </GridToolbar>
-                                <Column field="fixedAssetName" title="Fixed Asset Name" cell={FixedAssetCell}
+                                <Column field="fixedAssetName" title="Fixed Asset Name" cells={{ data: FixedAssetCell }}
                                         width={250}
                                         locked={true}/>
                                 <Column field="fixedAssetTypeDescription" title="Asset Type" width={180}/>

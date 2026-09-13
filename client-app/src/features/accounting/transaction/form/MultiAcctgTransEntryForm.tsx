@@ -6,7 +6,6 @@ import {
     GridColumn as Column,
     GridSortChangeEvent,
     GridPageChangeEvent,
-    GridRowProps,
     GridCellProps,
 } from "@progress/kendo-react-grid";
 import {orderBy, SortDescriptor, State} from "@progress/kendo-data-query";
@@ -28,6 +27,10 @@ import {MultiAcctgTransExcel} from "../report/MultiAcctgTransExcel";
 import {Can} from "../../../account/Can";
 import {useGetCostCentersQuery} from "../../../../app/store/apis/accounting/paymentTypesApi";
 import CreateCostCenterModal from "../../payment/form/CreateCostCenterModal";
+import { createStyledRow } from "../../../../app/common/grid";
+
+// Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
+const DebitCreditRow = createStyledRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag === "D" ? "rgba(55, 180, 0, 0.32)" : "#ffffff" }));
 
 interface TransEntry {
     id: string;
@@ -85,7 +88,6 @@ export default function MultiAcctgTransEntryForm() {
 
     console.log("transEntries", transEntries);
 
-
     // REFACTOR: Add state for transactionId to display after save
     const [transactionId, setTransactionId] = useState<string | null>(null);
     const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
@@ -102,7 +104,6 @@ export default function MultiAcctgTransEntryForm() {
         setAnchorEl(null);
     };
     let formRenderProps: any;
-
 
     // REFACTOR: Define initialFormValues for entry-level fields only
     const initialFormValues: FormValues = useMemo(
@@ -258,16 +259,6 @@ export default function MultiAcctgTransEntryForm() {
         setSort(event.sort);
     }, []);
 
-    // REFACTOR: Render row with conditional styling
-    const rowRender = useCallback(
-        (trElement: React.ReactElement<HTMLTableRowElement>, props: GridRowProps) => {
-            const isDebit = props.dataItem.debitCreditFlag === "D";
-            const style = {backgroundColor: isDebit ? "rgba(55, 180, 0, 0.32)" : "#ffffff"};
-            return React.cloneElement(trElement, {style}, trElement.props.children);
-        },
-        []
-    );
-
     // Add this near the top of your component
     const accountMap = useMemo(() => {
         const map = new Map<string, any>();
@@ -287,7 +278,6 @@ export default function MultiAcctgTransEntryForm() {
 
         return map;
     }, [glAccounts]);
-
 
 // Then in your GlAccountCell:
     const GlAccountCell = ({ dataItem }: GridCellProps) => {
@@ -357,7 +347,6 @@ export default function MultiAcctgTransEntryForm() {
             // handled in hook
         }
     }, [transactionId, unpostTransaction]);
-
 
     const handlePostTransaction = useCallback(async () => {
         if (!transactionId) return;
@@ -703,14 +692,14 @@ export default function MultiAcctgTransEntryForm() {
                                                     total={transEntries.length}
                                                     pageable
                                                     onPageChange={pageChange}
-                                                    rowRender={rowRender}
+                                                    rows={{ data: DebitCreditRow }}
                                                     resizable={true}
                                                 >
                                                     <Column
                                                         field="glAccountId"
                                                         title={getTranslatedLabel(`${localizationKey}.glAccount`, "GL Account")}
                                                         width={300}
-                                                        cell={GlAccountCell}
+                                                        cells={{ data: GlAccountCell }}
                                                     />
                                                     <Column
                                                         field="amount"
@@ -720,7 +709,7 @@ export default function MultiAcctgTransEntryForm() {
                                                     />
                                                     <Column 
                                                             title={""}
-                                                            footerCell={() => (
+                                                            cells={{ footerCell: () => (
                                                                 <td style={{
                                                                     textAlign: "left",
                                                                     fontWeight: "bold",
@@ -731,7 +720,7 @@ export default function MultiAcctgTransEntryForm() {
                                                                     {getTranslatedLabel(`${localizationKey}.totalCredit`, "Total Credit")}:{" "}
                                                                     {totalCredit.toFixed(2)}
                                                                 </td>
-                                                            )}
+                                                            ) }}
                                                     />
                                                     <Column
                                                         field="description"
@@ -743,7 +732,7 @@ export default function MultiAcctgTransEntryForm() {
                                                         title={getTranslatedLabel(`${localizationKey}.debitCredit`, "Debit/Credit")}
                                                         width={130}
                                                     />
-                                                    <Column title={""} width={100} cell={RemoveCell}/>
+                                                    <Column title={""} width={100} cells={{ data: RemoveCell }}/>
 
                                                 </KendoGrid>
                                             </Grid>

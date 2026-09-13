@@ -27,6 +27,21 @@
         <PackageReference Include="Serilog.Sinks.Console" Version="6.0.1-dev-00953" />
         <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+
+        <!-- Telerik Reporting (DevCraft). Engine + ReportProcessor for server-side PDF/XLSX/DOCX rendering.
+             These come from the Telerik private NuGet feed (NOT nuget.org) — see repo-root nuget.config;
+             set TELERIK_NUGET_KEY before restoring.
+             Telerik.Licensing activates the DevCraft key at build time (reads ~/.telerik/telerik-license.txt
+             locally, or the TELERIK_LICENSE env var in CI/Docker) so rendered output carries no trial banner.
+             All four packages version in lockstep — bump them together. -->
+        <PackageReference Include="Telerik.Reporting" Version="20.2.26.812" />
+        <PackageReference Include="Telerik.Reporting.OpenXmlRendering" Version="20.2.26.812" />
+        <!-- Cross-platform drawing engine. Telerik.Reporting references only the drawing
+             abstraction (Telerik.Drawing.Contract); without a concrete implementation the
+             Unit static ctor throws DrawingFactoryUnavailableException on first use. This
+             pulls SkiaSharp (3.119.1 — same as QuestPDF's, no conflict). -->
+        <PackageReference Include="Telerik.Drawing.Skia" Version="20.2.26.812" />
+        <PackageReference Include="Telerik.Licensing" Version="1.9.2" />
     </ItemGroup>
 
     <ItemGroup>

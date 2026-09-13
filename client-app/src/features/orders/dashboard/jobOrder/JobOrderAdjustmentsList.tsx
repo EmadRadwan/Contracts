@@ -177,14 +177,14 @@ export default function JobOrderAdjustmentsList({showList, onClose, orderId, wid
                                     >
 
                                         <Column field="orderAdjustmentTypeDescription" title="Adjustment Type"
-                                                cell={JobOrderAdjustmentCell} width={150}/>
+                                                cells={{ data: JobOrderAdjustmentCell }} width={150}/>
                                         <Column field="orderId" title="orderId" width={0}/>
                                         <Column field="orderItemSeqId" title="orderItemSeqId" width={0}/>
                                         <Column field="amount" title="Amount" width={100}/>
                                         <Column field="description" title="Description" width={100}/>
                                         <Column field="sourcePercentage" title="Percentage" width={120}/>
                                         <Column field="isManual" title="User Entered" width={100}/>
-                                        <Column cell={CommandCell} width="60px"/>
+                                        <Column cells={{ data: CommandCell }} width="60px"/>
 
                                     </KendoGrid>
                                 </div>

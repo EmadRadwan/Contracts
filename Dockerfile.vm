@@ -1,7 +1,19 @@
 # Build Stage
 FROM --platform=linux/arm64 mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
 WORKDIR /src
+
+# Telerik: NuGet feed key for restore, license key so the build embeds a non-trial license.
+# Pass on the build command, e.g.
+#   docker build -f Dockerfile.vm \
+#     --build-arg TELERIK_NUGET_KEY="$TELERIK_NUGET_KEY" \
+#     --build-arg TELERIK_LICENSE="$(cat ~/.telerik/telerik-license.txt)" ...
+ARG TELERIK_NUGET_KEY
+ARG TELERIK_LICENSE
+ENV TELERIK_NUGET_KEY=$TELERIK_NUGET_KEY
+ENV TELERIK_LICENSE=$TELERIK_LICENSE
+
 COPY ./Contracts.sln ./
+COPY ./nuget.config ./
 COPY ./API/API.csproj ./API/
 COPY ./Application/Application.csproj ./Application/
 COPY ./Infrastructure/Infrastructure.csproj ./Infrastructure/
@@ -27,8 +39,18 @@ COPY API/appsettings.*.json /app/
 
  RUN mkdir -p /app/logs
  
-# REFACTOR: Ensure OpenSSL is available by installing it explicitly to handle certificate loading
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+# REFACTOR: Ensure OpenSSL is available by installing it explicitly to handle certificate loading.
+# fontconfig + font faces: Telerik Reporting renders text through SkiaSharp and needs real
+# font files present (QuestPDF ships its own, Telerik does not). fonts-noto-core covers Latin;
+# add an Arabic naskh face here (Amiri / Cairo / Noto Naskh Arabic) once the report font is fixed.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      openssl libfontconfig1 libfreetype6 fontconfig fonts-noto-core \
+ && rm -rf /var/lib/apt/lists/* \
+ && fc-cache -f
+
+# Runtime license check (build already embedded one; this keeps parity if that changes).
+ARG TELERIK_LICENSE
+ENV TELERIK_LICENSE=$TELERIK_LICENSE
 ENV ASPNETCORE_URLS=http://0.0.0.0:5100;https://0.0.0.0:8544
 EXPOSE 5100
 EXPOSE 8544

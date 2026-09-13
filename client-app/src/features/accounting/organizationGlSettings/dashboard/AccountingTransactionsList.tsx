@@ -319,7 +319,7 @@ export default function AccountingTransactionsList() {
 
                 <Column
                   field="acctgTransId"
-                  cell={AcctTransDescriptionCell}
+                  cells={{ data: AcctTransDescriptionCell }}
                   width={110}
                   locked={!show}
                   title={getTranslatedLabel(
@@ -383,7 +383,7 @@ export default function AccountingTransactionsList() {
                       "Invoice Id"
                   )}
                   width={100}
-                  cell={AccountingTransInvoiceCell}
+                  cells={{ data: AccountingTransInvoiceCell }}
                 />
                 <Column field="paymentId" title={getTranslatedLabel(
                     "accounting.payments.list.paymentId",
@@ -432,7 +432,7 @@ export default function AccountingTransactionsList() {
                 <Column
                     title="Actions"
                     width={120}
-                    cell={DeleteCell}
+                    cells={{ data: DeleteCell }}
                     locked={true}
                 />
               </KendoGrid>

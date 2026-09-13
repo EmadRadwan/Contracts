@@ -117,7 +117,7 @@ const OrganizationGlSettingsList = () => {
                                 </GridToolbar>
                                 <Column
                                     field="partyName"
-                                    cell={CompanyNameCell}
+                                    cells={{ data: CompanyNameCell }}
                                     title={getTranslatedLabel(`${localizationKey}.company`, "Company")}
                                     width={320}
                                 />
@@ -125,13 +125,13 @@ const OrganizationGlSettingsList = () => {
                                     field="partyId"
                                     title=" "
                                     width={120}
-                                    cell={(props) => <SetupCell {...props} setup={setup}/>}
+                                    cells={{ data: (props) => <SetupCell {...props} setup={setup}/> }}
                                 />
                                 <Column
                                     field="partyId"
                                     title=" "
                                     width={120}
-                                    cell={(props) => <AccountingCell {...props} accounting={accounting}/>}
+                                    cells={{ data: (props) => <AccountingCell {...props} accounting={accounting}/> }}
                                 />
 
 

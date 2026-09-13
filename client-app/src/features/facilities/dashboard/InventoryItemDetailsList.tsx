@@ -176,12 +176,12 @@ export default function InventoryItemDetailsList() {
                                 <Column
                                     field="quantityOnHandDiff"
                                     title={getTranslatedLabel("facility.details.qohDiff", "QOH DiFF")}
-                                    cell={CustomCell1}
+                                    cells={{ data: CustomCell1 }}
                                 />
                                 <Column
                                     field="availableToPromiseDiff"
                                     title={getTranslatedLabel("facility.details.atpDiff", "ATP DiFF")}
-                                    cell={CustomCell1}
+                                    cells={{ data: CustomCell1 }}
                                 />
                                 <Column
                                     field="effectiveDate"

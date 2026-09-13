@@ -212,7 +212,7 @@ function JobOrderItemAdjustmentsList({
                                         <Column
                                             field="orderAdjustmentTypeDescription"
                                             title="Adjustment Type"
-                                            cell={orderAdjustmentCell}
+                                            cells={{ data: orderAdjustmentCell }}
                                             width={200}
                                         />
                                         <Column field="orderId" title="orderId" width={0}/>
@@ -228,7 +228,7 @@ function JobOrderItemAdjustmentsList({
                                             width={150}
                                         />
                                         <Column field="isManual" title="User Entered" width={150}/>
-                                        <Column cell={CommandCell} width="100px"/>
+                                        <Column cells={{ data: CommandCell }} width="100px"/>
                                     </KendoGrid>
                                 </div>
                             </Grid>

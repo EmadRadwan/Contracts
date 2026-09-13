@@ -192,7 +192,7 @@ export default function PayrollInvoiceItemsList({ invoiceId, canEdit, refreshTot
                         field="invoiceItemTypeDescription"
                         title={getTranslatedLabel("accounting.invoices.payroll.item-type", "Item Type")}
                         width={250}
-                        cell={(props) => (
+                        cells={{ data: (props) => (
                             <td>
                                 <Button 
                                     variant="text" 
@@ -204,7 +204,7 @@ export default function PayrollInvoiceItemsList({ invoiceId, canEdit, refreshTot
                                     {props.dataItem.invoiceItemTypeDescription}
                                 </Button>
                             </td>
-                        )}
+                        ) }}
                     />
 
                     <Column field="description" title={getTranslatedLabel("accounting.invoices.payroll.description", "Description")} width={300} />

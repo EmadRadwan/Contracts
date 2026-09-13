@@ -153,7 +153,7 @@ function ReserveRequestsList() {
                                     </Grid>
                                 </GridToolbar>
 
-                                <Column field="reserveRequestId" title={getTranslatedLabel("reserveRequest.list.id", "Request ID")} cell={RequestIdCell} width={130} />
+                                <Column field="reserveRequestId" title={getTranslatedLabel("reserveRequest.list.id", "Request ID")} cells={{ data: RequestIdCell }} width={130} />
                                 <Column field="apartmentName" title={getTranslatedLabel("reserveRequest.list.apartment", "Apartment")} width={250} />
                                 <Column field="fromPartyName" title={getTranslatedLabel("reserveRequest.list.customer", "Customer")} width={200} />
                                 <Column field="employeeName" title={getTranslatedLabel("reserveRequest.list.employee", "Employee")} width={200} />

@@ -221,7 +221,7 @@ export default function InventoryItemsList() {
                                 <Column
                                     field="inventoryItemId"
                                     title={getTranslatedLabel('facility.items.item', 'Inventory Item')}
-                                    cell={InventoryItemCell}
+                                    cells={{ data: InventoryItemCell }}
                                     width={100}
                                     reorderable={false}
                                 />
@@ -262,8 +262,8 @@ export default function InventoryItemsList() {
                                     width={160}
                                     format="{0: dd/MM/yyyy}"
                                 />
-                                <Column cell={TransferCell} width={125}/>
-                                <Column cell={DetailsCell} width={125}/>
+                                <Column cells={{ data: TransferCell }} width={125}/>
+                                <Column cells={{ data: DetailsCell }} width={125}/>
                             </KendoGrid>
                             {isFetching && (
                                 <LoadingComponent message={getTranslatedLabel('facility.items.loading', 'Loading Inventory Items...')}/>

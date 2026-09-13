@@ -381,9 +381,9 @@ const PackingList = () => {
                                     "Include Item"
                                 )}
                                 width={100}
-                                cell={IncludeCell}
+                                cells={{ data: IncludeCell }}
                             />
-                            <Column width={100} cell={PackCell} />
+                            <Column width={100} cells={{ data: PackCell }} />
                         </KendoGrid>
                     </Grid>
                 </Grid>

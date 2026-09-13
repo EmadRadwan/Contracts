@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button, Grid, Paper, Typography } from "@mui/material";
 import { Field, Form, FormElement } from "@progress/kendo-react-form";
 import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
@@ -7,6 +7,7 @@ import { MemoizedFormDropDownList } from "../../../app/common/form/MemoizedFormD
 import {
   Grid as KendoGrid,
   GridColumn as Column,
+  GridCustomCellProps,
 } from "@progress/kendo-react-grid";
 import { BillOfMaterial } from "../../../app/models/manufacturing/billOfMaterial";
 import {
@@ -19,39 +20,25 @@ import { ExcelExport } from "@progress/kendo-react-excel-export";
 import { handleDatesArray } from "../../../app/util/utils";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
+import { createStyledRow } from "../../../app/common/grid";
+
+// Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
+const MainProductRow = createStyledRow((dataItem) => ({ backgroundColor: dataItem.productLevel === 0 ? "#e0f7fa" : "inherit" }));
+
+// Bold red total on the main product row. props.children is the default (format-applied) content.
+const TotalCostCell = (props: GridCustomCellProps) => {
+  const isMainProduct = props.dataItem.productLevel === 0;
+  return (
+    <td {...props.tdProps} style={{ ...props.tdProps?.style, ...(isMainProduct ? { fontWeight: "bold", color: "#ff0000" } : {}) }}>
+      {props.children}
+    </td>
+  );
+};
 
 interface BOMSimulationFormProps {
   selectedProduct: BillOfMaterial | undefined;
   onClose: () => void;
 }
-
-
-// Row render for custom styling
-const rowRender = (trElement, props) => {
-  const isMainProduct = props.dataItem.productLevel === 0;
-  const trProps = {
-    ...trElement.props,
-    style: {
-      ...trElement.props.style,
-      backgroundColor: isMainProduct ? "#e0f7fa" : "inherit",
-    },
-  };
-  // Clone children to apply cost styling
-  const children = React.Children.map(trElement.props.children, (child) => {
-    if (child.props.field === "totalCost" && isMainProduct){
-      return React.cloneElement(child, {
-        style: {
-          ...child.props.style,
-          fontWeight: "bold",
-          color: "#ff0000",
-        },
-      });
-    }
-    return child;
-  });
-  return React.cloneElement(trElement, trProps, children);
-};
-
 
 const BOMSimulationForm = ({
   selectedProduct,
@@ -101,7 +88,6 @@ const BOMSimulationForm = ({
   
   
   const templateLink = data ? data.find(item => item.isTemplateLink) : null;
-
 
   const handleSubmit = (values: {
     quantityToProduce: number;
@@ -237,7 +223,7 @@ const BOMSimulationForm = ({
                 <div className="div-container">
                   <KendoGrid style={{ height: "35vh" }}
                              data={gridData}
-                             rowRender={rowRender}
+                             rows={{ data: MainProductRow }}
                              resizable={true}
                   >
                     <Column
@@ -296,6 +282,7 @@ const BOMSimulationForm = ({
                             "Total Cost"
                         )}
                         format="{0:n2}" // 3 decimal places
+                        cells={{ data: TotalCostCell }}
                     />
                   </KendoGrid>
                 </div>

@@ -3,7 +3,6 @@ import {
     Grid as KendoGrid,
     GridColumn as Column,
     GridSortChangeEvent,
-    GridRowProps,
     GridToolbar,
 } from '@progress/kendo-react-grid';
 import {DataResult, orderBy, SortDescriptor, State} from '@progress/kendo-data-query';
@@ -15,6 +14,10 @@ import LoadingComponent from '../../../../app/layout/LoadingComponent';
 import {useFetchGlAccountTransactionDetailsQuery} from "../../../../app/store/apis/accounting/accountingReportsApi";
 import {GlAccountTransactionsExcel} from "../report/GlAccountTransactionsExcel";
 import { GlAccountTransactionsDateRangeExcel } from '../report/GlAccountTransactionsDateRangeExcel';
+import { createStyledRow } from '../../../../app/common/grid';
+
+// Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
+const DebitCreditRow = createStyledRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag === 'D' ? 'rgba(55,180,0,0.32)' : '#fff' }));
 
 interface Props {
     onClose: () => void;
@@ -93,13 +96,6 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
         }));
     }, [accountingTransEntries]);
 
-    // Row Coloring
-    const rowRender = (trElement: React.ReactElement<HTMLTableRowElement>, props: GridRowProps) => {
-        const isDebit = props.dataItem.debitCreditFlag === 'D';
-        const style = { backgroundColor: isDebit ? 'rgba(55,180,0,0.32)' : '#fff' };
-        return React.cloneElement(trElement, { style }, trElement.props.children);
-    };
-
     // Footer Cell for Totals
     const TotalsFooterCell = () => (
         <td colSpan={15} style={{ fontWeight: 'bold', color: '#1565C0' }}>
@@ -167,7 +163,7 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                 onSortChange={(e: GridSortChangeEvent) => setSort(e.sort)}
                                 pageable={true}
                                 resizable
-                                rowRender={rowRender}
+                                rows={{ data: DebitCreditRow }}
                             >
                                 <GridToolbar>
                                     <Typography variant="h6">
@@ -205,7 +201,7 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                     field="acctgTransId"
                                     title={getTranslatedLabel(`${localizationKey}.transId`, 'Acctg Trans ID')}
                                     width={120}
-                                    footerCell={TotalsFooterCell}
+                                    cells={{ footerCell: TotalsFooterCell }}
                                 />
                                 <Column
                                     field="transactionDate"
@@ -221,20 +217,20 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                 <Column
                                     title={getTranslatedLabel(`${localizationKey}.debit`, 'Debit')}
                                     width={120}
-                                    cell={(props) => (
+                                    cells={{ data: (props) => (
                                         <td>
                                             {props.dataItem.debitCreditFlag === 'D' ? formatCurrency(props.dataItem.amount) : ''}
                                         </td>
-                                    )}
+                                    ) }}
                                 />
                                 <Column
                                     title={getTranslatedLabel(`${localizationKey}.credit`, 'Credit')}
                                     width={120}
-                                    cell={(props) => (
+                                    cells={{ data: (props) => (
                                         <td>
                                             {props.dataItem.debitCreditFlag === 'C' ? formatCurrency(props.dataItem.amount) : ''}
                                         </td>
-                                    )}
+                                    ) }}
                                 />
                                 <Column
                                     field="runningBalance"

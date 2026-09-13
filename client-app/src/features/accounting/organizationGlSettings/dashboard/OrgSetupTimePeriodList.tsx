@@ -152,7 +152,7 @@ const OrgSetupTimePeriodList = () => {
                   title="Time Period Id"
                   width={120}
                   locked
-                  cell={TimePeriodIdCell}
+                  cells={{ data: TimePeriodIdCell }}
                 />
                 <Column field="parentPeriodId" title="Parent Time Period Id" />
                 <Column field="periodTypeDescription" title="Period Type" />
@@ -160,7 +160,7 @@ const OrgSetupTimePeriodList = () => {
                 <Column field="periodName" title="Period Name" width={160} />
                 <Column field="fromDate" title="From Date" format="{0: dd/MM/yyyy}" />
                 <Column field="thruDate" title="Thru Date" format="{0: dd/MM/yyyy}" />
-                <Column cell={CloseTimePeriodCell} />
+                <Column cells={{ data: CloseTimePeriodCell }} />
               </KendoGrid>
             </div>
           </Grid>

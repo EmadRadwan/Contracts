@@ -174,7 +174,7 @@ export default function ReturnsList() {
                                         <Column
                                             field="returnId"
                                             title="Return Number"
-                                            cell={ReturnDescriptionCell}
+                                            cells={{ data: ReturnDescriptionCell }}
                                             width={150}
                                             locked={true}
                                         />

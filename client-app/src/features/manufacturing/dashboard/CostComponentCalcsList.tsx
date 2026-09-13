@@ -109,7 +109,7 @@ const [editMode, setEditMode] = useState(0)
                       <Column
                           field="costComponentCalcId"
                           title={getTranslatedLabel(`${localizationKey}.costComponentCalcId`, 'Routing Id')}
-                          cell={CostComponentCalcIdCell}
+                          cells={{ data: CostComponentCalcIdCell }}
                           width={200}
                           locked={true}
                       />

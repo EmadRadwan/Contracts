@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Payment Voucher v2 — Code Walkthrough</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI","Helvetica Neue",Arial,sans-serif; font-size:10.2pt; line-height:1.55; color:#1a1d21; margin:0; }
+  h1 { font-size:24pt; margin:0 0 4px; letter-spacing:-0.4px; color:#0f172a; }
+  h2 { break-after:avoid; font-size:14pt; margin:26px 0 10px; color:#0f172a; border-bottom:2px solid #2563eb; padding-bottom:5px; page-break-after:avoid; }
+  h3 { font-size:11.5pt; margin:18px 0 6px; color:#1e3a5f; page-break-after:avoid; }
+  h4 { font-size:10.4pt; margin:14px 0 4px; color:#334155; page-break-after:avoid; }
+  p { margin:7px 0; }
+  ul, ol { margin:7px 0; padding-left:20px; }
+  li { margin:3px 0; }
+  ul.task { list-style:none; padding-left:2px; }
+  ul.task li { margin:4px 0; text-indent:-16px; padding-left:16px; }
+  .cb { font-family:"SF Mono",Menlo,Consolas,monospace; color:#2563eb; font-size:10pt; }
+  code { font-family:"SF Mono",Menlo,Consolas,monospace; font-size:8.9pt; background:#f1f5f9; padding:1px 4px; border-radius:3px; color:#b91c1c; }
+  pre { font-family:"SF Mono",Menlo,Consolas,monospace; font-size:8.2pt; background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #2563eb; padding:9px 11px; border-radius:4px; overflow-x:auto; line-height:1.45; page-break-inside:avoid; margin:8px 0; white-space:pre-wrap; }
+  pre.allowbreak { page-break-inside:auto; }
+  pre code { background:none; padding:0; color:#1e293b; }
+  .cover { border-bottom:3px solid #2563eb; padding-bottom:14px; margin-bottom:6px; }
+  .sub { color:#64748b; font-size:10.5pt; margin-top:2px; }
+  .meta { color:#94a3b8; font-size:8.6pt; margin-top:10px; }
+  table { border-collapse:collapse; width:100%; margin:10px 0; font-size:9pt; }
+  tr { page-break-inside:avoid; }
+  thead { display:table-header-group; }
+  th { background:#1e3a5f; color:#fff; text-align:left; padding:6px 8px; font-weight:600; font-size:8.6pt; }
+  td { border-bottom:1px solid #e2e8f0; padding:5px 8px; vertical-align:top; }
+  tr:nth-child(even) td { background:#f8fafc; }
+  a { color:#1d4ed8; text-decoration:none; }
+  hr { margin:18px 0; }
+  h2 + p, h3 + p { margin-top:4px; }
+</style>
+</head>
+<body>
+<h1>Payment Voucher &quot;v2&quot; (Telerik) — Code Walkthrough</h1>
+<p><strong>What this covers:</strong> every file that participates when you click <strong>&quot;معاينة بيان الدفعة (Telerik)&quot;</strong> on a payment, traced the way a debugger would step through it — frame by frame, which line hands off to which file, and what&#x27;s in the key variables at each hop. Plus a section on the config/infra files that were changed to make Telerik Reporting work at all.</p>
+<p><strong>The request being traced</strong> (from the server log):</p>
+<pre><code>HTTP GET /api/paymentReports/payment-report-v2/O18037  →  200  (PDF bytes)</code></pre>
+<p><code>O18037</code> is a disbursement payment (<code>PaymentParentTypeDescription != &quot;RECEIPT&quot;</code> → <strong>إيصال صرف</strong>).</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>1. The cast — files involved</h2>
+<table><thead><tr><th>#</th><th>File</th><th>Layer</th><th>Role in this request</th></tr></thead><tbody><tr><td>F1</td><td><code>client-app/.../payment/form/EditPaymentForm.tsx</code></td><td>React UI</td><td>The button, the click handler, the PDF preview dialog</td></tr><tr><td>F2</td><td><code>client-app/src/app/store/apis/payment/paymentsApi.ts</code></td><td>RTK Query</td><td>Defines the <code>getPaymentReportPdfV2</code> endpoint + generated hook; attaches auth + <code>Accept-Language</code></td></tr><tr><td>F3</td><td><code>API/Controllers/BaseApiController.cs</code></td><td>API</td><td>Base class: route prefix <code>api/[controller]</code>, lazy <code>Mediator</code> accessor</td></tr><tr><td>F4</td><td><code>API/Controllers/Report/PaymentReports/PaymentReportsController.cs</code></td><td>API</td><td><code>GetPaymentReportV2</code> action — orchestrates data → render → file</td></tr><tr><td>F5</td><td><code>API/Extensions/ApplicationServiceExtensions.cs</code></td><td>API composition root</td><td>DI: binds <code>IPaymentVoucherReportService</code> → <code>TelerikPaymentVoucherReportService</code>; registers MediatR + pipeline behaviors</td></tr><tr><td>F6</td><td><code>Application/Accounting/Payments/GeneratePaymentReportPdf.cs</code></td><td>Application (CQRS)</td><td><code>GetPaymentForReport.Query</code> + <code>.Handler</code> + <code>PaymentReportDto</code> — the one DB read</td></tr><tr><td>F7</td><td><code>Application/Interfaces/IPaymentVoucherReportService.cs</code></td><td>Application (port)</td><td>The contract the controller depends on (keeps API → Telerik decoupled at the seam)</td></tr><tr><td>F8</td><td><code>API/Reporting/TelerikPaymentVoucherReportService.cs</code></td><td>API (adapter)</td><td>Wraps <code>ReportProcessor</code>; validates format; turns a <code>PaymentReportDto</code> into <code>byte[]</code></td></tr><tr><td>F9</td><td><code>API/Reporting/PaymentVoucherReport.cs</code></td><td>API (report definition)</td><td>Code-defined <code>Telerik.Reporting.Report</code> — builds the voucher layout item by item</td></tr><tr><td>F10</td><td><code>Application/Accounting/Payments/ArabicPaymentFormatter.cs</code></td><td>Application (helper)</td><td>Amount-in-words, Arabic-Indic digits, currency suffix, date stencil</td></tr><tr><td>F11</td><td><code>Infrastructure/Pdf/PdfGenerationService.cs</code></td><td>Infrastructure</td><td><strong>Not called here</strong> — the v1 (QuestPDF) engine, shown for contrast</td></tr></tbody></table>
+<p>Everything F6–F10 is also reachable from the <strong>v1</strong> endpoint except F8/F9; both endpoints share F6 (the data) and F10 (the Arabic helpers).</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>2. Debugger walkthrough — frontend</h2>
+<h3>STEP 1 — <code>EditPaymentForm.tsx:888</code> — the click</h3>
+<pre><code>&lt;Button variant=&quot;outlined&quot; color=&quot;secondary&quot;
+        onClick={handlePreviewPdfV2}
+        disabled={isPdfV2Fetching || !payment?.paymentId}&gt;
+  {isPdfV2Fetching ? &quot;جاري التحضير...&quot; : &quot;معاينة بيان الدفعة (Telerik)&quot;}
+&lt;/Button&gt;</code></pre>
+<p><code>payment</code> is the currently-loaded payment object (form state). Click → <strong>jump to</strong> <code>handlePreviewPdfV2</code>.</p>
+<h3>STEP 2 — <code>EditPaymentForm.tsx:120</code> — the handler</h3>
+<pre><code>const handlePreviewPdfV2 = async () =&gt; {
+    if (!payment?.paymentId) return;              // guard
+    setPreviewLoading(true);                       // dialog spinner on
+    try {
+        const arrayBuffer = await triggerPdfV2(payment.paymentId).unwrap();   // ← line 125
+        const blob = new Blob([arrayBuffer], { type: &quot;application/pdf&quot; });
+        const url  = URL.createObjectURL(blob);
+        setPdfBlobUrl(url);
+        setShowPdfViewer(true);
+    } catch (error) { /* alert */ } finally { setPreviewLoading(false); }
+};</code></pre>
+<ul><li><code>triggerPdfV2</code> came from <code>EditPaymentForm.tsx:148</code>: <code>const [triggerPdfV2, { isFetching: isPdfV2Fetching }] = useLazyGetPaymentReportPdfV2Query();</code></li><li>Calling <code>triggerPdfV2(&quot;O18037&quot;)</code> <strong>jumps into RTK Query&#x27;s generated thunk</strong> → the endpoint defined in F2.</li><li>Execution now <em>suspends</em> at <code>await</code> until the HTTP round-trip resolves.</li></ul>
+<h3>STEP 3 — <code>paymentsApi.ts:290</code> — the endpoint definition</h3>
+<pre><code>getPaymentReportPdfV2: builder.query&lt;ArrayBuffer, string&gt;({
+    query: (paymentId) =&gt; ({
+        url: `/paymentReports/payment-report-v2/${paymentId}`,
+        responseHandler: (response) =&gt; response.arrayBuffer(),   // raw bytes, not JSON
+        cache: &quot;no-cache&quot;,
+    }),
+}),</code></pre>
+<ul><li>Base URL: <code>paymentsApi.ts:14</code> → <code>import.meta.env.VITE_API_URL</code> → <code>http://localhost:5001/api</code> (dev).</li><li>Final URL: <code>http://localhost:5001/api/paymentReports/payment-report-v2/O18037</code>.</li><li><code>paymentsApi.ts:15–24</code> <code>prepareHeaders</code> runs: adds <code>Authorization: Bearer &lt;token&gt;</code> and <code>Accept-Language: &lt;ui language&gt;</code> from the Redux store.</li><li><code>responseHandler</code> overrides the default JSON parse so the 200 body is read as an <code>ArrayBuffer</code>.</li></ul>
+<p><strong>→ HTTP request leaves the browser.</strong> Next frame is on the server.</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>3. Debugger walkthrough — ASP.NET request pipeline</h2>
+<h3>STEP 4 — middleware, before the controller</h3>
+<p>Order (from <code>API/Program.cs</code>): Serilog request logging → Response compression → <strong>Authentication</strong> → Routing → <strong>Authorization</strong>.</p>
+<ul><li><code>Program.cs</code> registers a <strong>global</strong> <code>AuthorizeFilter</code> (<code>RequireAuthenticatedUser</code>), so the bearer token from STEP 3 is mandatory — a missing/expired token would 401 here and never reach F4.</li><li>Routing matches <code>api/PaymentReports/payment-report-v2/{paymentId}</code> to F4&#x27;s action (case-insensitive; the URL said <code>paymentReports</code>).</li></ul>
+<h3>STEP 5 — <code>PaymentReportsController</code> construction (DI)</h3>
+<p>Before the action runs, the container builds the controller. Its constructor (<code>PaymentReportsController.cs:13</code>):</p>
+<pre><code>public PaymentReportsController(
+    IPdfGenerationService pdfService,                    // v1 (QuestPDF)  — not used this request
+    IPaymentVoucherReportService voucherReportService)   // v2 (Telerik)</code></pre>
+<ul><li><code>IPaymentVoucherReportService</code> is resolved because of <code>ApplicationServiceExtensions.cs:91</code>: <code>services.AddScoped&lt;IPaymentVoucherReportService, TelerikPaymentVoucherReportService&gt;();</code></li><li><strong>If that line were missing:</strong> the container throws <em>&quot;Unable to resolve service for type IPaymentVoucherReportService&quot;</em> and the request 500s here, before your code.</li></ul>
+<h3>STEP 6 — <code>PaymentReportsController.cs:41</code> — the action</h3>
+<pre><code>[HttpGet(&quot;payment-report-v2/{paymentId}&quot;)]
+public async Task&lt;IActionResult&gt; GetPaymentReportV2(string paymentId, [FromQuery] string format = &quot;PDF&quot;)
+{
+    var reportData = await Mediator.Send(new GetPaymentForReport.Query(paymentId, &quot;ar&quot;));   // line 43
+    var bytes      = _voucherReportService.Render(reportData, format);                       // line 45
+    var (contentType, ext) = /* switch on format */ (&quot;application/pdf&quot;, &quot;pdf&quot;);              // line 47
+    var fileName = $&quot;{reportData.PaymentId}_بيان_دفعة.{ext}&quot;;                                 // line 56
+    return File(bytes, contentType, fileName);                                               // line 58
+}</code></pre>
+<p>Locals on entry: <code>paymentId = &quot;O18037&quot;</code>, <code>format = &quot;PDF&quot;</code>.</p>
+<p><code>Mediator</code> is the property on <code>BaseApiController.cs:13</code>:</p>
+<pre><code>protected IMediator Mediator =&gt; _mediator ??= HttpContext.RequestServices.GetService&lt;IMediator&gt;();</code></pre>
+<p>Line 43 constructs <code>new GetPaymentForReport.Query(&quot;O18037&quot;, &quot;ar&quot;)</code> and <strong>jumps into MediatR</strong>.</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>4. Debugger walkthrough — the data read (CQRS)</h2>
+<h3>STEP 7 — MediatR pipeline behaviors</h3>
+<p><code>Mediator.Send</code> doesn&#x27;t call the handler directly. Two behaviors wrap it (<code>ApplicationServiceExtensions.cs:77</code> and <code>:80</code>):</p>
+<pre><code>LoggingBehavior&lt;Query,PaymentReportDto&gt;          ← starts a stopwatch
+  └── AuditBehavior&lt;Query,PaymentReportDto&gt;      ← writes an AUDIT_ACTIVITY row (commands only; a query is a no-op here)
+        └── GetPaymentForReport.Handler.Handle(query, ct)     ← your code</code></pre>
+<h3>STEP 8 — <code>GeneratePaymentReportPdf.cs:20</code> — <code>GetPaymentForReport.Handler.Handle</code></h3>
+<pre><code>public async Task&lt;PaymentReportDto&gt; Handle(Query request, CancellationToken ct)
+{
+    var isArabic = request.Language.Equals(&quot;ar&quot;, ...);            // true
+
+    var query = from pyt in _context.Payments
+                where pyt.PaymentId == request.PaymentId          // &quot;O18037&quot;
+                join ptt in _context.PaymentTypes  on ...         // INNER
+                join sts in _context.StatusItems   on ...         // INNER
+                join pty in _context.Parties       on pyt.PartyIdFrom ...   // INNER
+                join pmt in _context.PaymentMethods ... into pmtJoin  from pmt in pmtJoin.DefaultIfEmpty()  // LEFT
+                join ptyto ... DefaultIfEmpty()                    // LEFT  (PartyIdTo)
+                join cc   ... DefaultIfEmpty()                     // LEFT  (CostCenter)
+                join proj ... DefaultIfEmpty()                     // LEFT  (WorkEffort / project)
+                select new PaymentReportDto { /* ~18 fields, Arabic vs English picked by isArabic */ };
+
+    var result = await query.FirstOrDefaultAsync(ct);             // line 71 — the SQL executes here
+    if (result == null) throw new Exception($&quot;Payment ... not found.&quot;);
+    return result;
+}</code></pre>
+<ul><li><code>_context</code> is the <code>DataContext</code> injected straight into the handler — <strong>no repository layer</strong> (house rule). Lazy loading is off, so every needed table is an explicit <code>join</code>.</li><li>One <code>SELECT … LEFT JOIN …</code> hits MySQL. EF materialises exactly one <code>PaymentReportDto</code> (<code>GeneratePaymentReportPdf.cs:82</code>).</li><li>Return value bubbles back out through <code>AuditBehavior</code> → <code>LoggingBehavior</code> (which logs the handler&#x27;s elapsed ms) → the <code>await</code> on <code>PaymentReportsController.cs:43</code>.</li></ul>
+<p><strong>State now:</strong> <code>reportData</code> is a populated <code>PaymentReportDto</code> (<code>PaymentId</code>, <code>Amount</code>, <code>EffectiveDate</code>, <code>FromPartyName</code>, <code>ToPartyName</code>, <code>PaymentMethodId</code>, <code>IsBankTransfer</code>, <code>Comments</code>, …).</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>5. Debugger walkthrough — rendering (Telerik)</h2>
+<h3>STEP 9 — <code>PaymentReportsController.cs:45</code> → <code>TelerikPaymentVoucherReportService.cs:20</code></h3>
+<pre><code>public byte[] Render(PaymentReportDto data, string format = &quot;PDF&quot;, string companyName = &quot;Golden Land&quot;)
+{
+    ArgumentNullException.ThrowIfNull(data);
+    var normalizedFormat = &quot;PDF&quot;;                                   // trimmed + upper-cased
+    if (!SupportedFormats.Contains(normalizedFormat)) throw ...;    // PDF/XLSX/DOCX/CSV/IMAGE/PPTX
+
+    using var report   = new PaymentVoucherReport(data, companyName);   // ← line 28, jump to F9
+    var reportSource   = new InstanceReportSource { ReportDocument = report };
+    var processor      = new ReportProcessor();
+    var result         = processor.RenderReport(normalizedFormat, reportSource, new Hashtable());   // line 32
+
+    if (result.HasErrors) throw new System.InvalidOperationException(...);
+    return result.DocumentBytes;                                    // line 39 — the PDF
+}</code></pre>
+<h3>STEP 10 — <code>PaymentVoucherReport.cs:29</code> — the report constructor</h3>
+<p>This is where the layout is assembled. Walking the constructor:</p>
+<table><thead><tr><th>Line</th><th>What happens</th><th>Notes</th></tr></thead><tbody><tr><td><code>31</code></td><td>null-check <code>data</code></td><td></td></tr><tr><td><code>33–40</code></td><td>derive booleans: <code>isReceipt</code>, <code>isCash</code>, <code>isBankTransfer</code>, <code>isCheque</code></td><td>same rules as the QuestPDF voucher</td></tr><tr><td><code>42</code></td><td><code>ArabicPaymentFormatter.CurrencySuffix(data.CurrencyUomId)</code></td><td><strong>jump to F10:16</strong> → <code>&quot;جنيه مصرى&quot;</code> etc.</td></tr><tr><td><code>43</code></td><td><code>ArabicPaymentFormatter.AmountToWords(data.Amount, suffix)</code></td><td><strong>jump to F10:45</strong> → recurses through <code>NumberToWords</code> (F10:58) to build <code>&quot;مائتان … جنيه مصرى لا غير&quot;</code></td></tr><tr><td><code>44–45</code></td><td>split <code>Amount</code> into whole pounds + piastres</td><td></td></tr><tr><td><code>48</code></td><td><code>Width = Unit.Cm(18.0)</code></td><td><strong>first touch of <code>Telerik.Reporting.Drawing.Unit</code></strong> → its static ctor runs → it loads the drawing backend <code>Telerik.Drawing.Skia</code>. <em>This is the line that threw <code>DrawingFactoryUnavailableException</code> before the <code>Telerik.Drawing.Skia</code> package was added.</em></td></tr><tr><td><code>49–50</code></td><td><code>PageSettings.PaperKind = A4</code>, 1.5 cm margins</td><td></td></tr><tr><td><code>52–55</code></td><td>create <code>PageHeaderSection</code> + <code>DetailSection</code>, add to <code>report.Items</code></td><td>a <code>DetailSection</code> with <strong>no data source renders exactly once</strong> — the trick that makes a &quot;static&quot; report</td></tr><tr><td><code>57</code></td><td><code>BuildHeader(...)</code></td><td>→ STEP 11</td></tr><tr><td><code>58</code></td><td><code>BuildBody(...)</code></td><td>→ STEP 12</td></tr></tbody></table>
+<h3>STEP 11 — <code>PaymentVoucherReport.cs:61</code> — <code>BuildHeader</code></h3>
+<ul><li><code>63–77</code> load <code>wwwroot/goldenlandlogo.jpg</code> and set it via <code>SKBitmap.Decode(logoPath)</code>. <code>PictureBox.Value</code> accepts <code>string | IImage | System.Drawing.Image | SKBitmap</code> — <strong>not</strong> <code>byte[]</code> (that was <code>ArgumentException: You can assign …</code> before the <code>SKBitmap.Decode</code> fix).</li><li><code>79–89</code> title (<code>إيصال صرف</code> / <code>إيصال قبض</code>), payment id, 3 company lines — each built by the <code>Text(...)</code> factory (<code>PaymentVoucherReport.cs:210</code>).</li><li><code>91–105</code> a header rule = an empty <code>TextBox</code> with only a bottom border (replaced the <code>Shape</code>/<code>LineShape</code> item, whose namespace moved between Reporting versions → <code>CS0246</code>).</li></ul>
+<h3>STEP 12 — <code>PaymentVoucherReport.cs:108</code> — <code>BuildBody</code></h3>
+<p>A single running <code>y</code> cursor (cm from the top of the detail section). Each block: <code>y</code> is read, one-to-three items are added at that <code>y</code>, then <code>y</code> is advanced.</p>
+<pre><code>y=0.2   cbBank / cbCheque / cbCash        (Checkbox factory :250 — a Panel = [X] box + caption)
+y=1.4   date line                          &quot;تحريراً فى : ٢٠٢٦/...&quot;
+y=2.5   [piastres][جنيه][pounds][قرش]      (Boxed factory :240 — full border)
+y=3.8   recipient caption + name           (Underlined factory :230 — bottom border only)
+y=4.9   amount-in-words                    ← the AmountToWords string from STEP 10
+y=6.1   نقداً / بموجب
+y=7.1   مسحوب على بنك
+y=8.1   cheque no. + date
+y=9.1   تحويل بنكى/اون لاين
+y=10.3  وذلك عن :  + Comments
+y=12.7  signatures block (يعتمد / المحاسب / المستلم + lines)
+y≈16    مرجع: O18037</code></pre>
+<p>Factories <code>Text</code> / <code>Underlined</code> / <code>Boxed</code> / <code>Checkbox</code> (<code>PaymentVoucherReport.cs:210–288</code>) each <code>new</code> a <code>TextBox</code> (or <code>Panel</code>), set <code>Location</code>/<code>Size</code> in cm, font = <code>&quot;Arial&quot;</code> (<code>FontFamily</code> const — swap for an Arabic naskh face once the Docker image ships one), and border style. Nothing is data-bound; every <code>.Value</code> is a literal string already computed from <code>data</code>.</p>
+<p>Constructor returns → back to <code>TelerikPaymentVoucherReportService.cs:29</code>.</p>
+<h3>STEP 13 — <code>TelerikPaymentVoucherReportService.cs:32</code> — <code>ReportProcessor.RenderReport</code></h3>
+<ul><li>Telerik walks the report&#x27;s item tree, uses <strong>Skia</strong> (via <code>Telerik.Drawing.Skia</code>) to measure and shape text (Arabic shaping/bidi happens here) and to rasterize, then emits a PDF stream.</li><li><code>Telerik.Licensing</code> is consulted during processing — because the DevCraft key is present (<code>~/.telerik/telerik-license.txt</code> locally, <code>TELERIK_LICENSE</code> in Docker) there is <strong>no trial watermark</strong>.</li><li><code>result.DocumentBytes</code> → <code>byte[]</code> of the finished PDF. Returned to the controller.</li></ul>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>6. Debugger walkthrough — response &amp; display</h2>
+<h3>STEP 14 — <code>PaymentReportsController.cs:47–58</code></h3>
+<pre><code>var (contentType, ext) = &quot;PDF&quot; switch { … _ =&gt; (&quot;application/pdf&quot;, &quot;pdf&quot;) };
+var fileName = &quot;O18037_بيان_دفعة.pdf&quot;;
+return File(bytes, &quot;application/pdf&quot;, fileName);          // FileContentResult</code></pre>
+<p>MVC serializes a <code>200 OK</code>, <code>Content-Type: application/pdf</code>, body = the bytes. Response compression may gzip it on the way out. Serilog logs <code>responded 200 in &lt;ms&gt;</code>.</p>
+<h3>STEP 15 — back in the browser, <code>EditPaymentForm.tsx:125</code></h3>
+<p>The suspended <code>await triggerPdfV2(...).unwrap()</code> now resolves:</p>
+<pre><code>arrayBuffer  ← response.arrayBuffer()      (from paymentsApi.ts responseHandler)
+blob         ← new Blob([arrayBuffer], {type:&quot;application/pdf&quot;})
+url          ← URL.createObjectURL(blob)    &quot;blob:http://localhost:3000/…&quot;
+setPdfBlobUrl(url); setShowPdfViewer(true);</code></pre>
+<p>The dialog (further down <code>EditPaymentForm.tsx</code>) renders <code>&lt;Viewer fileUrl={pdfBlobUrl} …/&gt;</code> (<code>@react-pdf-viewer</code>) inside a MUI <code>Dialog</code>. <code>handleClosePdfViewer</code> later calls <code>URL.revokeObjectURL</code> to free the blob.</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>7. One picture — the call sequence</h2>
+<pre><code>F1  EditPaymentForm.tsx      click &quot;معاينة بيان الدفعة (Telerik)&quot;
+      │  handlePreviewPdfV2()  →  triggerPdfV2(&quot;O18037&quot;)
+      ▼
+F2  paymentsApi.ts           GET {VITE_API_URL}/paymentReports/payment-report-v2/O18037
+      │  + Authorization: Bearer …   + Accept-Language: ar
+      ▼  ─────────────────────────── HTTP ───────────────────────────
+    Program.cs pipeline      Serilog → compression → auth filter → routing
+      ▼
+F4  PaymentReportsController  GetPaymentReportV2(&quot;O18037&quot;, &quot;PDF&quot;)
+      │
+      ├─(a)─► F3 BaseApiController.Mediator.Send( GetPaymentForReport.Query )
+      │         └─► F5 LoggingBehavior → AuditBehavior
+      │               └─► F6 GetPaymentForReport.Handler.Handle
+      │                     └─ one LEFT-JOIN SELECT on MySQL  ─►  PaymentReportDto
+      │        ◄──────────────────────────────────────────────────  reportData
+      │
+      ├─(b)─► F8 TelerikPaymentVoucherReportService.Render(reportData, &quot;PDF&quot;)
+      │         ├─► F9 new PaymentVoucherReport(dto)
+      │         │      ├─ F10 ArabicPaymentFormatter (words / digits / suffix)
+      │         │      ├─ BuildHeader()   (logo via SKBitmap, title, company)
+      │         │      └─ BuildBody()     (~30 TextBox/Panel items down a y cursor)
+      │         └─► ReportProcessor.RenderReport(&quot;PDF&quot;, …)  ─►  byte[]  (Skia + licence)
+      │        ◄──────────────────────────────────────────────────  bytes
+      │
+      └─(c)─► return File(bytes, &quot;application/pdf&quot;, &quot;O18037_بيان_دفعة.pdf&quot;)  →  200
+      ▼  ─────────────────────────── HTTP ───────────────────────────
+F1  EditPaymentForm.tsx      ArrayBuffer → Blob → URL.createObjectURL → &lt;Viewer fileUrl=…&gt;</code></pre>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>8. v1 vs v2 — same data, different engine</h2>
+<table><thead><tr><th></th><th><strong>v1</strong> (existing)</th><th><strong>v2</strong> (this walkthrough)</th></tr></thead><tbody><tr><td>Endpoint</td><td><code>GET /paymentReports/payment-report/{id}</code></td><td><code>GET /paymentReports/payment-report-v2/{id}?format=PDF</code></td></tr><tr><td>Controller action</td><td><code>GetPaymentReportPdf</code> (F4:22)</td><td><code>GetPaymentReportV2</code> (F4:41)</td></tr><tr><td>Data source</td><td><code>GetPaymentForReport.Query</code> (F6)</td><td><strong>same</strong> <code>GetPaymentForReport.Query</code> (F6)</td></tr><tr><td>Arabic helpers</td><td>private methods inside F11</td><td><code>ArabicPaymentFormatter</code> (F10)</td></tr><tr><td>Rendering</td><td><code>IPdfGenerationService</code> → QuestPDF (F11)</td><td><code>IPaymentVoucherReportService</code> → Telerik (F8 → F9)</td></tr><tr><td>Output</td><td>PDF only</td><td>PDF / XLSX / DOCX / CSV / IMAGE (via <code>?format=</code>)</td></tr><tr><td>Frontend</td><td><code>getPaymentReportPdf</code> + &quot;معاينة بيان الدفعة (PDF)&quot;</td><td><code>getPaymentReportPdfV2</code> + &quot;معاينة بيان الدفعة (Telerik)&quot;</td></tr></tbody></table>
+<p>The split point is a single DI line (F5:91). The controller depends only on the <em>interface</em> (F7), so swapping engines never touches F4&#x27;s logic.</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>9. Config / infra files changed for Telerik</h2>
+<h3>9.1 <code>nuget.config</code> — <strong>new, repo root</strong></h3>
+<p>Telerik Reporting packages are <strong>not on nuget.org</strong> — they come from the Telerik private feed.</p>
+<pre><code>&lt;packageSources&gt;
+  &lt;clear /&gt;
+  &lt;add key=&quot;nuget.org&quot; value=&quot;https://api.nuget.org/v3/index.json&quot; protocolVersion=&quot;3&quot; /&gt;
+  &lt;add key=&quot;telerik&quot;   value=&quot;https://nuget.telerik.com/v3/index.json&quot; /&gt;
+&lt;/packageSources&gt;
+&lt;packageSourceCredentials&gt;
+  &lt;telerik&gt;
+    &lt;add key=&quot;Username&quot; value=&quot;api-key&quot; /&gt;
+    &lt;add key=&quot;ClearTextPassword&quot; value=&quot;%TELERIK_NUGET_KEY%&quot; /&gt;   &lt;!-- from env, never committed --&gt;
+  &lt;/telerik&gt;
+&lt;/packageSourceCredentials&gt;
+&lt;packageSourceMapping&gt;
+  &lt;packageSource key=&quot;nuget.org&quot;&gt;&lt;package pattern=&quot;*&quot; /&gt;&lt;/packageSource&gt;
+  &lt;packageSource key=&quot;telerik&quot;&gt;&lt;package pattern=&quot;Telerik.*&quot; /&gt;&lt;/packageSource&gt;
+&lt;/packageSourceMapping&gt;</code></pre>
+<ul><li><code>packageSourceMapping</code> keeps every non-Telerik package on nuget.org — a missing key only breaks the <code>Telerik.*</code> restore, nothing else.</li><li>Dev must <code>export TELERIK_NUGET_KEY=&lt;key&gt;</code> (from telerik.com → account → NuGet keys) before <code>dotnet restore</code>.</li><li><strong>Without this file:</strong> <code>error NU1101: Unable to find package Telerik.Reporting</code>.</li></ul>
+<h3>9.2 <code>API/API.csproj</code> — four package references</h3>
+<pre><code>&lt;PackageReference Include=&quot;Telerik.Reporting&quot;                Version=&quot;20.2.26.812&quot; /&gt;
+&lt;PackageReference Include=&quot;Telerik.Reporting.OpenXmlRendering&quot; Version=&quot;20.2.26.812&quot; /&gt;
+&lt;PackageReference Include=&quot;Telerik.Drawing.Skia&quot;             Version=&quot;20.2.26.812&quot; /&gt;
+&lt;PackageReference Include=&quot;Telerik.Licensing&quot;                Version=&quot;1.9.2&quot; /&gt;</code></pre>
+<table><thead><tr><th>Package</th><th>Why it&#x27;s needed</th></tr></thead><tbody><tr><td><code>Telerik.Reporting</code></td><td>the report object model + <code>ReportProcessor</code> (F8, F9)</td></tr><tr><td><code>Telerik.Reporting.OpenXmlRendering</code></td><td>the <code>XLSX</code> / <code>DOCX</code> / <code>PPTX</code> render formats (the <code>?format=</code> options)</td></tr><tr><td><code>Telerik.Drawing.Skia</code></td><td><code>Telerik.Reporting</code> ships only the drawing <em>abstraction</em>; this is the concrete cross-platform (Skia) implementation. Pulls <code>SkiaSharp 3.119.1</code> — the <strong>same</strong> version QuestPDF already uses, so no conflict. <strong>Without it:</strong> <code>DrawingFactoryUnavailableException: Cannot load assembly Telerik.Drawing.Skia</code> on the first <code>Unit.Cm(...)</code> call.</td></tr><tr><td><code>Telerik.Licensing</code></td><td>activates the DevCraft key at build time so output has no trial watermark</td></tr></tbody></table>
+<h3>9.3 <code>API/Extensions/ApplicationServiceExtensions.cs</code> — the DI binding</h3>
+<pre><code>using API.Reporting;                                                            // line 24
+...
+services.AddScoped&lt;IPaymentVoucherReportService, TelerikPaymentVoucherReportService&gt;();   // line 91</code></pre>
+<p>The one line that connects the port (F7) to the adapter (F8). <strong>Without it:</strong> the container can&#x27;t build <code>PaymentReportsController</code> and every call to <em>either</em> payment-report endpoint 500s (the constructor needs both services).</p>
+<h3>9.4 <code>Dockerfile.vm</code> — build key, license, fonts</h3>
+<pre><code># build stage
+ARG TELERIK_NUGET_KEY
+ARG TELERIK_LICENSE
+ENV TELERIK_NUGET_KEY=$TELERIK_NUGET_KEY
+ENV TELERIK_LICENSE=$TELERIK_LICENSE
+COPY ./nuget.config ./                # so restore can see the Telerik feed
+
+# runtime stage
+RUN apt-get install -y --no-install-recommends \
+      openssl libfontconfig1 libfreetype6 fontconfig fonts-noto-core \
+ &amp;&amp; fc-cache -f
+ARG TELERIK_LICENSE
+ENV TELERIK_LICENSE=$TELERIK_LICENSE</code></pre>
+<ul><li><code>nuget.config</code> is copied <em>before</em> <code>dotnet restore</code>.</li><li>Skia measures/rasterizes against <strong>real font files</strong> — QuestPDF ships its own, Telerik does not, and the base <code>aspnet</code> image has almost none. <code>fonts-noto-core</code> covers Latin; an Arabic naskh face (Amiri / Cairo / Noto Naskh Arabic) still needs adding before the container render of the Arabic voucher looks right.</li><li>Build command gains: <code>--build-arg TELERIK_NUGET_KEY=&quot;$TELERIK_NUGET_KEY&quot; --build-arg TELERIK_LICENSE=&quot;$(cat ~/.telerik/telerik-license.txt)&quot;</code></li></ul>
+<h3>9.5 <code>docker-compose.vm.yml</code></h3>
+<pre><code>build:
+  args:
+    TELERIK_NUGET_KEY: ${TELERIK_NUGET_KEY:-}
+    TELERIK_LICENSE:   ${TELERIK_LICENSE:-}
+environment:
+  TELERIK_LICENSE:   ${TELERIK_LICENSE:-}     # runtime licence check parity</code></pre>
+<h3>9.6 <code>~/.telerik/telerik-license.txt</code> — <strong>not in the repo</strong></h3>
+<p>Machine-level file (same one the KendoReact DevCraft upgrade created). <code>Telerik.Licensing</code> reads it automatically at build and runtime on a dev box. In Docker there is no such file, so the <code>TELERIK_LICENSE</code> env var (its <em>contents</em>) stands in.</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>10. The setup, as a bug journey</h2>
+<p>Each of these was hit, in order, bringing v2 up:</p>
+<table><thead><tr><th>#</th><th>Symptom</th><th>Root cause</th><th>Fix</th></tr></thead><tbody><tr><td>1</td><td><code>NU1101: Unable to find package Telerik.Reporting</code> (restore)</td><td>Telerik packages aren&#x27;t on nuget.org</td><td>added <code>nuget.config</code> with the private feed + <code>TELERIK_NUGET_KEY</code></td></tr><tr><td>2</td><td><code>CS0104: &#x27;InvalidOperationException&#x27; is an ambiguous reference</code> (compile)</td><td><code>API.Middleware</code> declares its own <code>InvalidOperationException</code></td><td>qualified as <code>System.InvalidOperationException</code> (F8:35)</td></tr><tr><td>3</td><td><code>CS0246: The type or namespace name &#x27;LineShape&#x27; could not be found</code> (compile)</td><td>shape item types moved namespace between Reporting versions</td><td>replaced the header rule with a bottom-bordered <code>TextBox</code> (F9:93)</td></tr><tr><td>4</td><td><code>DrawingFactoryUnavailableException: Cannot load assembly Telerik.Drawing.Skia</code> (runtime, first <code>Unit.Cm</code>)</td><td><code>Telerik.Reporting</code> ships only the drawing abstraction</td><td>added <code>Telerik.Drawing.Skia</code> package</td></tr><tr><td>5</td><td><code>ArgumentException: You can assign System.String, IImage, System.Drawing.Image, or SKBitmap instances only</code> (runtime, <code>PictureBox.Value</code>)</td><td><code>PictureBox.Value</code> doesn&#x27;t accept <code>byte[]</code></td><td><code>SKBitmap.Decode(logoPath)</code> (F9:71)</td></tr><tr><td>—</td><td>works: <code>GET …/payment-report-v2/O18037 → 200</code></td><td></td><td></td></tr></tbody></table>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>11. Trace it yourself — where to put breakpoints</h2>
+<table><thead><tr><th>Break at</th><th>To watch</th></tr></thead><tbody><tr><td><code>PaymentReportsController.cs:43</code></td><td>the incoming <code>paymentId</code>, <code>format</code></td></tr><tr><td><code>GeneratePaymentReportPdf.cs:71</code></td><td>the EF query about to hit MySQL; inspect <code>result</code> after</td></tr><tr><td><code>TelerikPaymentVoucherReportService.cs:28</code></td><td><code>data</code> fully populated, just before the report is built</td></tr><tr><td><code>PaymentVoucherReport.cs:48</code></td><td>the Telerik drawing backend loads on this line — step over to confirm no exception</td></tr><tr><td><code>PaymentVoucherReport.cs:58</code></td><td>after <code>BuildHeader</code>, before <code>BuildBody</code> — <code>report.Items[0]</code> has its children</td></tr><tr><td><code>TelerikPaymentVoucherReportService.cs:34</code></td><td><code>result.HasErrors</code> / <code>result.DocumentBytes.Length</code></td></tr><tr><td><code>EditPaymentForm.tsx:126</code></td><td><code>arrayBuffer.byteLength</code> — the PDF size that came back</td></tr></tbody></table>
+<p>Frontend: DevTools → Network → the <code>payment-report-v2/…</code> request shows the exact URL, the <code>Authorization</code> / <code>Accept-Language</code> headers, status, and timing.</p>
+</body>
+</html>

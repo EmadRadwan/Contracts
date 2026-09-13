@@ -30,13 +30,13 @@ const PaymentApplicationsInvGrid: React.FC<PaymentApplicationGridProps> = ({
                     <GridColumn
                         field="invoiceId"
                         title={getTranslatedLabel(`${localizationKey}.invoiceId`, "Invoice ID")}
-                        cell={(props) => (
+                        cells={{ data: (props) => (
                             <td>
                                 <Link to={`/invoices/view/${props.dataItem.invoiceId}`}>
                                     [{props.dataItem.invoiceId}]
                                 </Link>
                             </td>
-                        )}
+                        ) }}
                     />
                     <GridColumn
                         field="invoiceItemSeqId"
@@ -46,13 +46,13 @@ const PaymentApplicationsInvGrid: React.FC<PaymentApplicationGridProps> = ({
                         field="amountApplied"
                         title={getTranslatedLabel(`${localizationKey}.amountApplied`, "Amount Applied")}
                         format="{0:c}"
-                        cell={(props) => (
+                        cells={{ data: (props) => (
                             <td>{props.dataItem.amountApplied.toFixed(2)} {payment?.currencyUomId}</td>
-                        )}
+                        ) }}
                     />
                     <GridColumn
                         title={getTranslatedLabel("general.actions", "Actions")}
-                        cell={(props) => (
+                        cells={{ data: (props) => (
                             <td>
                                 <Button
                                     variant="outlined"
@@ -64,7 +64,7 @@ const PaymentApplicationsInvGrid: React.FC<PaymentApplicationGridProps> = ({
                                     {getTranslatedLabel("general.remove", "Remove")}
                                 </Button>
                             </td>
-                        )}
+                        ) }}
                     />
                 </KendoGrid>
             </div>

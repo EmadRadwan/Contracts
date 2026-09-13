@@ -21,6 +21,12 @@ namespace Application.Projects
             public DateTime? SalesStartDate { get; set; }
             public DateTime? SalesEndDate { get; set; }
             public bool SalesAllData { get; set; }
+
+            // Management-fee inputs for ProjectReportDto.Summary. Previously lived only in the
+            // Excel dialog's local state; the client now passes them so the fee is computed
+            // server-side alongside every other total.
+            public decimal MgmtFeePercent { get; set; } = 12m;
+            public List<string> ExcludedBuildings { get; set; } = new();
         }
 
         public class Handler : IRequestHandler<Query, ProjectReportDto>
@@ -41,6 +47,7 @@ namespace Application.Projects
                 var accountingTransactions = await GetAccountingTransactions(request, cancellationToken);
                 var payroll = await GetProjectPayroll(request, cancellationToken);
                 var apartmentSales = await GetApartmentSales(request, cancellationToken);
+                var paidCommissions = await GetPaidCommissions(request, cancellationToken);
 
                 // Filter out duplicates across expense sections
                 var expensePaymentIds = expenses
@@ -70,7 +77,12 @@ namespace Application.Projects
                     OperatingExpenses = filteredOperatingExpenses,
                     AccountingTransactions = accountingTransactions,
                     Payroll = payroll,
-                    ApartmentSales = apartmentSales
+                    ApartmentSales = apartmentSales,
+                    PaidCommissions = paidCommissions,
+                    Summary = ProjectReportSummaryDto.Build(
+                        expenses, revenues, filteredDirectPayments, filteredOperatingExpenses,
+                        accountingTransactions, payroll, apartmentSales, paidCommissions,
+                        request.MgmtFeePercent, request.ExcludedBuildings)
                 };
             }
 
@@ -998,6 +1010,83 @@ namespace Application.Projects
                     .OrderBy(x => x.BuildingNumber)
                     .ThenBy(x => x.FloorNumber)
                     .ThenBy(x => x.ApartmentName)
+                    .ToList();
+            }
+
+            // Broker / sales commissions for THIS project. Approving a commission
+            // (ApproveSalesCommission) creates one COMMISSION_PAYMENT per payee, carrying the
+            // project on Payment.WorkEffortId and the sale on Payment.SalesRequestId. A sales
+            // request has at most one commission at a time (reset/delete purge the payments), so
+            // the join back to SalesCommission on SalesRequestId is 1:1. Both disbursed and
+            // still-owed payments are returned, each with its status; the report shows the split.
+            private async Task<List<ProjectCommissionPaymentRecord>> GetPaidCommissions(Query request,
+                CancellationToken ct)
+            {
+                var query = from pyt in _context.Payments.AsNoTracking()
+                    where pyt.PaymentTypeId == "COMMISSION_PAYMENT" && pyt.WorkEffortId == request.ProjectId
+                    join payee in _context.Parties.AsNoTracking() on pyt.PartyIdTo equals payee.PartyId into payeeJoin
+                    from payee in payeeJoin.DefaultIfEmpty()
+                    join pst in _context.StatusItems.AsNoTracking() on pyt.StatusId equals pst.StatusId into pstJoin
+                    from pst in pstJoin.DefaultIfEmpty()
+                    join pmt in _context.PaymentMethodTypes.AsNoTracking() on pyt.PaymentMethodTypeId equals
+                        pmt.PaymentMethodTypeId into pmtJoin
+                    from pmt in pmtJoin.DefaultIfEmpty()
+                    join sr in _context.SalesRequests.AsNoTracking() on pyt.SalesRequestId equals sr.SalesRequestId
+                        into srJoin
+                    from sr in srJoin.DefaultIfEmpty()
+                    join prod in _context.Products.AsNoTracking() on sr.ProductId equals prod.ProductId into prodJoin
+                    from prod in prodJoin.DefaultIfEmpty()
+                    join sc in _context.SalesCommissions.AsNoTracking() on pyt.SalesRequestId equals sc.SalesRequestId
+                        into scJoin
+                    from sc in scJoin.DefaultIfEmpty()
+                    join scst in _context.StatusItems.AsNoTracking() on sc.StatusId equals scst.StatusId into scstJoin
+                    from scst in scstJoin.DefaultIfEmpty()
+                    select new ProjectCommissionPaymentRecord
+                    {
+                        PaymentId = pyt.PaymentId,
+                        SalesCommissionId = sc.SalesCommissionId,
+                        SalesRequestId = pyt.SalesRequestId,
+                        SaleTypeId = sc.SaleTypeId,
+                        CommissionStatusId = sc.StatusId,
+                        CommissionStatusArabic = scst != null ? scst.DescriptionArabic : sc.StatusId,
+                        ApartmentId = sr.ProductId,
+                        ApartmentName = prod.ProductName,
+                        BuildingNumber = prod.BuildingNumber,
+                        PayeePartyId = pyt.PartyIdTo,
+                        PayeeName = payee != null
+                            ? payee.Description
+                            : (pyt.PartyIdTo == "Company" ? "Golden Land" : pyt.PartyIdTo),
+                        Amount = pyt.Amount,
+                        IsPaid = pyt.StatusId == "PMNT_SENT" || pyt.StatusId == "PMNT_CONFIRMED",
+                        PaymentStatusId = pyt.StatusId,
+                        PaymentStatusArabic = pst != null ? pst.DescriptionArabic : pyt.StatusId,
+                        PaymentMethodTypeArabic = pmt != null ? pmt.DescriptionArabic : null,
+                        EffectiveDate = pyt.EffectiveDate,
+                        CreatedStamp = pyt.CreatedStamp,
+                        ChequeNumber = pyt.ChequeNumber,
+                        ChequeDate = pyt.ChequeDate,
+                        Comments = pyt.Comments
+                    };
+
+                if (!request.ExpensesAllData)
+                {
+                    if (request.ExpensesStartDate.HasValue)
+                    {
+                        var start = DateOnly.FromDateTime(request.ExpensesStartDate.Value);
+                        query = query.Where(c => c.EffectiveDate >= start);
+                    }
+                    if (request.ExpensesEndDate.HasValue)
+                    {
+                        var end = DateOnly.FromDateTime(request.ExpensesEndDate.Value);
+                        query = query.Where(c => c.EffectiveDate <= end);
+                    }
+                }
+
+                var results = await query.ToListAsync(ct);
+
+                return results
+                    .OrderByDescending(x => x.EffectiveDate)
+                    .ThenByDescending(x => x.CreatedStamp)
                     .ToList();
             }
         }

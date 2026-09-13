@@ -408,10 +408,10 @@ const ReceiveInventoryList = () => {
                                     "Include Item"
                                 )}
                                 width={100}
-                                cell={IncludeCell}
+                                cells={{ data: IncludeCell }}
                             />
 
-                            <Column width={100} cell={ReceiveInventoryCell}/>
+                            <Column width={100} cells={{ data: ReceiveInventoryCell }}/>
                         </KendoGrid>
                     </Grid>
                 </Grid>

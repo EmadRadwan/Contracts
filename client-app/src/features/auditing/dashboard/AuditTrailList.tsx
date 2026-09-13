@@ -3,7 +3,7 @@ import {
     Grid as KendoGrid,
     GridColumn as Column,
     GridDataStateChangeEvent,
-    GridExpandChangeEvent,
+    GridDetailExpandChangeEvent,
 } from "@progress/kendo-react-grid";
 import {DataResult, State} from "@progress/kendo-data-query";
 import {Box, Chip, Grid, Paper, Tooltip, Typography} from "@mui/material";
@@ -90,20 +90,16 @@ export default function AuditTrailList() {
 
     useEffect(() => {
         if (data) {
-            // expanded drives the Kendo detail row; default every row collapsed.
-            const adjusted = handleDatesArray(data.data).map((r: any) => ({...r, expanded: false}));
+            const adjusted = handleDatesArray(data.data);
             setActivities({data: adjusted, total: data.total});
         }
     }, [data]);
 
     const dataStateChange = (e: GridDataStateChangeEvent) => setDataState(e.dataState);
 
-    const expandChange = (e: GridExpandChangeEvent) => {
-        const next = activities.data.map((row: any) =>
-            row.activityId === e.dataItem.activityId ? {...row, expanded: !e.dataItem.expanded} : row,
-        );
-        setActivities({data: next, total: activities.total});
-    };
+    // KendoReact v16: detail-row expansion is a descriptor keyed by dataItemKey; the Grid hands back the toggled descriptor
+    const [detailExpand, setDetailExpand] = useState<Record<string, boolean>>({});
+    const expandChange = (event: GridDetailExpandChangeEvent) => setDetailExpand(event.detailExpand);
 
     const OutcomeCell = (props: any) => (
         <td style={{textAlign: "center"}}>
@@ -150,8 +146,9 @@ export default function AuditTrailList() {
                             {...dataState}
                             onDataStateChange={dataStateChange}
                             detail={ChangesDetail}
-                            expandField="expanded"
-                            onExpandChange={expandChange}
+                            dataItemKey="activityId"
+                            detailExpand={detailExpand}
+                            onDetailExpandChange={expandChange}
                         >
                             <Column field="startedAt"
                                     title={getTranslatedLabel("audit.trail.when", "التاريخ والوقت")}
@@ -162,10 +159,10 @@ export default function AuditTrailList() {
                                     title={getTranslatedLabel("audit.trail.action", "الإجراء")} width={260}/>
                             <Column field="isSuccess"
                                     title={getTranslatedLabel("audit.trail.outcome", "النتيجة")}
-                                    width={110} cell={OutcomeCell} filter="boolean"/>
+                                    width={110} cells={{ data: OutcomeCell }} filter="boolean"/>
                             <Column field="durationMs"
                                     title={getTranslatedLabel("audit.trail.duration", "المدة")}
-                                    width={110} filter="numeric" cell={DurationCell}/>
+                                    width={110} filter="numeric" cells={{ data: DurationCell }}/>
                             <Column field="requestPath"
                                     title={getTranslatedLabel("audit.trail.path", "المسار")} width={280}/>
                             <Column field="errorMessage"

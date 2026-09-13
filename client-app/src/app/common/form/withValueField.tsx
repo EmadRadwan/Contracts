@@ -8,6 +8,7 @@ import {
     ComboBoxPageChangeEvent,
     ComboBoxProps,
     DropDownList,
+    DropDownListHandle,
     DropDownListBlurEvent,
     DropDownListChangeEvent,
     DropDownListFilterChangeEvent,
@@ -40,20 +41,20 @@ const isPresent = (value: any) => value !== null && value !== undefined;
  * @see https://www.telerik.com/kendo-react-ui/components/changelogs/ui-for-react/#release-12856530
  * @see https://www.telerik.com/kendo-react-ui/components/dropdowns/dropdownlist/common-scenarios/#toc-using-data-fields-for-values
  */
-export function withValueField<T = DropDownList>(WrappedDropdownComponent: React.ComponentType) {
-    type DropdownComponentType = T extends DropDownList
+export function withValueField<T = DropDownListHandle>(WrappedDropdownComponent: React.ComponentType) {
+    type DropdownComponentType = T extends DropDownListHandle
         ? typeof DropDownList
         : typeof ComboBox;
 
-    type Props = T extends DropDownList
+    type Props = T extends DropDownListHandle
         ? DropDownListProps & WithValueFieldProp & IndexSignature
         : ComboBoxProps & WithValueFieldProp & IndexSignature;
 
-    type BlurEvent = T extends DropDownList ? DropDownListBlurEvent : ComboBoxBlurEvent;
-    type FocusEvent = T extends DropDownList ? DropDownListFocusEvent : ComboBoxFocusEvent;
-    type ChangeEvent = T extends DropDownList ? DropDownListChangeEvent : ComboBoxChangeEvent;
-    type PageChangeEvent = T extends DropDownList ? DropDownListPageChangeEvent : ComboBoxPageChangeEvent;
-    type FilterChangeEvent = T extends DropDownList ? DropDownListFilterChangeEvent : ComboBoxFilterChangeEvent;
+    type BlurEvent = T extends DropDownListHandle ? DropDownListBlurEvent : ComboBoxBlurEvent;
+    type FocusEvent = T extends DropDownListHandle ? DropDownListFocusEvent : ComboBoxFocusEvent;
+    type ChangeEvent = T extends DropDownListHandle ? DropDownListChangeEvent : ComboBoxChangeEvent;
+    type PageChangeEvent = T extends DropDownListHandle ? DropDownListPageChangeEvent : ComboBoxPageChangeEvent;
+    type FilterChangeEvent = T extends DropDownListHandle ? DropDownListFilterChangeEvent : ComboBoxFilterChangeEvent;
     type EventType =
         | BlurEvent
         | FocusEvent

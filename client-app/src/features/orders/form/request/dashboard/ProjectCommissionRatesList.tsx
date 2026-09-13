@@ -132,7 +132,7 @@ export default function ProjectCommissionRatesList() {
                     <Column
                         field="projectCommissionRateId"
                         title={getTranslatedLabel("commissionRate.list.id", "Rate ID")}
-                        cell={RateIdCell}
+                        cells={{ data: RateIdCell }}
                         width={160}
                         locked
                     />
@@ -144,7 +144,7 @@ export default function ProjectCommissionRatesList() {
                     <Column
                         field="saleTypeId"
                         title={getTranslatedLabel("commissionRate.list.saleType", "Sale Type")}
-                        cell={SaleTypeCell}
+                        cells={{ data: SaleTypeCell }}
                         width={180}
                     />
                     <Column

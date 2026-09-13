@@ -73,7 +73,7 @@ export default function ProductionRunTasksListSimple({ productionRunTasksData }:
                         title={column.title}
                         width={column.width}
                         format={column.format}
-                        cell={column.cell}
+                        cells={{ data: column.cell }}
                     />
                 ))}
             </KendoGrid>

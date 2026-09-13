@@ -177,7 +177,7 @@ const PaymentGroupsList = () => {
                 </GridToolbar>
                 <Column
                   title={getTranslatedLabel(`${localizationKey}.paymentGroupId`,"Payment Group Number")}
-                  cell={PaymentDescriptionCell}
+                  cells={{ data: PaymentDescriptionCell }}
                   locked={true}
                 />
                 <Column

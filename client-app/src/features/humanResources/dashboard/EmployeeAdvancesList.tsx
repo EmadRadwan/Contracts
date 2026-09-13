@@ -213,14 +213,14 @@ function EmployeeAdvancesList() {
                             />
                         </GridToolbar>
 
-                        <Column field="advanceId" title={getTranslatedLabel("party.employeeAdvance.list.id", "ID")} cell={IdCell} width={130} />
+                        <Column field="advanceId" title={getTranslatedLabel("party.employeeAdvance.list.id", "ID")} cells={{ data: IdCell }} width={130} />
                         <Column field="employeeName" title={getTranslatedLabel("party.employeeAdvance.list.employee", "Employee")} width={220} />
                         <Column field="advanceDate" title={getTranslatedLabel("party.employeeAdvance.list.date", "Date")} format="{0:dd/MM/yyyy}" filter="date" width={140} />
                         <Column field="amount" title={getTranslatedLabel("party.employeeAdvance.list.amount", "Amount")} format="{0:n2}" width={130} />
                         <Column field="advanceTypeDescription" title={getTranslatedLabel("party.employeeAdvance.list.advanceTypeDescription", "Advance Type")} format="{0:n2}" width={130} />
                         <Column field="statusDescription" title={getTranslatedLabel("party.employeeAdvance.list.status", "Status")} width={160} />
                         <Column field="description" title={getTranslatedLabel("party.employeeAdvance.list.notes", "Notes")} />
-                        <Column cell={DeleteCell} width={100} filterable={false} sortable={false} />
+                        <Column cells={{ data: DeleteCell }} width={100} filterable={false} sortable={false} />
                     </KendoGrid>
 
                     {isFetching && <LoadingComponent />}

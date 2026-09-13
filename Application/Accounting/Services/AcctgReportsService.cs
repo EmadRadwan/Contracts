@@ -11,6 +11,11 @@ public interface IAcctgReportsService
 {
     Task<TrialBalanceContext> ComputeTrialBalance(string customTimePeriodId, string organizationPartyId);
 
+    // Additive COA-hierarchy-aware version of ComputeTrialBalance above: same leaf-level figures,
+    // rolled up by GlAccountHierarchyView.Level/ParentGlAccountId. Does not change or replace
+    // ComputeTrialBalance — it calls it internally to source the leaf balances.
+    Task<TrialBalanceByLevelContext> ComputeTrialBalanceByLevel(string customTimePeriodId, string organizationPartyId);
+
     Task<TransactionTotalsViewModel> GetTransactionTotals(string organizationPartyId, DateTime? fromDate,
         DateTime? thruDate, string glFiscalTypeId = "ACTUAL", int? selectedMonth = null);
 
@@ -225,8 +230,103 @@ public class AcctgReportsService : IAcctgReportsService
     }
 
     /// <summary>
-    /// Calculates the opening balance, ending balance, total debits, and total credits for a given GL account 
-    /// within a specified CustomTimePeriod. This mirrors the OFBiz simple-method named 
+    /// COA-hierarchy-aware version of <see cref="ComputeTrialBalance"/>. Does not duplicate or
+    /// alter the leaf-level computation: it calls ComputeTrialBalance to get the exact same
+    /// per-account figures already relied on by the flat Trial Balance report, then rolls those
+    /// figures up the Chart of Accounts tree using GlAccountHierarchyView (ParentGlAccountId/Level),
+    /// so every ancestor (class/type/group account) shows the sum of its descendant leaf accounts.
+    /// </summary>
+    public async Task<TrialBalanceByLevelContext> ComputeTrialBalanceByLevel(string customTimePeriodId, string organizationPartyId)
+    {
+        var leafContext = await ComputeTrialBalance(customTimePeriodId, organizationPartyId);
+
+        var result = new TrialBalanceByLevelContext
+        {
+            PostedDebitsTotal = leafContext.PostedDebitsTotal,
+            PostedCreditsTotal = leafContext.PostedCreditsTotal,
+            Nodes = new List<TrialBalanceLevelNode>()
+        };
+
+        if (leafContext.AccountBalances == null || leafContext.AccountBalances.Count == 0)
+        {
+            return result;
+        }
+
+        var hierarchyByAccountId = await _context.GlAccountHierarchyView
+            .ToDictionaryAsync(h => h.GlAccountId!, h => h);
+
+        // GlAccountId -> accumulated node (leaf nodes are added once; ancestor nodes accumulate
+        // as each descendant leaf is walked up to the root of the Chart of Accounts).
+        var nodesByAccountId = new Dictionary<string, TrialBalanceLevelNode>();
+
+        foreach (var leaf in leafContext.AccountBalances)
+        {
+            hierarchyByAccountId.TryGetValue(leaf.GlAccountId, out var leafHierarchy);
+
+            nodesByAccountId[leaf.GlAccountId] = new TrialBalanceLevelNode
+            {
+                GlAccountId = leaf.GlAccountId,
+                ParentGlAccountId = leafHierarchy?.ParentGlAccountId,
+                AccountCode = leaf.AccountCode,
+                AccountName = leaf.AccountName,
+                Level = leafHierarchy?.Level ?? 0,
+                IsLeaf = true,
+                OpeningBalance = leaf.OpeningBalance,
+                PostedDebits = leaf.PostedDebits,
+                PostedCredits = leaf.PostedCredits,
+                EndingBalance = leaf.EndingBalance
+            };
+
+            // Walk up the parent chain, accumulating this leaf's figures into each ancestor's
+            // roll-up row (creating that row the first time an ancestor is encountered).
+            var currentParentId = leafHierarchy?.ParentGlAccountId;
+
+            while (!string.IsNullOrEmpty(currentParentId))
+            {
+                if (!hierarchyByAccountId.TryGetValue(currentParentId, out var parentHierarchy))
+                {
+                    break;
+                }
+
+                if (!nodesByAccountId.TryGetValue(currentParentId, out var parentNode))
+                {
+                    parentNode = new TrialBalanceLevelNode
+                    {
+                        GlAccountId = parentHierarchy.GlAccountId!,
+                        ParentGlAccountId = parentHierarchy.ParentGlAccountId,
+                        AccountCode = parentHierarchy.AccountCode,
+                        // REFACTOR (2026-09-13): use the Arabic name like leaf rows already do
+                        // (leaf.AccountName is sourced from GL_ACCOUNT.ACCOUNT_NAME_ARABIC via
+                        // ComputeTrialBalance). GlAccountHierarchyView now carries it too -- it
+                        // used to expose only the English AccountName, so every roll-up row
+                        // silently fell back to English even when GL_ACCOUNT had a real Arabic
+                        // name for that account.
+                        AccountName = parentHierarchy.AccountNameArabic,
+                        Level = parentHierarchy.Level ?? 0,
+                        IsLeaf = false
+                    };
+                    nodesByAccountId[currentParentId] = parentNode;
+                }
+
+                parentNode.OpeningBalance += leaf.OpeningBalance;
+                parentNode.PostedDebits += leaf.PostedDebits;
+                parentNode.PostedCredits += leaf.PostedCredits;
+                parentNode.EndingBalance += leaf.EndingBalance;
+
+                currentParentId = parentHierarchy.ParentGlAccountId;
+            }
+        }
+
+        result.Nodes = nodesByAccountId.Values
+            .OrderBy(n => n.AccountCode)
+            .ToList();
+
+        return result;
+    }
+
+    /// <summary>
+    /// Calculates the opening balance, ending balance, total debits, and total credits for a given GL account
+    /// within a specified CustomTimePeriod. This mirrors the OFBiz simple-method named
     /// "computeGlAccountBalanceForTimePeriod" from an accounting standpoint.
     /// </summary>
     /// <param name="organizationPartyId">

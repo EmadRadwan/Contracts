@@ -15,7 +15,7 @@
 --   1. Deploy the application (backend + frontend).
 --   2. Apply migration 20260907160152_AddExtCompanyTaxInvoiceRaised.
 --   3. Run this script.
---   4. Edit two payments in the UI — see step 6.
+--   4. Run step 6 of this script to correct two broker payments.
 --
 -- Verified end to end on the dev copy of production taken 2026-09-07: all ten commissions agree
 -- with the users' sheet afterwards.
@@ -172,19 +172,73 @@ COMMIT;
 
 
 -- --------------------------------------------------------------------------------------------
--- Step 6. Payment edits — done in the payments UI, not here.
+-- Step 6. Correct the two broker payments.
 --
---   Two broker payments no longer match their entitlement. Both are PMNT_NOT_PAID with no
---   AcctgTrans behind them (CreatePayment only posts to the ledger at PMNT_SENT / PMNT_RECEIVED),
---   so editing the amount has no GL impact:
+--   Both are PMNT_NOT_PAID and have NOTHING hanging off them — verified on the 2026-09-07 dev copy:
+--   zero ACCTG_TRANS, zero FIN_ACCOUNT_TRANS, zero PAYMENT_APPLICATION, zero PAYMENT_GROUP_MEMBER.
+--   The ledger is only written when a payment reaches PMNT_SENT / PMNT_RECEIVED, so changing the
+--   amount here has no accounting impact and nothing to cascade.
 --
 --       11116   O17584   204,955 -> 170,796
 --       11119   O17606   249,861 -> 238,902
+--
+--   ACTUAL_CURRENCY_AMOUNT mirrors AMOUNT on creation, so both columns move together.
+--   The STATUS_ID = 'PMNT_NOT_PAID' condition is a hard safety catch: if either payment has been
+--   disbursed since this script was written, its row simply will not match and you will see fewer
+--   than 2 rows affected. If that happens, STOP — a sent payment must not be silently rewritten.
 --
 --   Never reset a commission to "recalculate" it. CommissionPaymentCleanup.PurgeAsync deletes
 --   every COMMISSION_PAYMENT on the sales request — disbursed ones included, along with the
 --   manual adjustments the users have added by hand.
 -- --------------------------------------------------------------------------------------------
+
+-- 6a. PRE-CHECK. Expect 2 rows, both PMNT_NOT_PAID, and DEPENDENT_ROWS = 0 on each.
+SELECT
+    p.PAYMENT_ID,
+    p.AMOUNT                                   AS AMOUNT_NOW,
+    CAST(CASE p.PAYMENT_ID WHEN 'O17584' THEN 170796
+                           WHEN 'O17606' THEN 238902 END AS DECIMAL(20,2)) AS NEW_AMOUNT,
+    p.STATUS_ID,
+    (SELECT COUNT(*) FROM ACCTG_TRANS         t WHERE t.PAYMENT_ID = p.PAYMENT_ID)
+  + (SELECT COUNT(*) FROM FIN_ACCOUNT_TRANS   f WHERE f.PAYMENT_ID = p.PAYMENT_ID)
+  + (SELECT COUNT(*) FROM PAYMENT_APPLICATION a WHERE a.PAYMENT_ID = p.PAYMENT_ID
+                                                   OR a.TO_PAYMENT_ID = p.PAYMENT_ID)
+  + (SELECT COUNT(*) FROM PAYMENT_GROUP_MEMBER g WHERE g.PAYMENT_ID = p.PAYMENT_ID)
+                                               AS DEPENDENT_ROWS
+FROM PAYMENT p
+WHERE p.PAYMENT_ID IN ('O17584','O17606');
+
+-- 6b. THE UPDATE. Expect "2 rows affected".
+START TRANSACTION;
+
+UPDATE PAYMENT
+SET AMOUNT                 = 170796.00,
+    ACTUAL_CURRENCY_AMOUNT = 170796.00,
+    LAST_UPDATED_STAMP     = UTC_TIMESTAMP()
+WHERE PAYMENT_ID       = 'O17584'
+  AND PAYMENT_TYPE_ID  = 'COMMISSION_PAYMENT'
+  AND STATUS_ID        = 'PMNT_NOT_PAID'
+  AND AMOUNT           = 204955.00;
+
+UPDATE PAYMENT
+SET AMOUNT                 = 238902.00,
+    ACTUAL_CURRENCY_AMOUNT = 238902.00,
+    LAST_UPDATED_STAMP     = UTC_TIMESTAMP()
+WHERE PAYMENT_ID       = 'O17606'
+  AND PAYMENT_TYPE_ID  = 'COMMISSION_PAYMENT'
+  AND STATUS_ID        = 'PMNT_NOT_PAID'
+  AND AMOUNT           = 249861.00;
+
+-- 6c. VERIFY BEFORE COMMITTING. Both rows must show AMOUNT = NEW_AMOUNT.
+SELECT p.PAYMENT_ID, p.AMOUNT, p.ACTUAL_CURRENCY_AMOUNT, p.STATUS_ID,
+       CAST(CASE p.PAYMENT_ID WHEN 'O17584' THEN 170796
+                              WHEN 'O17606' THEN 238902 END AS DECIMAL(20,2)) AS NEW_AMOUNT
+FROM PAYMENT p WHERE p.PAYMENT_ID IN ('O17584','O17606');
+
+-- 6d. If 6c is right:
+COMMIT;
+-- Otherwise:
+-- ROLLBACK;
 
 
 -- --------------------------------------------------------------------------------------------
@@ -226,6 +280,8 @@ ORDER BY DIFFERENCE DESC;
 --   UPDATE SALES_COMMISSION SET HAS_VAT_EXEMPTION=1, VAT_PERCENT=0,  EXT_COMPANY_NET_AMOUNT=204955.14 WHERE SALES_COMMISSION_ID='11116';
 --   UPDATE SALES_COMMISSION SET HAS_VAT_EXEMPTION=1, VAT_PERCENT=0,  EXT_COMPANY_NET_AMOUNT=249861.15 WHERE SALES_COMMISSION_ID='11119';
 --   UPDATE SALES_COMMISSION SET HAS_VAT_EXEMPTION=1, VAT_PERCENT=14, EXT_COMPANY_NET_AMOUNT=99560.00  WHERE SALES_COMMISSION_ID='11125';
+--   UPDATE PAYMENT SET AMOUNT=204955.00, ACTUAL_CURRENCY_AMOUNT=204955.00 WHERE PAYMENT_ID='O17584';
+--   UPDATE PAYMENT SET AMOUNT=249861.00, ACTUAL_CURRENCY_AMOUNT=249861.00 WHERE PAYMENT_ID='O17606';
 --   UPDATE SALES_COMMISSION SET EXT_COMPANY_TAX_INVOICE_RAISED=0
 --    WHERE SALES_COMMISSION_ID IN ('11116','11117','11118','11119','11120','11121','11122','11123','11124','11125');
 -- ============================================================================================

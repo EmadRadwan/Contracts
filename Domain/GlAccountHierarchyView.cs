@@ -9,5 +9,6 @@ public class GlAccountHierarchyView
     public string? ParentGlAccountId { get; set; }
     public string? AccountCode { get; set; }
     public string? AccountName { get; set; }
+    public string? AccountNameArabic { get; set; }
     public int? Level { get; set; }
 }

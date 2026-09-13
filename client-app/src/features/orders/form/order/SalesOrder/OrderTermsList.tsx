@@ -111,7 +111,7 @@ const OrderTermsList = ({onClose, orderId}: OrderTermsListProps) => {
                             </Button>
                         </Grid>
                     </GridToolbar>
-                    <Column field="termTypeId" title={getTranslatedLabel(`${localizationKey}.type`, "Term Type")} width={220} cell={TermTypeCell} />
+                    <Column field="termTypeId" title={getTranslatedLabel(`${localizationKey}.type`, "Term Type")} width={220} cells={{ data: TermTypeCell }} />
                     <Column field="termDays" title={getTranslatedLabel(`${localizationKey}.days`, "Term Days")} />
                     <Column field="termValue" title={getTranslatedLabel(`${localizationKey}.termValue`, "Term Value")} />
                     <Column field="textValue" title={getTranslatedLabel(`${localizationKey}.textValue`, "Text Value")} />

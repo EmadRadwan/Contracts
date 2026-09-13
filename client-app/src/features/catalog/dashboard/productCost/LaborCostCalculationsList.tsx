@@ -106,7 +106,7 @@ export default function LaborCostCalculationsList({
               >
                 <Column
                   field="workEffortName"
-                  cell={LaborCostCell}
+                  cells={{ data: LaborCostCell }}
                   title="Work Effort"
                   width={150}
                 />

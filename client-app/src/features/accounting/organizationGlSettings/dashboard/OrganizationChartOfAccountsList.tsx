@@ -5,7 +5,7 @@ import {
   GridColumn as Column,
   GridDataStateChangeEvent,
   GridDetailRowProps,
-  GridExpandChangeEvent,
+  GridDetailExpandChangeEvent,
   GridToolbar,
 } from "@progress/kendo-react-grid";
 import Button from "@mui/material/Button";
@@ -86,8 +86,9 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
         <KendoGrid
           data={items}
           detail={DetailComponent}
-          expandField="expanded"
-          onExpandChange={expandChange}
+          dataItemKey="glAccountId"
+          detailExpand={detailExpand}
+          onDetailExpandChange={expandChange}
           resizable={true}
         >
           <GridToolbar>
@@ -99,7 +100,7 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
             field="glAccountId"
             title={getTranslatedLabel("accounting.glAccount.list.accountNumber", "Account Number")}
             width={120}
-            cell={AccountDescriptionCell}
+            cells={{ data: AccountDescriptionCell }}
           />
           <Column field="text" title={getTranslatedLabel("accounting.glAccount.list.accountName", "Account Name")} width={320} />
           <Column
@@ -170,43 +171,9 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
 
 
 
-  const findAndModifyChild = (
-    accountId: string,
-    accounts: GlAccount[],
-    expandedValue: boolean
-  ): GlAccount[] => {
-    return accounts.map((account: GlAccount) => {
-      // If the current account matches the accountId, update its expanded property
-      if (account.glAccountId === accountId) {
-        return { ...account, expanded: expandedValue };
-      }
-      // If the account has children, recursively search and update within the children
-      if (account.items) {
-        return {
-          ...account,
-          items: findAndModifyChild(
-            accountId,
-            account.items,
-            expandedValue
-          ),
-        };
-      }
-      // Return the account unchanged if no match
-      return account;
-    });
-  };
-
-  const expandChange = (event: GridExpandChangeEvent) => {
-    const selectedAccountId = event.dataItem.glAccountId;
-    let modifiedAccounts = findAndModifyChild(
-      selectedAccountId,
-      accounts,
-      event.value
-    );
-    if (modifiedAccounts) {
-      setAccounts(modifiedAccounts);
-    }
-  };
+  // KendoReact v16: detail-row expansion is a descriptor keyed by dataItemKey; the Grid hands back the toggled descriptor
+  const [detailExpand, setDetailExpand] = useState<Record<string, boolean>>({});
+  const expandChange = (event: GridDetailExpandChangeEvent) => setDetailExpand(event.detailExpand);
 
   function handleSelectGlAccount(glAccountId: string) {
     const selectedGlAccount: GlAccount | undefined = data?.data?.find(
@@ -352,8 +319,9 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
               resizable={true}
               sortable={true}
               detail={DetailComponent}
-              expandField="expanded"
-              onExpandChange={expandChange}
+              dataItemKey="glAccountId"
+              detailExpand={detailExpand}
+              onDetailExpandChange={expandChange}
               data={accounts ?? []}
               reorderable={true}
             >
@@ -371,7 +339,7 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
                 field="glAccountId"
                 title={getTranslatedLabel("accounting.glAccount.list.accountNumber", "Account Number")}
                 width={120}
-                cell={AccountDescriptionCell}
+                cells={{ data: AccountDescriptionCell }}
               />
               <Column field="text" title={getTranslatedLabel("accounting.glAccount.list.accountName", "Account Name")} width={400} />
               <Column
@@ -400,7 +368,7 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
                   field="glAccountId"
                   title={getTranslatedLabel("accounting.glAccount.list.accountNumber", "Account Number")}
                   width={120}
-                  cell={AccountDescriptionCell}
+                  cells={{ data: AccountDescriptionCell }}
                 />
                 <Column field="accountName" title={getTranslatedLabel("accounting.glAccount.list.accountName", "Account Name")} width={400} />
                 <Column
@@ -413,7 +381,7 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
                 <Column field="glSubClassDescription" title={getTranslatedLabel("accounting.glAccount.list.subClass", "Sub Class")} width={180} />
                 <Column field="glSubClass2Description" title={getTranslatedLabel("accounting.glAccount.list.subClass2", "Sub Class 2")} width={180} />
                 <Column field="glAccountCourseLabelDescription" title={getTranslatedLabel("accounting.glAccount.list.courseLabel", "Course Label")} width={180} />
-                <Column cell={CreateSimilarAccountCell} width={170} locked={true} />
+                <Column cells={{ data: CreateSimilarAccountCell }} width={170} locked={true} />
 
               </KendoGrid>
             </Grid>

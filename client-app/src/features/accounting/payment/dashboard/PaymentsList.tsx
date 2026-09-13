@@ -337,7 +337,7 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     {
       field: "paymentId",
       title: getTranslatedLabel(`${localizationKey}.paymentId`, "Payment Number"),
-      cell: PaymentDescriptionCell,
+      cells: { data: PaymentDescriptionCell },
       width: 150,
       locked: !show,
     },
@@ -394,7 +394,7 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
       title: getTranslatedLabel(`${localizationKey}.isBankTransfer`, "Bank Transfer"),
       width: 120,
       filter: "boolean",
-      cell: BankTransferCell,
+      cells: { data: BankTransferCell },
     },
     {
       field: "chequeNumber",
@@ -405,7 +405,7 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
       field: "dueStatusArabic",
       title: getTranslatedLabel(`${localizationKey}.dueStatus`, "Due Status"),
       width: 260,
-      cell: DueStatusCell,
+      cells: { data: DueStatusCell },
     },
   ];
 
@@ -537,7 +537,7 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     {
       title: getTranslatedLabel(`${localizationKey}.actions`, "Actions"),
       width: 220,
-      cell: ActionsCell,
+      cells: { data: ActionsCell },
     },
   ];
 

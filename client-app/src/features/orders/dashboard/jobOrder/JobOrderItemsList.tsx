@@ -369,14 +369,14 @@ export default function JobOrderItemsList({
                             <Column
                                 field="productName"
                                 title="Product"
-                                cell={orderItemCell}
+                                cells={{ data: orderItemCell }}
                                 width={300}
                             />
                             <Column field="orderItemSeqId" title="orderItemSeqId" width={0}/>
                             <Column field="unitListPrice" title="List Price" width={110}/>
                             <Column field="quantity" title="Quantity" width={120}/>
                             <Column
-                                cell={ItemAdjustmentCommandCell}
+                                cells={{ data: ItemAdjustmentCommandCell }}
                                 title="Adjustments"
                                 width={150}
                             />
@@ -386,7 +386,7 @@ export default function JobOrderItemsList({
                                 width={120}
                                 format="{0:c}"
                             />
-                            <Column cell={CommandCell} width="100px"/>
+                            <Column cells={{ data: CommandCell }} width="100px"/>
                         </KendoGrid>
                     </div>
                 </Grid>

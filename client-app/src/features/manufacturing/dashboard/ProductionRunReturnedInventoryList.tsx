@@ -223,9 +223,9 @@ const ProductionRunReturnedInventoryList = ({productionRunId}: Props) => {
                                 field="productName"
                                 title={getTranslatedLabel("manufacturing.return.product", "Product")}
                                 width={200}
-                                cell={(props) => (
+                                cells={{ data: (props) => (
                                     <td>{`${props.dataItem.productName}`}</td>
-                                )}
+                                ) }}
                             />
                             <Column
                                 field="estimatedQuantity"
@@ -256,9 +256,9 @@ const ProductionRunReturnedInventoryList = ({productionRunId}: Props) => {
                                 field="includeThisItem"
                                 title={getTranslatedLabel("manufacturing.return.include", "Include")}
                                 width={100}
-                                cell={IncludeCell}
+                                cells={{ data: IncludeCell }}
                             />
-                            <Column width={100} cell={EditCell}/>
+                            <Column width={100} cells={{ data: EditCell }}/>
                         </KendoGrid>
                     </Grid>
                 </Grid>

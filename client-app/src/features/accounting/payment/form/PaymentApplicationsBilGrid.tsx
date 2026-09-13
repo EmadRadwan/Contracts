@@ -34,13 +34,13 @@ const PaymentApplicationsBilGrid: React.FC<PaymentApplicationGridProps> = ({
                         field="amountApplied"
                         title={getTranslatedLabel(`${localizationKey}.amountApplied`, "Amount Applied")}
                         format="{0:c}"
-                        cell={(props) => (
+                        cells={{ data: (props) => (
                             <td>{props.dataItem.amountApplied.toFixed(2)} {payment?.currencyUomId}</td>
-                        )}
+                        ) }}
                     />
                     <GridColumn
                         title={getTranslatedLabel("general.actions", "Actions")}
-                        cell={(props) => (
+                        cells={{ data: (props) => (
                             <td>
                                 <Button
                                     variant="outlined"
@@ -52,7 +52,7 @@ const PaymentApplicationsBilGrid: React.FC<PaymentApplicationGridProps> = ({
                                     {getTranslatedLabel("general.remove", "Remove")}
                                 </Button>
                             </td>
-                        )}
+                        ) }}
                     />
                 </KendoGrid>
             </div>

@@ -84,7 +84,7 @@ const FacilityLocationsList = () => {
                 </Grid>
             </GridToolbar>
 
-            <Column field="facilityName" title="Facility Name" cell={FacilityNameCell} width={280}
+            <Column field="facilityName" title="Facility Name" cells={{ data: FacilityNameCell }} width={280}
                     locked={true}/>
             <Column field="locationTypeEnumDescription" title="Location Type" width={200}/>
             <Column field="areaId" title="Area Id" />

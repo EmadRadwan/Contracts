@@ -1,4 +1,4 @@
-import React, {useMemo, useState } from 'react';
+import {useMemo, useState } from 'react';
 import {
     Grid as KendoGrid,
     GridColumn as Column,
@@ -14,6 +14,10 @@ import LoadingComponent from '../../../../app/layout/LoadingComponent';
 
 import { useFetchBalanceSheetGlAccountTransactionDetailsQuery } from "../../../../app/store/apis/accounting/accountingReportsApi";
 import { GlAccountTransactionsExcel } from "../report/GlAccountTransactionsExcel";
+import { createStyledRow } from "../../../../app/common/grid";
+
+// Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
+const DebitCreditRow = createStyledRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag === 'D' ? 'rgba(55, 180, 0, 0.15)' : '#ffffff' }));
 
 interface Props {
     onClose: () => void;
@@ -104,14 +108,6 @@ export default function BalanceSheetGlAccountTransactionsModal({
         setPage(event.page);
     };
 
-    const rowRender = (trElement: React.ReactElement, props: any) => {
-        const isDebit = props.dataItem.debitCreditFlag === 'D';
-        const style = {
-            backgroundColor: isDebit ? 'rgba(55, 180, 0, 0.15)' : '#ffffff'
-        };
-        return React.cloneElement(trElement, { style }, trElement.props.children);
-    };
-
     return (
         <ModalContainer show={true} onClose={onClose} width={1280}>
             <Box sx={{ p: 3 }}>
@@ -180,7 +176,7 @@ export default function BalanceSheetGlAccountTransactionsModal({
                                 take={page.take}
                                 total={transactions.length}
                                 onPageChange={pageChange}
-                                rowRender={rowRender}
+                                rows={{ data: DebitCreditRow }}
                                 resizable={true}
                             >
                                 <GridToolbar>

@@ -124,7 +124,7 @@ export default function FacilitiesList() {
                         </Grid>
                     </GridToolbar>
 
-                    <Column field="facilityName" title={getTranslatedLabel("facility.facilities.list.name", "Facility Name")} cell={FacilityNameCell} width={300}
+                    <Column field="facilityName" title={getTranslatedLabel("facility.facilities.list.name", "Facility Name")} cells={{ data: FacilityNameCell }} width={300}
                             locked={true}/>
                     <Column field="facilityTypeDescription" title={getTranslatedLabel("facility.facilities.list.type", "Facility Type")} />
 

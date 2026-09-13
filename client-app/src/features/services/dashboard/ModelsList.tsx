@@ -156,7 +156,7 @@ export default function ModelsList() {
                                     />
                                     <Column field="modelDescription"
                                             title="Model"
-                                            cell={ModelDescriptionCell}
+                                            cells={{ data: ModelDescriptionCell }}
                                     />
                                     <Column field="makeId"
                                             title="Make"

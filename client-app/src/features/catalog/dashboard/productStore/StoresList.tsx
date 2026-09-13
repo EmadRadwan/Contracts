@@ -145,7 +145,7 @@ export default function StoresList() {
 
                                         </GridToolbar>
                                         <Column field="fixedAssetName" title={getTranslatedLabel("product.stores.list.name", "Fixed Asset Name")}
-                                                cell={FinancialAccountCell}
+                                                cells={{ data: FinancialAccountCell }}
                                                 locked={true}/>
                                         <Column field="payToPartyName" title={getTranslatedLabel("product.stores.list.party", "Pay to Party")} />
                                         <Column field="inventoryFacilityName" title={getTranslatedLabel("product.stores.list.facility", "Inventory Facility")} />

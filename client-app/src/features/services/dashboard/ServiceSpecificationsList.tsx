@@ -177,7 +177,7 @@ export default function ServiceSpecificationsList() {
                                     />
                                     <Column field="productName"
                                             title="Service"
-                                            cell={ServiceSpecificationDescriptionCell} 
+                                            cells={{ data: ServiceSpecificationDescriptionCell }} 
                                             locked={true}/>
                                     <Column field="makeDescription" title="Make" />
                                     <Column field="modelDescription" title="Model" />

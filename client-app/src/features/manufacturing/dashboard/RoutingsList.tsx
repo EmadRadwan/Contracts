@@ -139,7 +139,7 @@ function RoutingsList() {
                                         "manufacturing.routings.list.routingId",
                                         "Routing Id"
                                     )}
-                                    cell={RoutingIdCell}
+                                    cells={{ data: RoutingIdCell }}
                                     width={200}
                                     locked={true}
                                 />

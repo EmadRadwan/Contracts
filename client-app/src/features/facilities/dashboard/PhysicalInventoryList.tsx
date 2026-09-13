@@ -149,7 +149,7 @@ const PhysicalInventoryList = () => {
                   <Column field="itemQOH" title={getTranslatedLabel("facility.physical.itemQOH", "Item QOH")} />
                   <Column field="productATP" title={getTranslatedLabel("facility.physical.productATP", "Product ATP")} />
                   <Column field="productQOH" title={getTranslatedLabel("facility.physical.productQOH", "Product QOH")} />
-                  <Column cell={CommandCell} />
+                  <Column cells={{ data: CommandCell }} />
                 </KendoGrid>
                 {isFetching && (
                   <LoadingComponent message={getTranslatedLabel("facility.physical.loading", "Loading Physical Inventory...")} />

@@ -17436,6 +17436,9 @@ namespace Persistence.Migrations
                     b.Property<string>("AccountName")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("AccountNameArabic")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("GlAccountClassId")
                         .HasColumnType("longtext");
 

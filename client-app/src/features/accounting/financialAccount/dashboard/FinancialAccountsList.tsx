@@ -123,7 +123,7 @@ const FinancialAccountsList = () => {
                                             </Grid>
                                         </GridToolbar>
                                         <Column field="finAccountId" title="Fin Account"
-                                                cell={FinancialAccountCell} width={220}
+                                                cells={{ data: FinancialAccountCell }} width={220}
                                                 locked={true}/>
                                         <Column field="availableBalance" title="Available Balance" />
                                         <Column field="actualBalance" title="Actual Balance" />

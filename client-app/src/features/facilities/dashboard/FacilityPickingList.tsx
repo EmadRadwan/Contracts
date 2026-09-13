@@ -118,7 +118,7 @@ const FacilityPickingList = () => {
                 <Column field="orderId" title="Order" />
                 <Column field="readyToPick" title="Ready to pick" />
                 <Column field="needStockMove" title="Need stock move" />
-                <Column cell={CreatPicklistCell} />
+                <Column cells={{ data: CreatPicklistCell }} />
               </KendoGrid>
             </div>
           </Grid>

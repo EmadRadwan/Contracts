@@ -132,7 +132,7 @@ export default function ProductPricesList() {
                                 <Column
                                     field="productPriceTypeDescription"
                                     title={getTranslatedLabel(`${localizationKey}.type`, 'Price Type')}
-                                    cell={productPriceCell}
+                                    cells={{ data: productPriceCell }}
                                     width={300}
                                 />
                                 <Column

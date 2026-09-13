@@ -185,7 +185,7 @@ function QuoteItemAdjustmentsList({
                             <Column
                                 field="quoteAdjustmentTypeDescription"
                                 title="Adjustment Type"
-                                cell={quoteAdjustmentCell}
+                                cells={{ data: quoteAdjustmentCell }}
                                 width={150}
                             />
                             <Column field="quoteId" title="quoteId" width={0}/>
@@ -200,7 +200,7 @@ function QuoteItemAdjustmentsList({
                                 title="Percentage"
                                 width={140}
                             />
-                            <Column cell={CommandCell} width="100px"/>
+                            <Column cells={{ data: CommandCell }} width="100px"/>
                         </KendoGrid>
                     </div>
                 </Grid>

@@ -187,14 +187,14 @@ export default function OrderAdjustmentsList({ onClose }: Props) {
               <Column
                 field="orderAdjustmentTypeDescription"
                 title={getTranslatedLabel(`${localizationKey}.type`, "Adjustment Type")}
-                cell={orderAdjustmentCell}
+                cells={{ data: orderAdjustmentCell }}
                 width={140}
               />
               <Column field="amount" title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")} width={130} />
               <Column field="description" title={getTranslatedLabel(`${localizationKey}.description`, "Description")} width={140} />
               <Column field="sourcePercentage" title={getTranslatedLabel(`${localizationKey}.percentage`, "Percentage")} width={150} />
               <Column field="isManual" title={getTranslatedLabel(`${localizationKey}.userEntered`, "User Entered")} width={110} />
-              <Column cell={CommandCell} width="100px" />
+              <Column cells={{ data: CommandCell }} width="100px" />
             </KendoGrid>
           </div>
         </Grid>

@@ -248,7 +248,7 @@ export default function ListRoutingTaskCosts() {
                                 <Column
                                     field="costComponentCalcId"
                                     title={labels.costComponentCalc}
-                                    cell={CostCalcNameCell}
+                                    cells={{ data: CostCalcNameCell }}
                                     width={400}
                                 />
                                 <Column
@@ -268,7 +268,7 @@ export default function ListRoutingTaskCosts() {
                                     format="{0:yyyy-MM-dd}"
                                     width={180}
                                 />
-                                <Column title=" " cell={DeleteCell} width={100} />
+                                <Column title=" " cells={{ data: DeleteCell }} width={100} />
                             </KendoGrid>
                             {(isCostCalcsFetching || isWorkEffortFetching) && (
                                 <LoadingComponent message={labels.loading} />

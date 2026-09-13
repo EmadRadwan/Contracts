@@ -118,7 +118,7 @@ function RoutingTasksList() {
                     <Column
                         field="workEffortId"
                         title={getTranslatedLabel(`${localizationKey}.taskId`, "Task Id")}
-                        cell={RoutingIdCell}
+                        cells={{ data: RoutingIdCell }}
                         width={250}
                         locked={true}
                     />

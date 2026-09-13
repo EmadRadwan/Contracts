@@ -130,7 +130,7 @@ const PaymentMethodTypeList = () => {
                                     <Column
                                         field="defaultGlAccountId"
                                         title="Default Gl Account Id"
-                                        cell={PaymentMethodUpdateCell}
+                                        cells={{ data: PaymentMethodUpdateCell }}
                                         // width={200}
                                     />
                                 </KendoGrid>

@@ -309,7 +309,7 @@ export default function MultiPaymentCertificatesList() {
                                     field="workEffortId"
                                     title={getTranslatedLabel(`${localizationKey}.workEffortId`, "Certificate ID")}
                                     width={columnWidths.workEffortId}
-                                    cell={CertificateNumberCell}
+                                    cells={{ data: CertificateNumberCell }}
                                 />
                                 <Column
                                     field="date"
@@ -358,7 +358,7 @@ export default function MultiPaymentCertificatesList() {
                                 <Column
                                     title={getTranslatedLabel(`${localizationKey}.actions`, "Actions")}
                                     width={220}
-                                    cell={ActionsCell}
+                                    cells={{ data: ActionsCell }}
                                     locked={true}
                                 />
 

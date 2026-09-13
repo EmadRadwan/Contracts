@@ -155,7 +155,7 @@ export default function MakesList() {
                                         />
                                         <Column field="makeDescription"
                                                 title="Make"
-                                                cell={MakeDescriptionCell}
+                                                cells={{ data: MakeDescriptionCell }}
                                         />
                                     </KendoGrid>
                                 </ExcelExport>

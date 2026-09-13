@@ -1,0 +1,672 @@
+<title>Phase Two Business Case</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<style>
+:root{
+  --paper:#F4F6F9; --surface:#FFFFFF; --surface-2:#EAEEF4;
+  --ink:#141A22; --ink-2:#4A5665; --ink-3:#78838F;
+  --rule:#DBE1E9; --rule-strong:#C0C9D4;
+  --accent:#1B4FA8; --accent-soft:#E6EDFA;
+  --brass:#8A6210;
+  --built:#24654A; --built-soft:#E0EDE6;
+  --partial:#8F5D0B; --partial-soft:#F4EAD7;
+  --neutral-soft:#E7EBF1;
+  --serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --arabic:"IBM Plex Sans Arabic","Segoe UI",Tahoma,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E1218; --surface:#141A22; --surface-2:#1A212B;
+    --ink:#E6EBF2; --ink-2:#9BA7B5; --ink-3:#79848F;
+    --rule:#232B35; --rule-strong:#333D4A;
+    --accent:#83AAEF; --accent-soft:#182233;
+    --brass:#D0A44E;
+    --built:#74C4A0; --built-soft:#152A22;
+    --partial:#DDA84F; --partial-soft:#2B2214;
+    --neutral-soft:#1E2530;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E1218; --surface:#141A22; --surface-2:#1A212B;
+  --ink:#E6EBF2; --ink-2:#9BA7B5; --ink-3:#79848F;
+  --rule:#232B35; --rule-strong:#333D4A;
+  --accent:#83AAEF; --accent-soft:#182233;
+  --brass:#D0A44E;
+  --built:#74C4A0; --built-soft:#152A22;
+  --partial:#DDA84F; --partial-soft:#2B2214;
+  --neutral-soft:#1E2530;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+body.ar{font-family:var(--arabic)}
+.wrap{max-width:1060px;margin:0 auto;padding:0 24px 96px}
+
+/* ---------- masthead ---------- */
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;
+  padding:28px 0 0;flex-wrap:wrap}
+.eyebrow{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:600}
+body.ar .eyebrow{letter-spacing:normal;text-transform:none;font-size:12.5px}
+.langbar{display:flex;gap:0;border:1px solid var(--rule-strong);border-radius:2px;overflow:hidden}
+.langbar button{font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.06em;
+  padding:6px 13px;background:var(--surface);color:var(--ink-2);border:0;cursor:pointer;
+  transition:background .15s,color .15s}
+.langbar button+button{border-inline-start:1px solid var(--rule-strong)}
+.langbar button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.langbar button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(30px,4.4vw,46px);
+  line-height:1.12;margin:18px 0 0;text-wrap:balance;letter-spacing:-.015em}
+body.ar h1{font-family:var(--arabic);font-weight:600;letter-spacing:0;line-height:1.35}
+.standfirst{font-size:18px;line-height:1.6;color:var(--ink-2);max-width:64ch;margin:14px 0 0}
+.provenance{margin-top:18px;padding-top:14px;border-top:1px solid var(--rule);
+  font-size:13px;color:var(--ink-3);max-width:70ch}
+
+/* ---------- tallies ---------- */
+.tallies{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule);
+  border:1px solid var(--rule);margin:32px 0 0}
+.tally{background:var(--surface);padding:16px 18px}
+.tally .n{font-family:var(--serif);font-size:30px;font-weight:600;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--ink)}
+body.ar .tally .n{font-family:var(--arabic)}
+.tally .l{font-size:12.5px;color:var(--ink-3);margin-top:7px;line-height:1.35}
+
+/* ---------- themes / argument ---------- */
+.section-head{margin:56px 0 0}
+.section-head h2{font-family:var(--serif);font-size:23px;font-weight:600;margin:0;
+  letter-spacing:-.01em}
+body.ar .section-head h2{font-family:var(--arabic)}
+.section-head p{color:var(--ink-2);font-size:15.5px;max-width:68ch;margin:9px 0 0}
+
+.themes{display:grid;grid-template-columns:repeat(2,1fr);gap:22px 34px;margin-top:24px}
+.theme{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start}
+.theme .mark{width:30px;height:30px;border-radius:50%;background:var(--accent-soft);
+  color:var(--accent);display:grid;place-items:center;font-size:13px;font-weight:600;
+  font-variant-numeric:tabular-nums}
+.theme h3{font-size:15.5px;margin:4px 0 0;font-weight:600}
+.theme p{font-size:14.5px;color:var(--ink-2);margin:5px 0 0;line-height:1.55}
+.theme .refs{font-size:12px;color:var(--ink-3);margin-top:6px;letter-spacing:.02em}
+
+/* ---------- register ---------- */
+.module{margin-top:52px}
+.module-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+  padding-bottom:10px;border-bottom:2px solid var(--ink);flex-wrap:wrap}
+.module-head h2{font-family:var(--serif);font-size:21px;font-weight:600;margin:0}
+body.ar .module-head h2{font-family:var(--arabic)}
+.module-head .count{font-size:12.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+
+.row{display:grid;grid-template-columns:52px minmax(0,1fr) minmax(0,1.25fr) 120px;
+  gap:22px;padding:20px 0;border-bottom:1px solid var(--rule);align-items:start}
+.row:last-child{border-bottom:1px solid var(--rule-strong)}
+.src{font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums;
+  letter-spacing:.04em;padding-top:3px;white-space:nowrap}
+.req{font-size:15.5px;font-weight:500;line-height:1.45;color:var(--ink)}
+.val{font-size:15px;color:var(--ink-2);line-height:1.6;
+  padding-inline-start:16px;border-inline-start:1px solid var(--rule)}
+.meta{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.chip{font-size:11px;font-weight:600;letter-spacing:.03em;padding:3px 8px;border-radius:2px;
+  white-space:nowrap}
+body.ar .chip{letter-spacing:0}
+.chip.now{background:var(--accent);color:#fff}
+.chip.next{background:var(--accent-soft);color:var(--accent)}
+.chip.later{background:var(--neutral-soft);color:var(--ink-3)}
+.chip.built{background:var(--built-soft);color:var(--built)}
+.chip.partial{background:var(--partial-soft);color:var(--partial)}
+.effort{font-size:11.5px;color:var(--ink-3);display:flex;align-items:center;gap:6px}
+.effort b{font-family:var(--serif);font-weight:600;font-size:13px;color:var(--brass)}
+body.ar .effort b{font-family:var(--arabic)}
+
+/* ---------- legend + close ---------- */
+.legend{margin-top:34px;padding:18px 20px;background:var(--surface);border:1px solid var(--rule);
+  display:flex;flex-wrap:wrap;gap:10px 26px;font-size:13px;color:var(--ink-2);align-items:center}
+.legend .item{display:flex;align-items:center;gap:8px}
+
+.close{margin-top:60px;padding:30px 32px;background:var(--surface);border:1px solid var(--rule-strong)}
+.close h2{font-family:var(--serif);font-size:23px;margin:0 0 12px;font-weight:600}
+body.ar .close h2{font-family:var(--arabic)}
+.close p{color:var(--ink-2);max-width:70ch;margin:0 0 16px;font-size:15.5px}
+.startlist{list-style:none;padding:0;margin:18px 0 0;display:grid;
+  grid-template-columns:repeat(2,1fr);gap:8px 28px}
+.startlist li{font-size:14.5px;padding:7px 0;border-top:1px solid var(--rule);
+  display:flex;gap:10px;align-items:baseline}
+.startlist .tag{font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums;
+  min-width:34px;letter-spacing:.04em}
+
+footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--rule);
+  font-size:12.5px;color:var(--ink-3);max-width:74ch}
+footer p{margin:0 0 8px}
+
+/* ---------- language visibility ---------- */
+.ar-only{display:none}
+body.ar .en-only{display:none}
+body.ar .ar-only{display:initial}
+body.ar .theme .ar-only,body.ar .row .ar-only{display:block}
+
+@media screen and (max-width:820px){
+  .tallies{grid-template-columns:repeat(2,1fr)}
+  .themes{grid-template-columns:1fr}
+  .startlist{grid-template-columns:1fr}
+  .row{grid-template-columns:1fr;gap:10px;padding:22px 0}
+  .val{padding-inline-start:0;border-inline-start:0;padding-top:2px}
+  .meta{flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ---------- print ---------- */
+@page{size:A4;margin:14mm 13mm 15mm}
+@media print{
+  :root{--paper:#fff;--surface:#fff;--surface-2:#F2F5F8;--ink:#0F1319;--ink-2:#3D4854;
+    --ink-3:#6B7682;--rule:#D6DCE4;--rule-strong:#A9B4C0;--accent:#164493;--accent-soft:#E6EDFA}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{background:#fff;font-size:10.5pt}
+  .wrap{max-width:none;padding:0}
+  .langbar{display:none}
+  h1{font-size:26pt}
+  .standfirst{font-size:12pt}
+  .tallies{break-inside:avoid}
+  .section-head{margin-top:26px}
+  .theme,.row,.tally,.close{break-inside:avoid}
+  .module{margin-top:26px;break-inside:auto}
+  .module-head{break-after:avoid}
+  .close{break-before:page}
+  footer{break-inside:avoid}
+  .row{grid-template-columns:46px minmax(0,1fr) minmax(0,1.2fr) 104px;gap:14px;padding:13px 0}
+  .themes{grid-template-columns:repeat(2,1fr);gap:18px 26px}
+  .startlist{grid-template-columns:repeat(2,1fr)}
+  a{color:var(--accent);text-decoration:none}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="top">
+      <div class="eyebrow">
+        <span class="en-only">Golden Land &middot; ERP Phase Two</span>
+        <span class="ar-only">جولدن لاند &middot; المرحلة الثانية من النظام</span>
+      </div>
+      <div class="langbar" role="group" aria-label="Language">
+        <button type="button" id="btn-en" aria-pressed="true">EN</button>
+        <button type="button" id="btn-ar" aria-pressed="false">ع</button>
+      </div>
+    </div>
+
+    <h1>
+      <span class="en-only">What phase two buys, and why each item is worth paying for</span>
+      <span class="ar-only">ماذا تشتري المرحلة الثانية، ولماذا يستحق كل بند ما يُدفع فيه</span>
+    </h1>
+
+    <p class="standfirst">
+      <span class="en-only">Forty-two requests came back from the people who use the system every day.
+      This document restates each one in the only terms that matter to the person funding it: what it
+      costs the business today, and what changes the day it ships.</span>
+      <span class="ar-only">اثنان وأربعون طلبًا وردت ممن يستخدمون النظام يوميًا. تعيد هذه الوثيقة صياغة
+      كل طلب منها بالمعيار الوحيد الذي يهمّ من يموّله: ماذا يكلّف الشركة اليوم، وما الذي يتغيّر يوم تسليمه.</span>
+    </p>
+
+    <p class="provenance">
+      <span class="en-only">Compiled from the client's six-page handwritten list dated 29 July 2026.
+      Page references below point back to that original so any item can be checked against the handwriting.</span>
+      <span class="ar-only">مجمّعة من قائمة العميل المكتوبة بخط اليد في ست صفحات بتاريخ ٢٩ يوليو ٢٠٢٦.
+      وأرقام الصفحات أدناه تشير إلى الأصل ليتسنى مراجعة أي بند على النص المكتوب.</span>
+    </p>
+
+    <div class="tallies" id="tallies"></div>
+  </header>
+
+  <section class="section-head">
+    <h2>
+      <span class="en-only">These are not forty-two problems. They are four.</span>
+      <span class="ar-only">ليست اثنين وأربعين مشكلة. بل أربع.</span>
+    </h2>
+    <p>
+      <span class="en-only">Read as a list, phase two looks like a long bill of small features. Read by
+      what each item is actually fixing, it collapses into four recurring costs the company is paying
+      right now, every week, without the costs appearing anywhere in the accounts.</span>
+      <span class="ar-only">إذا قُرئت المرحلة الثانية كقائمة بدت فاتورة طويلة من مزايا صغيرة. أما إذا
+      قُرئت بحسب ما يعالجه كل بند فعليًا، فهي تعود إلى أربع تكاليف متكررة تدفعها الشركة الآن، كل أسبوع،
+      دون أن تظهر في أي بند من بنود الحسابات.</span>
+    </p>
+
+    <div class="themes">
+      <div class="theme">
+        <div class="mark"><span class="en-only">1</span><span class="ar-only">١</span></div>
+        <div>
+          <h3><span class="en-only">Work that is done twice</span><span class="ar-only">عمل يُؤدّى مرتين</span></h3>
+          <p><span class="en-only">The system has no way to amend, so staff delete and re-enter. One late
+          change to a payroll run means re-keying every employee. One date change on a sales request destroys
+          the whole instalment schedule. This is the largest hidden labour cost in the list.</span>
+          <span class="ar-only">لا يتيح النظام التعديل، فيلجأ الموظفون إلى الحذف وإعادة الإدخال. تغيير واحد
+          متأخر في مسيّر الرواتب يعني إعادة إدخال كل الموظفين، وتغيير تاريخ واحد في طلب مبيعات يهدم جدول
+          الدفعات بالكامل. وهذه أكبر تكلفة عمالة مستترة في القائمة.</span></p>
+          <div class="refs"><span class="en-only">Payroll 2 &middot; Sales 2, 3 &middot; Vouchers 1, 4</span><span class="ar-only">الرواتب ٢ &middot; المبيعات ٢ و٣ &middot; السندات ١ و٤</span></div>
+        </div>
+      </div>
+
+      <div class="theme">
+        <div class="mark"><span class="en-only">2</span><span class="ar-only">٢</span></div>
+        <div>
+          <h3><span class="en-only">Money that moves unwatched</span><span class="ar-only">أموال تتحرك دون رقابة</span></h3>
+          <p><span class="en-only">There is no approval queue, no ceiling on what a contractor can be
+          certified for, and no budget-against-actual per project. Overpayment is discoverable only after
+          the project closes, which is after the money has left.</span>
+          <span class="ar-only">لا توجد قائمة اعتمادات، ولا سقف لما يمكن اعتماده لمقاول، ولا مقارنة بين
+          الموازنة والفعلي لكل مشروع. ولا يُكتشف تجاوز الصرف إلا بعد إقفال المشروع، أي بعد خروج المال.</span></p>
+          <div class="refs"><span class="en-only">Vouchers 7, 8 &middot; Journal 2 &middot; Certificates 1, 3, 4</span><span class="ar-only">السندات ٧ و٨ &middot; القيود ٢ &middot; المستخلصات ١ و٣ و٤</span></div>
+        </div>
+      </div>
+
+      <div class="theme">
+        <div class="mark"><span class="en-only">3</span><span class="ar-only">٣</span></div>
+        <div>
+          <h3><span class="en-only">Cash that arrives late</span><span class="ar-only">تحصيل يصل متأخرًا</span></h3>
+          <p><span class="en-only">Instalment reminders are manual, post-dated cheques live outside the
+          system, and a customer's true balance is wrong whenever money was taken before contracting.
+          Every one of these delays collection rather than losing it &mdash; which is precisely what makes
+          them worth fixing.</span>
+          <span class="ar-only">تذكير الأقساط يدوي، والشيكات الآجلة خارج النظام، ورصيد العميل يظهر خاطئًا
+          كلما حُصّلت مبالغ قبل التعاقد. وكل ذلك يؤخّر التحصيل ولا يُضيعه &mdash; وهذا بالضبط ما يجعل
+          معالجته مجدية.</span></p>
+          <div class="refs"><span class="en-only">Sales 1, 7 &middot; System 5 &middot; Vouchers 3</span><span class="ar-only">المبيعات ١ و٧ &middot; النظام ٥ &middot; السندات ٣</span></div>
+        </div>
+      </div>
+
+      <div class="theme">
+        <div class="mark"><span class="en-only">4</span><span class="ar-only">٤</span></div>
+        <div>
+          <h3><span class="en-only">Paper that fights back</span><span class="ar-only">مخرجات ورقية تقاوم مستخدمها</span></h3>
+          <p><span class="en-only">Almost every printing complaint says the same thing: the layout has to be
+          fixed by hand before it can be printed. It is the most repeated item in the whole list, and the
+          cheapest hour of the working day to give back.</span>
+          <span class="ar-only">كل شكاوى الطباعة تقريبًا تقول الشيء نفسه: لا بد من ضبط التنسيق يدويًا قبل
+          الطباعة. وهو البند الأكثر تكرارًا في القائمة كلها، وأرخص ساعة عمل يمكن استردادها يوميًا.</span></p>
+          <div class="refs"><span class="en-only">System 6, 10 &middot; Vouchers 6 &middot; Payroll 6</span><span class="ar-only">النظام ٦ و١٠ &middot; السندات ٦ &middot; الرواتب ٦</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="legend">
+    <span class="item"><span class="chip now">&nbsp;</span>
+      <span class="en-only">Start now</span><span class="ar-only">يبدأ الآن</span></span>
+    <span class="item"><span class="chip next">&nbsp;</span>
+      <span class="en-only">Next</span><span class="ar-only">التالي</span></span>
+    <span class="item"><span class="chip later">&nbsp;</span>
+      <span class="en-only">Later</span><span class="ar-only">لاحقًا</span></span>
+    <span class="item"><span class="chip partial">&nbsp;</span>
+      <span class="en-only">Foundations already in the system</span><span class="ar-only">أساسه قائم في النظام</span></span>
+    <span class="item"><span class="chip built">&nbsp;</span>
+      <span class="en-only">Delivered since the list was written</span><span class="ar-only">منجز بعد كتابة القائمة</span></span>
+    <span class="item"><b style="font-family:var(--serif);color:var(--brass)">S / M / L</b>
+      <span class="en-only">build size</span><span class="ar-only">حجم التنفيذ: صغير / متوسط / كبير</span></span>
+  </div>
+
+  <main id="register"></main>
+
+  <section class="close">
+    <h2><span class="en-only">Where I would start</span><span class="ar-only">من أين أبدأ</span></h2>
+    <p>
+      <span class="en-only">These fourteen carry the weight of all four costs above, and none of them
+      depends on the rest of the list being funded. Taken together they stop the rework, put a visible
+      approval in front of money leaving the company, and make a project's profit readable while it can
+      still be changed.</span>
+      <span class="ar-only">هذه البنود الأربعة عشر تحمل ثقل التكاليف الأربع السابقة، ولا يتوقف أي منها على
+      تمويل بقية القائمة. وهي مجتمعة توقف إعادة العمل، وتضع اعتمادًا ظاهرًا أمام أي مال يخرج من الشركة،
+      وتجعل ربح المشروع مقروءًا وهو ما زال قابلًا للتعديل.</span>
+    </p>
+    <ul class="startlist" id="startlist"></ul>
+  </section>
+
+  <footer>
+    <p><span class="en-only"><b>On the source.</b> The original is handwritten and a few marginal notes are
+    genuinely ambiguous &mdash; the annotation beside post-dated cheques on page 1, the boundary between
+    the payroll and advances items on page 4, and the final line on page 6. Those three are transcribed as
+    read and should be confirmed with the user before any of them is priced.</span>
+    <span class="ar-only"><b>عن المصدر.</b> الأصل مكتوب بخط اليد، وبعض الملاحظات الهامشية غير قاطعة
+    &mdash; التعليق المجاور للشيكات الآجلة في الصفحة الأولى، والفاصل بين بنود الرواتب والسلف في الصفحة
+    الرابعة، والسطر الأخير في الصفحة السادسة. وقد نُقلت هذه الثلاثة كما قُرئت، ويُستحسن مراجعتها مع
+    المستخدم قبل تسعير أي منها.</span></p>
+    <p><span class="en-only">Build sizes are relative effort, not price: S is days, M is a week or two,
+    L is a month or more of development. Items marked as having foundations already in the system are
+    cheaper than their size suggests.</span>
+    <span class="ar-only">أحجام التنفيذ تعبّر عن الجهد النسبي لا عن السعر: «صغير» أيام، و«متوسط» أسبوع أو
+    اثنان، و«كبير» شهر أو أكثر من التطوير. والبنود التي أساسها قائم في النظام أقل كلفة مما يوحي به حجمها.</span></p>
+  </footer>
+</div>
+
+<script>
+const AR_DIGITS = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+const toAr = n => String(n).split('').map(c => AR_DIGITS[+c] ?? c).join('');
+
+const MODULES = [
+  {key:'sys',  en:'Reports and the system as a whole', ar:'التقارير والنظام ككل'},
+  {key:'vou',  en:'Payment vouchers — disbursement and receipt', ar:'سندات الصرف والقبض'},
+  {key:'jrn',  en:'Journal entries', ar:'القيود اليومية'},
+  {key:'pay',  en:'Payroll and staff advances', ar:'الرواتب والسلف'},
+  {key:'sal',  en:'Sales', ar:'المبيعات'},
+  {key:'cer',  en:'Contractor certificates', ar:'المستخلصات'}
+];
+
+const ITEMS = [
+  // ---------- system / reports ----------
+  {m:'sys',p:1,e:'L',b:'next',s:'partial',
+   en:{t:'A reporting engine of its own, plus detailed custom reports on request',
+       v:'Every new report today is a development request. An engine lets the finance team build their own and stops small reporting asks from consuming paid development time.'},
+   ar:{t:'محرك تقارير مستقل، مع تقارير تفصيلية مخصّصة عند الطلب',
+       v:'كل تقرير جديد يمرّ اليوم بالبرمجة. ووجود محرك تقارير يتيح للإدارة المالية بناء تقاريرها بنفسها، ويوقف استهلاك وقت التطوير المدفوع في طلبات صغيرة.'}},
+  {m:'sys',p:1,e:'M',b:'next',s:'new',
+   en:{t:'Grouping levels and subtotals in departmental reports',
+       v:'Lets the owner read a project or department total off the report itself, instead of exporting to Excel and summing it by hand.'},
+   ar:{t:'مستويات تجميع ومجاميع فرعية في تقارير الأقسام',
+       v:'تتيح للمالك قراءة إجمالي المشروع أو القسم من التقرير نفسه، بدل تصديره إلى إكسل وجمعه يدويًا.'}},
+  {m:'sys',p:1,e:'L',b:'next',s:'new',
+   en:{t:'More than one company on one system — Golden and Al-Ard Holding',
+       v:'Runs both entities on a single system rather than buying and staffing a second one, and makes consolidated group figures possible at all.'},
+   ar:{t:'أكثر من شركة على نظام واحد — جولدن والأرض القابضة',
+       v:'تشغيل الشركتين على نظام واحد بدل شراء نظام ثانٍ وتشغيله، ويجعل استخراج أرقام مجمّعة للمجموعة ممكنًا أصلًا.'}},
+  {m:'sys',p:1,e:'M',b:'next',s:'partial',
+   en:{t:'Scanned documents attached to every record, opened straight from the payment number',
+       v:'Ends the search through paper files during an audit or a dispute: the supporting document sits one click from the transaction.'},
+   ar:{t:'ربط المستندات الممسوحة بكل حركة، وفتحها مباشرة من رقم الدفعة',
+       v:'ينهي البحث في الملفات الورقية عند المراجعة أو الخلاف: المستند المؤيّد على بُعد ضغطة واحدة من الحركة.'}},
+  {m:'sys',p:1,e:'L',b:'next',s:'new',
+   en:{t:'Post-dated cheque management — maturity, presentation, returns',
+       v:'Post-dated cheques are the company’s real cash calendar. Holding them in the system prevents a cheque being presented against an account nobody funded.'},
+   ar:{t:'إدارة الشيكات الآجلة — الاستحقاق والتقديم والمرتجع',
+       v:'الشيكات الآجلة هي تقويم السيولة الحقيقي للشركة. وحفظها داخل النظام يمنع تقديم شيك على حساب لم يُموَّل.'}},
+  {m:'sys',p:1,e:'M',b:'now',s:'partial',
+   en:{t:'Printing that works first time — fixed layout, right page size, company template',
+       v:'Staff re-format a report or a receipt on every single print. It is the most repeated complaint in the list and the cheapest hour of the day to hand back.'},
+   ar:{t:'طباعة سليمة من أول مرة — تنسيق ثابت ومقاس صفحة صحيح ونموذج الشركة',
+       v:'يعيد الموظفون ضبط التنسيق مع كل طباعة. وهي الشكوى الأكثر تكرارًا في القائمة، وأرخص ساعة عمل يمكن استردادها يوميًا.'}},
+  {m:'sys',p:1,e:'M',b:'next',s:'new',
+   en:{t:'A screen for transfers between banks and treasury — CIB to ADIB, treasury to bank',
+       v:'Internal transfers are entered today as two unrelated payments, which is the standard way a bank balance drifts away from the ledger.'},
+   ar:{t:'شاشة للتحويلات بين البنوك والخزينة — من CIB إلى ADIB، ومن الخزينة إلى البنك',
+       v:'التحويلات الداخلية تُسجَّل اليوم كدفعتين منفصلتين، وهو السبب المعتاد في ابتعاد رصيد البنك عن الدفاتر.'}},
+  {m:'sys',p:1,e:'S',b:'next',s:'new',
+   en:{t:'Payment types redefined',
+       v:'The current list no longer matches how the company actually pays and collects, which quietly distorts every report grouped by payment type.'},
+   ar:{t:'إعادة تعريف أنواع الدفعات',
+       v:'القائمة الحالية لم تعد تطابق واقع الصرف والتحصيل، فتشوّه في صمت كل تقرير مبني على نوع الدفعة.'}},
+  {m:'sys',p:1,e:'S',b:'now',s:'new',
+   en:{t:'Show the debit and credit entry on screen before the voucher is posted',
+       v:'Catches a wrong account at the moment of entry rather than at the monthly close, when correcting it costs an accountant the better part of a day.'},
+   ar:{t:'عرض القيد مدينًا ودائنًا على الشاشة قبل اعتماد السند',
+       v:'يكشف الحساب الخطأ لحظة الإدخال بدل الإقفال الشهري، حين يكلّف تصحيحه معظم يوم عمل محاسب.'}},
+  {m:'sys',p:2,e:'M',b:'next',s:'new',
+   en:{t:'Reports generated and delivered on a schedule — daily, weekly, monthly, quarterly',
+       v:'The owner gets the numbers without asking anyone for them, and nobody spends the first hour of the day assembling a report by hand.'},
+   ar:{t:'تقارير تُنشأ وتُرسل بمواعيد محددة — يومي وأسبوعي وشهري وربع سنوي',
+       v:'تصل الأرقام إلى المالك دون أن يطلبها من أحد، ولا يُستهلك أول ساعة من اليوم في تجميع تقرير يدويًا.'}},
+
+  // ---------- vouchers ----------
+  {m:'vou',p:3,e:'S',b:'next',s:'partial',
+   en:{t:'Party and payment type editable when a payment is duplicated',
+       v:'Recurring payments are entered by duplication; locking the party forces the clerk back to a blank form every time.'},
+   ar:{t:'إتاحة تعديل الطرف ونوع الدفعة عند تكرار الدفعة',
+       v:'الدفعات المتكررة تُدخل بالنسخ، وتثبيت الطرف يعيد الموظف إلى نموذج فارغ في كل مرة.'}},
+  {m:'vou',p:3,e:'S',b:'now',s:'partial',
+   en:{t:'Cancel a payment from the actions menu, and keep it on screen in red',
+       v:'Cancelled payments vanish today, so nobody can explain what became of a voucher. Keeping the record visible preserves the audit trail without touching balances.'},
+   ar:{t:'إلغاء الدفعة من قائمة الإجراءات مع بقائها ظاهرة باللون الأحمر',
+       v:'الدفعات الملغاة تختفي اليوم فلا يستطيع أحد تفسير مصير السند. وبقاؤها ظاهرة يحفظ أثر المراجعة دون المساس بالأرصدة.'}},
+  {m:'vou',p:3,e:'M',b:'now',s:'partial',
+   en:{t:'Partial payment showing amount due, amount actually paid, and the remainder',
+       v:'Suppliers and contractors are paid in stages. With no remaining balance on screen, the company pays twice or pays short.'},
+   ar:{t:'الدفع الجزئي مع إظهار المستحق والمصروف فعليًا والمتبقي',
+       v:'الموردون والمقاولون يُدفع لهم على مراحل. وبغياب المتبقي على الشاشة تتكرر الدفعة أو تنقص.'}},
+  {m:'vou',p:3,e:'S',b:'next',s:'partial',
+   en:{t:'A screen to edit or delete a cost centre',
+       v:'Cost centres can be created but never corrected, so one typo follows every report ever built on it.'},
+   ar:{t:'شاشة لتعديل مركز التكلفة أو حذفه',
+       v:'يمكن إنشاء مركز التكلفة ولا يمكن تصحيحه، فيلاحق الخطأ الواحد كل تقرير يُبنى عليه.'}},
+  {m:'vou',p:3,e:'M',b:'next',s:'new',
+   en:{t:'Voucher lists restructured so every column fits without scrolling sideways',
+       v:'Clerks scroll left and right to read a single line. Fitting the columns is a small change felt on every screen, every day.'},
+   ar:{t:'إعادة هيكلة شاشات السندات لتظهر كل الأعمدة دون تنقّل يمينًا ويسارًا',
+       v:'يتنقّل الموظف يمينًا ويسارًا لقراءة سطر واحد. وضبط الأعمدة تعديل صغير يُلمس أثره في كل شاشة وكل يوم.'}},
+  {m:'vou',p:3,e:'M',b:'next',s:'partial',
+   en:{t:'Receipts printed on the company’s own approved template',
+       v:'The receipt is the one thing the customer or contractor keeps. A printout that looks improvised weakens the company in front of the people paying it.'},
+   ar:{t:'طباعة الإيصالات على نموذج الشركة المعتمد',
+       v:'الإيصال هو ما يحتفظ به العميل أو المقاول. وشكل غير منضبط يضعف صورة الشركة أمام من يدفع لها.'}},
+  {m:'vou',p:3,e:'M',b:'now',s:'partial',
+   en:{t:'Daily treasury movement, and a daily activity report per employee',
+       v:'Opening balance, movement, closing balance — plus entry date against approval date, which is what exposes where a payment sat waiting.'},
+   ar:{t:'تقرير الحركة اليومية للخزينة، وتقرير نشاط يومي لكل موظف',
+       v:'رصيد أول اليوم والحركة ورصيد آخره، مع تاريخ الإنشاء مقابل تاريخ الاعتماد، وهو ما يكشف أين توقّفت الدفعة منتظرة.'}},
+  {m:'vou',p:3,e:'M',b:'now',s:'new',
+   en:{t:'An approval queue for transactions awaiting sign-off',
+       v:'Approvals are chased by phone today. A queue makes the delay visible and stops a payment sitting unapproved for days.'},
+   ar:{t:'شاشة للمعاملات التي تنتظر الاعتماد',
+       v:'الاعتمادات تُتابَع اليوم بالهاتف. والقائمة تُظهر التأخير وتمنع بقاء دفعة بلا اعتماد لأيام.'}},
+  {m:'vou',p:3,e:'S',b:'next',s:'partial',
+   en:{t:'Real filters — date range, several filters at once, sorting by due status',
+       v:'Finding last quarter’s payments to one contractor is a manual scan today; proper filters turn it into a few seconds.'},
+   ar:{t:'فلاتر حقيقية — نطاق تاريخي، وأكثر من فلتر معًا، وترتيب حسب حالة الاستحقاق',
+       v:'البحث عن دفعات مقاول خلال ربع سنة يتم اليوم بالمسح اليدوي، والفلاتر السليمة تختصره إلى ثوانٍ.'}},
+
+  // ---------- journal ----------
+  {m:'jrn',p:4,e:'S',b:'next',s:'partial',
+   en:{t:'A daily report of every journal entry, attributed to the employee who posted it',
+       v:'Makes each accountant answerable for their own postings, and shortens the hunt when an entry has to be traced back.'},
+   ar:{t:'تقرير يومي بكل القيود منسوبة إلى الموظف الذي حرّرها',
+       v:'يجعل كل محاسب مسؤولًا عن قيوده، ويختصر زمن تتبّع أي قيد عند الحاجة.'}},
+  {m:'jrn',p:4,e:'S',b:'now',s:'partial',
+   en:{t:'The same permission rules on journal entries as on vouchers',
+       v:'A journal entry moves money on the books exactly as a voucher does. Leaving it under looser control is the widest open door in the system.'},
+   ar:{t:'تطبيق صلاحيات القيود بنفس قواعد سندات الصرف والقبض',
+       v:'القيد يحرّك الأرقام في الدفاتر تمامًا كما يفعل السند. وبقاؤه تحت ضوابط أضعف هو أوسع باب مفتوح في النظام.'}},
+  {m:'jrn',p:4,e:'S',b:'next',s:'new',
+   en:{t:'Show the originating payment or invoice number on automatically generated entries',
+       v:'Turns an unexplained entry into a traceable one — which is most of the work in answering an auditor.'},
+   ar:{t:'إظهار رقم الدفعة أو الفاتورة على القيود المنشأة تلقائيًا',
+       v:'يحوّل القيد المبهم إلى قيد قابل للتتبّع، وهو معظم الجهد في الرد على المراجع.'}},
+
+  // ---------- payroll ----------
+  {m:'pay',p:4,e:'S',b:'next',s:'new',
+   en:{t:'Sort, filter and search payroll by name, department or amount',
+       v:'A payroll run covers the whole company; without search, checking one employee means reading the entire list.'},
+   ar:{t:'ترتيب الرواتب وفلترتها والبحث فيها بالاسم أو القسم أو المبلغ',
+       v:'مسيّر الرواتب يشمل الشركة كلها، وبدون بحث تتطلب مراجعة موظف واحد قراءة القائمة بأكملها.'}},
+  {m:'pay',p:4,e:'L',b:'now',s:'new',
+   en:{t:'Edit one employee’s payroll invoice without deleting the whole run',
+       v:'A single late change forces deleting and re-entering every employee — hours of work and a fresh chance of error, every month.'},
+   ar:{t:'تعديل فاتورة موظف واحد دون حذف المسيّر كله',
+       v:'تغيير واحد متأخر يفرض حذف كل الموظفين وإعادة إدخالهم — ساعات عمل وفرصة جديدة للخطأ، كل شهر.'}},
+  {m:'pay',p:4,e:'M',b:'next',s:'new',
+   en:{t:'Advance balance shown alongside leave balance and accrued entitlement',
+       v:'Answers the question every employee brings to HR, without an accountant opening three screens to work it out.'},
+   ar:{t:'عرض رصيد السلفة مع رصيد الإجازات والمستحقات',
+       v:'يجيب عن السؤال الذي يحمله كل موظف إلى شؤون العاملين، دون أن يفتح المحاسب ثلاث شاشات لحسابه.'}},
+  {m:'pay',p:4,e:'M',b:'next',s:'new',
+   en:{t:'Change the monthly deduction on an advance after a new agreement',
+       v:'Repayment terms get renegotiated. The system should record the new instalment instead of forcing the advance to be cancelled and rebuilt.'},
+   ar:{t:'تعديل الاستقطاع الشهري للسلفة بعد اتفاق جديد',
+       v:'شروط السداد يُعاد الاتفاق عليها، والمفروض أن يسجّل النظام القسط الجديد بدل إلغاء السلفة وإعادة إنشائها.'}},
+  {m:'pay',p:4,e:'S',b:'later',s:'new',
+   en:{t:'Reassign or increase an existing advance',
+       v:'Handles the ordinary case of a second advance on top of the first, without leaving a duplicate record to reconcile later.'},
+   ar:{t:'إعادة تعيين السلفة القائمة أو زيادتها',
+       v:'يعالج الحالة المعتادة لسلفة ثانية فوق الأولى، دون ترك سجل مكرر يحتاج تسوية لاحقًا.'}},
+  {m:'pay',p:4,e:'S',b:'later',s:'new',
+   en:{t:'Click an advance amount to see and print its full statement',
+       v:'Settles an argument about what an employee has repaid with a printed statement instead of a conversation.'},
+   ar:{t:'الضغط على مبلغ السلفة لعرض كشف حركتها وطباعته',
+       v:'يحسم الخلاف حول ما سدّده الموظف بكشف مطبوع بدل نقاش شفهي.'}},
+  {m:'pay',p:4,e:'S',b:'next',s:'new',
+   en:{t:'Advance requests listed with their voucher numbers and amounts, behind an approval queue',
+       v:'An advance is cash leaving the company; it should pass the same visible approval as any other payment.'},
+   ar:{t:'عرض طلبات السلف بأرقام سنداتها ومبالغها، مع قائمة اعتماد',
+       v:'السلفة نقد يخرج من الشركة، ومن حقّها أن تمرّ باعتماد ظاهر كأي دفعة أخرى.'}},
+
+  // ---------- sales ----------
+  {m:'sal',p:5,e:'M',b:'now',s:'new',
+   en:{t:'WhatsApp messaging to customers — reminders before a due date, overdue notices, cheque instructions',
+       v:'Collection improves most from a reminder sent before the money is late. This is the clearest direct return on cash flow anywhere in the list.'},
+   ar:{t:'مراسلة العملاء عبر واتساب — تذكير قبل الاستحقاق، وإشعارات التأخير، وتعليمات الشيكات',
+       v:'التحصيل يتحسّن أكثر ما يتحسّن بتذكير يُرسل قبل أن يتأخر المال. وهذا أوضح عائد مباشر على السيولة في القائمة كلها.'}},
+  {m:'sal',p:5,e:'M',b:'now',s:'new',
+   en:{t:'Edit a sales request without deleting every instalment behind it',
+       v:'Changing one date destroys the payment schedule and its history. Rebuilding it by hand is exactly where collection records get lost.'},
+   ar:{t:'تعديل طلب المبيعات دون حذف كل الدفعات المرتبطة به',
+       v:'تغيير تاريخ واحد يهدم جدول الدفعات وتاريخه، وإعادة بنائه يدويًا هي بالضبط حيث تضيع سجلات التحصيل.'}},
+  {m:'sal',p:5,e:'L',b:'next',s:'new',
+   en:{t:'Keep the sales request through a resale, a change of customer, or an increase in area and price',
+       v:'A unit resold, or a roof added once a permit comes through, is ordinary business here. The contract history should survive it rather than be re-created.'},
+   ar:{t:'الاحتفاظ بطلب المبيعات عند إعادة البيع أو تغيير العميل أو زيادة المساحة والسعر',
+       v:'إعادة بيع وحدة، أو إضافة الروف بعد صدور الترخيص، أمر معتاد في هذا النشاط. ويجب أن يبقى تاريخ التعاقد قائمًا بدل إعادة إنشائه.'}},
+  {m:'sal',p:5,e:'L',b:'now',s:'new',
+   en:{t:'Restructure instalments freely, mixing monthly, quarterly and annual in one plan',
+       v:'The payment plan is what closes the sale. A system that offers only one rhythm limits what the sales team is able to agree to.'},
+   ar:{t:'إعادة هيكلة الدفعات بمرونة، بالجمع بين الشهري والربع سنوي والسنوي في خطة واحدة',
+       v:'خطة السداد هي ما يُغلق البيعة، ونظام لا يتيح إلا إيقاعًا واحدًا يحدّ مما تستطيع إدارة المبيعات الاتفاق عليه.'}},
+  {m:'sal',p:5,e:'M',b:'later',s:'built',
+   en:{t:'Commission calculated on what is actually collected, keyed to the unit, payable to more than one party',
+       v:'Delivered since this list was written. Commission now follows collection instead of contract value, which stops a broker being paid for money the company has not received.'},
+   ar:{t:'احتساب العمولة على المحصّل فعليًا، مرتبطة برقم الوحدة، وقابلة للصرف لأكثر من طرف',
+       v:'مُنجز بعد كتابة هذه القائمة. صارت العمولة تتبع التحصيل لا قيمة العقد، ما يمنع صرف عمولة عن مال لم تستلمه الشركة.'}},
+  {m:'sal',p:5,e:'L',b:'next',s:'partial',
+   en:{t:'One comprehensive sales report — requests, revenue, and tax payable, linked to e-invoicing',
+       v:'Brings the amount owed to the tax authority out of a spreadsheet and into the system that already holds the underlying invoices.'},
+   ar:{t:'تقرير مبيعات شامل — الطلبات والإيرادات والضريبة المستحقة، مرتبطًا بالفاتورة الإلكترونية',
+       v:'ينقل المبلغ المستحق للضرائب من ملف إكسل إلى النظام الذي يحتفظ أصلًا بالفواتير نفسها.'}},
+  {m:'sal',p:5,e:'M',b:'next',s:'new',
+   en:{t:'Fold payments taken before contracting into the approved schedule',
+       v:'Reservation money collected before the sales request sits outside the plan, so the customer’s balance is wrong from day one.'},
+   ar:{t:'ضم الدفعات المحصّلة قبل التعاقد إلى الجدول المعتمد',
+       v:'مبالغ الحجز المحصّلة قبل طلب المبيعات تبقى خارج الخطة، فيظهر رصيد العميل خاطئًا من اليوم الأول.'}},
+
+  // ---------- certificates ----------
+  {m:'cer',p:6,e:'L',b:'now',s:'new',
+   en:{t:'Record every contractor and supplier contract against its project — value, paid, remaining',
+       v:'Without the contract in the system, nobody can say whether a contractor has been overpaid until the project is finished and the money is gone.'},
+   ar:{t:'تسجيل عقد كل مقاول ومورد على مشروعه — قيمة العقد والمدفوع والمتبقي',
+       v:'بدون العقد داخل النظام لا يمكن معرفة تجاوز المدفوع لقيمة العقد إلا بعد انتهاء المشروع وخروج المال.'}},
+  {m:'cer',p:6,e:'M',b:'now',s:'new',
+   en:{t:'Cumulative progress percentages on certificates — this certificate against the total to date',
+       v:'The client wrote the arithmetic out himself: 10,000 at 20% this certificate, 30% cumulative. That calculation decides what a contractor is owed this month.'},
+   ar:{t:'نسب الإنجاز التراكمية في المستخلصات — نسبة هذا المستخلص مقابل الإجمالي حتى تاريخه',
+       v:'كتب العميل الحسبة بخطه: ١٠٬٠٠٠ بنسبة ٢٠٪ لهذا المستخلص و٣٠٪ تراكمي. وهذه الحسبة هي التي تحدد مستحق المقاول هذا الشهر.'}},
+  {m:'cer',p:6,e:'L',b:'now',s:'partial',
+   en:{t:'Budget against actual for every project, with expenses matched to committed amounts',
+       v:'The one report that tells the owner whether a project is making money while it can still be corrected, rather than after handover.'},
+   ar:{t:'الموازنة مقابل الفعلي لكل مشروع، بمطابقة المصروفات بالمبالغ المعتمدة',
+       v:'التقرير الوحيد الذي يخبر المالك بربحية المشروع وهو ما زال قابلًا للتصحيح، لا بعد التسليم.'}},
+  {m:'cer',p:6,e:'M',b:'next',s:'new',
+   en:{t:'Link every certificate to that contractor’s contract value on the project',
+       v:'Makes over-certification visible at the moment of entry instead of at final account.'},
+   ar:{t:'ربط كل مستخلص بقيمة عقد المقاول على المشروع',
+       v:'يُظهر تجاوز المستخلصات لقيمة العقد لحظة الإدخال بدل اكتشافه في الحساب الختامي.'}},
+  {m:'cer',p:6,e:'S',b:'later',s:'new',
+   en:{t:'Widen the item description so the full text is visible',
+       v:'A truncated description gets the wrong item approved. The fix is trivial; the error is not.'},
+   ar:{t:'توسيع حقل الوصف في البنود ليظهر النص كاملًا',
+       v:'الوصف المقطوع يؤدي إلى اعتماد بند خاطئ. التعديل بسيط، والخطأ ليس كذلك.'}},
+  {m:'cer',p:6,e:'S',b:'later',s:'new',
+   en:{t:'Convert quantities when the unit of measure changes',
+       v:'Changing a unit without converting its quantity silently changes the value of the certificate.'},
+   ar:{t:'تحويل الكميات عند تغيير وحدة القياس',
+       v:'تغيير الوحدة دون تحويل الكمية يغيّر قيمة المستخلص في صمت.'}}
+];
+
+const BAND = {
+  now:  {en:'Start now', ar:'يبدأ الآن'},
+  next: {en:'Next',      ar:'التالي'},
+  later:{en:'Later',     ar:'لاحقًا'}
+};
+const STATUS = {
+  partial:{en:'Foundations in place', ar:'أساسه قائم'},
+  built:  {en:'Delivered',            ar:'مُنجز'}
+};
+const EFFORT = {
+  S:{en:'Small',  ar:'صغير'},
+  M:{en:'Medium', ar:'متوسط'},
+  L:{en:'Large',  ar:'كبير'}
+};
+
+function bi(en, ar){
+  return '<span class="en-only">' + en + '</span><span class="ar-only">' + ar + '</span>';
+}
+
+function renderRegister(){
+  const host = document.getElementById('register');
+  host.innerHTML = MODULES.map(mod => {
+    const items = ITEMS.filter(i => i.m === mod.key);
+    const rows = items.map((it, idx) => {
+      const n = idx + 1;
+      const src = bi('p.' + it.p + ' &middot; ' + n, 'ص ' + toAr(it.p) + ' &middot; ' + toAr(n));
+      const statusChip = it.s === 'new' ? '' :
+        '<span class="chip ' + it.s + '">' + bi(STATUS[it.s].en, STATUS[it.s].ar) + '</span>';
+      return '<div class="row">' +
+        '<div class="src">' + src + '</div>' +
+        '<div class="req">' + bi(it.en.t, it.ar.t) + '</div>' +
+        '<div class="val">' + bi(it.en.v, it.ar.v) + '</div>' +
+        '<div class="meta">' +
+          '<span class="chip ' + it.b + '">' + bi(BAND[it.b].en, BAND[it.b].ar) + '</span>' +
+          statusChip +
+          '<span class="effort"><b>' + it.e + '</b>' +
+            bi(EFFORT[it.e].en, EFFORT[it.e].ar) + '</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    return '<section class="module">' +
+      '<div class="module-head"><h2>' + bi(mod.en, mod.ar) + '</h2>' +
+      '<span class="count">' + bi(items.length + ' requests', toAr(items.length) + ' طلبًا') + '</span></div>' +
+      rows + '</section>';
+  }).join('');
+}
+
+function renderTallies(){
+  const total   = ITEMS.length;
+  const now     = ITEMS.filter(i => i.b === 'now').length;
+  const started = ITEMS.filter(i => i.s !== 'new').length;
+  const el = document.getElementById('tallies');
+  const tiles = [
+    [total,          'requests on the list',        'طلبًا في القائمة'],
+    [MODULES.length, 'areas of the business',       'مجالات في العمل'],
+    [now,            'to start with',               'بندًا يُبدأ به'],
+    [started,        'already part-built and cheaper','بندًا أساسه قائم وأقل كلفة']
+  ];
+  el.innerHTML = tiles.map(([n, en, ar]) =>
+    '<div class="tally"><div class="n">' + bi(String(n), toAr(n)) + '</div>' +
+    '<div class="l">' + bi(en, ar) + '</div></div>').join('');
+}
+
+function renderStartList(){
+  const host = document.getElementById('startlist');
+  host.innerHTML = ITEMS.filter(i => i.b === 'now').map(it => {
+    const mod = MODULES.find(m => m.key === it.m);
+    return '<li><span class="tag">' + bi('p.' + it.p, 'ص ' + toAr(it.p)) + '</span>' +
+      '<span>' + bi(it.en.t, it.ar.t) + '</span></li>';
+  }).join('');
+}
+
+function setLang(lang){
+  const ar = lang === 'ar';
+  document.body.classList.toggle('ar', ar);
+  document.body.dir = ar ? 'rtl' : 'ltr';
+  document.documentElement.lang = ar ? 'ar' : 'en';
+  document.getElementById('btn-en').setAttribute('aria-pressed', String(!ar));
+  document.getElementById('btn-ar').setAttribute('aria-pressed', String(ar));
+  try { localStorage.setItem('p2lang', lang); } catch (e) {}
+}
+
+renderRegister();
+renderTallies();
+renderStartList();
+document.getElementById('btn-en').addEventListener('click', () => setLang('en'));
+document.getElementById('btn-ar').addEventListener('click', () => setLang('ar'));
+// Language priority: ?lang= in the URL, then the viewer's last choice, then English.
+let initial = 'en';
+try { initial = localStorage.getItem('p2lang') || 'en'; } catch (e) {}
+try {
+  const q = new URLSearchParams(location.search).get('lang');
+  if (q === 'ar' || q === 'en') initial = q;
+} catch (e) {}
+setLang(initial);
+</script>

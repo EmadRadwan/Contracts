@@ -259,7 +259,7 @@ function ProductsList() {
                 <Column
                   field="productId"
                   title={getTranslatedLabel("product.products.list.title", "Number")}
-                  cell={ProductIdCell}
+                  cells={{ data: ProductIdCell }}
                   width={150}
                 />
                 <Column
@@ -305,7 +305,7 @@ function ProductsList() {
                     "product.products.list.description",
                     "Description"
                   )}
-                  cell={ProductDescriptionCell}
+                  cells={{ data: ProductDescriptionCell }}
                 />
               </KendoGrid>
               {isFetching && <LoadingComponent message="Loading Products..." />}

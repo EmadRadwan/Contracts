@@ -7,7 +7,7 @@ interface Props extends GridCellProps {
 
 export const ReceiveInventoryFacilityDropDown = (props: Props): JSX.Element | null => {
     console.log('ReceiveInventoryFacilityDropDown rendered');
-    const {ariaColumnIndex, columnIndex, render} = props;
+    const {ariaColumnIndex, columnIndex} = props;
     const {dataItem} = props;
     const field = props.field || "";
     const dataValue = dataItem[field] === null ? "" : dataItem[field];
@@ -49,10 +49,6 @@ export const ReceiveInventoryFacilityDropDown = (props: Props): JSX.Element | nu
             {isInEdit ? <div>{editor}</div> : dataValue ? <div>{editor}</div> : null}
         </td>
     );
-
-    if (render) {
-        return render(defaultRendering, props);
-    }
 
 
     return defaultRendering;

@@ -1,3 +1,9 @@
 export { TextFilterCell } from './TextFilterCell';
 export { DateFilterCell } from './DateFilterCell';
 export { NumericFilterCell } from './NumericFilterCell';
+export { createSelectFilterCell } from './SelectFilterCell';
+export type { SelectFilterOption } from './SelectFilterCell';
+export { createStyledRow } from './StyledRow';
+export type { RowStyleFn } from './StyledRow';
+export { editDescriptorFrom } from './editDescriptor';
+export type { EditDescriptor } from './editDescriptor';

@@ -239,7 +239,7 @@ const IncomeStatement = () => {
                             {getTranslatedLabel(`${localizationKey}.revenues`, "Revenues")}
                           </Typography>
                         </GridToolbar>
-                        <Column field="accountCode" title={getTranslatedLabel(`${localizationKey}.code`, "Account Code")} cell={AccountCodeCell} />
+                        <Column field="accountCode" title={getTranslatedLabel(`${localizationKey}.code`, "Account Code")} cells={{ data: AccountCodeCell }} />
                         <Column field="accountName" title={getTranslatedLabel(`${localizationKey}.name`, "Account Name")} />
                         <Column field="balance" title={getTranslatedLabel(`${localizationKey}.balance`, "Balance")} format="{0:n2}" filter={"numeric"} />
                       </KendoGrid>
@@ -271,7 +271,7 @@ const IncomeStatement = () => {
                                 {getTranslatedLabel(`${localizationKey}.cost-of-goods-sold`, "Cost of Goods Sold")}
                               </Typography>
                             </GridToolbar>
-                            <Column field="accountCode" title={getTranslatedLabel(`${localizationKey}.code`, "Account Code")} cell={AccountCodeCell} />
+                            <Column field="accountCode" title={getTranslatedLabel(`${localizationKey}.code`, "Account Code")} cells={{ data: AccountCodeCell }} />
                             <Column field="accountName" title={getTranslatedLabel(`${localizationKey}.name`, "Account Name")} />
                             <Column field="balance" title={getTranslatedLabel(`${localizationKey}.balance`, "Balance")} format="{0:n2}" filter={"numeric"} />
                           </KendoGrid>
@@ -303,7 +303,7 @@ const IncomeStatement = () => {
                             {getTranslatedLabel(`${localizationKey}.expenses`, "Expenses")}
                           </Typography>
                         </GridToolbar>
-                        <Column field="accountCode" title={getTranslatedLabel(`${localizationKey}.code`, "Account Code")} cell={AccountCodeCell} />
+                        <Column field="accountCode" title={getTranslatedLabel(`${localizationKey}.code`, "Account Code")} cells={{ data: AccountCodeCell }} />
                         <Column field="accountName" title={getTranslatedLabel(`${localizationKey}.name`, "Account Name")} />
                         <Column field="balance" title={getTranslatedLabel(`${localizationKey}.balance`, "Balance")} format="{0:n2}" filter={"numeric"} />
                       </KendoGrid>
@@ -335,7 +335,7 @@ const IncomeStatement = () => {
                                 {getTranslatedLabel(`${localizationKey}.income`, "Other Income")}
                               </Typography>
                             </GridToolbar>
-                            <Column field="accountCode" title={getTranslatedLabel(`${localizationKey}.code`, "Account Code")} cell={AccountCodeCell} />
+                            <Column field="accountCode" title={getTranslatedLabel(`${localizationKey}.code`, "Account Code")} cells={{ data: AccountCodeCell }} />
                             <Column field="accountName" title={getTranslatedLabel(`${localizationKey}.name`, "Account Name")} />
                             <Column field="balance" title={getTranslatedLabel(`${localizationKey}.balance`, "Balance")} format="{0:n2}" filter={"numeric"} />
                           </KendoGrid>

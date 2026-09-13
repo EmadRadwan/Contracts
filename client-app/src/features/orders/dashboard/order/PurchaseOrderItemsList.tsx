@@ -379,14 +379,14 @@ export default function PurchaseOrderItemsList({orderFormEditMode, orderId}: Pro
                                     </Grid>
                                 </Grid>
                             </GridToolbar>
-                            <Column field="productName" title="Product" cell={orderItemCell} width={280}/>
+                            <Column field="productName" title="Product" cells={{ data: orderItemCell }} width={280}/>
                             <Column field="orderId" title="orderId" width={0}/>
                             <Column field="orderItemSeqId" title="orderItemSeqId" width={0}/>
                             <Column field="unitPrice" title="Unit Price" />
                             <Column field="quantity" title="Quantity" />
-                            <Column cell={ItemDiscountCommandCell} title={getTranslatedLabel(`${localizationKey}.discount`,"Discounts/Tax")} width={170}/>
+                            <Column cells={{ data: ItemDiscountCommandCell }} title={getTranslatedLabel(`${localizationKey}.discount`,"Discounts/Tax")} width={170}/>
                             <Column field="subTotal" title="Sub Total" format="{0:n2}" />
-                            <Column cell={CommandCell} />
+                            <Column cells={{ data: CommandCell }} />
 
 
                         </KendoGrid>

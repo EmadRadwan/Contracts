@@ -164,7 +164,7 @@ export default function VehiclesList() {
                                     />
                                     <Column field="chassisNumber"
                                             title="Chassis Number"
-                                            cell={VehicleDescriptionCell} 
+                                            cells={{ data: VehicleDescriptionCell }} 
                                             locked={true}/>
                                     <Column field="fromPartyName" title="Customer" />
                                     <Column field="makeDescription" title="Make" />

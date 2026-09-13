@@ -49,7 +49,7 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
                 field: "glAccountName",
                 title: getTranslatedLabel(`${localizationKey}.glAccountName`, "glAccountName"),
                 width: "200px",
-                cell: GlAccountNameCell,
+                cells: { data: GlAccountNameCell },
             },
             {
                 field: "description",

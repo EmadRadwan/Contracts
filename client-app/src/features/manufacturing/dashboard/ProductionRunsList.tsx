@@ -171,7 +171,7 @@ function ProductionRunsList() {
                                 </GridToolbar>
 
 
-                                <Column field="workEffortId" title={getTranslatedLabel("manufacturing.jobshop.list.runId", "Production Run Id")} cell={ProductionRunIdCell}
+                                <Column field="workEffortId" title={getTranslatedLabel("manufacturing.jobshop.list.runId", "Production Run Id")} cells={{ data: ProductionRunIdCell }}
                                         width={100}
                                         locked={true}/>
                                 <Column field="estimatedStartDate" title={getTranslatedLabel("manufacturing.jobshop.list.startDate", "Start Date")} width={150}

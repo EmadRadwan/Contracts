@@ -1,11 +1,10 @@
 import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
-import React, { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import {
   Grid as KendoGrid,
   GridCellProps,
   GridColumn as Column,
   GridPageChangeEvent,
-  GridRowProps,
   GridSortChangeEvent,
   GridCustomFooterCellProps,
   GridToolbar,
@@ -18,6 +17,10 @@ import { nonDeletedAcctgTransEntriesSelector } from "../../slice/accountingSelec
 import { useSelector } from "react-redux";
 import { AcctgTrans } from "../../../../app/models/accounting/acctgTrans";
 import { Grid, Typography } from "@mui/material";
+import { createStyledRow } from "../../../../app/common/grid";
+
+// Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
+const DebitCreditRow = createStyledRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag !== "C" ? "rgba(55, 180, 0, 0.32)" : "#ffffff" }));
 
 interface Props {
   acctgTrans?: AcctgTrans;
@@ -50,18 +53,6 @@ export default function TransactionsList({ acctgTrans }: Props) {
       setAcctTransEntries(adjustedData);
     }
   }, [uiAcctgTransEntries]);
-
-  const rowRender = (
-      trElement: React.ReactElement<HTMLTableRowElement>,
-      props: GridRowProps
-  ) => {
-    // Color the row green if it is not a credit entry.
-    const actionable = props.dataItem.debitCreditFlag !== "C";
-    const green = { backgroundColor: "rgba(55, 180, 0, 0.32)" };
-    const white = { backgroundColor: "#ffffff" };
-    const trProps: any = { style: actionable ? green : white };
-    return React.cloneElement(trElement, { ...trProps }, trElement.props.children);
-  };
 
   const DeleteTransEntryCell = (props: any) => {
     const { dataItem } = props;
@@ -121,7 +112,7 @@ export default function TransactionsList({ acctgTrans }: Props) {
             onSortChange={(e: GridSortChangeEvent) => setSort(e.sort)}
             pageable={false} // Disables the grid pager entirely
             resizable
-            rowRender={rowRender}
+            rows={{ data: DebitCreditRow }}
         >
           <GridToolbar>
             <Grid container alignItems="center">
@@ -143,26 +134,25 @@ export default function TransactionsList({ acctgTrans }: Props) {
               field="acctgTransId"
               title="Acctg Trans"
               width={100}
-              footerCell={TotalsFooterCell}
+              cells={{ footerCell: TotalsFooterCell }}
           />
-          <Column field="acctgTransEntrySeqId" title="Acctg Trans Seq Id" width={0} footerCell={() => null} />
-          <Column field="amount" title="Amount" width={100} footerCell={() => null} />
-          <Column field="origAmount" title="Orig Amount" width={100} footerCell={() => null} />
-          <Column field="debitCreditFlag" title="Debit/Credit" width={70} footerCell={() => null} />
-          <Column field="glAccountId" title="GL Account" width={100} footerCell={() => null} />
-          <Column field="glAccountTypeDescription" title="Account Name" width={220} footerCell={() => null} />
-          <Column field="productName" title="Product" width={200} footerCell={() => null} />
-          <Column field="isPosted" title="Is Posted" width={100} footerCell={() => null} />
-          <Column field="glFiscalTypeId" title="GL Fiscal Type" width={100} footerCell={() => null} />
-          <Column field="acctgTransTypeDescription" title="Acctg Trans Type" width={130} footerCell={() => null} />
-          <Column field="transactionDate" title="Transaction Date" width={150} format="{0: dd/MM/yyyy}" footerCell={() => null} />
-          <Column field="postedDate" title="Posted Date" width={150} format="{0: dd/MM/yyyy}" footerCell={() => null} />
-          <Column field="glAccountClassDescription" title="Account Class" width={140} footerCell={() => null} />
-          <Column field="origCurrencyUomId" title="Currency" width={110} footerCell={() => null} />
+          <Column field="acctgTransEntrySeqId" title="Acctg Trans Seq Id" width={0} cells={{ footerCell: () => null }} />
+          <Column field="amount" title="Amount" width={100} cells={{ footerCell: () => null }} />
+          <Column field="origAmount" title="Orig Amount" width={100} cells={{ footerCell: () => null }} />
+          <Column field="debitCreditFlag" title="Debit/Credit" width={70} cells={{ footerCell: () => null }} />
+          <Column field="glAccountId" title="GL Account" width={100} cells={{ footerCell: () => null }} />
+          <Column field="glAccountTypeDescription" title="Account Name" width={220} cells={{ footerCell: () => null }} />
+          <Column field="productName" title="Product" width={200} cells={{ footerCell: () => null }} />
+          <Column field="isPosted" title="Is Posted" width={100} cells={{ footerCell: () => null }} />
+          <Column field="glFiscalTypeId" title="GL Fiscal Type" width={100} cells={{ footerCell: () => null }} />
+          <Column field="acctgTransTypeDescription" title="Acctg Trans Type" width={130} cells={{ footerCell: () => null }} />
+          <Column field="transactionDate" title="Transaction Date" width={150} format="{0: dd/MM/yyyy}" cells={{ footerCell: () => null }} />
+          <Column field="postedDate" title="Posted Date" width={150} format="{0: dd/MM/yyyy}" cells={{ footerCell: () => null }} />
+          <Column field="glAccountClassDescription" title="Account Class" width={140} cells={{ footerCell: () => null }} />
+          <Column field="origCurrencyUomId" title="Currency" width={110} cells={{ footerCell: () => null }} />
           <Column
-              cell={(props: GridCellProps) => <DeleteTransEntryCell {...props} remove={remove} />}
+              cells={{ data: (props: GridCellProps) => <DeleteTransEntryCell {...props} remove={remove} />, footerCell: () => null }}
               width="100px"
-              footerCell={() => null}
           />
         </KendoGrid>
       </Fragment>

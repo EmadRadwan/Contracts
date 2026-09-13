@@ -170,13 +170,13 @@ export default function JobQuoteAdjustmentsList({showList, onClose, quoteId, wid
                                     >
 
                                         <Column field="quoteAdjustmentTypeDescription" title="Adjustment Type"
-                                                cell={JobQuoteAdjustmentCell} width={150}/>
+                                                cells={{ data: JobQuoteAdjustmentCell }} width={150}/>
                                         <Column field="quoteId" title="jobQuoteId" width={0}/>
                                         <Column field="quoteItemSeqId" title="jobQuoteItemSeqId" width={0}/>
                                         <Column field="amount" title="Amount" width={130}/>
                                         <Column field="sourcePercentage" title="Percentage" width={140}/>
                                         <Column field="description" title="Description" width={140}/>
-                                        <Column cell={CommandCell} width="60px"/>
+                                        <Column cells={{ data: CommandCell }} width="60px"/>
 
                                     </KendoGrid>
                                 </div>

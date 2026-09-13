@@ -218,7 +218,7 @@ export default function PaymentsWithDueAmountsList() {
                                 <Column
                                     field="paymentId"
                                     title={getTranslatedLabel(`${localizationKey}.paymentId`, "Payment Number")}
-                                    cell={PaymentDescriptionCell}
+                                    cells={{ data: PaymentDescriptionCell }}
                                     width={150}
                                 />
                                 <Column
@@ -253,7 +253,7 @@ export default function PaymentsWithDueAmountsList() {
                                     field="daysUntilDue"
                                     title={getTranslatedLabel(`${localizationKey}.dueStatus`, "Due Status")}
                                     width={260}
-                                    cell={DueStatusCell} 
+                                    cells={{ data: DueStatusCell }} 
                                     filter={"numeric"}
                                 />
                                 

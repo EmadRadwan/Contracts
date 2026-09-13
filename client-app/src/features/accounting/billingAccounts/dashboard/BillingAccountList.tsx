@@ -100,7 +100,7 @@ function BillingAccountsList() {
                         </Button>
                     </GridToolbar>
 
-                    <Column field="billingAccountId" title="رقم الحساب" cell={IdCell} width={130} />
+                    <Column field="billingAccountId" title="رقم الحساب" cells={{ data: IdCell }} width={130} />
                     <Column field="partyName" title="اسم العميل" width={280} />
                     <Column field="projectName" title="المشروع" width={220} />
                     <Column field="accountLimit" title="حد الحساب" format="{0:n2}" filter={"numeric"} />

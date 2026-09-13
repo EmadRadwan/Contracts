@@ -178,7 +178,7 @@ export default function JobQuotesList() {
                                     <Column
                                         field="quoteId"
                                         title="Quote Number"
-                                        cell={QuoteDescriptionCell}
+                                        cells={{ data: QuoteDescriptionCell }}
                                         locked={true}
                                     />
                                     <Column

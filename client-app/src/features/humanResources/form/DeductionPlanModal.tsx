@@ -319,7 +319,7 @@ export default function DeductionPlanModal({
                             <Column
                                 title={getTranslatedLabel("general.actions", "Actions")}
                                 width="120"
-                                cell={(props) => {
+                                cells={{ data: (props) => {
                                     const isRowProcessed = !!props.dataItem.payrollInvoiceId;
                                     return (
                                         <td style={{ textAlign: "center" }}>
@@ -340,7 +340,7 @@ export default function DeductionPlanModal({
                                             </IconButton>
                                         </td>
                                     );
-                                }}
+                                } }}
                             />
                         )}
                     </KendoGrid>

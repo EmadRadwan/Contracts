@@ -120,7 +120,7 @@ export default function ProductFacilitiesList() {
                                     </Grid>
                                 </GridToolbar>
 
-                                <Column field="facilityName" title="Product Facility" cell={productFacilityCell} width={220} />
+                                <Column field="facilityName" title="Product Facility" cells={{ data: productFacilityCell }} width={220} />
                                 <Column field="minimumStock" title="Minimum Stock" width={140} />
                                 <Column field="reorderQuantity" title="Reorder Quantity" width={140} />
                                 <Column field="lastInventoryCount" title="Last Inventory Count" width={0} />

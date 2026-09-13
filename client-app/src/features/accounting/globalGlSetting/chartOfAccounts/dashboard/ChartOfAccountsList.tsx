@@ -251,7 +251,7 @@ const ChartOfAccountsList = () => {
                     <strong>{getTranslatedLabel("accounting.glAccount.list.globalTitle", "Global Chart of Accounts")}</strong>
                   </GridToolbar>
 
-                  <Column field="glAccountId" title={getTranslatedLabel("accounting.glAccount.list.accountId", "Account ID")} cell={AccountIdCell} width={120} />
+                  <Column field="glAccountId" title={getTranslatedLabel("accounting.glAccount.list.accountId", "Account ID")} cells={{ data: AccountIdCell }} width={120} />
                   <Column field="accountName" title={getTranslatedLabel("accounting.glAccount.list.accountName", "Account Name")} width={120}/>
                   <Column field="parentGlAccountId" title={getTranslatedLabel("accounting.glAccount.list.parentId", "Parent ID")} width={120} />
                   <Column field="glReportDescription" title={getTranslatedLabel("accounting.glAccount.list.report", "Report")} width={180} />
@@ -259,7 +259,7 @@ const ChartOfAccountsList = () => {
                   <Column field="glSubClassDescription" title={getTranslatedLabel("accounting.glAccount.list.subClass", "Sub Class")} width={180} />
                   <Column field="glSubClass2Description" title={getTranslatedLabel("accounting.glAccount.list.subClass2", "Sub Class 2")} width={180} />
                   <Column field="glAccountCourseLabelDescription" title={getTranslatedLabel("accounting.glAccount.list.courseLabel", "Course Label")} width={180} />
-                  <Column cell={CreateSimilarAccountCell} width={170} />
+                  <Column cells={{ data: CreateSimilarAccountCell }} width={170} />
                 </KendoGrid>
 
                 {(isFlatFetching || isTopFetching) && <LoadingComponent />}

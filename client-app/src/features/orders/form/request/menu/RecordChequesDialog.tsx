@@ -219,7 +219,7 @@ export const RecordChequesDialog: React.FC<RecordChequesDialogProps> = ({
                                 <Column
                                     field="chequeNumber"
                                     title={t("chequeNumber", "Cheque Number")}
-                                    cell={chequeNumberCell}
+                                    cells={{ data: chequeNumberCell }}
                                     width="160px"
                                 />
                             </KendoGrid>
@@ -237,7 +237,7 @@ export const RecordChequesDialog: React.FC<RecordChequesDialogProps> = ({
                                     <Column
                                         field="chequeNumber"
                                         title={t("chequeNumber", "Cheque Number")}
-                                        cell={chequeNumberCell}
+                                        cells={{ data: chequeNumberCell }}
                                         width="160px"
                                     />
                                 </KendoGrid>

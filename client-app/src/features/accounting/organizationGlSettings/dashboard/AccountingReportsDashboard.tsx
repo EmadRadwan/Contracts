@@ -19,10 +19,15 @@ import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper
 import { CompanyReportExcel } from "../../reports/CompanyReportExcel";
 
 const links = [
-  { 
-    path: "/trialBalance", 
-    title: "Trial Balance", 
-    key: "trial-balance" 
+  {
+    path: "/trialBalance",
+    title: "Trial Balance",
+    key: "trial-balance"
+  },
+  {
+    path: "/trialBalanceByLevel",
+    title: "Trial Balance By Level",
+    key: "trial-balance-by-level"
   },
   {
     path: "/transactionTotals",

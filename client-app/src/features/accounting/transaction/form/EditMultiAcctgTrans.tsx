@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {Grid, Paper, Typography, Button, Skeleton, Chip, Menu, MenuItem, TextField, Autocomplete, Box} from "@mui/material";
 import { Form, FormElement, Field } from "@progress/kendo-react-form";
-import { Grid as KendoGrid, GridColumn as Column, GridSortChangeEvent, GridPageChangeEvent, GridRowProps, GridCellProps, GridToolbar } from "@progress/kendo-react-grid";
+import { Grid as KendoGrid, GridColumn as Column, GridSortChangeEvent, GridPageChangeEvent, GridCellProps } from "@progress/kendo-react-grid";
 import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
 import { RootState, useAppSelector, useFetchGeneralAcctTransEntriesQuery, useFetchAcctgTransTypesQuery } from "../../../../app/store/configureStore";
 import { useFetchGlAccountOrganizationHierarchyLovQuery } from "../../../../app/store/apis";
@@ -25,6 +25,10 @@ import {MultiAcctgTransExcel} from "../report/MultiAcctgTransExcel";
 import {Can} from "../../../account/Can";
 import {useGetCostCentersQuery} from "../../../../app/store/apis/accounting/paymentTypesApi";
 import CreateCostCenterModal from "../../payment/form/CreateCostCenterModal";
+import { createStyledRow } from "../../../../app/common/grid";
+
+// Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
+const DebitCreditRow = createStyledRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag === "D" ? "rgba(55, 180, 0, 0.32)" : "#ffffff" }));
 
 interface TransEntry {
     id: string;
@@ -54,7 +58,6 @@ export default function EditMultiAcctgTrans() {
     const { acctgTransId: currentTransId } = useParams<{ acctgTransId: string }>();
 
     const initialTransFromState = location.state?.selectedAcctgTrans;
-
 
     
     const { language } = useAppSelector((state) => state.localization);
@@ -266,15 +269,6 @@ export default function EditMultiAcctgTrans() {
         setSort(event.sort);
     }, []);
 
-    const rowRender = useCallback(
-        (trElement: React.ReactElement<HTMLTableRowElement>, props: GridRowProps) => {
-            const isDebit = props.dataItem.debitCreditFlag === "D";
-            const style = { backgroundColor: isDebit ? "rgba(55, 180, 0, 0.32)" : "#ffffff" };
-            return React.cloneElement(trElement, { style }, trElement.props.children);
-        },
-        []
-    );
-
     const GlAccountCell = useCallback(
         ({ dataItem }: GridCellProps) => {
             const glAccountId = dataItem.debitGlAccountId || dataItem.creditGlAccountId;
@@ -299,7 +293,6 @@ export default function EditMultiAcctgTrans() {
         },
         [transEntriesData, handleEditEntry]
     );
-
 
     const RemoveCell = useCallback(
         ({ dataItem }: GridCellProps) => (
@@ -651,14 +644,14 @@ export default function EditMultiAcctgTrans() {
                                                     total={transEntries.length}
                                                     pageable
                                                     onPageChange={pageChange}
-                                                    rowRender={rowRender}
+                                                    rows={{ data: DebitCreditRow }}
                                                     resizable={true}
                                                 >
                                                     <Column
                                                         field="glAccountId"
                                                         title={getTranslatedLabel(`${localizationKey}.glAccount`, "GL Account")}
                                                         width={300}
-                                                        cell={GlAccountCell}
+                                                        cells={{ data: GlAccountCell }}
                                                     />
                                                     <Column
                                                         field="amount"
@@ -676,15 +669,15 @@ export default function EditMultiAcctgTrans() {
                                                         title={getTranslatedLabel(`${localizationKey}.debitCredit`, "Debit/Credit")}
                                                         width={150}
                                                     />
-                                                    <Column title={""} width={100} cell={RemoveCell} />
+                                                    <Column title={""} width={100} cells={{ data: RemoveCell }} />
                                                     <Column
                                                         title={""}
-                                                        footerCell={() => (
+                                                        cells={{ footerCell: () => (
                                                             <td style={{ textAlign: "left", fontWeight: "bold", color: "#1565C0" }}>
                                                                 {getTranslatedLabel(`${localizationKey}.totalDebit`, "Total Debit")}: {totalDebit.toFixed(2)} |{" "}
                                                                 {getTranslatedLabel(`${localizationKey}.totalCredit`, "Total Credit")}: {totalCredit.toFixed(2)}
                                                             </td>
-                                                        )}
+                                                        ) }}
                                                     />
                                                 </KendoGrid>
                                             </Grid>

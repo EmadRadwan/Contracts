@@ -14,7 +14,7 @@
  * - Responsive to column width
  *
  * Usage:
- * <Column field="fieldName" filterCell={TextFilterCell} filterable={true} filter="text" />
+ * <Column field="fieldName" cells={{ filterCell: TextFilterCell }} filterable={true} filter="text" />
  */
 
 import React from 'react';

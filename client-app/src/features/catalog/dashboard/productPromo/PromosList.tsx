@@ -117,7 +117,7 @@ export default function PromosList() {
                 <Column
                   field="productPromoId"
                   title={getTranslatedLabel("product.promos.list.id", "Promotion ID")}
-                  cell={ProductPromoIdCell}
+                  cells={{ data: ProductPromoIdCell }}
                   width={110}
                   locked={true}
                 />

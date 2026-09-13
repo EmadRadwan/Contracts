@@ -4,7 +4,7 @@ import {
     Grid as KendoGrid,
     GRID_COL_INDEX_ATTRIBUTE,
     GridColumn as Column,
-    GridDataStateChangeEvent, GridRowProps,
+    GridDataStateChangeEvent,
 } from "@progress/kendo-react-grid";
 import {DataResult, State} from '@progress/kendo-data-query';
 import Button from "@mui/material/Button";
@@ -27,7 +27,10 @@ import AccountingSummaryMenu from "../menu/AccountingSummaryMenu";
 import {useSelector} from "react-redux";
 import {useNavigate} from "react-router";
 import { AccountingTransactionEntriesDateRangeExcel } from "./AccountingTransactionEntriesDateRangeExcel";
+import { createStyledRow } from "../../../../app/common/grid";
 
+// Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
+const DebitCreditRow = createStyledRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag === "D" ? "rgba(55, 180, 0, 0.32)" : "#ffffff" }));
 
 export default function AccountingTransactionEntriesList() {
 
@@ -47,9 +50,6 @@ export default function AccountingTransactionEntriesList() {
     const dispatch = useAppDispatch();
     const companyName = useSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
     const navigate = useNavigate();               // <-- add this hook
-
-
-
 
     const handleSelectAcctTrans = useCallback((acctgTransId: string) => {
         navigate(`/editAcctgTrans/${acctgTransId}`, {
@@ -74,14 +74,12 @@ export default function AccountingTransactionEntriesList() {
         }
     }, [location?.state?.glAccountId]);
 
-
     const {getTranslatedLabel} = useTranslationHelper();
 
     const [editMode, setEditMode] = useState(0);
     const [acctTrans, setAcctTrans] = useState<AcctgTrans | undefined>(undefined);
 
     const [show, setShow] = useState(false);
-
 
     const queryArgs = {...dataState, companyId};
     const {data, error, isFetching} = companyId
@@ -100,7 +98,6 @@ export default function AccountingTransactionEntriesList() {
         , [data]);
 
     
-
 
     const AcctTransDescriptionCell = (props: any) => {
         const field = props.field || '';
@@ -127,22 +124,11 @@ export default function AccountingTransactionEntriesList() {
         )
     };
 
-    const rowRender = useCallback(
-        (trElement: React.ReactElement<HTMLTableRowElement>, props: GridRowProps) => {
-            const isDebit = props.dataItem.debitCreditFlag === "D";
-            const style = {backgroundColor: isDebit ? "rgba(55, 180, 0, 0.32)" : "#ffffff"};
-            return React.cloneElement(trElement, {style}, trElement.props.children);
-        },
-        []
-    );
-
-
     // convert cancelEdit function to memoized function
     const cancelEdit = React.useCallback(() => {
         setEditMode(0);
         setAcctTrans(undefined);
     }, [setEditMode, setAcctTrans]);
-
 
     return <>
 
@@ -168,11 +154,11 @@ export default function AccountingTransactionEntriesList() {
                             {...dataState}
                             data={accountingTransEntries ? accountingTransEntries : {data: [], total: 77}}
                             onDataStateChange={dataStateChange}
-                            rowRender={rowRender}
+                            rows={{ data: DebitCreditRow }}
                         >
 
                             <Column field="acctgTransId"
-                                    cell={AcctTransDescriptionCell} width={110}
+                                    cells={{ data: AcctTransDescriptionCell }} width={110}
                                     locked={!show} title={getTranslatedLabel(
                                 "accounting.orgGL.accounting.summary.txns.acctgTransId",
                                 "Acctg Trans Id"

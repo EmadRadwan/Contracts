@@ -1,5 +1,6 @@
 import React, {useState, useCallback, useMemo, useEffect, useRef} from "react";
 import { Grid as KendoGrid, GridColumn as Column, GridToolbar, GridItemChangeEvent, GridCellProps } from "@progress/kendo-react-grid";
+import { editDescriptorFrom } from "../../../app/common/grid";
 import { Button, Box, Typography } from "@mui/material";
 import { toast } from "react-toastify";
 
@@ -38,6 +39,8 @@ const CertificateItemKendoBulkAdd: React.FC<Props> = ({
     const itemFormLocalizationKey = "projects.certificate.items.list";
     const { currentCertificateType } = useAppSelector((state) => state.certificateUi);
     const [data, setData] = useState<BulkAddRow[]>([]);
+    // KendoReact v16: edit state is a descriptor keyed by dataItemKey, derived from the inEdit flag on the rows
+    const editDescriptor = useMemo(() => editDescriptorFrom(data, "workEffortId"), [data]);
     const isContracting = currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE";
     const isSupplyProcurement = currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE";
     const isCompanySupply = currentCertificateType === "COMPANY_SUPPLY_SALE_CERTIFICATE";
@@ -380,7 +383,7 @@ const CertificateItemKendoBulkAdd: React.FC<Props> = ({
     // ==================== DYNAMIC COLUMNS ====================
     const gridColumns = useMemo(() => {
         const cols: React.ReactElement[] = [
-            <Column key="commands" cell={CommandCell} width={150} locked={true} />,
+            <Column key="commands" cells={{ data: CommandCell }} width={150} locked={true} />,
             <Column
                 key="net"
                 field="net"
@@ -388,10 +391,10 @@ const CertificateItemKendoBulkAdd: React.FC<Props> = ({
                 editable={false}
                 locked={true}
                 width={100}
-                cell={(props) => <td><strong>{(props.dataItem.net || 0).toFixed(2)}</strong></td>}
+                cells={{ data: (props) => <td><strong>{(props.dataItem.net || 0).toFixed(2)}</strong></td> }}
             />,
-            <Column key="productId" field="productId" title={getTranslatedLabel(`${itemFormLocalizationKey}.product`, "Product")} cell={ProductCell} width={280} />,
-            <Column key="uomId" field="uomId" title={getTranslatedLabel(`${itemFormLocalizationKey}.unitOfMeasure`, "UOM")} cell={UomCell} width={180} />,
+            <Column key="productId" field="productId" title={getTranslatedLabel(`${itemFormLocalizationKey}.product`, "Product")} cells={{ data: ProductCell }} width={280} />,
+            <Column key="uomId" field="uomId" title={getTranslatedLabel(`${itemFormLocalizationKey}.unitOfMeasure`, "UOM")} cells={{ data: UomCell }} width={180} />,
             <Column key="description" field="description" title={getTranslatedLabel(`${itemFormLocalizationKey}.description`, "Description")} width={250} />,
             <Column key="quantity" field="quantity" title={getTranslatedLabel(`${itemFormLocalizationKey}.quantity`, "Qty")} editor="numeric" width={100} />,
         ];
@@ -401,8 +404,8 @@ const CertificateItemKendoBulkAdd: React.FC<Props> = ({
                 <Column key="materialPrice" field="materialPrice" title={getTranslatedLabel(`${itemFormLocalizationKey}.materialPrice`, "Mat. Price")} editor="numeric" width={130} />,
                 <Column key="laborPrice" field="laborPrice" title={getTranslatedLabel(`${itemFormLocalizationKey}.laborPrice`, "Lab. Price")} editor="numeric" width={130} />,
                 <Column key="achievementPercentage" field="achievementPercentage" title={getTranslatedLabel(`${itemFormLocalizationKey}.achievementPercentage`, "Ach. %")} editor="numeric" width={110} />,
-                <Column key="total" field="totalAmount" title={getTranslatedLabel(`${itemFormLocalizationKey}.totalAmount`, "Total")} editable={false} width={110} cell={(p) => <td>{(p.dataItem.totalAmount || 0).toFixed(2)}</td>} />,
-                <Column key="deserved" field="deserved" title={getTranslatedLabel(`${itemFormLocalizationKey}.deserved`, "Deserved")} editable={false} width={110} cell={(p) => <td>{(p.dataItem.deserved || 0).toFixed(2)}</td>} />
+                <Column key="total" field="totalAmount" title={getTranslatedLabel(`${itemFormLocalizationKey}.totalAmount`, "Total")} editable={false} width={110} cells={{ data: (p) => <td>{(p.dataItem.totalAmount || 0).toFixed(2)}</td> }} />,
+                <Column key="deserved" field="deserved" title={getTranslatedLabel(`${itemFormLocalizationKey}.deserved`, "Deserved")} editable={false} width={110} cells={{ data: (p) => <td>{(p.dataItem.deserved || 0).toFixed(2)}</td> }} />
             );
         } else {
             cols.push(
@@ -442,7 +445,7 @@ const CertificateItemKendoBulkAdd: React.FC<Props> = ({
                 title={getTranslatedLabel(`${itemFormLocalizationKey}.net`, "Net")}
                 editable={false}
                 width={120}
-                cell={(props) => <td><strong>{(props.dataItem.net || 0).toFixed(2)}</strong></td>}
+                cells={{ data: (props) => <td><strong>{(props.dataItem.net || 0).toFixed(2)}</strong></td> }}
             />
         );
 
@@ -462,7 +465,8 @@ const CertificateItemKendoBulkAdd: React.FC<Props> = ({
             <KendoGrid
                 data={data}
                 onItemChange={handleRowChange}
-                editField="inEdit"
+                editable={{ enabled: true, mode: "inline" }}
+                edit={editDescriptor}
                 dataItemKey="workEffortId"
                 style={{ height: '70vh' }}
             >

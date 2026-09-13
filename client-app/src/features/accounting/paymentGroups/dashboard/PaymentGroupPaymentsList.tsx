@@ -157,7 +157,7 @@ const PaymentGroupPaymentsList = () => {
           <Column
             field="paymentId"
             title={getTranslatedLabel(`${localizationKey}.paymentId`,"Payment Number")}
-            cell={PaymentDescriptionCell}
+            cells={{ data: PaymentDescriptionCell }}
             locked={true}
           />
           <Column
@@ -171,7 +171,7 @@ const PaymentGroupPaymentsList = () => {
             title={getTranslatedLabel(`${localizationKey}.thruDate`,"Thru Date")}
           />
           <Column
-            cell={CancelPaymentGroupMemberCell}
+            cells={{ data: CancelPaymentGroupMemberCell }}
           />
         
         </KendoGrid>

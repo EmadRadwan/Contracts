@@ -79,7 +79,7 @@ const SalesOpportunityList: React.FC<SalesOpportunityListProps> = ({ onCreateNew
                 onDataStateChange={dataStateChange}
             >
 
-                <Column cell={OpportunityLeadsCell} title={getTranslatedLabel(`${localizationKey}.leads`, 'Leads')} />
+                <Column cells={{ data: OpportunityLeadsCell }} title={getTranslatedLabel(`${localizationKey}.leads`, 'Leads')} />
                 <Column field="productName" title={getTranslatedLabel(`projects.certificate.form.project`, 'Project')} />
                 <Column field="workEffortName" title={getTranslatedLabel(`${localizationKey}.unit`, 'unit')} />
                 <Column field="opportunityStageName" title={getTranslatedLabel(`${localizationKey}.stage`, 'Stage')} />
@@ -90,7 +90,7 @@ const SalesOpportunityList: React.FC<SalesOpportunityListProps> = ({ onCreateNew
                     width={200}
                     filterable={false}
                     sortable={false}
-                    cell={(props: GridCellProps) => (
+                    cells={{ data: (props: GridCellProps) => (
                         <td className={props.className} style={props.style}>
                             <Box sx={{ display: 'flex', gap: 1 }}>
                                 <Button
@@ -109,7 +109,7 @@ const SalesOpportunityList: React.FC<SalesOpportunityListProps> = ({ onCreateNew
                                 </Button>
                             </Box>
                         </td>
-                    )}
+                    ) }}
                 />
             </KendoGrid>
 

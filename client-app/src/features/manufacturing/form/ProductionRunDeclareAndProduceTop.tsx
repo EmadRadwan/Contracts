@@ -1,5 +1,5 @@
 import { Box, Button, CircularProgress, Grid, Paper, Typography } from "@mui/material";
-import { Field, Form, FormElement, FormRenderProps, FormFieldChangeEvent } from "@progress/kendo-react-form";
+import { Field, Form, FormElement, FormHandle } from "@progress/kendo-react-form";
 import FormNumericTextBox from "../../../app/common/form/FormNumericTextBox";
 import FormInput from "../../../app/common/form/FormInput";
 import { requiredValidator } from "../../../app/common/form/Validators";
@@ -47,12 +47,12 @@ export default function ProductionRunDeclareAndProduceTop({ productId, mainProdu
     const { data: facilities } = useFetchFinishedProductFacilitiesQuery(undefined);
 
     // Use ref to store form state
-    const formRef = useRef<FormRenderProps | null>(null);
+    const formRef = useRef<FormHandle | null>(null);
     // Track selected productId
     const [selectedProductId, setSelectedProductId] = useState<string>("");
 
     // Debounced productId change handler
-    const handleProductIdChange = useDebouncedCallback((event: FormFieldChangeEvent) => {
+    const handleProductIdChange = useDebouncedCallback((event: { value?: any }) => {
         const newProductId = event.value as string;
         if (newProductId && newProductId !== selectedProductId) {
             setSelectedProductId(newProductId);

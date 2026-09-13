@@ -619,14 +619,13 @@ export default function PaymentPlanModal({
                         </GridToolbar>
                         <Column
                             width="50"
-                            headerCell={SelectionHeaderCell}
-                            cell={SelectionCell}
+                            cells={{ headerCell: SelectionHeaderCell, data: SelectionCell }}
                         />
                         <Column
                             field="number"
                             title="#"
                             width="60"
-                            cell={NumberCell}
+                            cells={{ data: NumberCell }}
                         />
                     <Column
                         field="dueDate"
@@ -640,7 +639,7 @@ export default function PaymentPlanModal({
                         width="180"
                         format="{0:n2}"
                     />
-                    <Column title={getTranslatedLabel("salesRequest.paymentPlan.actions", "Actions")} width="140" cell={ActionsCell} />
+                    <Column title={getTranslatedLabel("salesRequest.paymentPlan.actions", "Actions")} width="140" cells={{ data: ActionsCell }} />
 
                     </KendoGrid>
                 </div>

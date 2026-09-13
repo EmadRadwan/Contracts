@@ -223,7 +223,7 @@ export default function JobOrdersList() {
                                                         orders_order_listOrder_grid_orderNumber_key,
                                                         "Order Number",
                                                     )}
-                                                    cell={OrderDescriptionCell}
+                                                    cells={{ data: OrderDescriptionCell }}
                                                     width={150}
                                                     locked={true}
                                                 />

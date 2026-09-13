@@ -92,7 +92,7 @@ const AccountingCosts = () => {
                                     </Grid>
                                 </GridToolbar>
 
-                                <Column field="costComponentCalcId" title="Routing Id" cell={CostComponentCalcIdCell} width={200}
+                                <Column field="costComponentCalcId" title="Routing Id" cells={{ data: CostComponentCalcIdCell }} width={200}
                                         locked={true}/>
                                 <Column field="description" title="Description" width={350}/>
                                 <Column field="fixedCost" title="Fixed Cost" width={150} filter={"numeric"}/>

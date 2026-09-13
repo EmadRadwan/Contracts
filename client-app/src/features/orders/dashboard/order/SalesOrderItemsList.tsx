@@ -507,18 +507,18 @@ export default function SalesOrderItemsList({orderFormEditMode, orderId}: Props)
                                 </Grid>
                             </Grid>
                         </GridToolbar>
-                        <Column field="productName" title={getTranslatedLabel(`${localizationKey}.product`, "Product")} cell={orderItemCell} />
+                        <Column field="productName" title={getTranslatedLabel(`${localizationKey}.product`, "Product")} cells={{ data: orderItemCell }} />
                         <Column field="productId" title={getTranslatedLabel(`${localizationKey}.orderItem`,"ProductId")} />
                         <Column field="orderItemSeqId" title={getTranslatedLabel(`${localizationKey}.orderItem`,"orderItemSeqId")} width={0}/>
                         <Column
                             field="quantity"
                             title={getTranslatedLabel(`${localizationKey}.quantity`, "Quantity")}
                             
-                            cell={QuantityCell}
+                            cells={{ data: QuantityCell }}
                         /> <Column field="quantity" title={getTranslatedLabel(`${localizationKey}.quantity`,"Quantity")} />
-                        <Column cell={ItemDiscountCommandCell} title={getTranslatedLabel(`${localizationKey}.discount`,"Discounts/Tax")} />
-                        <Column field="subTotal" cell={SubtotalDisplayCell} title={getTranslatedLabel(`${localizationKey}.total`,"Item Total")}  format="{0:c}"/>
-                        <Column cell={CommandCell} />
+                        <Column cells={{ data: ItemDiscountCommandCell }} title={getTranslatedLabel(`${localizationKey}.discount`,"Discounts/Tax")} />
+                        <Column field="subTotal" cells={{ data: SubtotalDisplayCell }} title={getTranslatedLabel(`${localizationKey}.total`,"Item Total")}  format="{0:c}"/>
+                        <Column cells={{ data: CommandCell }} />
 
                     </KendoGrid>
             </div>

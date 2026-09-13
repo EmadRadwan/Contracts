@@ -4,7 +4,7 @@ import {
   GridColumn as Column,
   GridToolbar,
   GridDetailRowProps,
-  GridExpandChangeEvent,
+  GridDetailExpandChangeEvent,
   StatusBar, GridPageChangeEvent,
 } from "@progress/kendo-react-grid";
 import { DataResult, orderBy, State } from "@progress/kendo-data-query";
@@ -60,42 +60,9 @@ export default function ActualProductCostsList({ productionRunId, productId }: P
     return null;
   };
 
-  const findAndModifyChild = (
-      costComponentTypeId: string,
-      costComponents: CostComponent[],
-      expandedValue: boolean
-  ): CostComponent[] => {
-    return costComponents.map((cc: CostComponent) => {
-      if (
-          cc.costComponentTypeId === costComponentTypeId &&
-          cc.children &&
-          cc.children.length > 0
-      ) {
-        return { ...cc, expanded: expandedValue };
-      }
-      if (cc.children) {
-        return {
-          ...cc,
-          children: findAndModifyChild(
-              costComponentTypeId,
-              cc.children,
-              expandedValue
-          ),
-        };
-      }
-      return cc;
-    });
-  };
-
-  const expandChange = (event: GridExpandChangeEvent) => {
-    const selectedAccountId = event.dataItem.costComponentTypeId;
-    const modifiedAccounts = findAndModifyChild(
-        selectedAccountId,
-        costComponents.data,
-        event.value
-    );
-    setCostComponents({ data: modifiedAccounts, total: ccData?.total || 0 });
-  };
+  // KendoReact v16: detail-row expansion is a descriptor keyed by dataItemKey; the Grid hands back the toggled descriptor
+  const [detailExpand, setDetailExpand] = useState<Record<string, boolean>>({});
+  const expandChange = (event: GridDetailExpandChangeEvent) => setDetailExpand(event.detailExpand);
 
   const [costComponents, setCostComponents] = useState<DataResult>({
     data: [],
@@ -129,7 +96,6 @@ export default function ActualProductCostsList({ productionRunId, productId }: P
     if (ccData?.costComponents) {
       const adjustedData = handleDatesArray(ccData.costComponents).map((cc: CostComponent) => ({
         ...cc,
-        expanded: false,
         children: cc.children || []
       }));
       setCostComponents({ data: adjustedData, total: ccData.costComponents.length });
@@ -225,8 +191,9 @@ export default function ActualProductCostsList({ productionRunId, productId }: P
                     total={costComponents.total}
                     pageable={true}
                     detail={DetailComponent}
-                    expandField="expanded"
-                    onExpandChange={expandChange}
+                    dataItemKey="costComponentTypeId"
+                    detailExpand={detailExpand}
+                    onDetailExpandChange={expandChange}
                     onPageChange={pageChange}
                     data={orderBy(costComponents.data, []).slice(page.skip, page.take + page.skip)}
                 >

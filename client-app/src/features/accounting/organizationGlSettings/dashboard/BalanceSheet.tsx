@@ -249,7 +249,7 @@ const BalanceSheet = () => {
                                                 `${localizationKey}.code`,
                                                 "Account Code"
                                             )}
-                                            cell={AccountCodeCell}
+                                            cells={{ data: AccountCodeCell }}
                                         />
                                         <Column
                                             field="accountName"
@@ -301,7 +301,7 @@ const BalanceSheet = () => {
                                                 `${localizationKey}.code`,
                                                 "Account Code"
                                             )}
-                                            cell={AccountCodeCell}
+                                            cells={{ data: AccountCodeCell }}
                                         />
                                         <Column
                                             field="accountName"
@@ -353,7 +353,7 @@ const BalanceSheet = () => {
                                                 `${localizationKey}.code`,
                                                 "Account Code"
                                             )}
-                                            cell={AccountCodeCell}
+                                            cells={{ data: AccountCodeCell }}
                                         />
                                         <Column
                                             field="accountName"

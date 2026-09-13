@@ -561,7 +561,7 @@ export default function ProductionRunTasksList({
           {showActionColumn && (
           <Column
             title={getTranslatedLabel("general.actions", "Actions")}
-            cell={renderActionButtons}
+            cells={{ data: renderActionButtons }}
             width={firstColumnWidth}
           />)}
           <Column
@@ -612,7 +612,7 @@ export default function ProductionRunTasksList({
               "Actual Setup Time"
             )}
             width={200}
-            cell={TimeDisplayCell}
+            cells={{ data: TimeDisplayCell }}
           />
           <Column
             field="actualMilliSeconds"
@@ -621,7 +621,7 @@ export default function ProductionRunTasksList({
               "Actual Run Time"
             )}
             width={200}
-            cell={TimeDisplayCell}
+            cells={{ data: TimeDisplayCell }}
           />
           <Column
             field="quantityToProduce"

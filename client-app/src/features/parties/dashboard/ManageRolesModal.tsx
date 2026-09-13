@@ -168,7 +168,7 @@ export default function ManageRolesModal({ partyId, partyName, open, onClose }: 
                             >
                                 <Column field="roleTypeId" title={getTranslatedLabel("party.parties.manageRoles.roleId", "Role ID")} width="150px" />
                                 <Column field="roleName" title={getTranslatedLabel("party.parties.manageRoles.roleName", "Role Name")} />
-                                <Column cell={DeleteCell} width="80px" filterable={false} sortable={false} />
+                                <Column cells={{ data: DeleteCell }} width="80px" filterable={false} sortable={false} />
                             </KendoGrid>
                         )}
                     </Grid>

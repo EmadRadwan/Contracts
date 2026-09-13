@@ -72,22 +72,22 @@ const NotAppliedInvoicesGrid: React.FC<NotAppliedInvoicesGridProps> = ({
                     field="amount"
                     title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")}
                     format="{0:c}"
-                    cell={(props) => (
+                    cells={{ data: (props) => (
                         <td>{props.dataItem.amount.toFixed(2)} {payment?.currencyUomId}</td>
-                    )}
+                    ) }}
                 />
                 <GridColumn
                     title={getTranslatedLabel(`${localizationKey}.alreadyApplied`, "Applied")}
-                    cell={({dataItem}) => (
+                    cells={{ data: ({dataItem}) => (
                         <td>{dataItem.amountApplied.toFixed(2)} {payment?.currencyUomId}</td>
-                    )}
+                    ) }}
                 />
 
                 <GridColumn
                     title={getTranslatedLabel(`${localizationKey}.remaining`, "Remaining")}
-                    cell={({dataItem}) => (
+                    cells={{ data: ({dataItem}) => (
                         <td>{dataItem.amountToApply.toFixed(2)} {payment?.currencyUomId}</td>
-                    )}
+                    ) }}
                 />
             </KendoGrid>
         </MuiGrid>

@@ -114,7 +114,7 @@ const CustomTimePeriods = () => {
                                     <Column
                                         field="customTimePeriodId"
                                         title="Custom Time Period Id"
-                                        cell={CustomTimePeriodCell}
+                                        cells={{ data: CustomTimePeriodCell }}
                                         width={160}
                                     />
                                     <Column

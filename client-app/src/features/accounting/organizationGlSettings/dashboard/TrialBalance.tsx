@@ -215,7 +215,7 @@ const TrialBalance = () => {
                         isFetching={isFetching}
                     />
                   </GridToolbar>
-                  <Column field="accountCode" title={getTranslatedLabel(`${localizationKey}.accountCode`, "Account Code")} cell={AccountCodeCell} />
+                  <Column field="accountCode" title={getTranslatedLabel(`${localizationKey}.accountCode`, "Account Code")} cells={{ data: AccountCodeCell }} />
                   <Column field="accountName" title={getTranslatedLabel(`${localizationKey}.accountName`, "Account Name")} />
                   <Column field="openingBalance" title={getTranslatedLabel(`${localizationKey}.openingBalance`, "Opening Balance")} format="{0:n2}" filter={"numeric"} />
                   <Column field="postedDebits" title={getTranslatedLabel(`${localizationKey}.postedDebits`, "Debit")} format="{0:n2}" filter={"numeric"} />

@@ -130,7 +130,7 @@ export default function ProductCategoriesList() {
                                     </Grid>
                                 </GridToolbar>
 
-                                <Column field="description" title="Product Category" cell={productCategoryCell}
+                                <Column field="description" title="Product Category" cells={{ data: productCategoryCell }}
                                         width={300}/>
                                 <Column field="fromDate" title="From" width={100} format="{0: dd/MM/yyyy}"/>
                                 <Column field="thruDate" title="To" width={100} format="{0: dd/MM/yyyy}"/>

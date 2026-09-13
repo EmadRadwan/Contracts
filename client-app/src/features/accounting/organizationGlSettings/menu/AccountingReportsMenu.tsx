@@ -18,6 +18,7 @@ interface AccountingMenuProps {
 
 const links1 = [
   { path: "/trialBalance", title: "Trial Balance" },
+  { path: "/trialBalanceByLevel", title: "Trial Balance By Level" },
   { path: "/transactionTotals", title: "Transaction Totals" },
   { path: "/incomeStatement", title: "Income Statement" },
   { path: "/cashFlowStatement", title: "Cash Flow Statement" },

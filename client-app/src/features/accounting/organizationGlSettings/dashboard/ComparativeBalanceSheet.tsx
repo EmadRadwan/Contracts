@@ -143,7 +143,7 @@ const ComparativeBalanceSheet = () => {
                     `${localizationKey}.code`,
                     "Account Code"
                   )}
-                  cell={AccountCodeCell}
+                  cells={{ data: AccountCodeCell }}
                 />
                 <Column
                   field="accountName"
@@ -187,7 +187,7 @@ const ComparativeBalanceSheet = () => {
                     `${localizationKey}.code`,
                     "Account Code"
                   )}
-                  cell={AccountCodeCell}
+                  cells={{ data: AccountCodeCell }}
                 />
                 <Column
                   field="accountName"
@@ -231,7 +231,7 @@ const ComparativeBalanceSheet = () => {
                     `${localizationKey}.code`,
                     "Account Code"
                   )}
-                  cell={AccountCodeCell}
+                  cells={{ data: AccountCodeCell }}
                 />
                 <Column
                   field="accountName"

@@ -109,7 +109,7 @@ const InvoiceItemTypeList = () => {
                                     <Column
                                         field="invoiceItemTypeId"
                                         title="Invoice Item Type"
-                                        cell={InvoiceItemTypeCell}
+                                        cells={{ data: InvoiceItemTypeCell }}
                                         // width={200}
                                     />
                                     <Column

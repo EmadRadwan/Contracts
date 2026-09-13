@@ -16,6 +16,10 @@ import { useAppSelector } from "../../../app/store/configureStore";
 import { FormSimpleComboBoxVirtualProductWithCategory } from "../../../app/common/form/FormSimpleComboBoxVirtualProductWithCategory";
 import { FormComboBoxVirtualUOMAbbreviation } from "../../../app/common/form/FormComboBoxVirtualUOMAbbreviation";
 import { v4 as uuidv4 } from "uuid";
+import { createStyledRow, editDescriptorFrom } from "../../../app/common/grid";
+
+// Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
+const InvalidItemRow = createStyledRow((dataItem) => (!dataItem._isValid && dataItem.productId ? { backgroundColor: "#fff8e1" } : undefined));
 
 // Purpose: Plain <td> totals (read-only cells / toolbar text) don't get Kendo's built-in
 // numeric-editor thousands separator, unlike the editable numeric columns — mirrors the
@@ -138,6 +142,8 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
     const { currentCertificateType } = useAppSelector(s => s.certificateUi);
 
     const [data, setData] = useState<BulkAddRow[]>([]);
+    // KendoReact v16: edit state is a descriptor keyed by dataItemKey, derived from the inEdit flag on the rows
+    const editDescriptor = useMemo(() => editDescriptorFrom(data, "workEffortId"), [data]);
 
     const isContracting       = currentCertificateType === "WORKMANSHIP_CONTRACTING_CERTIFICATE";
     const isSupplyProcurement = currentCertificateType === "SUPPLY_PROCUREMENT_CERTIFICATE";
@@ -407,27 +413,13 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
         getLabel: getTranslatedLabel,
     }), [removeRow, getTranslatedLabel]);
 
-    // ── Row highlight for started-but-incomplete rows ───────────────────────────
-
-    const rowRender = useCallback(
-        (trElement: React.ReactElement, { dataItem }: { dataItem: BulkAddRow }) => {
-            if (!dataItem._isValid && dataItem.productId) {
-                return React.cloneElement(trElement, {
-                    style: { backgroundColor: "#fff8e1" },
-                });
-            }
-            return trElement;
-        },
-        []
-    );
-
     // ── Columns ─────────────────────────────────────────────────────────────────
 
     const gridColumns = useMemo(() => {
         const cols: React.ReactElement[] = [
-            <Column key="productId"   field="productId"   title={isContracting ? getTranslatedLabel(`${itemKey}.product`, "Work Item") : getTranslatedLabel(`${itemKey}.productItem`, "Item")}     cell={ProductCell} width={280} />,
+            <Column key="productId"   field="productId"   title={isContracting ? getTranslatedLabel(`${itemKey}.product`, "Work Item") : getTranslatedLabel(`${itemKey}.productItem`, "Item")}     cells={{ data: ProductCell }} width={280} />,
             <Column key="description" field="description" title={getTranslatedLabel(`${itemKey}.description`,    "Description")}                    width={250} />,
-            <Column key="uomId"       field="uomId"       title={getTranslatedLabel(`${itemKey}.unitOfMeasure`,  "UOM")}         cell={UomCell}     width={150} />,
+            <Column key="uomId"       field="uomId"       title={getTranslatedLabel(`${itemKey}.unitOfMeasure`,  "UOM")}         cells={{ data: UomCell }}     width={150} />,
             <Column key="quantity"    field="quantity"    title={getTranslatedLabel(`${itemKey}.quantity`,       "Qty")}  editor="numeric"           width={100} />,
         ];
 
@@ -435,9 +427,9 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
             cols.push(
                 <Column key="materialPrice"        field="materialPrice"        title={getTranslatedLabel(`${itemKey}.materialPrice`,        "Mat. Price")}   editor="numeric"  width={130} />,
                 <Column key="laborPrice"           field="laborPrice"           title={getTranslatedLabel(`${itemKey}.laborPrice`,           "Lab. Price")}   editor="numeric"  width={130} />,
-                <Column key="achievementPercentage" field="achievementPercentage" title={getTranslatedLabel(`${itemKey}.achievementPercentage`, "Ach. %")}   cell={AchievementPercentageCell}  width={200} />,
-                <Column key="totalAmount"          field="totalAmount"          title={getTranslatedLabel(`${itemKey}.totalAmount`,          "Total")}        editable={false}  width={110} cell={p => <td>{formatNumber(p.dataItem.totalAmount)}</td>} />,
-                <Column key="deserved"             field="deserved"             title={getTranslatedLabel(`${itemKey}.deserved`,             "Deserved")}     editable={false}  width={110} cell={p => <td>{formatNumber(p.dataItem.deserved)}</td>} />,
+                <Column key="achievementPercentage" field="achievementPercentage" title={getTranslatedLabel(`${itemKey}.achievementPercentage`, "Ach. %")}   cells={{ data: AchievementPercentageCell }}  width={200} />,
+                <Column key="totalAmount"          field="totalAmount"          title={getTranslatedLabel(`${itemKey}.totalAmount`,          "Total")}        editable={false}  width={110} cells={{ data: p => <td>{formatNumber(p.dataItem.totalAmount)}</td> }} />,
+                <Column key="deserved"             field="deserved"             title={getTranslatedLabel(`${itemKey}.deserved`,             "Deserved")}     editable={false}  width={110} cells={{ data: p => <td>{formatNumber(p.dataItem.deserved)}</td> }} />,
                 <Column key="insurance"            field="insurance"            title={getTranslatedLabel(`${itemKey}.insurance`,            "Insurance")}    editor="numeric"  width={130} />,
                 <Column key="additionalInsurance"  field="additionalInsurance"  title={getTranslatedLabel(`${itemKey}.additionalInsurance`,  "Add. Ins.")}    editor="numeric"  width={130} />,
                 <Column key="deductions"           field="deductions"           title={getTranslatedLabel(`${itemKey}.deductions`,           "Deduc.")}       editor="numeric"  width={110} />,
@@ -470,9 +462,9 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
                 title={getTranslatedLabel(`${itemKey}.net`, "Net")}
                 editable={false}
                 width={120}
-                cell={p => <td><strong>{formatNumber(p.dataItem.net)}</strong></td>}
+                cells={{ data: p => <td><strong>{formatNumber(p.dataItem.net)}</strong></td> }}
             />,
-            <Column key="commands" cell={CommandCell} width={110} locked />,
+            <Column key="commands" cells={{ data: CommandCell }} width={110} locked />,
         );
 
         return cols;
@@ -493,9 +485,10 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
                 <KendoGrid
                     data={data}
                     onItemChange={handleRowChange}
-                    editField="inEdit"
+                    editable={{ enabled: true, mode: "inline" }}
+                    edit={editDescriptor}
                     dataItemKey="workEffortId"
-                    rowRender={rowRender as any}
+                    rows={{ data: InvalidItemRow }}
                     style={{ height: "70vh" }}
                 >
                     <GridToolbar>

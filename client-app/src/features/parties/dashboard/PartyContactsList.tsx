@@ -119,7 +119,7 @@ export default function PartyContactsList() {
 
                     >
 
-                        <Column field="contactMechPurposeType" title="Contact Type" cell={partyContactCell}
+                        <Column field="contactMechPurposeType" title="Contact Type" cells={{ data: partyContactCell }}
                                 width={300}/>
                         <Column field="contactNumber" title="Contact Number" width={150}/>
                         <Column field="infoString" title="Email Address" width={150}/>

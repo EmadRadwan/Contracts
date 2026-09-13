@@ -139,7 +139,7 @@ export default function InventoryTransferList() {
                                 <Column
                                     field="inventoryTransferId"
                                     title={getTranslatedLabel("facility.transfer.list.invTransfer", "Inventory Transfer")}
-                                    cell={InventoryTransferCell}
+                                    cells={{ data: InventoryTransferCell }}
                                     width={110}
                                     reorderable={false}
                                 />

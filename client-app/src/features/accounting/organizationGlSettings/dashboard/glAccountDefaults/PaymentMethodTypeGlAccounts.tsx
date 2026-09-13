@@ -101,7 +101,7 @@ const PaymentMethodTypeGlAccounts = () => {
                   width={300}
                 />
                 <Column field="glAccountName" title="GL Account" width={350} />
-                  <Column cell={CommandCell} width="auto" />
+                  <Column cells={{ data: CommandCell }} width="auto" />
 
               </KendoGrid>
             </div>

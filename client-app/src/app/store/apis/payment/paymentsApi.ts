@@ -286,6 +286,14 @@ const paymentsApi = createApi({
                     cache: "no-cache",
                 }),
             }),
+            // Same voucher rendered via Telerik Reporting (parallel to getPaymentReportPdf / QuestPDF).
+            getPaymentReportPdfV2: builder.query<ArrayBuffer, string>({
+                query: (paymentId) => ({
+                    url: `/paymentReports/payment-report-v2/${paymentId}`,
+                    responseHandler: (response) => response.arrayBuffer(),
+                    cache: "no-cache",
+                }),
+            }),
             fetchPaymentsByDateRange: builder.query<
                 { data: PaymentRecordDto[]; total: number },
                 { paymentType: 'incoming' | 'outgoing'; fromDate: string; toDate: string }
@@ -355,6 +363,7 @@ export const {
     useLazyFetchPaymentsWithDueStatusByDateRangeQuery,
     useLazyFetchPaymentsWithDueStatusForExportQuery,
     useLazyGetPaymentReportPdfQuery,
+    useLazyGetPaymentReportPdfV2Query,
     useLazyFetchPaymentsByDateRangeQuery,
     useDeletePaymentMutation,
     useDuplicatePaymentMutation, useResetPaymentMutation,

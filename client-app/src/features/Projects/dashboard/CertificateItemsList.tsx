@@ -140,18 +140,18 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
             field: 'code',
             title: getTranslatedLabel(`${localizationKey}.code`, 'Code'),
             width: 250,
-            cell: (props: GridCellProps) => (
+            cells: { data: (props: GridCellProps) => (
                 <td>
                     {props.dataItem.isLastInGroup && props.dataItem.productSubtotal !== undefined
                         ? `${props.dataItem.code} (${getTranslatedLabel(`${localizationKey}.productSubtotal`, 'Subtotal')}: ${formatNumber(props.dataItem.productSubtotal)})`
                         : props.dataItem.code}
                 </td>
-            ),
+            ) },
         },
         {
             field: "productName",
             title: getTranslatedLabel(`${localizationKey}.description`, "Product"),
-            cell: descriptionCell,
+            cells: { data: descriptionCell },
             width: 280,
         },
         {
@@ -175,7 +175,7 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
                     field: "deductionDescription",
                     title: getTranslatedLabel(`${localizationKey}.deductionDescription`, "Deduction Description"),
                     width: 200,
-                    cell: deductionDescriptionCell,
+                    cells: { data: deductionDescriptionCell },
                 },
                 { field: "deserved", title: getTranslatedLabel(`${localizationKey}.deserved`, "Deserved"), format: "{0:n2}", width: 120 },
                 { field: "insurance", title: getTranslatedLabel(`${localizationKey}.insurance`, "Insurance"), format: "{0:n2}", width: 120 },
@@ -246,7 +246,7 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
             ]
             : []),
         {
-            cell: CommandCell,
+            cells: { data: CommandCell },
             width: 100,
         },
     ];

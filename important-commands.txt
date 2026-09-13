@@ -354,19 +354,22 @@ find invoice -> summarize sessions related to supply certificate invoices
 find project -> project report and start was dedicated to fixes for payroll payment type error in creating their acctg trans
 refactor sales commission
 compare and ->power bi
-erp modernization
+erp modernizationdrop
 verify trial balance
 commission-reset-workflow
 payroll system
 Oracle cloud
-CRM Module
 ofbiz audit
 Kendo React
 Lead Assignment
 erp modernization demo
+second batch features
+Telerik report
+CRM v2
+trial balance
+
+
+export TELERIK_NUGET_KEY=42wvbLi8oUCmViiVziRj/g==.y5vjHWks5WSqEDdieynJ3AOKnMIV4gHWDHFiHQPIHLqk9BM/iHDG8GqLNLidzAkrPXfUyaunK+uKg9aJkukqsA==
 
 
 
-
-
-  

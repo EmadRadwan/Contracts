@@ -3,10 +3,14 @@ import { GridFilterCellProps } from '@progress/kendo-react-grid';
 import { Button as KendoButton } from '@progress/kendo-react-buttons';
 import { filterClearIcon } from '@progress/kendo-svg-icons';
 
-export const DateFilterCell = (props: GridFilterCellProps) => {
+// See TextFilterCell.tsx for why the root element must be a <td> spreading props.tdProps.
+type Props = GridFilterCellProps & { tdProps?: React.TdHTMLAttributes<HTMLTableCellElement> };
+
+export const DateFilterCell = (props: Props) => {
     const dateValue = props.value ? new Date(props.value).toISOString().split('T')[0] : '';
 
     return (
+        <td {...props.tdProps}>
         <div className="k-filtercell" style={{ width: '100%', padding: '8px 4px', boxSizing: 'border-box' }}>
             <div className="k-filtercell-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '100%' }}>
                 <select
@@ -56,5 +60,6 @@ export const DateFilterCell = (props: GridFilterCellProps) => {
                 />
             </div>
         </div>
+        </td>
     );
 };

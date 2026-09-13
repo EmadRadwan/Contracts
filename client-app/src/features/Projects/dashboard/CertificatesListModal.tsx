@@ -165,7 +165,7 @@ export default function CertificatesListModal({
             field: "certificateNumber",
             title: getTranslatedLabel("projects.certificate.certificateNumber", "Certificate Number"),
             width: 180,
-            cell: (props: any) => {
+            cells: { data: (props: any) => {
                 const type = props.dataItem.__type;
                 const isHeader = type === "header";
                 const isSubtotal = type === "subtotal";
@@ -198,27 +198,27 @@ export default function CertificatesListModal({
                         )}
                     </td>
                 );
-            },
+            } },
         },
         {
             field: "projectName",
             title: getTranslatedLabel("projects.certificate.projectName", "Project"),
             width: 200,
-            cell: (props: any) => (
+            cells: { data: (props: any) => (
                 <td style={{ fontWeight: props.dataItem.__type === "header" ? "bold" : "normal" }}>
                     {props.dataItem.projectName || ""}
                 </td>
-            ),
+            ) },
         },
         ...(!isWorkmanship ? [{
             field: "description",
             title: getTranslatedLabel("projects.certificate.description", "Description"),
             width: 320,
-            cell: (props: any) => (
+            cells: { data: (props: any) => (
                 <td style={{ fontStyle: props.dataItem.__type === "header" ? "italic" : "normal" }}>
                     {props.dataItem.description || "-"}
                 </td>
-            ),
+            ) },
         }] : []),
         ...(isWorkmanship
             ? [
@@ -226,14 +226,14 @@ export default function CertificatesListModal({
                     field: "productName",
                     title: getTranslatedLabel("projects.certificate.productName", "Product / Service"),
                     width: 280,
-                    cell: (props: any) => {
+                    cells: { data: (props: any) => {
                         if (props.dataItem.__type !== "item") return <td />;
                         return (
                             <td style={{ fontWeight: 500 }}>
                                 {props.dataItem.productName || "—"}
                             </td>
                         );
-                    },
+                    } },
                 },
 
                 {
@@ -241,14 +241,14 @@ export default function CertificatesListModal({
                     title: getTranslatedLabel("projects.certificate.totalPrice", "Total Price (100%)"),
                     width: 160,
                     format: "{0:n2}",
-                    cell: (props: any) => {
+                    cells: { data: (props: any) => {
                         if (props.dataItem.__type !== "item") return <td />;
                         return (
                             <td style={{ textAlign: "right", color: "#424242" }}>
                                 {(props.dataItem.totalPrice ?? 0).toFixed(2)}
                             </td>
                         );
-                    },
+                    } },
                 },
 
                 {
@@ -256,21 +256,21 @@ export default function CertificatesListModal({
                     title: getTranslatedLabel("projects.certificate.deserved", "Deserved Amount"),
                     width: 160,
                     format: "{0:n2}",
-                    cell: (props: any) => {
+                    cells: { data: (props: any) => {
                         if (props.dataItem.__type !== "item") return <td />;
                         return (
                             <td style={{ textAlign: "right", color: "#2e7d32", fontWeight: 600 }}>
                                 {(props.dataItem.deserved ?? 0).toFixed(2)}
                             </td>
                         );
-                    },
+                    } },
                 },
 
                 {
                     field: "achievementPercent",
                     title: getTranslatedLabel("projects.certificate.achievement", "Achievement %"),
                     width: 140,
-                    cell: (props: any) => {
+                    cells: { data: (props: any) => {
                         if (props.dataItem.__type !== "item") return <td>-</td>;
                         return (
                             <td style={{ textAlign: "right", color: "#2e7d32", fontWeight: 600 }}>
@@ -282,7 +282,7 @@ export default function CertificatesListModal({
                                     : "-"}
                             </td>
                         );
-                    },
+                    } },
                 },
             ]
             : []),
@@ -291,12 +291,11 @@ export default function CertificatesListModal({
             title: getTranslatedLabel("projects.certificate.total", "Total"),
             width: 260,
             format: "{0:n2}",
-            footerCell: () => (
+            cells: { footerCell: () => (
                 <td style={{ textAlign: "right", fontWeight: "bold", color: "#d32f2f", fontSize: "1.2em", whiteSpace: "nowrap" }}>
                     {getTranslatedLabel("projects.certificate.grandTotal", "Grand Total")}: {grandTotal.toFixed(2)}
                 </td>
-            ),
-            cell: (props: any) => {
+            ), data: (props: any) => {
                 const type = props.dataItem.__type;
 
                 // In workmanship mode: hide total on header rows
@@ -315,13 +314,13 @@ export default function CertificatesListModal({
                         {value.toFixed(2)}
                     </td>
                 );
-            },
+            } },
         },
         {
             field: "statusDescription",
             title: getTranslatedLabel("projects.certificate.status", "Status"),
             width: 140,
-            cell: (props: any) => {
+            cells: { data: (props: any) => {
                 const type = props.dataItem.__type;
 
                 // Only hide status for header rows in workmanship mode
@@ -332,7 +331,7 @@ export default function CertificatesListModal({
                         {props.dataItem.statusDescription || ""}
                     </td>
                 );
-            },
+            } },
         },
     ];
 

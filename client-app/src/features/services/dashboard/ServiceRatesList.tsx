@@ -175,7 +175,7 @@ export default function ServiceRatesList() {
                                     />
                                     <Column field="makeDescription"
                                             title="Make"
-                                            cell={ServiceRateDescriptionCell} 
+                                            cells={{ data: ServiceRateDescriptionCell }} 
                                             locked={true}/>
                                     <Column field="modelDescription" title="Model" />
                                     <Column field="productStoreName" title="Workshop" />

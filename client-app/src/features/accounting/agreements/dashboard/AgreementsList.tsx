@@ -165,7 +165,7 @@ function AgreementsList() {
                 <Column
                   field="agreementId"
                   title="Agreement Id"
-                  cell={AgreementIdCell}
+                  cells={{ data: AgreementIdCell }}
                   width={210}
                   locked={true}
                 />

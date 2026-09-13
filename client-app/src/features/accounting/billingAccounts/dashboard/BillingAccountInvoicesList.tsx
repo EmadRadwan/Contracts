@@ -159,7 +159,7 @@ const BillingAccountInvoicesList = () => {
         <Grid item xs={12}>
           <div className="div-container">
             <KendoGrid style={{ height: "35vh" }} data={billingAccountInvoices}>
-              <Column field="invoiceId" title="Invoice" cell={InvoiceCell} />
+              <Column field="invoiceId" title="Invoice" cells={{ data: InvoiceCell }} />
               <Column field="invoiceTypeDescription" title="Invoice Type" />
               <Column field="statusDescription" title="Status" />
               <Column
@@ -170,7 +170,7 @@ const BillingAccountInvoicesList = () => {
               <Column
                 field="paidInvoice"
                 title="Is Paid?"
-                cell={InvoicePaidCell}
+                cells={{ data: InvoicePaidCell }}
               />
               <Column field="amountToApply" title="Amount to apply" filter={"numeric"} />
               <Column field="total" title="Total" filter={"numeric"} />

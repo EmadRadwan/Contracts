@@ -21,6 +21,11 @@ namespace Application.Accounting.Reports
             public DateTime? SalesStartDate { get; set; }
             public DateTime? SalesEndDate { get; set; }
             public bool SalesAllData { get; set; }
+
+            // Management-fee inputs for ProjectReportDto.Summary (parity with GetProjectReport.Query).
+            // Not surfaced by the current company Excel; used once the company report gets its own screen.
+            public decimal MgmtFeePercent { get; set; } = 12m;
+            public List<string> ExcludedBuildings { get; set; } = new();
         }
 
         public class Handler : IRequestHandler<Query, ProjectReportDto>
@@ -68,7 +73,14 @@ namespace Application.Accounting.Reports
                     DirectPayments = filteredDirectPayments,
                     OperatingExpenses = filteredOperatingExpenses,
                     Payroll = payroll,
-                    ApartmentSales = apartmentSales
+                    ApartmentSales = apartmentSales,
+                    // Same roll-ups as the project report. This handler has no accounting-transactions
+                    // or paid-commissions section, so those pass through empty.
+                    Summary = ProjectReportSummaryDto.Build(
+                        expenses, revenues, filteredDirectPayments, filteredOperatingExpenses,
+                        System.Array.Empty<PaymentRecord>(), payroll, apartmentSales,
+                        System.Array.Empty<ProjectCommissionPaymentRecord>(),
+                        request.MgmtFeePercent, request.ExcludedBuildings)
                 };
             }
 

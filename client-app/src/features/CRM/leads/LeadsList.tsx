@@ -360,15 +360,14 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
                         width={50}
                         filterable={false}
                         sortable={false}
-                        cell={SelectCell}
-                        headerCell={() => (
+                        cells={{ data: SelectCell, headerCell: () => (
                             <Checkbox
                                 size="small"
                                 checked={allPageSelected}
                                 indeterminate={somePageSelected}
                                 onChange={togglePage}
                             />
-                        )}
+                        ) }}
                     />
                 )}
 
@@ -382,38 +381,38 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
                 <Column
                     field="fullName"
                     title={getTranslatedLabel(`${localizationKey}.name`, 'Name')}
-                    cell={NameCell}
+                    cells={{ data: NameCell }}
                     width={200}
                     locked={true}
                 />
                 <Column
                     field="email"
                     title={getTranslatedLabel(`${localizationKey}.email`, 'Email')}
-                    cell={EmailCell}
+                    cells={{ data: EmailCell }}
                     width={300}
                 />
                 <Column
                     field="phone"
                     title={getTranslatedLabel(`${localizationKey}.phone`, 'Phone')}
-                    cell={PhoneCell}
+                    cells={{ data: PhoneCell }}
                     width={200}
                 />
                 <Column
                     field="ownerName"
                     title={getTranslatedLabel(`${localizationKey}.owner`, 'Assigned To')}
-                    cell={OwnerCell}
+                    cells={{ data: OwnerCell }}
                     width={200}
                 />
                 <Column
                     field="address1"
                     title={getTranslatedLabel(`${localizationKey}.address`, 'Address')}
-                    cell={AddressCell}
+                    cells={{ data: AddressCell }}
 
                 />
                 {canAssign && (
                     <Column
                         title={getTranslatedLabel(`${localizationKey}.actions`, 'Actions')}
-                        cell={AssignCell}
+                        cells={{ data: AssignCell }}
                         width={140}
                         filterable={false}
                         sortable={false}

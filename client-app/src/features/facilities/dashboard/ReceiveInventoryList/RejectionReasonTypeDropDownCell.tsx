@@ -8,7 +8,7 @@ interface Props extends GridCellProps {
 
 export const RejectionReasonTypeDropDownCell = (props: Props): JSX.Element | null => {
     console.log('RejectionReasonTypeDropDownCell rendered');
-    const {ariaColumnIndex, columnIndex, render} = props;
+    const {ariaColumnIndex, columnIndex} = props;
     const {dataItem} = props;
     const field = props.field || "";
     const dataValue = dataItem[field] === null ? "" : dataItem[field];
@@ -52,10 +52,6 @@ export const RejectionReasonTypeDropDownCell = (props: Props): JSX.Element | nul
             {isInEdit ? <div>{editor}</div> : dataValue ? <div>{editor}</div> : null}
         </td>
     );
-
-    if (render) {
-        return render(defaultRendering, props);
-    }
 
 
     return defaultRendering;

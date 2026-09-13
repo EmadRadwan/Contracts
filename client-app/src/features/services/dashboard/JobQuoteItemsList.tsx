@@ -372,7 +372,7 @@ export default function JobQuoteItemsList({
                         <Column
                             field="productName"
                             title="Product"
-                            cell={quoteItemCell}
+                            cells={{ data: quoteItemCell }}
                             width={300}
                         />
                         <Column field="quoteItemSeqId" title="quoteItemSeqId" width={0}/>
@@ -382,12 +382,12 @@ export default function JobQuoteItemsList({
                             width={110}
                         />
                         <Column
-                            cell={ItemQuantityCommandCell}
+                            cells={{ data: ItemQuantityCommandCell }}
                             title="Quantity"
                             width={120}
                         />
                         <Column
-                            cell={ItemDiscountCommandCell}
+                            cells={{ data: ItemDiscountCommandCell }}
                             title="Adjustments"
                             width={150}
                         />
@@ -397,7 +397,7 @@ export default function JobQuoteItemsList({
                             width={120}
                             format="{0:c}"
                         />
-                        <Column cell={CommandCell} width="100px"/>
+                        <Column cells={{ data: CommandCell }} width="100px"/>
                     </KendoGrid>
                 </Grid>
             </Grid>

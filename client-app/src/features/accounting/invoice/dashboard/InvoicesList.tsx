@@ -112,7 +112,7 @@ export default function InvoicesList() {
                                         `${localizationKey}.invoiceId`,
                                         "Invoice Number"
                                     )}
-                                    cell={InvoiceDescriptionCell}
+                                    cells={{ data: InvoiceDescriptionCell }}
                                     width={150}
                                     locked={true}
                                 />

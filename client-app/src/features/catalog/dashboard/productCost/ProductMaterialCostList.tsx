@@ -101,7 +101,7 @@ const ProductMaterialCostList = ({materialCosts, onClose}: Props) => {
             >
               <Column
                 field="productId"
-                cell={FixedCostCell}
+                cells={{ data: FixedCostCell }}
                 title="Material"
                 width={230}
                 reorderable={false}

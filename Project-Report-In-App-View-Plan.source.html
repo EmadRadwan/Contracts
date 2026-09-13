@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Project Report — In-App View Plan</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI","Helvetica Neue",Arial,sans-serif; font-size:10.2pt; line-height:1.55; color:#1a1d21; margin:0; }
+  h1 { font-size:24pt; margin:0 0 4px; letter-spacing:-0.4px; color:#0f172a; }
+  h2 { break-after:avoid; font-size:14pt; margin:26px 0 10px; color:#0f172a; border-bottom:2px solid #2563eb; padding-bottom:5px; page-break-after:avoid; }
+  h3 { font-size:11.5pt; margin:18px 0 6px; color:#1e3a5f; page-break-after:avoid; }
+  h4 { font-size:10.4pt; margin:14px 0 4px; color:#334155; page-break-after:avoid; }
+  p { margin:7px 0; }
+  ul, ol { margin:7px 0; padding-left:20px; }
+  li { margin:3px 0; }
+  ul.task { list-style:none; padding-left:2px; }
+  ul.task li { margin:4px 0; text-indent:-16px; padding-left:16px; }
+  .cb { font-family:"SF Mono",Menlo,Consolas,monospace; color:#2563eb; font-size:10pt; }
+  code { font-family:"SF Mono",Menlo,Consolas,monospace; font-size:8.9pt; background:#f1f5f9; padding:1px 4px; border-radius:3px; color:#b91c1c; }
+  pre { font-family:"SF Mono",Menlo,Consolas,monospace; font-size:8.2pt; background:#f8fafc; border:1px solid #e2e8f0; border-left:3px solid #2563eb; padding:9px 11px; border-radius:4px; overflow-x:auto; line-height:1.45; page-break-inside:avoid; margin:8px 0; white-space:pre-wrap; }
+  pre.allowbreak { page-break-inside:auto; }
+  pre code { background:none; padding:0; color:#1e293b; }
+  .cover { border-bottom:3px solid #2563eb; padding-bottom:14px; margin-bottom:6px; }
+  .sub { color:#64748b; font-size:10.5pt; margin-top:2px; }
+  .meta { color:#94a3b8; font-size:8.6pt; margin-top:10px; }
+  table { border-collapse:collapse; width:100%; margin:10px 0; font-size:9pt; }
+  tr { page-break-inside:avoid; }
+  thead { display:table-header-group; }
+  th { background:#1e3a5f; color:#fff; text-align:left; padding:6px 8px; font-weight:600; font-size:8.6pt; }
+  td { border-bottom:1px solid #e2e8f0; padding:5px 8px; vertical-align:top; }
+  tr:nth-child(even) td { background:#f8fafc; }
+  a { color:#1d4ed8; text-decoration:none; }
+  hr { margin:18px 0; }
+  h2 + p, h3 + p { margin-top:4px; }
+</style>
+</head>
+<body>
+<div class="cover"><h1>Project Report &mdash; In-App View</h1><div class="sub">Making the app the primary way to view the report, with Excel/PDF as exports &mdash; Contracts ERP</div><div class="meta">Audit finding from the project-report presentation &nbsp;·&nbsp; GetProjectReport &rarr; KendoReact Grid screen &nbsp;·&nbsp; 10 September 2026</div></div>
+<p><strong>Status:</strong> Draft for review · <strong>Date:</strong> 2026-09-10 · <strong>Owner:</strong> Emad Radwan</p>
+<p><strong>Trigger:</strong> During the project-report presentation, the client&#x27;s <strong>auditor</strong> objected that the system must not depend on Excel as the <em>primary</em> way to view a report. The report has to be <strong>viewable inside the application</strong> — the way the payment voucher now is — with <strong>Excel and PDF as &quot;export / save-as&quot; options</strong>, not as the report itself.</p>
+<p>This plan covers only the <strong>Project Report</strong> (<code>GetProjectReport</code> → <code>client-app/.../Projects/report/ProjectReportExcel.tsx</code>). The same refactor applies 1:1 to the company-level report (<code>fetchCompanyReport</code>, <code>/project/companyReport</code>), which returns the identical <code>ProjectReportDto</code>.</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>1. This is not the same problem as the payment voucher</h2>
+<table><thead><tr><th></th><th><strong>Payment voucher (done)</strong></th><th><strong>Project report (this plan)</strong></th></tr></thead><tbody><tr><td>Shape</td><td>one fixed page, print layout</td><td>8 sections, hundreds of rows, analytical</td></tr><tr><td>What the viewer does</td><td>reads / prints it</td><td><strong>filters, sorts, groups, traces a total to its rows</strong></td></tr><tr><td>Right primary surface</td><td>a code-defined <strong>Telerik report</strong></td><td>an <strong>in-app screen built on the KendoReact Grid</strong> (v16)</td></tr><tr><td>Telerik Reporting&#x27;s role</td><td><em>is</em> the report</td><td>one of the <strong>export</strong> formats (PDF), secondary</td></tr></tbody></table>
+<p>A rendered PDF or spreadsheet is static — it can&#x27;t be the &quot;layer you work in&quot; for a report this size. The KendoReact Grid gives sorting, filtering, grouping, column reordering and its own Excel/PDF export <strong>for free</strong>, and the data already arrives as JSON.</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>2. Current architecture (as-is)</h2>
+<pre><code>                 ┌───────────────────────────────────────────────┐
+ MySQL  ◄────────┤  GetProjectReport.Handler   (Application/CQRS) │
+                 │  builds ProjectReportDto: 8 collections        │
+                 │   Expenses, Revenues, DirectPayments,          │
+                 │   OperatingExpenses, AccountingTransactions,   │
+                 │   Payroll, ApartmentSales, PaidCommissions     │
+                 └───────────────────────┬───────────────────────┘
+                                         │  JSON  (GET /project/report)
+                                         ▼
+             ┌───────────────────────────────────────────────────┐
+             │  ProjectReportExcel.tsx     (MUI Dialog)           │
+             │   • date filters ×3, mgmt-fee %, excluded buildings│
+             │   • generateExcel(dto):                            │
+             │       – computes ALL summary totals in the browser │
+             │       – builds ~11 ExcelJS sheets                  │
+             │       – saveAs(blob, &quot;*.xlsx&quot;)                     │
+             └───────────────────────────────────────────────────┘</code></pre>
+<p><strong>Files involved today</strong></p>
+<table><thead><tr><th>File</th><th>Role</th></tr></thead><tbody><tr><td><code>Application/Projects/GetProjectReport.cs</code></td><td>the query + handler — one DB read per section, all calculation server-side</td></tr><tr><td><code>Application/Projects/ProjectReportDto.cs</code></td><td>8 collection types (<code>ProjectExpenseRecord</code>, <code>ProjectRevenueRecord</code>, <code>ProjectCommissionPaymentRecord</code>, shared <code>PaymentRecord</code>, <code>SalesRequestOrApartmentRecord</code>)</td></tr><tr><td><code>client-app/src/app/store/apis/projectsApi.ts</code></td><td><code>fetchProjectReport</code> query (<code>useLazyFetchProjectReportQuery</code>); FE <code>ProjectReportDto</code> interface</td></tr><tr><td><code>client-app/src/features/Projects/report/ProjectReportExcel.tsx</code></td><td>the entire user-facing feature — a dialog that produces an <code>.xlsx</code></td></tr><tr><td><code>client-app/src/features/Projects/dashboard/ProjectsList.tsx:280</code></td><td>opens <code>&lt;ProjectReportExcel&gt;</code> from a per-row action, gated by role <code>RunProjectReport</code></td></tr></tbody></table>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>3. The gap — precisely</h2>
+<ol><li><strong>There is no in-app view.</strong> The only way to <em>see</em> the report is to download a spreadsheet and open it. That is exactly what the auditor rejected.</li><li><strong>The summary numbers are computed in the browser.</strong> <code>ProjectReportExcel.tsx:223–296</code> (<code>sumSection</code> / <code>sumLine</code>) derives every total client-side — certificate/direct/transaction/ payroll/operating expense subtotals and grand total, revenue scheduled/collected/outstanding, maintenance-deposit split, unit-sales totals, commissions paid/pending, and the management-fee block (<code>mgmtBase</code>, <code>mgmtFee</code>, <code>mgmtNet</code>). If a second surface (a screen, a PDF) computes its own totals, the two <strong>will drift</strong> — and there is already a known rounding rule the reports must respect (<code>PAYROL_PAYMENT</code> nets are rounded per-invoice to 2 dp <em>then</em> summed, never raw-summed).</li><li><strong>Management-fee inputs live only in the dialog.</strong> <code>mgmtFeePercent</code> (default 12) and <code>excludedBuildings</code> (pre-selects A1/A2) are dialog state, fed by <code>useFetchProjectBuildingsQuery</code>. Any new surface needs the same two inputs — so they belong in the query, not one screen&#x27;s state.</li></ol>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>4. Target architecture</h2>
+<p>One calculation layer. Three surfaces, all reading the same DTO.</p>
+<pre><code>                 ┌───────────────────────────────────────────────┐
+ MySQL  ◄────────┤  GetProjectReport.Handler                     │
+                 │  ProjectReportDto  =  8 collections            │
+                 │                    +  Summary  ◄── NEW         │
+                 │  Query gains: mgmtFeePercent, excludedBuildings│
+                 └───────────────────────┬───────────────────────┘
+                                         │  JSON
+              ┌──────────────────────────┼──────────────────────────┐
+              ▼                          ▼                          ▼
+ ┌─────────────────────┐   ┌──────────────────────────┐  ┌────────────────────────┐
+ │ ProjectReportView   │   │ buildProjectReportWorkbook│  │ IProjectReportService  │
+ │  (PRIMARY - screen) │   │  (EXPORT - .xlsx)         │  │  (EXPORT - .pdf)       │
+ │  summary ribbon +   │   │  = today&#x27;s generateExcel, │  │  Telerik, like the     │
+ │  section grids      │   │    extracted to a module  │  │  payment voucher       │
+ └─────────────────────┘   └──────────────────────────┘  └────────────────────────┘</code></pre>
+<p><strong>Principle:</strong> no number exists only in a spreadsheet formula. Every total is computed once, in <code>GetProjectReport</code>, shown on the screen, and re-used verbatim by both exports.</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>5. The in-app screen — <code>ProjectReportView</code></h2>
+<p>A full screen (not a dialog), opened from the same <code>RunProjectReport</code> action on <code>ProjectsList</code>.</p>
+<h3>5.1 Filter bar (top, sticky)</h3>
+<p>Everything the <code>Query</code> already takes, plus the two mgmt-fee inputs pulled out of the old dialog:</p>
+<ul><li>Project (fixed when opened from a row; a picker for the company report)</li><li>Expenses period · Revenues period · Sales period — each a date range + an &quot;All data&quot; toggle</li><li>Management fee % (<code>10 / 11 / 12 / 12.5 / 13 / 14 / 15</code>, default 12)</li><li>Excluded buildings (multi-select from <code>fetchProjectBuildings</code>, pre-checks A1/A2)</li><li><strong>Actions:</strong> <code>Refresh</code> · <code>Export ▾ (Excel · PDF)</code></li></ul>
+<p>Changing a filter re-runs <code>useLazyFetchProjectReportQuery</code> (one call, returns the whole DTO).</p>
+<h3>5.2 Summary ribbon</h3>
+<p>Cards / a compact table driven <strong>entirely</strong> by <code>dto.summary</code> — the same sections the Excel summary sheet has today:</p>
+<table><thead><tr><th>Group</th><th>Lines</th></tr></thead><tbody><tr><td>المصاريف</td><td>المستخلصات · الدفعات المباشرة · قيود محاسبية · رواتب المشروع · المصاريف التشغيلية · <strong>إجمالي مصاريف المشروع</strong></td></tr><tr><td>الإيرادات</td><td>الإيراد المتفق عليه · المحصل · المتبقي</td></tr><tr><td>وديعة الصيانة</td><td>الإجمالي · المحصل · المتبقي</td></tr><tr><td>مبيعات الوحدات</td><td>عدد الوحدات المباعة · إجمالي القيمة · إجمالي المقدمات المحصلة · عدد الوحدات المتاحة</td></tr><tr><td>العمولات</td><td>عدد الدفعات · المدفوعة · المستحقة · <strong>الإجمالي</strong></td></tr><tr><td>مبلغ الإدارة</td><td>الأساس (± المستبعد) · النسبة (x%) · − المصاريف التشغيلية · <strong>الصافي المتبقي</strong></td></tr><tr><td>الصافي</td><td>المحصل − مصاريف المشروع · بعد خصم العمولات المدفوعة</td></tr></tbody></table>
+<h3>5.3 Section grids</h3>
+<p>One KendoReact <code>Grid</code> (v16) per DTO collection, as tabs or an accordion. Column sets <strong>mirror the current Excel sheets</strong> so nothing is lost versus the spreadsheet:</p>
+<table><thead><tr><th>Tab (Arabic)</th><th>DTO collection</th><th>Notes</th></tr></thead><tbody><tr><td>المصاريف – المستخلصات</td><td><code>expenses</code></td><td>~15 cols; group by certificate; footer = net total</td></tr><tr><td>الدفعات المباشرة</td><td><code>directPayments</code></td><td>shared <code>PaymentRecord</code> columns</td></tr><tr><td>قيود محاسبية</td><td><code>accountingTransactions</code></td><td><code>PaymentRecord</code></td></tr><tr><td>رواتب المشروع</td><td><code>payroll</code></td><td><code>PaymentRecord</code>; <strong>per-invoice 2 dp rounding</strong> already applied server-side</td></tr><tr><td>المصاريف التشغيلية</td><td><code>operatingExpenses</code></td><td><code>PaymentRecord</code></td></tr><tr><td>الإيرادات</td><td><code>revenues</code></td><td>due-status buckets → filterable columns</td></tr><tr><td>وديعة الصيانة</td><td><code>revenues</code> filtered to maintenance</td><td>same grid component, pre-filter</td></tr><tr><td>مبيعات الوحدات</td><td><code>apartmentSales</code></td><td>sold + available</td></tr><tr><td>العمولات المدفوعة</td><td><code>paidCommissions</code></td><td>paid vs. still-owed split (<code>isPaid</code>)</td></tr></tbody></table>
+<p>Each grid: sort, multi-column filter, group, column show/hide, and per-grid <code>Export to Excel</code> (KendoReact built-in) for the &quot;just this section&quot; case.</p>
+<p>Empty sections render a muted &quot;لا توجد بيانات للفترة المحددة&quot; instead of an empty tab.</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>6. Backend changes</h2>
+<h3>6.1 <code>ProjectReportDto</code> — add <code>Summary</code> (additive, no breakage)</h3>
+<pre class="allowbreak"><code>public class ProjectReportDto
+{
+    // ... 8 existing collections, unchanged ...
+    public ProjectReportSummaryDto Summary { get; set; } = new();   // NEW
+}
+
+public class ProjectReportSummaryDto
+{
+    // المصاريف
+    public decimal CertificateExpenses { get; set; }
+    public decimal DirectPayments { get; set; }
+    public decimal AccountingTransactions { get; set; }
+    public decimal ProjectPayroll { get; set; }          // per-invoice 2dp rounded then summed
+    public decimal OperatingExpenses { get; set; }
+    public decimal TotalProjectExpenses { get; set; }
+
+    // الإيرادات / وديعة الصيانة
+    public decimal RevenueScheduled { get; set; }
+    public decimal RevenueCollected { get; set; }
+    public decimal RevenueOutstanding { get; set; }
+    public decimal MaintenanceScheduled { get; set; }
+    public decimal MaintenanceCollected { get; set; }
+    public decimal MaintenanceOutstanding { get; set; }
+
+    // مبيعات الوحدات
+    public int UnitsSold { get; set; }
+    public decimal UnitsSoldValue { get; set; }
+    public decimal UnitsAdvanceCollected { get; set; }
+    public int UnitsAvailable { get; set; }
+
+    // العمولات
+    public int CommissionPaymentCount { get; set; }
+    public decimal CommissionsPaid { get; set; }
+    public decimal CommissionsPending { get; set; }
+
+    // مبلغ الإدارة
+    public decimal MgmtFeeBase { get; set; }
+    public decimal MgmtFeePercent { get; set; }
+    public decimal MgmtFee { get; set; }
+    public decimal MgmtFeeNet { get; set; }
+    public IReadOnlyList&lt;string&gt; MgmtExcludedBuildings { get; set; } = Array.Empty&lt;string&gt;();
+
+    // الصافي
+    public decimal NetAfterExpenses { get; set; }         // collected − total expenses
+    public decimal NetAfterPaidCommissions { get; set; }  // − commissions paid
+}</code></pre>
+<p>The handler computes these from the collections it already builds — this is a <strong>lift-and-shift of <code>ProjectReportExcel.tsx:223–296</code> into C#</strong>, nothing new is calculated.</p>
+<h3>6.2 <code>GetProjectReport.Query</code> — two new params</h3>
+<pre><code>public decimal MgmtFeePercent { get; set; } = 12m;
+public List&lt;string&gt; ExcludedBuildings { get; set; } = new();   // default: server pre-fills A1/A2 if present</code></pre>
+<p>Needed so <code>Summary.MgmtFee*</code> can be computed server-side. Wire them through <code>fetchProjectReport</code> / <code>fetchCompanyReport</code> in <code>projectsApi.ts</code>.</p>
+<h3>6.3 (Optional) <code>IProjectReportService</code> for server-side PDF/XLSX</h3>
+<p>Mirrors <code>IPaymentVoucherReportService</code> — <code>Render(ProjectReportDto dto, string format)</code>. Only needed if we want the PDF produced on the server rather than from the Grid. Decide in §7.</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>7. PDF export — options</h2>
+<table><thead><tr><th>Option</th><th>Effort</th><th>Fidelity</th><th>Notes</th></tr></thead><tbody><tr><td><strong>A. KendoReact Grid <code>PDFExport</code></strong> per section + a summary page</td><td>Low</td><td>Fair</td><td>Ships with v16; one file, section-per-page; quickest path to &quot;there is a PDF button&quot;</td></tr><tr><td><strong>B. Telerik <code>ProjectReport</code> (code-defined)</strong> bound to the DTO, rendered by <code>IProjectReportService</code></td><td>Medium</td><td>High</td><td>Same pattern as the payment voucher; print-quality summary + section tables; server-side</td></tr><tr><td><strong>C. Headless-Chrome print of the screen</strong></td><td>Low–Med</td><td>Good</td><td>Reuses the exact on-screen layout; needs a print stylesheet</td></tr></tbody></table>
+<p><strong>Recommendation:</strong> ship <strong>A</strong> with the first release (low cost, satisfies &quot;PDF is an export option&quot;), then add <strong>B</strong> if the auditor or client wants a formal, paginated PDF. Excel export is <strong>not</strong> in this table — it stays as today&#x27;s hand-built workbook (§8.2).</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>8. Frontend changes</h2>
+<h3>8.1 New: <code>features/Projects/report/ProjectReportView.tsx</code></h3>
+<p>The screen from §5. Uses <code>useLazyFetchProjectReportQuery</code>, KendoReact <code>Grid</code> per section, a summary ribbon component, and the filter bar. Follows the repo&#x27;s Menu-Exit pattern for list↔view switching (<code>client-app/CLAUDE.md</code>).</p>
+<h3>8.2 Refactor: <code>ProjectReportExcel.tsx</code> → a pure module</h3>
+<p>Extract <code>generateExcel(dto)</code> into <code>features/Projects/report/buildProjectReportWorkbook.ts</code>:</p>
+<pre><code>export async function buildProjectReportWorkbook(
+    dto: ProjectReportDto,
+    opts: { projectName: string; periods: {...} }
+): Promise&lt;ArrayBuffer&gt;</code></pre>
+<ul><li>No React, no hooks — just DTO in, <code>.xlsx</code> buffer out.</li><li>Delete the browser-side summing; read totals from <code>dto.summary</code>.</li><li>The existing dialog keeps working during the transition (it just calls the new function).</li><li><code>ProjectReportView</code>&#x27;s &quot;Export → Excel&quot; button calls the same function.</li></ul>
+<h3>8.3 Switch the entry point</h3>
+<p><code>ProjectsList.tsx:280</code> — replace <code>&lt;ProjectReportExcel open=…&gt;</code> with navigation to <code>ProjectReportView</code>. Once parity is confirmed, delete <code>ProjectReportExcel.tsx</code> (the dialog shell; the workbook logic lives on in the module).</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>9. Migration path (low risk, incremental)</h2>
+<table><thead><tr><th>Step</th><th>Change</th><th>Ships behind</th></tr></thead><tbody><tr><td>1</td><td>Backend: <code>ProjectReportSummaryDto</code> + handler fills it (lift from the TSX summary)</td><td>nothing — additive</td></tr><tr><td>2</td><td>Backend: <code>Query.MgmtFeePercent</code> + <code>ExcludedBuildings</code>; wire through <code>projectsApi.ts</code></td><td>nothing — additive</td></tr><tr><td>3</td><td>FE: extract <code>buildProjectReportWorkbook.ts</code>; old dialog calls it; totals now from <code>dto.summary</code></td><td>old dialog (unchanged UX)</td></tr><tr><td>4</td><td>FE: <code>ProjectReportView</code> — filter bar + summary ribbon + <strong>one</strong> section grid (المستخلصات)</td><td>a hidden route / feature flag</td></tr><tr><td>5</td><td>FE: add remaining section grids one at a time, each checked against its Excel sheet</td><td>same</td></tr><tr><td>6</td><td>FE: &quot;Export → Excel&quot; (reuses step 3) + &quot;Export → PDF&quot; (option A) on the screen</td><td>same</td></tr><tr><td>7</td><td>Flip <code>ProjectsList</code> action to open the screen; keep the dialog reachable for one release</td><td>—</td></tr><tr><td>8</td><td>Delete <code>ProjectReportExcel.tsx</code> dialog shell</td><td>—</td></tr><tr><td>9</td><td>(Optional) <code>IProjectReportService</code> + Telerik <code>ProjectReport</code> for a formal PDF</td><td>—</td></tr></tbody></table>
+<p>Every step is independently shippable and reversible. Steps 1–3 have <strong>zero</strong> user-visible change.</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>10. Effort &amp; sequencing</h2>
+<table><thead><tr><th>Block</th><th>Rough size</th></tr></thead><tbody><tr><td>Steps 1–2 (backend summary + params)</td><td>~0.5–1 day — mechanical port of existing JS math</td></tr><tr><td>Step 3 (extract workbook module)</td><td>~0.5 day</td></tr><tr><td>Steps 4–5 (screen + 9 grids)</td><td>~3–5 days — the bulk; grid column defs mirror existing sheets</td></tr><tr><td>Step 6 (export buttons)</td><td>~0.5 day (Excel reuse) + ~0.5 day (Grid PDF)</td></tr><tr><td>Steps 7–8 (cutover + cleanup)</td><td>~0.5 day</td></tr><tr><td>Step 9 (Telerik PDF, optional)</td><td>~1–2 days</td></tr></tbody></table>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>11. Risks &amp; watch-items</h2>
+<table><thead><tr><th>#</th><th>Item</th><th>Mitigation</th></tr></thead><tbody><tr><td>R1</td><td><strong>Freshly changed code.</strong> The mgmt-fee block, maintenance-deposit split and paid-commissions sheet were coded 2026-09-10 and are still in the working tree, not yet built/verified.</td><td>Land and verify that batch <strong>first</strong>; build this plan on top of it, not in parallel</td></tr><tr><td>R2</td><td><strong>Summary drift</strong> between screen, Excel, PDF</td><td>Single <code>Summary</code> DTO is the whole point — no surface recomputes totals</td></tr><tr><td>R3</td><td><strong>Payroll rounding</strong> (<code>PAYROL_PAYMENT</code> per-invoice 2 dp → sum)</td><td>Already handled in the handler; the ported <code>Summary</code> must call the same path, never raw-sum <code>payroll</code></td></tr><tr><td>R4</td><td><strong>RTL / Arabic</strong> in KendoReact Grid</td><td>v16 Grid supports <code>dir=&quot;rtl&quot;</code>; the app already runs RTL grids elsewhere</td></tr><tr><td>R5</td><td>Column parity — a stakeholder misses a column that was in the sheet</td><td>Step 5 checks each grid against its Excel sheet before enabling</td></tr><tr><td>R6</td><td><code>RunProjectReport</code> role</td><td>screen sits behind the same <code>&lt;Can perform=&quot;RunProjectReport&quot;&gt;</code> / route guard as today</td></tr><tr><td>R7</td><td>Company report (<code>/project/companyReport</code>) diverges</td><td>build <code>ProjectReportView</code> to take the DTO + a <code>mode</code> prop (<code>&#x27;project&#x27;</code> or <code>&#x27;company&#x27;</code>) from the start</td></tr><tr><td>R8</td><td>Large projects — hundreds of expense rows</td><td>Grid virtual scrolling; the DTO is already returned whole today, so payload size is unchanged</td></tr></tbody></table>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>12. What to tell the auditor</h2>
+<ul><li>The <strong>application now displays</strong> the project&#x27;s financial position — summary and every supporting row — with live filtering and sorting.</li><li><strong>Excel and PDF are export actions</strong>, generated on demand from the same server query that feeds the screen; they are a snapshot of what the system shows, not a separate calculation.</li><li>No figure in the report originates in a spreadsheet formula. Every total is computed in <code>GetProjectReport</code> on the server and is traceable on screen to the transactions behind it.</li></ul>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:18px 0;">
+<h2>13. Decisions needed</h2>
+<ol><li>PDF export: start with <strong>option A</strong> (KendoReact Grid PDF) and defer Telerik (<strong>B</strong>)? — recommended.</li><li>Screen layout for the sections: <strong>tabs</strong> or a single scrolling <strong>accordion</strong>? — tabs recommended for 9 sections.</li><li>Do we cut the company-level report (<code>fetchCompanyReport</code>) over in the same effort, or fast-follow?</li><li>Confirm the 2026-09-10 enhancements batch is verified before step 1 begins.</li></ol>
+</body>
+</html>

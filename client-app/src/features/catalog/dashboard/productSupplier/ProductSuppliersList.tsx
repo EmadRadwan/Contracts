@@ -136,7 +136,7 @@ export default function ProductSuppliersList() {
                                     </Grid>
                                 </GridToolbar>
 
-                                <Column field="partyName" title="Supplier" cell={supplierProductCell} width={300} />
+                                <Column field="partyName" title="Supplier" cells={{ data: supplierProductCell }} width={300} />
                                 <Column field="currencyUomDescription" title="Currency" width={150} />
                                 <Column field="quantityUomDescription" title="Quantity Uom" width={200} />
                                 <Column field="lastPrice" title="Last Price" width={150} />

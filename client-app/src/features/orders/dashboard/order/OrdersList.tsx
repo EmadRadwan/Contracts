@@ -206,10 +206,9 @@ export default function OrdersList({ orderType }: OrdersListProps) {
                                     title={getTranslatedLabel("order.list.orderNumber", "Order Number")}
                                     width={150}
                                     locked={!show}
-                                    cell={OrderDescriptionCell}
+                                    cells={{ data: OrderDescriptionCell, filterCell: TextFilterCell }}
                                     filterable={true}
                                     filter="text"
-                                    filterCell={TextFilterCell}
                                 />
                                 <Column
                                     field="orderTypeDescription"
@@ -222,7 +221,7 @@ export default function OrdersList({ orderType }: OrdersListProps) {
                                     title={getTranslatedLabel("order.list.customer", "Customer")}
                                     filterable={true}
                                     filter="text"
-                                    filterCell={TextFilterCell}
+                                    cells={{ filterCell: TextFilterCell }}
                                 />
                                 <Column
                                     field="grandTotal"
@@ -230,7 +229,7 @@ export default function OrdersList({ orderType }: OrdersListProps) {
                                     
                                     filter={"numeric"}
                                     filterable={true}
-                                    filterCell={NumericFilterCell}
+                                    cells={{ filterCell: NumericFilterCell }}
                                 />
                                 <Column
                                     field="currencyUomDescription"
@@ -244,14 +243,14 @@ export default function OrdersList({ orderType }: OrdersListProps) {
                                     format="{0: dd/MM/yyyy}"
                                     filterable={true}
                                     filter="date"
-                                    filterCell={DateFilterCell}
+                                    cells={{ filterCell: DateFilterCell }}
                                 />
                                 <Column
                                     field="statusDescription"
                                     title={getTranslatedLabel("order.list.status", "Status")}
                                     filterable={true}
                                     filter="text"
-                                    filterCell={TextFilterCell}
+                                    cells={{ filterCell: TextFilterCell }}
                                 />
                             </KendoGrid>
                             {isFetching && (

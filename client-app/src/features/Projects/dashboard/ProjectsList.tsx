@@ -17,7 +17,7 @@ import ProjectMenu from "../menu/ProjectMenu";
 import {DataResult, State} from "@progress/kendo-data-query";
 import {handleDatesArray} from "../../../app/util/utils";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
-import {ProjectReportExcel} from "../report/ProjectReportExcel";
+import ProjectReportView from "./ProjectReportView";
 import {Can} from "../../account/Can";
 import {
     resetCertificateUi,
@@ -51,8 +51,9 @@ export default function ProjectsList() {
     const [project, setProject] = useState<WorkEffort | undefined>(undefined);
     const [projects, setProjects] = React.useState<DataResult>({data: [], total: 0});
 
-    const [reportDialogOpen, setReportDialogOpen] = useState(false);
-    const [selectedProjectForReport, setSelectedProjectForReport] = useState<{id: string, name: string} | null>(null);
+    // In-app report screen — replaces the old Excel-only dialog (ProjectReportExcel); its
+    // "Export Excel" button reuses the same buildProjectReportWorkbook module.
+    const [reportView, setReportView] = useState<{id: string, name: string} | null>(null);
 
     const [dataState, setDataState] = React.useState<State>({take: 6, skip: 0});
     const { data, error, isFetching, isLoading } = useFetchProjectsQuery({...dataState});
@@ -139,15 +140,14 @@ export default function ProjectsList() {
                     <Can perform="RunProjectReport">
                         <Button
                             size="small"
-                            variant="outlined"
+                            variant="contained"
                             color="success"
-                            onClick={() => {
-                                setSelectedProjectForReport({
+                            onClick={() =>
+                                setReportView({
                                     id: props.dataItem.workEffortId,
-                                    name: props.dataItem.projectName
-                                });
-                                setReportDialogOpen(true);
-                            }}
+                                    name: props.dataItem.projectName,
+                                })
+                            }
                         >
                             {getTranslatedLabel("project.projects.report", "Project Report")}
                         </Button>
@@ -193,6 +193,19 @@ export default function ProjectsList() {
         return <ProjectForm project={project} cancelEdit={cancelEdit} editMode={editMode} />;
     }
 
+    if (reportView) {
+        return (
+            <>
+                <ProjectMenu selectedMenuItem={"projects"} />
+                <ProjectReportView
+                    projectId={reportView.id}
+                    projectName={reportView.name}
+                    onExit={() => setReportView(null)}
+                />
+            </>
+        );
+    }
+
     return (
         <>
             <ProjectMenu selectedMenuItem={"projects"} />
@@ -223,7 +236,7 @@ export default function ProjectsList() {
                     <Column
                         field="workEffortId"
                         title={getTranslatedLabel("project.projects.list.num", "Project Number")}
-                        cell={ProjectNumCell}
+                        cells={{ data: ProjectNumCell }}
                         width={canRunProjectReport ? 320 : 160}
                         locked={true}
                     />
@@ -235,7 +248,7 @@ export default function ProjectsList() {
                     <Column
                         field="certificateActions"
                         title={getTranslatedLabel("project.projects.list.createCertificate", "Create Certificate")}
-                        cell={CertificateButtonsCell}
+                        cells={{ data: CertificateButtonsCell }}
                         width={480}
                         sortable={false}
                         filterable={false}
@@ -253,13 +266,13 @@ export default function ProjectsList() {
                     <Column
                         field="isCompanyProject"
                         title={getTranslatedLabel("project.projects.list.isCompanyProject", "Company Project")}
-                        cell={(props: any) => (
+                        cells={{ data: (props: any) => (
                             <td className={props.className} style={props.style} colSpan={props.colSpan} role={"gridcell"} aria-colindex={props.ariaColumnIndex} aria-selected={props.isSelected}>
                                 {props.dataItem.isCompanyProject
                                     ? getTranslatedLabel("project.projects.list.companyProject", "Company Project")
                                     : getTranslatedLabel("project.projects.list.workForOthers", "Work Done for Others")}
                             </td>
-                        )}
+                        ) }}
                         width={180}
                     />
                     <Column
@@ -276,17 +289,6 @@ export default function ProjectsList() {
                     />
                 </KendoGrid>
                 {isFetching && <LoadingComponent message={getTranslatedLabel("project.projects.list.loading", "Loading Projects...")} />}
-                {reportDialogOpen && selectedProjectForReport && (
-                    <ProjectReportExcel
-                        projectId={selectedProjectForReport.id}
-                        projectName={selectedProjectForReport.name}
-                        open={reportDialogOpen}
-                        onClose={() => {
-                            setReportDialogOpen(false);
-                            setSelectedProjectForReport(null);
-                        }}
-                    />
-                )}
             </Paper>
         </>
     );

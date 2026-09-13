@@ -227,7 +227,7 @@ return (
                       <Column
                         field="accountCode"
                         title={getTranslatedLabel(`${localizationKey}.code`, "Account Code")}
-                        cell={AccountCodeCell}
+                        cells={{ data: AccountCodeCell }}
                       />
                       <Column
                         field="accountName"
@@ -279,7 +279,7 @@ return (
                       <Column
                         field="accountCode"
                         title={getTranslatedLabel(`${localizationKey}.code`, "Account Code")}
-                        cell={AccountCodeCell}
+                        cells={{ data: AccountCodeCell }}
                       />
                       <Column
                         field="accountName"
@@ -331,7 +331,7 @@ return (
                       <Column
                         field="accountCode"
                         title={getTranslatedLabel(`${localizationKey}.code`, "Account Code")}
-                        cell={AccountCodeCell}
+                        cells={{ data: AccountCodeCell }}
                       />
                       <Column
                         field="accountName"

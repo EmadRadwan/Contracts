@@ -185,10 +185,10 @@ const projectsApi = createApi({
                     params: { glAccountId, workEffortTypeId, workEffortParentId },
                 }),
             }),
-            fetchProjectReport: builder.query<ProjectReportDto, { 
-                projectId: string; 
-                expensesStartDate?: string; 
-                expensesEndDate?: string; 
+            fetchProjectReport: builder.query<ProjectReportDto, {
+                projectId: string;
+                expensesStartDate?: string;
+                expensesEndDate?: string;
                 expensesAllData: boolean;
                 revenuesStartDate?: string;
                 revenuesEndDate?: string;
@@ -196,10 +196,45 @@ const projectsApi = createApi({
                 salesStartDate?: string;
                 salesEndDate?: string;
                 salesAllData: boolean;
+                // Management-fee inputs — drive ProjectReportDto.summary server-side.
+                // excludedBuildings is comma-separated (e.g. "A1,A2").
+                mgmtFeePercent?: number;
+                excludedBuildings?: string;
             }>({
                 query: (params) => ({
                     url: "/project/report",
                     params,
+                }),
+            }),
+            // Server-rendered PDF (Telerik Reporting) — replaces a KendoReact Grid PDFExport attempt
+            // that could not shape/reorder Arabic text. Same params as fetchProjectReport, plus the
+            // display name the DTO itself doesn't carry.
+            fetchProjectReportPdf: builder.query<ArrayBuffer, {
+                projectId: string;
+                projectName: string;
+                expensesStartDate?: string;
+                expensesEndDate?: string;
+                expensesAllData: boolean;
+                revenuesStartDate?: string;
+                revenuesEndDate?: string;
+                revenuesAllData: boolean;
+                salesStartDate?: string;
+                salesEndDate?: string;
+                salesAllData: boolean;
+                mgmtFeePercent?: number;
+                excludedBuildings?: string;
+            }>({
+                query: (params) => ({
+                    url: "/project/report/pdf",
+                    params,
+                    responseHandler: (response) => response.arrayBuffer(),
+                    cache: "no-cache",
+                }),
+            }),
+            fetchProjectBuildings: builder.query<string[], string>({
+                query: (projectId) => ({
+                    url: "/project/buildings",
+                    params: { projectId },
                 }),
             }),
             fetchCompanyReport: builder.query<ProjectReportDto, {
@@ -212,6 +247,8 @@ const projectsApi = createApi({
                 salesStartDate?: string;
                 salesEndDate?: string;
                 salesAllData: boolean;
+                mgmtFeePercent?: number;
+                excludedBuildings?: string;
             }>({
                 query: (params) => ({
                     url: "/project/companyReport",
@@ -282,7 +319,9 @@ export const {
     useResetProjectCertificateMutation,
     useFetchWorkEffortsByGlAccountIdQuery,
     useLazyFetchProjectReportQuery,
+    useLazyFetchProjectReportPdfQuery,
     useLazyFetchCompanyReportQuery,
+    useFetchProjectBuildingsQuery,
     useFetchProjectCommissionRatesQuery,
     useAddProjectCommissionRateMutation,
     useUpdateProjectCommissionRateMutation,
@@ -334,6 +373,70 @@ export interface ProjectReportDto {
     accountingTransactions: Payment[];
     payroll: Payment[];
     apartmentSales: any[];
+    paidCommissions: ProjectCommissionPaymentRecord[];
+    // Server-computed roll-ups (mirror of ProjectReportSummaryDto). Authoritative — the in-app
+    // report screen and the Excel/PDF exports read these instead of re-summing in the browser.
+    // Optional while the old Excel dialog still computes its own totals (removed in a later step).
+    summary?: ProjectReportSummary;
+}
+
+export interface ProjectReportSummary {
+    // المصاريف
+    certificateExpenses: number;
+    directPayments: number;
+    accountingTransactions: number;
+    projectPayroll: number;
+    operatingExpenses: number;
+    totalProjectExpenses: number;
+    // الإيرادات / وديعة الصيانة
+    revenueScheduled: number;
+    revenueCollected: number;
+    revenueOutstanding: number;
+    maintenanceScheduled: number;
+    maintenanceCollected: number;
+    maintenanceOutstanding: number;
+    // مبيعات الوحدات
+    unitsSold: number;
+    unitsSoldValue: number;
+    unitsAdvanceCollected: number;
+    unitsAvailable: number;
+    // العمولات
+    commissionPaymentCount: number;
+    commissionsPaid: number;
+    commissionsPending: number;
+    // مبلغ الإدارة
+    mgmtFeeBase: number;
+    mgmtFeePercent: number;
+    mgmtFee: number;
+    mgmtFeeNet: number;
+    mgmtExcludedBuildings: string[];
+    // الصافي
+    netAfterExpenses: number;
+    netAfterPaidCommissions: number;
+}
+
+export interface ProjectCommissionPaymentRecord {
+    paymentId: string;
+    salesCommissionId?: string;
+    salesRequestId?: string;
+    saleTypeId?: string;
+    commissionStatusId?: string;
+    commissionStatusArabic?: string;
+    apartmentId?: string;
+    apartmentName?: string;
+    buildingNumber?: string;
+    payeePartyId?: string;
+    payeeName?: string;
+    amount: number;
+    isPaid: boolean;
+    paymentStatusId?: string;
+    paymentStatusArabic?: string;
+    paymentMethodTypeArabic?: string;
+    effectiveDate?: string;
+    createdStamp?: string;
+    chequeNumber?: string;
+    chequeDate?: string;
+    comments?: string;
 }
 
 export interface ProjectExpenseRecord {

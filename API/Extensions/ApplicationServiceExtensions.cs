@@ -21,6 +21,8 @@ using Application.Services;
 using Application.Shipments;
 using Application.WorkEfforts;
 using FluentValidation;
+using API.Reporting;
+using API.Reporting.ProjectReport;
 using Infrastructure.Auditing;
 using Infrastructure.Contents;
 using Infrastructure.Security;
@@ -86,6 +88,11 @@ public static class ApplicationServiceExtensions
         });
 
         services.AddScoped<IPdfGenerationService, PdfGenerationService>();
+        // Telerik Reporting voucher — parallel to IPdfGenerationService (QuestPDF), same GetPaymentForReport data.
+        services.AddScoped<IPaymentVoucherReportService, TelerikPaymentVoucherReportService>();
+        // Telerik Reporting project report PDF — replaces a KendoReact Grid PDFExport attempt that
+        // could not shape/reorder Arabic text (see docs/project-report-in-app-view-plan.md).
+        services.AddScoped<IProjectReportService, TelerikProjectReportService>();
         services.AddScoped<IUserAccessor, UserAccessor>();
 
         // Auditing. IHttpContextAccessor is registered explicitly rather than relying on the

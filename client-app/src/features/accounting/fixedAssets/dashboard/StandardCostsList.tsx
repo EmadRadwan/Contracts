@@ -136,7 +136,7 @@ const StandardCostsList = () => {
                 </Grid>
               </Grid>
             </GridToolbar>
-            <Column field="cleanCostName" title="Standard Cost" cell={StandardCostNameCell} />
+            <Column field="cleanCostName" title="Standard Cost" cells={{ data: StandardCostNameCell }} />
             <Column field="amount" title="Amount" filter={"numeric"} />
             <Column field="amountUomId" title="Currency" />
             <Column

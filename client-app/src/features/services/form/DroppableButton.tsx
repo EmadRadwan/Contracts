@@ -1,5 +1,5 @@
 import * as React from "react";
-import {Button} from "@progress/kendo-react-buttons";
+import {Button, ButtonHandle} from "@progress/kendo-react-buttons";
 import {Icon, NormalizedDragEvent, useDraggable,} from "@progress/kendo-react-common";
 
 export const DraggableButton = (props: any) => {
@@ -9,7 +9,7 @@ export const DraggableButton = (props: any) => {
     const [initial, setInitial] = React.useState<{ x: number; y: number } | null>(
         null,
     );
-    const button = React.useRef<Button | null>(null);
+    const button = React.useRef<ButtonHandle | null>(null);
 
     const handlePress = React.useCallback(() => {
         setPressed(true);

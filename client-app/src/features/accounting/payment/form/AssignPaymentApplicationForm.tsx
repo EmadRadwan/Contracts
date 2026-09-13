@@ -89,7 +89,7 @@ const AssignPaymentApplicationForm = ({ paymentId }: Props) => {
             <Column
               field="invoiceId"
               title="Invoice Id"
-              cell={PaymentApplicationCell}
+              cells={{ data: PaymentApplicationCell }}
             />
             <Column
               field="invoiceDate"
@@ -99,7 +99,7 @@ const AssignPaymentApplicationForm = ({ paymentId }: Props) => {
             <Column field="amount" title="Invoice Amount" />
             <Column field="currencyUomId" title="Currency" />
             <Column field="amountApplied" title="Amount Applied" />
-            <Column cell={ApplyAllCell} />
+            <Column cells={{ data: ApplyAllCell }} />
           </KendoGrid>
         </div>
         <AssignPaymentForm

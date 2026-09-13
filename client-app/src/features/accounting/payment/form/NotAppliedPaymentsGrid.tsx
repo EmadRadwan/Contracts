@@ -52,9 +52,9 @@ const NotAppliedPaymentsGrid: React.FC<NotAppliedPaymentsGridProps> = ({
                     field="amount"
                     title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")}
                     format="{0:c}"
-                    cell={(props) => (
+                    cells={{ data: (props) => (
                         <td>{props.dataItem.amount.toFixed(2)} {payment?.currencyUomId}</td>
-                    )}
+                    ) }}
                 />
             </KendoGrid>
         </MuiGrid>

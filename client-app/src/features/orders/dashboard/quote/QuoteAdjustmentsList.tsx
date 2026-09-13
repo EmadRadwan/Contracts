@@ -174,14 +174,14 @@ export default function QuoteAdjustmentsList({onClose}: Props) {
                     >
 
                         <Column field="quoteAdjustmentTypeDescription" title="Adjustment Type"
-                                cell={quoteAdjustmentCell} width={140}/>
+                                cells={{ data: quoteAdjustmentCell }} width={140}/>
                         <Column field="quoteId" title="quoteId" width={0}/>
                         <Column field="quoteItemSeqId" title="quoteItemSeqId" width={0}/>
                         <Column field="amount" title="Amount" width={130}/>
                         <Column field="description" title="Description" width={140}/>
                         <Column field="sourcePercentage" title="Percentage" width={150}/>
                         <Column field="isManual" title="User Entered" width={110}/>
-                        <Column cell={CommandCell} width="100px"/>
+                        <Column cells={{ data: CommandCell }} width="100px"/>
 
                     </KendoGrid>
                 </div>

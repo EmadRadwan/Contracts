@@ -21,7 +21,8 @@ import {
 import {
     useFetchGlAccountOrganizationHierarchyLovQuery,
     useFetchPaymentApplicationsForPaymentQuery,
-    useLazyFetchBalancesForVendorAndProjectQuery, useLazyGetPaymentReportPdfQuery
+    useLazyFetchBalancesForVendorAndProjectQuery, useLazyGetPaymentReportPdfQuery,
+    useLazyGetPaymentReportPdfV2Query
 } from "../../../../app/store/apis";
 import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
 import {PaymentExcelTechnical} from "../report/PaymentExcelTechnical";
@@ -115,6 +116,26 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
         }
     };
 
+    // Telerik-rendered voucher — same data, different engine. Reuses the preview dialog.
+    const handlePreviewPdfV2 = async () => {
+        if (!payment?.paymentId) return;
+
+        setPreviewLoading(true);
+        try {
+            const arrayBuffer = await triggerPdfV2(payment.paymentId).unwrap();
+            const blob = new Blob([arrayBuffer], { type: "application/pdf" });
+            const url = URL.createObjectURL(blob);
+
+            setPdfBlobUrl(url);
+            setShowPdfViewer(true);
+        } catch (error) {
+            console.error("Failed to load Telerik PDF:", error);
+            alert("فشل تحميل بيان الدفعة (Telerik).");
+        } finally {
+            setPreviewLoading(false);
+        }
+    };
+
     const handleClosePdfViewer = () => {
         setShowPdfViewer(false);
         if (pdfBlobUrl) {
@@ -124,6 +145,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
     };
 
     const [triggerPdf, { isFetching: isPdfFetching }] = useLazyGetPaymentReportPdfQuery();
+    const [triggerPdfV2, { isFetching: isPdfV2Fetching }] = useLazyGetPaymentReportPdfV2Query();
 
     useEffect(() => {
         if (payment?.projectId) {
@@ -858,7 +880,19 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                             {isPdfFetching ? "جاري التحضير..." : "معاينة بيان الدفعة (PDF)"}
                                         </Button>
                                     </Grid>
-                                    
+
+                                    <Grid item xs={2}>
+                                        <Button
+                                            variant="outlined"
+                                            color="secondary"
+                                            onClick={handlePreviewPdfV2}
+                                            disabled={isPdfV2Fetching || !payment?.paymentId}
+                                            sx={{ mt: 2, mr: 1 }}
+                                        >
+                                            {isPdfV2Fetching ? "جاري التحضير..." : "معاينة بيان الدفعة (Telerik)"}
+                                        </Button>
+                                    </Grid>
+
                                     <Grid item xs={1}>
                                         <Button
                                             sx={{mt: 2}}

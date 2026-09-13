@@ -101,7 +101,7 @@ const FactoryOverheadCostList = ({onClose, fohCosts}: Props) => {
               >
                 <Column
                   field="workEffortName"
-                  cell={FactoryOverheadCell}
+                  cells={{ data: FactoryOverheadCell }}
                   title="Work Effort"
                   width={150}
                 />

@@ -1,11 +1,10 @@
-import React, {useState, useEffect} from "react";
+import React, {useState, useEffect, useMemo} from "react";
 import { 
     Grid as KendoGrid, 
     GridColumn as Column, 
     GridItemChangeEvent, 
     GridCellProps,
     GridDataStateChangeEvent,
-    GridRowProps,
     GridToolbar 
 } from "@progress/kendo-react-grid";
 import { Button, Box, Typography, CircularProgress } from "@mui/material";
@@ -29,6 +28,10 @@ import {
 } from "../../../../app/store/apis/accounting/organizationGlChartOfAccountsApi";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import { AdjustPowerBIPropsExcel } from "../report/AdjustPowerBIPropsExcel";
+import { createStyledRow, editDescriptorFrom } from "../../../../app/common/grid";
+
+// Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
+const PendingChangeRow = createStyledRow((dataItem) => (dataItem.isPending ? { backgroundColor: 'rgba(255, 255, 0, 0.15)' } : undefined));
 
 interface Props {
     companyId: string;
@@ -52,6 +55,8 @@ const AdjustPowerBIPropsBulkEdit: React.FC<Props> = ({ companyId, onClose }) => 
     });
     const [pendingChanges, setPendingChanges] = useState<Record<string, Partial<GlAccount>>>({});
     const [activeEditIds, setActiveEditIds] = useState<string[]>([]);
+    // KendoReact v16: edit state is a descriptor keyed by dataItemKey, derived from the inEdit flag on the rows
+    const editDescriptor = useMemo(() => editDescriptorFrom(data, "glAccountId"), [data]);
 
     const { data: pagedData, isFetching } = useFetchOrganizationGlAccountsForBulkEditQuery(
         { companyId, dataState }, 
@@ -82,11 +87,12 @@ const AdjustPowerBIPropsBulkEdit: React.FC<Props> = ({ companyId, onClose }) => 
             const merged = pagedData.data.map(item => {
                 const id = item.glAccountId || (item as any).GlAccountId;
                 const pending = pendingChanges[id];
-                return { 
-                    ...item, 
+                return {
+                    ...item,
                     glAccountId: id,
-                    ...pending, 
-                    inEdit: activeEditIds.includes(id) 
+                    ...pending,
+                    isPending: !!pending,
+                    inEdit: activeEditIds.includes(id)
                 };
             });
             setData(merged);
@@ -232,15 +238,6 @@ const AdjustPowerBIPropsBulkEdit: React.FC<Props> = ({ companyId, onClose }) => 
         );
     };
 
-    const rowRender = (trElement: React.ReactElement<HTMLTableRowElement>, props: GridRowProps) => {
-        const id = props.dataItem.glAccountId || (props.dataItem as any).GlAccountId;
-        const isPending = !!pendingChanges[id];
-        const style = isPending 
-            ? { ...trElement.props.style, backgroundColor: 'rgba(255, 255, 0, 0.15)' } 
-            : trElement.props.style;
-        return React.cloneElement(trElement, { ...trElement.props, style });
-    };
-
     return (
         <>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -258,11 +255,12 @@ const AdjustPowerBIPropsBulkEdit: React.FC<Props> = ({ companyId, onClose }) => 
                 filterable={true}
                 pageable={true}
                 onItemChange={handleRowChange}
-                editField="inEdit"
+                editable={{ enabled: true, mode: "inline" }}
+                edit={editDescriptor}
                 dataItemKey="glAccountId"
                 style={{ height: '75vh', width: '85%' }}
                 resizable={true}
-                rowRender={rowRender}
+                rows={{ data: PendingChangeRow }}
             >
                 <GridToolbar>
                     <Box display="flex" alignItems="center">
@@ -287,7 +285,7 @@ const AdjustPowerBIPropsBulkEdit: React.FC<Props> = ({ companyId, onClose }) => 
                         )}
                     </Box>
                 </GridToolbar>
-                <Column cell={CommandCell} width={180} locked />
+                <Column cells={{ data: CommandCell }} width={180} locked />
                 <Column field="glAccountId" title={getTranslatedLabel("accounting.glAccount.list.accountId", "Account ID")} width={120} editable={false} />
                 <Column field="accountName" title={getTranslatedLabel("accounting.glAccount.list.accountName", "Account Name")} width={300} editable={false} />
                 
@@ -295,31 +293,31 @@ const AdjustPowerBIPropsBulkEdit: React.FC<Props> = ({ companyId, onClose }) => 
                     field="glReportId" 
                     title={getTranslatedLabel("accounting.glAccount.list.report", "Report")} 
                     width={220}
-                    cell={(p) => DropDownCell(p, glReportsData?.glReports || [], "glReportId", "description")}
+                    cells={{ data: (p) => DropDownCell(p, glReportsData?.glReports || [], "glReportId", "description") }}
                 />
                 <Column 
                     field="glClassCourseId" 
                     title={getTranslatedLabel("accounting.glAccount.list.classCourse", "Class Course")} 
                     width={220}
-                    cell={(p) => DropDownCell(p, glClassCoursesData?.glClassCourses || [], "glClassCourseId", "description")}
+                    cells={{ data: (p) => DropDownCell(p, glClassCoursesData?.glClassCourses || [], "glClassCourseId", "description") }}
                 />
                 <Column 
                     field="glSubClassId" 
                     title={getTranslatedLabel("accounting.glAccount.list.subClass", "Sub Class")} 
                     width={220}
-                    cell={(p) => DropDownCell(p, glSubClassesData?.glSubClasses || [], "glSubClassId", "description")}
+                    cells={{ data: (p) => DropDownCell(p, glSubClassesData?.glSubClasses || [], "glSubClassId", "description") }}
                 />
                 <Column 
                     field="glSubClass2Id" 
                     title={getTranslatedLabel("accounting.glAccount.list.subClass2", "Sub Class 2")} 
                     width={220}
-                    cell={(p) => DropDownCell(p, glSubClasses2Data?.glSubClasses2 || [], "glSubClass2Id", "description")}
+                    cells={{ data: (p) => DropDownCell(p, glSubClasses2Data?.glSubClasses2 || [], "glSubClass2Id", "description") }}
                 />
                 <Column 
                     field="glAccountCourseLabelId" 
                     title={getTranslatedLabel("accounting.glAccount.list.courseLabel", "Course Label")} 
                     width={220}
-                    cell={(p) => DropDownCell(p, glAccountCourseLabelsData?.glAccountCourseLabels || [], "glAccountCourseLabelId", "description")}
+                    cells={{ data: (p) => DropDownCell(p, glAccountCourseLabelsData?.glAccountCourseLabels || [], "glAccountCourseLabelId", "description") }}
                 />
             </KendoGrid>
 

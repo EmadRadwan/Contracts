@@ -173,7 +173,7 @@ export default function FacilityInventoryList() {
                   title={getTranslatedLabel("facility.list.product", "Product")}
                   width={200}
                   locked={!show}
-                  cell={InventoryDescriptionCell}
+                  cells={{ data: InventoryDescriptionCell }}
                 />
                 <Column
                   field="facilityName"
@@ -234,7 +234,7 @@ export default function FacilityInventoryList() {
                   )}
                 />
                 <Column
-                  cell={DetailsCell}
+                  cells={{ data: DetailsCell }}
                   width={100}
                   filterable={false}
                   sortable={false}

@@ -340,7 +340,7 @@ export default function PartiesList() {
                                     <Column
                                         field="description"
                                         title={getTranslatedLabel("party.parties.list.description", "Party")}
-                                        cell={PartyDescriptionCell}
+                                        cells={{ data: PartyDescriptionCell }}
                                         width={300}
                                         locked={true}
                                     />
@@ -366,7 +366,7 @@ export default function PartiesList() {
                                     />
                                     <Column
                                         title={getTranslatedLabel("party.parties.list.actions", "Actions")}
-                                        cell={ChangeRoleCell}
+                                        cells={{ data: ChangeRoleCell }}
                                         width={280}
                                         filterable={false}
                                         sortable={false}

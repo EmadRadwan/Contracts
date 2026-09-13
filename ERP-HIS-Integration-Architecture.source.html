@@ -1,0 +1,467 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found]){display:none!important}</style></head><body>
+<title>ERP × HIS Interoperability</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,500&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#f3f1ea;
+    --surface:#ffffff;
+    --surface-2:#eae6db;
+    --border:#ddd7c6;
+    --ink:#221e17;
+    --ink-soft:#726b5a;
+    --accent:#1f5d53;
+    --accent-soft:#dfeae6;
+    --accent-line:#6fa89d;
+    --accent2:#a34a1d;
+    --accent2-soft:#f4e0cf;
+    --accent2-line:#c98a5c;
+    --shadow: 0 1px 2px rgba(34,30,23,0.07);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#14120d;
+      --surface:#1d1a14;
+      --surface-2:#231f18;
+      --border:#352f23;
+      --ink:#ece6d8;
+      --ink-soft:#a89e89;
+      --accent:#7fc2b5;
+      --accent-soft:rgba(127,194,181,0.14);
+      --accent-line:#4f8c7f;
+      --accent2:#e2996a;
+      --accent2-soft:rgba(226,153,106,0.14);
+      --accent2-line:#a85f35;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14120d;
+    --surface:#1d1a14;
+    --surface-2:#231f18;
+    --border:#352f23;
+    --ink:#ece6d8;
+    --ink-soft:#a89e89;
+    --accent:#7fc2b5;
+    --accent-soft:rgba(127,194,181,0.14);
+    --accent-line:#4f8c7f;
+    --accent2:#e2996a;
+    --accent2-soft:rgba(226,153,106,0.14);
+    --accent2-line:#a85f35;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size:14px;
+    line-height:1.5;
+  }
+  .sheet{max-width:980px; margin:0 auto; padding:30px 24px 60px;}
+  h1,h2,h3{text-wrap:balance; margin:0;}
+  .mono{font-family:"IBM Plex Mono", ui-monospace, monospace;}
+  .pill{
+    display:inline-block; padding:1px 7px; border-radius:4px;
+    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:0.86em; font-weight:600;
+    background:var(--surface-2); border:1px solid var(--border); color:var(--ink); white-space:nowrap;
+  }
+  .tag2{
+    display:inline-block; padding:2px 8px; border-radius:4px;
+    font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
+    background:var(--accent2-soft); color:var(--accent2); border:1px solid var(--accent2-line);
+  }
+
+  /* masthead */
+  header.masthead{border-bottom:2px solid var(--ink); padding-bottom:16px; margin-bottom:22px;}
+  .eyebrow{font-size:11.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent);}
+  h1.title{font-size:32px; font-weight:700; letter-spacing:-0.015em; margin-top:6px;}
+  .dek{color:var(--ink-soft); font-size:14.5px; margin-top:8px; max-width:62ch;}
+
+  /* exec summary */
+  .exec{
+    background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--accent);
+    border-radius:8px; padding:16px 20px; margin:22px 0 30px; box-shadow:var(--shadow);
+  }
+  .exec .label{font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; display:block;}
+  .exec p{margin:0; font-size:15px; line-height:1.6;}
+
+  section{margin-bottom:36px;}
+  h2.h{
+    font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft);
+    display:flex; align-items:center; gap:10px; margin-bottom:14px;
+  }
+  h2.h::after{content:""; flex:1; height:1px; background:var(--border);}
+  h2.h .n{font-family:"IBM Plex Mono",monospace; color:var(--accent);}
+  p.lead{color:var(--ink-soft); font-size:13.5px; margin:-6px 0 14px; max-width:70ch;}
+
+  /* tables */
+  .table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:8px; box-shadow:var(--shadow);}
+  table{width:100%; border-collapse:collapse; background:var(--surface); font-size:13px;}
+  th,td{text-align:left; padding:10px 13px; border-bottom:1px solid var(--border); vertical-align:top;}
+  thead th{
+    background:var(--surface-2); font-size:10.5px; font-weight:700; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--ink-soft); white-space:nowrap;
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  td.std{font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:12.5px; white-space:nowrap;}
+  td.status{white-space:nowrap;}
+
+  /* diagram */
+  .diagram-card{background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:18px; box-shadow:var(--shadow); overflow-x:auto;}
+  .diagram-cap{font-size:12px; color:var(--ink-soft); margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);}
+
+  /* roadmap */
+  .roadmap{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+  .phase{background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:13px 14px; box-shadow:var(--shadow); position:relative;}
+  .phase .when{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--accent); font-weight:600;}
+  .phase h3{font-size:13.5px; font-weight:700; margin:4px 0 6px;}
+  .phase p{margin:0; font-size:12px; color:var(--ink-soft); line-height:1.5;}
+  .phase-arrow{position:absolute; top:14px; right:-19px; color:var(--border); font-size:16px; z-index:1;}
+  @media (max-width:860px){
+    .roadmap{grid-template-columns:1fr;}
+    .phase-arrow{display:none;}
+  }
+
+  /* domain map cards */
+  .domain-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .domain{background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px 14px; box-shadow:var(--shadow);}
+  .domain .flow{font-size:11px; color:var(--ink-soft); margin-top:6px;}
+  @media (max-width:700px){ .domain-grid{grid-template-columns:1fr;} }
+
+  /* domain deep-dive */
+  .domain-deep{background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:16px 18px; box-shadow:var(--shadow); margin-bottom:14px;}
+  .domain-deep:last-child{margin-bottom:0;}
+  .domain-deep-head{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:5px;}
+  .domain-deep-head b{font-size:15px;}
+  .domain-deep-sub{margin:0 0 13px; font-size:12.5px; color:var(--ink-soft); max-width:78ch; line-height:1.55;}
+  .ex-cols{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .ex-label{font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:7px;}
+  .chip-list{display:flex; flex-wrap:wrap; gap:6px;}
+  .chip{display:inline-block; padding:3px 10px; border-radius:20px; font-size:11.5px; background:var(--surface-2); border:1px solid var(--border); color:var(--ink); line-height:1.5;}
+  .chip.his{background:var(--accent2-soft); border-color:var(--accent2-line); color:var(--accent2);}
+  .dormant-note{margin-top:13px; padding-top:11px; border-top:1px dashed var(--border); font-size:12px; color:var(--ink-soft); line-height:1.6;}
+  .dormant-note b{color:var(--ink); font-weight:600;}
+  .dormant-note .dn-tag{display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--accent); margin-right:6px;}
+  @media (max-width:700px){ .ex-cols{grid-template-columns:1fr;} }
+
+  /* glossary */
+  .glossary-group{margin-bottom:18px;}
+  .glossary-group:last-child{margin-bottom:0;}
+  .subhead{
+    font-size:11px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase;
+    color:var(--accent2); margin:0 0 8px;
+  }
+  .term{background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:11px 14px; box-shadow:var(--shadow);}
+  .term .name{display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; margin-bottom:4px;}
+  .term .name b{font-size:13px; font-weight:700;}
+  .term .name .full{font-size:11.5px; color:var(--ink-soft); font-weight:400;}
+  .term .def{margin:0; font-size:12.5px; color:var(--ink-soft); line-height:1.55;}
+
+  /* footer */
+  .footer{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px;}
+  .box{border-radius:8px; padding:14px 18px; box-shadow:var(--shadow);}
+  .box.fit{background:var(--accent-soft); border:1px solid var(--accent-line);}
+  .box.guard{background:var(--accent2-soft); border:1px solid var(--accent2-line);}
+  .box .tag{display:block; font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px;}
+  .box.fit .tag{color:var(--accent);}
+  .box.guard .tag{color:var(--accent2);}
+  .box p{margin:0; font-size:13px; line-height:1.55;}
+  @media (max-width:700px){ .footer{grid-template-columns:1fr;} }
+
+  @media print{
+    body{background:#fff; color:#000;}
+    .sheet{padding:10mm; max-width:none;}
+    .exec,.diagram-card,.box,.table-wrap,.phase,.domain,.term,.domain-deep{box-shadow:none;}
+    .glossary-group,.term,.domain,.phase,.exec,.diagram-card,.domain-deep{break-inside:avoid-page;}
+    h2.h{break-after:avoid-page;}
+    @page{size:A4 portrait; margin:12mm;}
+  }
+</style>
+
+<div class="sheet">
+
+  <header class="masthead">
+    <span class="eyebrow">Technical reference &middot; ERP&ndash;HIS partnership</span>
+    <h1 class="title">Best-in-class integration technologies: this ERP &times; a HIS (TrakCare)</h1>
+    <p class="dek">A companion to the demo speaker notes &mdash; the standards, architecture pattern, and phased path for connecting this ERP's Party / Product / Order / Facility / Accounting core to InterSystems TrakCare, without either system becoming a satellite of the other.</p>
+  </header>
+
+  <div class="exec">
+    <span class="label">In one paragraph</span>
+    <p>The standards choice isn't really open anymore: <b>HL7 FHIR R4</b> is the modern default, and TrakCare's own InterSystems IRIS platform already speaks it natively &mdash; plus legacy HL7 v2.x, which still carries most live ADT traffic in production HIS deployments. <b>NPHIES is not our problem to solve at all</b>: InterSystems is independently certified NPHIES-compliant and TrakCare already submits claims through it for live Saudi hospitals today. That removes an entire integration leg from this design. What's actually left to build is small: a thin FHIR-shaped adapter added to this ERP's existing API project, talking directly to IRIS's own interoperability engine &mdash; which already does the queuing, retries, and routing our side would otherwise have had to build from scratch.</p>
+  </div>
+
+  <section>
+    <h2 class="h"><span class="n">01</span> Glossary &mdash; if HIS terms are new to you</h2>
+    <p class="lead">Every term used on this page, in plain language, grouped by what it's actually for. Skip this section entirely if you already work in health IT.</p>
+
+    <div class="glossary-group">
+      <div class="subhead">The systems themselves</div>
+      <div class="domain-grid">
+        <div class="term"><div class="name"><b>HIS</b><span class="full">Hospital Information System</span></div><p class="def">The hospital's own software &mdash; admissions, orders, results, and clinical billing. TrakCare is one specific HIS product, made by a company called InterSystems.</p></div>
+        <div class="term"><div class="name"><b>EMR / EHR</b><span class="full">Electronic Medical / Health Record</span></div><p class="def">The part of a HIS that holds a patient's actual chart &mdash; diagnoses, notes, medications. People often say "EMR" and "HIS" interchangeably in conversation.</p></div>
+        <div class="term"><div class="name"><b>ERP</b><span class="full">for contrast</span></div><p class="def">This system. Manages the business side &mdash; orders, inventory, accounting &mdash; rather than clinical care. The two systems' data has to meet in the middle.</p></div>
+        <div class="term"><div class="name"><b>PACS / RIS</b></div><p class="def">The systems that store medical images (X-rays, scans) and run the radiology department's workflow. Mentioned only so it's clear this ERP never touches image data directly.</p></div>
+      </div>
+    </div>
+
+    <div class="glossary-group">
+      <div class="subhead">How systems talk to each other</div>
+      <div class="domain-grid">
+        <div class="term"><div class="name"><b>HL7</b><span class="full">Health Level Seven</span></div><p class="def">The umbrella name for the family of hospital messaging standards. Not one format &mdash; a whole lineage of them, including the next two entries.</p></div>
+        <div class="term"><div class="name"><b>HL7 v2.x</b></div><p class="def">The older, still-dominant message format &mdash; plain text with fields separated by <span class="mono">|</span> pipe characters. Not pretty, but it's what most live hospital systems actually send today.</p></div>
+        <div class="term"><div class="name"><b>ADT</b><span class="full">Admit / Discharge / Transfer</span></div><p class="def">An HL7 v2 message announcing patient movement &mdash; admitted, discharged, or moved to a different ward or bed.</p></div>
+        <div class="term"><div class="name"><b>ORU / ORM</b><span class="full">Observation Result / Order</span></div><p class="def">Two more HL7 v2 message types &mdash; ORU carries a lab or test result, ORM carries a new order such as "run this test."</p></div>
+        <div class="term"><div class="name"><b>FHIR</b><span class="full">Fast Healthcare Interoperability Resources, said "fire"</span></div><p class="def">The modern replacement for HL7 v2 &mdash; structured JSON exchanged over a normal web API, the same style this ERP's own OData endpoints already use.</p></div>
+        <div class="term"><div class="name"><b>Resource</b><span class="full">a FHIR term</span></div><p class="def">A named, structured record type &mdash; Patient, Encounter, Claim. Think of it as a DTO with an industry-agreed shape everyone builds to.</p></div>
+      </div>
+    </div>
+
+    <div class="glossary-group">
+      <div class="subhead">Matching up identity across systems</div>
+      <div class="domain-grid">
+        <div class="term"><div class="name"><b>MRN</b><span class="full">Medical Record Number</span></div><p class="def">The HIS's own unique ID for a patient &mdash; the hospital-side equivalent of this ERP's <span class="mono">PartyId</span>.</p></div>
+        <div class="term"><div class="name"><b>IHE</b><span class="full">Integrating the Healthcare Enterprise</span></div><p class="def">An initiative that defines standard patterns for using HL7/FHIR consistently, so two vendors' systems can actually interoperate, not just both claim "FHIR support."</p></div>
+        <div class="term" style="grid-column:1/-1;"><div class="name"><b>PIX / PDQ</b><span class="full">two IHE patterns</span></div><p class="def">PIX keeps two systems' patient IDs cross-referenced to each other; PDQ lets one system ask the other "does this patient already exist, and under what ID?"</p></div>
+      </div>
+    </div>
+
+    <div class="glossary-group">
+      <div class="subhead">Saudi-specific &amp; regulatory</div>
+      <div class="domain-grid">
+        <div class="term"><div class="name"><b>NPHIES</b></div><p class="def">Saudi Arabia's national platform that every hospital and insurer must connect through for eligibility checks, approvals, and claims. TrakCare already has this certified &mdash; it's TrakCare's job, not this ERP's.</p></div>
+        <div class="term"><div class="name"><b>PDPL</b><span class="full">Personal Data Protection Law</span></div><p class="def">Saudi Arabia's data-privacy law &mdash; governs how personal and health data must be stored, moved, and protected.</p></div>
+        <div class="term"><div class="name"><b>Payer</b></div><p class="def">Insurance terminology for whoever is paying the bill &mdash; an insurance company, in most cases here.</p></div>
+        <div class="term"><div class="name"><b>Eligibility / Prior&nbsp;auth</b></div><p class="def">Asking the payer "is this patient covered, and will you approve this treatment" &mdash; before or during care, via NPHIES.</p></div>
+        <div class="term"><div class="name"><b>Claim</b></div><p class="def">The bill submitted to the payer after treatment is given.</p></div>
+        <div class="term"><div class="name"><b>Remittance</b></div><p class="def">The payer's response to a claim &mdash; what they agreed to pay, and why anything was reduced or rejected.</p></div>
+      </div>
+    </div>
+
+    <div class="glossary-group">
+      <div class="subhead">Security</div>
+      <div class="domain-grid">
+        <div class="term"><div class="name"><b>OAuth2</b></div><p class="def">A standard way for one system to prove to another "I'm allowed to access this," using short-lived tokens instead of a shared password.</p></div>
+        <div class="term"><div class="name"><b>SMART on FHIR</b></div><p class="def">OAuth2 adapted specifically for healthcare FHIR APIs &mdash; the standard way a clinical app authenticates itself.</p></div>
+        <div class="term" style="grid-column:1/-1;"><div class="name"><b>Mutual TLS</b><span class="full">mTLS</span></div><p class="def">Both sides of a connection prove their identity with certificates &mdash; not just the client checking the server, the way an ordinary "padlock icon" website connection works.</p></div>
+      </div>
+    </div>
+
+    <div class="glossary-group">
+      <div class="subhead">TrakCare / InterSystems specific</div>
+      <div class="domain-grid">
+        <div class="term"><div class="name"><b>InterSystems IRIS</b></div><p class="def">The underlying database-and-integration platform TrakCare is built on &mdash; not just a hospital app, but also the "engine room" capable of sending and receiving HL7/FHIR messages.</p></div>
+        <div class="term"><div class="name"><b>Interoperability engine</b><span class="full">formerly "Ensemble"</span></div><p class="def">The piece of IRIS that translates and routes messages between TrakCare and outside systems, with queuing and retry already built in &mdash; the thing our FHIR adapter in &sect;03 talks to directly, no extra infrastructure needed on our side.</p></div>
+      </div>
+    </div>
+
+    <div class="glossary-group">
+      <div class="subhead">Clinical/business terms used in &sect;04's mapping table</div>
+      <div class="domain-grid">
+        <div class="term"><div class="name"><b>Encounter</b></div><p class="def">One clinical visit or episode &mdash; a checkup, an ER visit, a hospital stay. Roughly the HIS equivalent of an ERP order.</p></div>
+        <div class="term"><div class="name"><b>Coverage</b></div><p class="def">A patient's insurance policy details, in FHIR form.</p></div>
+        <div class="term"><div class="name"><b>Practitioner / RelatedPerson</b></div><p class="def">FHIR's terms for a clinician, and for a patient's family member or guardian, respectively.</p></div>
+        <div class="term"><div class="name"><b>ServiceRequest</b></div><p class="def">A FHIR resource for an ordered procedure or test &mdash; the FHIR-shaped version of an ORM message.</p></div>
+        <div class="term"><div class="name"><b>ChargeItemDefinition</b></div><p class="def">A FHIR resource describing something billable and its price &mdash; the FHIR-shaped version of a product/price-list entry.</p></div>
+        <div class="term"><div class="name"><b>ExplanationOfBenefit</b><span class="full">EOB</span></div><p class="def">A FHIR resource showing what the payer decided about a claim &mdash; the FHIR-shaped version of "remittance."</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="h"><span class="n">02</span> Standards landscape</h2>
+    <p class="lead">What each one actually carries, and whether it's live, optional, or out of scope for an ERP-side integration.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Standard</th><th>Carries</th><th>Status here</th><th>Why it matters</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="std">HL7 v2.x<br><span style="font-weight:400;color:var(--ink-soft)">ADT / ORU / ORM</span></td>
+            <td>Real-time clinical events &mdash; admit / discharge / transfer, orders, results</td>
+            <td class="status"><span class="pill">live in prod</span></td>
+            <td>Still the actual wire format for most ADT feeds today, TrakCare included &mdash; a FHIR-first design still has to speak it at the edge</td>
+          </tr>
+          <tr>
+            <td class="std">HL7 FHIR R4</td>
+            <td>REST/JSON resources &mdash; Patient, Encounter, Coverage, Claim, Invoice</td>
+            <td class="status"><span class="tag2">target standard</span></td>
+            <td>What any new integration should be built on; IRIS Interoperability exposes it natively</td>
+          </tr>
+          <tr>
+            <td class="std">NPHIES</td>
+            <td>Saudi national exchange &mdash; eligibility, prior-auth, claims, remittance</td>
+            <td class="status"><span class="tag2">TrakCare's job, not ours</span></td>
+            <td>InterSystems is independently NPHIES-certified and TrakCare already submits claims through it for live Saudi hospitals &mdash; our adapter never has to speak NPHIES directly</td>
+          </tr>
+          <tr>
+            <td class="std">IHE PIX / PDQ</td>
+            <td>Cross-system patient identity resolution &amp; query</td>
+            <td class="status"><span class="pill">recommended</span></td>
+            <td>Keeps <span class="mono">PartyId</span> and TrakCare's MRN from drifting apart once both systems can write identity</td>
+          </tr>
+          <tr>
+            <td class="std">DICOM</td>
+            <td>Imaging</td>
+            <td class="status"><span class="pill">out of scope</span></td>
+            <td>A HIS/RIS/PACS concern &mdash; the ERP side of this partnership never touches image data directly</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="h"><span class="n">03</span> Recommended architecture &mdash; simpler than the first draft</h2>
+    <p class="lead">No new service to deploy, no event bus to run and monitor. One new set of endpoints inside this ERP's existing API project, talking straight to the integration engine TrakCare already operates.</p>
+    <div class="diagram-card">
+      <pre class="mermaid">
+flowchart LR
+  subgraph ERP["Contracts ERP (this codebase)"]
+    P["Party / Product / Order / Facility / Accounting"]
+    A["FHIR adapter — new controllers, same CQRS handlers"]
+    P --> A
+  end
+  subgraph HIS["TrakCare on InterSystems IRIS"]
+    I["IRIS Interoperability engine — queuing, retry, routing built in"]
+    C["Clinical / patient records"]
+    G["NPHIES submission — already certified"]
+    I --> C
+    I --> G
+  end
+  A <--> I
+      </pre>
+      <div class="diagram-cap">Two systems talking directly, not three. The adapter is a handful of new controllers in this ERP's existing API project &mdash; it translates <span class="mono">OrderRecords</span>/<span class="mono">PartyRecords</span> to and from FHIR shapes, reusing the CQRS handlers that already back the OData endpoints. Everything to the right of the arrow is TrakCare's job: IRIS's own interoperability engine already queues, retries, and routes messages (confirmed against InterSystems' own documentation, not assumed), and NPHIES submission is a capability TrakCare ships with today, independently certified &mdash; not something this integration has to build.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="h"><span class="n">04</span> Domain deep-dive &mdash; the same tables, a different vertical</h2>
+    <p class="lead">This is the part worth saying out loud in the room: nothing below is a new table or a new field. Each domain already holds a property-development vertical (and, in Product's case, a manufacturing one too) &mdash; the columns below show it could hold TrakCare's world just as easily, sitting in the exact same schema.</p>
+
+    <div class="domain-deep">
+      <div class="domain-deep-head"><b>Party</b> <span class="pill">PartyRoleTypeId</span> <span class="mono" style="color:var(--ink-soft);font-size:11px;">FHIR:</span> <span class="pill">Patient</span> <span class="pill">RelatedPerson</span> <span class="pill">Practitioner</span></div>
+      <p class="domain-deep-sub">One <span class="mono">Party</span> entity, <span class="mono">Person</span> or <span class="mono">PartyGroup</span> &mdash; every role is just a <span class="mono">PartyRole</span> row against an open lookup, not a different table.</p>
+      <div class="ex-cols">
+        <div class="ex-col"><div class="ex-label">Already live here</div><div class="chip-list"><span class="chip">Property buyer</span><span class="chip">Sales broker</span><span class="chip">Employee</span><span class="chip">Building contractor</span><span class="chip">Material vendor</span></div></div>
+        <div class="ex-col"><div class="ex-label">Same table, TrakCare's world</div><div class="chip-list"><span class="chip his">Patient</span><span class="chip his">Referring physician</span><span class="chip his">Attending consultant</span><span class="chip his">Ward nurse</span><span class="chip his">Lab technician</span><span class="chip his">Next of kin / legal guardian</span><span class="chip his">Payer &mdash; Bupa Arabia, Tawuniya, MedGulf</span><span class="chip his">MOH / regulator</span></div></div>
+      </div>
+      <div class="dormant-note"><span class="dn-tag">Already in the schema</span><b>PartyQual</b> + <b>PartySkill</b> already carry a qualification type with its own <span class="mono">VerifStatusId</span>, and years-of-experience plus a proficiency rating &mdash; ready for clinician credentialing (board certification, verification status, specialty registry) with zero schema change. <b>PartyIdentification</b>'s open type+value pair covers a national ID, an Iqama, or a payer member ID the same way a new lookup row does today. <b>PartyBenefit</b> already models a two-party, two-role benefit record with cost and period &mdash; a payer benefit plan between patient and insurer, out of the box.</div>
+    </div>
+
+    <div class="domain-deep">
+      <div class="domain-deep-head"><b>Product</b> <span class="pill">ProductTypeId</span> <span class="mono" style="color:var(--ink-soft);font-size:11px;">FHIR:</span> <span class="pill">ChargeItemDefinition</span></div>
+      <p class="domain-deep-sub">One <span class="mono">Product</span> table gated by <span class="mono">ProductTypeId</span> &mdash; the same row shape that already holds an apartment and a bag of cement holds a drug, an implant, or a bed-day.</p>
+      <div class="ex-cols">
+        <div class="ex-col"><div class="ex-label">Already live here</div><div class="chip-list"><span class="chip">Apartment unit</span><span class="chip">Cement</span><span class="chip">Steel rebar</span><span class="chip">Finished villa</span><span class="chip">Manufactured component</span></div></div>
+        <div class="ex-col"><div class="ex-label">Same table, TrakCare's world</div><div class="chip-list"><span class="chip his">Paracetamol 500mg tablet</span><span class="chip his">Amoxicillin 250mg/5ml suspension</span><span class="chip his">Hip implant &mdash; titanium</span><span class="chip his">MRI &mdash; brain with contrast</span><span class="chip his">CBC (complete blood count)</span><span class="chip his">ICU bed-day</span><span class="chip his">General ward bed-day</span><span class="chip his">Nursing consultation &mdash; 30 min</span><span class="chip his">N95 mask, box of 50</span></div></div>
+      </div>
+      <div class="dormant-note"><span class="dn-tag">Already in the schema</span><b>ProductCategoryMember</b> is many-to-many already &mdash; the same apartment can sit in a 2nd category live on screen, which for TrakCare means a formulary tier and a drug class at once. <b>ProductPrice</b> already supports concurrent, dated, per-currency prices &mdash; payer-contracted rates by agreement and date. <b>ProductAssoc</b> (<span class="mono">MANUF_COMPONENT</span>) already expresses a bill-of-materials &mdash; a surgical procedure linked to its required supply kit. <b>ProductFeature</b> already picks size/color/spec variants &mdash; dosage, formulation, route of administration.</div>
+    </div>
+
+    <div class="domain-deep">
+      <div class="domain-deep-head"><b>Order / Encounter</b> <span class="pill">OrderTypeId</span> <span class="mono" style="color:var(--ink-soft);font-size:11px;">FHIR:</span> <span class="pill">Encounter</span> <span class="pill">ServiceRequest</span></div>
+      <p class="domain-deep-sub">One <span class="mono">OrderHeader</span>/<span class="mono">OrderItem</span> engine, driven by <span class="mono">OrderTypeId</span> and a status lifecycle &mdash; sales, purchase, and quote are already the same machine, so a clinical encounter is too.</p>
+      <div class="ex-cols">
+        <div class="ex-col"><div class="ex-label">Already live here</div><div class="chip-list"><span class="chip">Apartment sales order</span><span class="chip">Cement purchase order</span><span class="chip">Villa sales quote</span><span class="chip">Manufacturing sales order</span></div></div>
+        <div class="ex-col"><div class="ex-label">Same table, TrakCare's world</div><div class="chip-list"><span class="chip his">Inpatient admission &mdash; 3-day stay, Cardiology</span><span class="chip his">ER visit</span><span class="chip his">Outpatient clinic visit</span><span class="chip his">Lab order &mdash; CBC + lipid panel</span><span class="chip his">Radiology order &mdash; chest X-ray</span><span class="chip his">Surgical case &mdash; appendectomy, OR-3</span><span class="chip his">Home-health visit</span><span class="chip his">Telehealth consultation</span></div></div>
+      </div>
+      <div class="dormant-note"><span class="dn-tag">Already in the schema</span>The same status lifecycle that already tracks an order from created to approved to fulfilled already models a clinical order's real lifecycle &mdash; ordered, in-progress, resulted &mdash; without inventing a single new state.</div>
+    </div>
+
+    <div class="domain-deep">
+      <div class="domain-deep-head"><b>Facility</b> <span class="pill">FacilityTypeId</span> <span class="mono" style="color:var(--ink-soft);font-size:11px;">FHIR:</span> <span class="pill">Location</span></div>
+      <p class="domain-deep-sub"><span class="mono">Facility</span> models warehouse, store, and plant generically; <span class="mono">FacilityLocation</span> gives it an internal hierarchy &mdash; aisle/shelf/bin today, ward/room/bed tomorrow.</p>
+      <div class="ex-cols">
+        <div class="ex-col"><div class="ex-label">Already live here</div><div class="chip-list"><span class="chip">Sales office</span><span class="chip">Materials warehouse</span><span class="chip">Cement plant</span><span class="chip">Show unit / model apartment</span></div></div>
+        <div class="ex-col"><div class="ex-label">Same table, TrakCare's world</div><div class="chip-list"><span class="chip his">Cardiology ward &mdash; Ward B, 3rd floor</span><span class="chip his">ICU</span><span class="chip his">OR-3 operating theatre</span><span class="chip his">Bed 204-B</span><span class="chip his">Radiology department</span><span class="chip his">Central pharmacy</span><span class="chip his">ER triage bay</span><span class="chip his">Blood bank</span></div></div>
+      </div>
+      <div class="dormant-note"><span class="dn-tag">Already in the schema</span>A ward, a room, and a bed are a new <b>FacilityType</b> plus a naming convention on the existing hierarchy &mdash; not a new concept, and not a new table.</div>
+    </div>
+
+    <div class="domain-deep">
+      <div class="domain-deep-head"><b>WorkEffort</b> <span class="pill">WorkEffortTypeId</span></div>
+      <p class="domain-deep-sub">OFBiz's generic "anything that happens over time" &mdash; the same entity already tracks a construction project and a manufacturing run.</p>
+      <div class="ex-cols">
+        <div class="ex-col"><div class="ex-label">Already live here</div><div class="chip-list"><span class="chip">Apartment construction project</span><span class="chip">Manufacturing production run</span></div></div>
+        <div class="ex-col"><div class="ex-label">Same table, TrakCare's world</div><div class="chip-list"><span class="chip his">Post-op recovery pathway</span><span class="chip his">Surgical case workflow</span><span class="chip his">Nursing shift / rounds</span><span class="chip his">Infection-control isolation period</span><span class="chip his">Care coordination episode</span></div></div>
+      </div>
+    </div>
+
+    <div class="domain-deep">
+      <div class="domain-deep-head"><b>GL / Accounting</b> <span class="pill">AcctgTransTypeId</span> <span class="mono" style="color:var(--ink-soft);font-size:11px;">FHIR:</span> <span class="pill">Claim</span> <span class="pill">ExplanationOfBenefit</span></div>
+      <p class="domain-deep-sub">One accounting-transaction engine posts everything into one chart of accounts today, regardless of source module &mdash; a claim posts through the identical engine an apartment installment does.</p>
+      <div class="ex-cols">
+        <div class="ex-col"><div class="ex-label">Already live here</div><div class="chip-list"><span class="chip">Apartment installment payment</span><span class="chip">Project revenue/cost recognition</span><span class="chip">Broker commission payable</span></div></div>
+        <div class="ex-col"><div class="ex-label">Same table, TrakCare's world</div><div class="chip-list"><span class="chip his">Insurance claim &mdash; inpatient stay</span><span class="chip his">Co-payment collected at discharge</span><span class="chip his">Consumables cost allocated to a department</span><span class="chip his">Physician fee-split</span><span class="chip his">Refund for a rejected claim line</span></div></div>
+      </div>
+      <div class="dormant-note"><span class="dn-tag">Already in the schema</span><b>Budget</b>/<b>BudgetItem</b> &mdash; a full header-plus-line-item schema with review, revision, and approval sub-entities alongside &mdash; has exactly one reference in the whole codebase today. Schema complete, ready for departmental or payer-contract budgets, nothing built on it yet.</div>
+    </div>
+
+    <p class="lead" style="margin-top:2px;">Flow direction, in short: Party is bidirectional (ERP owns the billing party, TrakCare owns clinical identity); Product, Order, and Facility flow TrakCare &rarr; ERP (their catalog and encounters become our pricing and orders); GL flows ERP &rarr; TrakCare &rarr; NPHIES &rarr; payer, with remittance posting back the same path into the GL engine already in place.</p>
+  </section>
+
+  <section>
+    <h2 class="h"><span class="n">05</span> Why this fits the current stack</h2>
+    <p class="lead">No new service to stand up, patch, or monitor &mdash; the adapter is new endpoints in the existing API project, thin because the ERP is already shaped like a REST API, not a database dump.</p>
+    <div class="domain-grid">
+      <div class="domain">OData endpoints (<span class="mono">OrderRecords</span>, <span class="mono">PartyRecords</span>, <span class="mono">QuoteRecords</span>) are already resource-shaped, filterable lists &mdash; the adapter translates them, it doesn't replace them.</div>
+      <div class="domain">CQRS already separates reads from writes. FHIR's own verbs map directly: <span class="mono">GET</span> &rarr; Query, <span class="mono">POST/PUT</span> &rarr; Command &mdash; no new mental model for the handler layer.</div>
+      <div class="domain" style="grid-column:1/-1;">The MediatR pipeline already runs a <span class="mono">LoggingBehavior</span> ahead of every handler &mdash; that's the natural slot for FHIR resource validation too, without touching a single existing handler.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="h"><span class="n">06</span> Security &amp; compliance</h2>
+    <div class="domain-grid">
+      <div class="domain"><b>OAuth2 / SMART on FHIR</b><div class="flow">Token-scoped access between systems &mdash; no shared database credentials, no static API keys</div></div>
+      <div class="domain"><b>Mutual TLS</b><div class="flow">Between the ERP's adapter and IRIS directly &mdash; one hop, since there's no separate facade tier in between</div></div>
+      <div class="domain"><b>PDPL alignment</b><div class="flow">Saudi Personal Data Protection Law &mdash; data residency and consent, layered onto the audit trail this ERP already writes to <span class="mono">AUDIT_ACTIVITY</span></div></div>
+      <div class="domain"><b>Field-level encryption</b><div class="flow">National ID and clinical identifiers encrypted in transit and at rest, not just the connection</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="h"><span class="n">07</span> Phased roadmap</h2>
+    <p class="lead">Identity first, money last &mdash; each phase is independently useful and none requires the next to already exist.</p>
+    <div class="roadmap">
+      <div class="phase"><span class="when">Phase 1</span><h3>Identity sync</h3><p>Party &harr; Patient via HL7v2 ADT or FHIR <span class="mono">Patient</span>, one direction: TrakCare &rarr; ERP</p><span class="phase-arrow">&rarr;</span></div>
+      <div class="phase"><span class="when">Phase 2</span><h3>Encounter / order sync</h3><p>Billable encounters land as ERP sales orders automatically, same OrderHeader/Item engine</p><span class="phase-arrow">&rarr;</span></div>
+      <div class="phase"><span class="when">Phase 3</span><h3>Billing handoff</h3><p>ERP invoices reach TrakCare in FHIR <span class="mono">Claim</span> shape; TrakCare submits to NPHIES itself and posts remittance back to GL</p><span class="phase-arrow">&rarr;</span></div>
+      <div class="phase"><span class="when">Phase 4</span><h3>Push-based sync</h3><p>IRIS pushes to the adapter as events happen, replacing scheduled polling &mdash; no new infrastructure, just a subscription IRIS's engine already supports</p></div>
+    </div>
+  </section>
+
+  <div class="footer">
+    <div class="box fit">
+      <span class="tag">Where this comes from</span>
+      <p>&sect;04's domain deep-dive expands on the live-demo walkthrough in the companion speaker notes ("One Core, Two Verticals") with the fuller set of dormant-capability proof points and concrete TrakCare-world examples for the room. The simplification in &sect;03 is verified, not assumed: InterSystems' own documentation confirms IRIS's interoperability productions already do message queuing, priority routing, and configurable retry &mdash; and InterSystems has been independently certified NPHIES-compliant since 2022, with TrakCare live on it at real Saudi hospitals. Also grounded in the deeper KSA ERP&times;HIS integration design this team reviewed in July 2026 &mdash; 204 fully-specified integration points, 816 field-level mappings, dedicated ZATCA and NPHIES chapters.</p>
+    </div>
+    <div class="box guard">
+      <span class="tag">Guardrail &mdash; don't overclaim</span>
+      <p>None of §03&ndash;07 is built today. This is the recommended target architecture, not a status report. If pressed for a committed date, land on the phased roadmap in §07 rather than a single number.</p>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad:true,
+    theme:'base',
+    themeVariables:{
+      background:'transparent',
+      primaryColor:'#dfeae6',
+      primaryTextColor:'#221e17',
+      primaryBorderColor:'#6fa89d',
+      lineColor:'#726b5a',
+      secondaryColor:'#f4e0cf',
+      tertiaryColor:'#eae6db',
+      fontFamily:'IBM Plex Sans, sans-serif'
+    }
+  });
+</script>
+
+</body></html>

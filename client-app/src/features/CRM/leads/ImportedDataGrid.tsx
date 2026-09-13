@@ -230,7 +230,7 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
   };
 
   const editableColumns = columns.map((col) => (
-    <Column key={col} field={col} title={columnTitle(col)} editor="text" cell={MyEditCell} />
+    <Column key={col} field={col} title={columnTitle(col)} editor="text" cells={{ data: MyEditCell }} />
   ));
 
   return (
@@ -304,7 +304,7 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
           <Column
             title={getTranslatedLabel(`${localizationKey}.actionsColumn`, 'Actions')}
             width={80}
-            cell={DeleteCell}
+            cells={{ data: DeleteCell }}
             filterable={false}
             sortable={false}
           />

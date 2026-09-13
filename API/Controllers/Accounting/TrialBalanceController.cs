@@ -18,7 +18,15 @@ public class TrialBalanceController : BaseApiController
     {
         return HandleResult(await Mediator.Send(new GetTrialBalanceReport.Query { CustomTimePeriodId = customTimePeriodId, OrganizationPartyId = selectedAccountingCompanyId }));
     }
-    
+
+    // New COA-hierarchy-level version of the trial balance. Additive endpoint — does not replace
+    // getTrialBalanceReport above.
+    [HttpGet("{selectedAccountingCompanyId}/{customTimePeriodId}/getTrialBalanceByLevelReport")]
+    public async Task<IActionResult> GetTrialBalanceByLevelReport(string selectedAccountingCompanyId, string customTimePeriodId)
+    {
+        return HandleResult(await Mediator.Send(new GetTrialBalanceByLevel.Query { CustomTimePeriodId = customTimePeriodId, OrganizationPartyId = selectedAccountingCompanyId }));
+    }
+
     [HttpGet("{selectedAccountingCompanyId}/{customTimePeriodId}/{glAccountId}/getGlAccountTransactionDetails")]
     public async Task<IActionResult> GetGlAccountTransactionDetails(
         string selectedAccountingCompanyId,

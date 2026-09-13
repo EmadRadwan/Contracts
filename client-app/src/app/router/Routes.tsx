@@ -89,6 +89,7 @@ import TaxAuthorityGlAccounts
 import FixedAssetTypeGlMappings
     from "../../features/accounting/organizationGlSettings/dashboard/glAccountDefaults/FixedAssetTypeGlMappings";
 import TrialBalance from "../../features/accounting/organizationGlSettings/dashboard/TrialBalance";
+import TrialBalanceByLevel from "../../features/accounting/organizationGlSettings/dashboard/TrialBalanceByLevel";
 import AccountingReportsDashboard
     from "../../features/accounting/organizationGlSettings/dashboard/AccountingReportsDashboard";
 import TransactionTotals from "../../features/accounting/organizationGlSettings/dashboard/TransactionTotals";
@@ -344,6 +345,7 @@ export const routes: RouteObject[] = [
                             {path: "fixedAssetTypeGLMappings", element: <FixedAssetTypeGlMappings/>},
                             {path: "finAccountTypeGLAccount", element: <FinAccountGlAccounts/>},
                             {path: "trialBalance", element: <TrialBalance/>},
+                            {path: "trialBalanceByLevel", element: <TrialBalanceByLevel/>},
                             {path: "accountingReports", element: <AccountingReportsDashboard/>},
                             {path: "transactionTotals", element: <TransactionTotals/>},
                             {path: "incomeStatement", element: <IncomeStatement/>},

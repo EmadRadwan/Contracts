@@ -187,7 +187,7 @@ export default function ListRoutingTaskAssoc() {
                                         <Column
                                             field="workEffortIdTo.workEffortIdTo"
                                             title={getTranslatedLabel('manufacturing.taskName', 'Task Name')}
-                                            cell={TaskNameCell}
+                                            cells={{ data: TaskNameCell }}
                                             width={250}
                                         />
                                         <Column
@@ -208,7 +208,7 @@ export default function ListRoutingTaskAssoc() {
                                             width={180}
                                         />
                                        
-                                        <Column title=" " cell={DeleteCell} width={100} />
+                                        <Column title=" " cells={{ data: DeleteCell }} width={100} />
                                     </KendoGrid>
                                     {isFetching && (
                                         <LoadingComponent

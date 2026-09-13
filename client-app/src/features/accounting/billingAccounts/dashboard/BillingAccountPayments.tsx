@@ -103,7 +103,7 @@ const BillingAccountPayments = () => {
                   </Grid>
                 </Grid>
               </GridToolbar>
-              <Column field="paymentId" title="Invoice" cell={PaymentCell} />
+              <Column field="paymentId" title="Invoice" cells={{ data: PaymentCell }} />
               <Column field="invoiceId" title="Invoice" />
               <Column
                 field="paymentMethodTypeDescription"

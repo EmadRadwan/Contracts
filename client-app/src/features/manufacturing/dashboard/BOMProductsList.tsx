@@ -156,7 +156,7 @@ const { getTranslatedLabel } = useTranslationHelper()
                     field="productAssocTypeDescription"
                     title={getTranslatedLabel("manufacturing.bom.list.bomType", "BOM Type")}
                   />
-                  <Column cell={CommandCell} width={250} filterable={false} />
+                  <Column cells={{ data: CommandCell }} width={250} filterable={false} />
                 </KendoGrid>
                 {isFetching && (
                   <LoadingComponent

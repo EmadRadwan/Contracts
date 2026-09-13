@@ -133,7 +133,7 @@ const UsersList = () => {
 
                             <Column
                                 field="displayName"
-                                cell={UserDescriptionCell}
+                                cells={{ data: UserDescriptionCell }}
                                 title={getTranslatedLabel("users.list.displayName", "Display Name")}
                                 width={350}
                                 filter="text"

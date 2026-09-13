@@ -1973,6 +1973,7 @@
           "qCreateTxn": "إنشاء قيد محاسبي سريع",
           "unposted": "المعاملات المحاسبية الغير مرحلة",
           "trial": "ميزان المراجعة",
+          "trialByLevel": "ميزان المراجعة حسب المستوى",
           "income": "قائمة الدخل",
           "balanceSheet": "الميزانية العمومية",
           "initialBalance": "إنشاء قيد افتتاحى",
@@ -2052,6 +2053,7 @@
         "title": "اختر تقريرًا لعرضه",
         "menu": {
           "trial-balance": "ميزان المراجعة",
+          "trial-balance-by-level": "ميزان المراجعة حسب المستوى",
           "transaction-totals": "إجماليات المعاملات",
           "income-statement": "قائمة الدخل",
           "cash-flow-statement": "بيان التدفقات النقدية",
@@ -2116,6 +2118,24 @@
             "balance": "الرصيد",
             "description": "البيان"
           }
+        },
+        "trial-balance-by-level": {
+          "title": "ميزان المراجعة حسب المستوى لـ: ",
+          "accountCode": "رمز الحساب",
+          "accountName": "اسم الحساب",
+          "level": "المستوى",
+          "openingBalance": "الرصيد الافتتاحي",
+          "postedDebits": "مدين",
+          "postedCredits": "دائن",
+          "endingBalance": "الرصيد الختامي",
+          "loading": "جارٍ تحميل بيانات التقرير...",
+          "debits": "إجمالي المدين: ",
+          "credits": "إجمالي الدائن: ",
+          "levelFilter": "المستوى",
+          "allLevels": "كل المستويات",
+          "excel": "تصدير إكسل",
+          "exportPdf": "تصدير PDF",
+          "totals": "الإجمالي"
         },
         "transaction-totals": {
           "list": {

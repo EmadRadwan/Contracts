@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {
     Grid as KendoGrid,
     GridCellProps,
@@ -6,6 +6,7 @@ import {
     GridItemChangeEvent,
     GridToolbar,
 } from "@progress/kendo-react-grid";
+import { editDescriptorFrom } from "../../../../app/common/grid";
 import Button from "@mui/material/Button";
 import ReactDOM from "react-dom";
 import {CSSTransition} from "react-transition-group";
@@ -41,6 +42,8 @@ export default function JobOrderPaymentsList({showPaymentList, onClose, orderId,
     const editField = "inEdit";
 
     const [data, setData] = useState<Array<Payment | undefined>>(orderPaymentsData ? orderPaymentsData : []);
+    // KendoReact v16: edit state is a descriptor keyed by dataItemKey, derived from the inEdit flag on the rows
+    const editDescriptor = useMemo(() => editDescriptorFrom(data, "paymentId"), [data]);
 
     const remove = (dataItem: Payment) => {
         deleteItem(dataItem);
@@ -160,7 +163,8 @@ export default function JobOrderPaymentsList({showPaymentList, onClose, orderId,
                                     <KendoGrid className="main-grid" style={{height: "300px"}}
                                                data={data}
                                                onItemChange={itemChange}
-                                               editField={editField}
+                                               editable={{ enabled: true, mode: "inline" }}
+                                               edit={editDescriptor}
                                                dataItemKey={"paymentId"}
 
                                     >
@@ -176,8 +180,8 @@ export default function JobOrderPaymentsList({showPaymentList, onClose, orderId,
                                         <Column field="paymentId" title="Id" editable={false} width={0}/>
                                         <Column field="amount" title="Amount" editor="numeric" width={150}/>
                                         <Column field="paymentMethodTypeId" title="Payment Method"
-                                                cell={JobDropDownCell} width={200}/>
-                                        <Column cell={CommandCell} width="240px"/>
+                                                cells={{ data: JobDropDownCell }} width={200}/>
+                                        <Column cells={{ data: CommandCell }} width="240px"/>
                                     </KendoGrid>
                                 </div>
                             </Grid>

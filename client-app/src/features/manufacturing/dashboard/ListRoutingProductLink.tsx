@@ -164,7 +164,7 @@ export default function ListRoutingProductLink() {
                                         <Column
                                             field="productId.productId"
                                             title={getTranslatedLabel('manufacturing.productId', 'Product ID')}
-                                            cell={ProductIdCell}
+                                            cells={{ data: ProductIdCell }}
                                             width={150}
                                         />
                                         <Column
@@ -189,7 +189,7 @@ export default function ListRoutingProductLink() {
                                             title={getTranslatedLabel('manufacturing.quantity', 'Quantity')}
                                             width={120}
                                         />
-                                        <Column title=" " cell={DeleteCell} width={100} />
+                                        <Column title=" " cells={{ data: DeleteCell }} width={100} />
                                     </KendoGrid>
                                     {isFetching && (
                                         <LoadingComponent

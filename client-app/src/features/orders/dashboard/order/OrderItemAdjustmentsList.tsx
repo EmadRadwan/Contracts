@@ -188,11 +188,11 @@ function OrderItemAdjustmentsList({
                 >
 
                     <Column field="orderAdjustmentTypeDescription" title={getTranslatedLabel(`${localizationKey}.type`, "Adjustment Type")}
-                            cell={orderAdjustmentCell} width={180}/>
+                            cells={{ data: orderAdjustmentCell }} width={180}/>
                     <Column field="amount" title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")} width={120}/>
                     <Column field="sourcePercentage" title={getTranslatedLabel(`${localizationKey}.percentage`, "Percentage")} width={140}/>
                     <Column field="isManual" title={getTranslatedLabel(`${localizationKey}.userEntered`, "User Entered")} width={150}/>
-                    <Column cell={CommandCell} width="100px"/>
+                    <Column cells={{ data: CommandCell }} width="100px"/>
 
 
                 </KendoGrid>

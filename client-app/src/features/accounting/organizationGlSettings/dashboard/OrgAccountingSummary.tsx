@@ -76,6 +76,14 @@ const OrgAccountingSummary = () => {
         <Grid item xs={12} sx={{ paddingBottom: 1, marginInlineStart: 2 }}>
           <Button
             themeColor={"success"}
+            onClick={() => router.navigate("/trialBalanceByLevel")}
+          >
+            {getTranslatedLabel(`${localizationKey}.trialByLevel`, "Trial Balance By Level")}
+          </Button>
+        </Grid>
+        <Grid item xs={12} sx={{ paddingBottom: 1, marginInlineStart: 2 }}>
+          <Button
+            themeColor={"success"}
             onClick={() => router.navigate("/incomeStatement")}
           >
             {getTranslatedLabel(`${localizationKey}.income`, "Income Statement")}

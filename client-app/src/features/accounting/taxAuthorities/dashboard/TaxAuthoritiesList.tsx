@@ -233,7 +233,7 @@ function TaxAuthoritiesList() {
                                 <Column
                                     field="taxAuthGeoId"
                                     title="TaxAuthority Geo Id"
-                                    cell={TaxAuthorityIdCell}
+                                    cells={{ data: TaxAuthorityIdCell }}
                                     width={250}
                                     locked={true}
                                 />
@@ -243,12 +243,12 @@ function TaxAuthoritiesList() {
                                     width={180}
                                 />
                                 <Column
-                                    cell={TaxAuthProductsCell}
+                                    cells={{ data: TaxAuthProductsCell }}
                                     title="Tax Authority Products"
                                     width={180}
                                 />
                                 <Column
-                                    cell={TaxAuthCategoryCell}
+                                    cells={{ data: TaxAuthCategoryCell }}
                                     title="Tax Authority Categories"
                                     width={180}
                                 />

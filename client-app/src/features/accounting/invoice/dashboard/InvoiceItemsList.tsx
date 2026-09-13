@@ -254,7 +254,7 @@ export default function InvoiceItemsList({invoiceId, canEdit, refreshTotal}: Pro
                     <Column
                         field="productName"
                         title={getTranslatedLabel(`${localizationKey}.columns.product`, "Product")}
-                        cell={invoiceItemCell}
+                        cells={{ data: invoiceItemCell }}
                         width={250}
                     />
 
@@ -291,7 +291,7 @@ export default function InvoiceItemsList({invoiceId, canEdit, refreshTotal}: Pro
                     <Column
                         title=" "
                         width={110}
-                        cell={actionCell}
+                        cells={{ data: actionCell }}
                         filterable={false}
                         sortable={false}
                     />

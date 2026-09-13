@@ -359,6 +359,13 @@ const partiesApi = createApi({
                     params: params,
                 }),
             }),
+            fetchPartiesEmployeesLov: builder.query<{ parties: PartyLovItem[]; partyCount: number }, void>({
+                query: () => ({
+                    url: '/parties/getPartiesEmployeesLov',
+                    method: 'GET',
+                    params: { pageSize: 1000 },
+                }),
+            }),
             fetchPayrollAdvances: builder.query<EmployeeAdvancesResponse, { invoiceDate: string; organizationPartyId: string }>({
                 query: ({ invoiceDate, organizationPartyId }) => `/humanResources/listPayrollAdvances?invoiceDate=${invoiceDate}&organizationPartyId=${organizationPartyId}`,
                 providesTags: ['EmployeeAdvance'],
@@ -370,6 +377,12 @@ const partiesApi = createApi({
 export interface EmployeeAdvancesResponse {
     data: EmployeeAdvance[];
     total: number;
+}
+
+export interface PartyLovItem {
+    fromPartyId: string;
+    fromPartyName: string;
+    fromPartyPhone?: string;
 }
 
 export const {
@@ -395,5 +408,6 @@ export const {
     useFetchEmployeesWithSalaryQuery,
     useFetchPayrollAdvancesQuery,
     useFetchDepartmentsLovQuery,
+    useFetchPartiesEmployeesLovQuery,
 } = partiesApi;
 export {partiesApi};

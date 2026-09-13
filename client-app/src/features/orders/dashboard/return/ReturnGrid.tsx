@@ -235,18 +235,18 @@ export const ReturnGrid: React.FC<ReturnGridProps> = ({
 
     return (
         <KendoGrid data={gridData} style={{ maxHeight: '400px', overflowY: 'auto' }} resizable={true} reorderable={true}>
-            <GridColumn field="orderId" title={getTranslatedLabel('Order', 'OrderItems')} cell={OrderIdCell} />
-            <GridColumn field="productId" title={getTranslatedLabel('Product', 'Product')} cell={ProductIdCell} />
-            <GridColumn field="description" title={getTranslatedLabel('Common', 'Description')} cell={DescriptionCell} />
-            <GridColumn field="returnQuantity" title={getTranslatedLabel('Order', 'Quantity')} cell={QuantityCell} />
-            <GridColumn field="returnPrice" title={getTranslatedLabel('Order', 'Price')} cell={PriceCell} />
-            <GridColumn field="subTotal" title={getTranslatedLabel('Order', 'SubTotal')} cell={SubTotalCell} />
-            <GridColumn field="returnReasonId" title={getTranslatedLabel('Order', 'ReturnReason')} cell={ReturnReasonCell} />
-            <GridColumn field="statusId" title={getTranslatedLabel('Order', 'ItemStatus')} cell={ItemStatusCell} />
-            <GridColumn field="returnTypeId" title={getTranslatedLabel('Common', 'Type')} cell={ReturnTypeCell} />
-            {readOnly && <GridColumn field="returnResponse" title={getTranslatedLabel('Order', 'ReturnResponse')} cell={ReturnResponseCell} />}
-            <GridColumn title="" cell={EditCell} />
-            <GridColumn title="" cell={RemoveCell} />
+            <GridColumn field="orderId" title={getTranslatedLabel('Order', 'OrderItems')} cells={{ data: OrderIdCell }} />
+            <GridColumn field="productId" title={getTranslatedLabel('Product', 'Product')} cells={{ data: ProductIdCell }} />
+            <GridColumn field="description" title={getTranslatedLabel('Common', 'Description')} cells={{ data: DescriptionCell }} />
+            <GridColumn field="returnQuantity" title={getTranslatedLabel('Order', 'Quantity')} cells={{ data: QuantityCell }} />
+            <GridColumn field="returnPrice" title={getTranslatedLabel('Order', 'Price')} cells={{ data: PriceCell }} />
+            <GridColumn field="subTotal" title={getTranslatedLabel('Order', 'SubTotal')} cells={{ data: SubTotalCell }} />
+            <GridColumn field="returnReasonId" title={getTranslatedLabel('Order', 'ReturnReason')} cells={{ data: ReturnReasonCell }} />
+            <GridColumn field="statusId" title={getTranslatedLabel('Order', 'ItemStatus')} cells={{ data: ItemStatusCell }} />
+            <GridColumn field="returnTypeId" title={getTranslatedLabel('Common', 'Type')} cells={{ data: ReturnTypeCell }} />
+            {readOnly && <GridColumn field="returnResponse" title={getTranslatedLabel('Order', 'ReturnResponse')} cells={{ data: ReturnResponseCell }} />}
+            <GridColumn title="" cells={{ data: EditCell }} />
+            <GridColumn title="" cells={{ data: RemoveCell }} />
         </KendoGrid>
     );
 };

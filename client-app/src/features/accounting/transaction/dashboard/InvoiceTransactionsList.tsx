@@ -5,7 +5,6 @@ import {
     Grid as KendoGrid,
     GridColumn as Column,
     GridSortChangeEvent,
-    GridRowProps,
     GridToolbar,
 } from "@progress/kendo-react-grid";
 import Button from "@mui/material/Button";
@@ -22,6 +21,10 @@ import { AcctgTransEntry } from "../../../../app/models/accounting/acctgTransEnt
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import MermaidChart from "../../../manufacturing/dashboard/MermaidChart";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
+import { createStyledRow } from "../../../../app/common/grid";
+
+// Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
+const DebitCreditRow = createStyledRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag !== "C" ? "rgba(55,180,0,0.32)" : "#fff" }));
 
 interface Props {
     onClose: () => void;
@@ -65,17 +68,6 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
             setPaymentTransEntries(handleDatesArray(acctTransEntryDataPaymentApplication));
         }
     }, [acctTransEntryDataPaymentApplication]);
-    
-
-    /** Row colouring: credits white, debits light‑green */
-    const rowRender = (
-        trElement: React.ReactElement<HTMLTableRowElement>,
-        props: GridRowProps
-    ) => {
-        const isDebit = props.dataItem.debitCreditFlag !== "C";
-        const style = { backgroundColor: isDebit ? "rgba(55,180,0,0.32)" : "#fff" };
-        return React.cloneElement(trElement, { style }, trElement.props.children);
-    };
 
     // ───────────────────── Totals Calculation for Sales Invoice ─────────────────────────────
     const { totalDebit, totalCredit } = useMemo(() => {
@@ -143,13 +135,13 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                                     onSortChange={(e: GridSortChangeEvent) => setSort(e.sort)}
                                     pageable={false}
                                     resizable
-                                    rowRender={rowRender}
+                                    rows={{ data: DebitCreditRow }}
                                 >
                                     <Column
                                         field="acctgTransId"
                                         title={getTranslatedLabel("accounting.payments.transactions.columns.acctgTransId", "Acctg Trans")}
                                         width={100}
-                                        footerCell={TotalsFooterCell}
+                                        cells={{ footerCell: TotalsFooterCell }}
                                     />
                                     <Column field="amount" title={getTranslatedLabel("accounting.payments.transactions.columns.origAmount", "Orig Amount")} width={100} />
                                     <Column field="debitCreditFlag" title={getTranslatedLabel("accounting.payments.transactions.columns.debitCreditFlag", "Debit/Credit")} width={90} />
@@ -188,7 +180,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                                     onSortChange={(e: GridSortChangeEvent) => setSort(e.sort)}
                                     pageable={false}
                                     resizable
-                                    rowRender={rowRender}
+                                    rows={{ data: DebitCreditRow }}
                                 >
                                     
                                     {/* ───── Columns ───── */}
@@ -196,7 +188,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                                         field="acctgTransId"
                                         title={getTranslatedLabel("accounting.transactions.acctgTransId", "Acctg Trans")}
                                         width={100}
-                                        footerCell={PaymentTotalsFooterCell}
+                                        cells={{ footerCell: PaymentTotalsFooterCell }}
                                     />
                                     <Column field="amount" title={getTranslatedLabel("accounting.transactions.origAmount", "Orig Amount")} width={100} />
                                     <Column field="debitCreditFlag" title={getTranslatedLabel("accounting.transactions.debitCredit", "Debit/Credit")} width={90} />

@@ -368,7 +368,7 @@ export default function ProjectCertificatesList() {
                                 )}
                                 width={columnWidths.certificateNumber}
                                 locked={false}
-                                cell={ProjectNumberCell}
+                                cells={{ data: ProjectNumberCell }}
                             />
                             <Column
                                 field="projectName"

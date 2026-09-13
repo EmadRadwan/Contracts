@@ -1,4 +1,6 @@
+using System.Text.RegularExpressions;
 using Application.Core;
+using Application.Interfaces;
 using Application.Parties.Parties;
 using Application.Projects;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +9,13 @@ namespace API.Controllers.WorkEffort;
 
 public class ProjectController : BaseApiController
 {
+    private readonly IProjectReportService _projectReportService;
+
+    public ProjectController(IProjectReportService projectReportService)
+    {
+        _projectReportService = projectReportService;
+    }
+
     [HttpPost("createProject", Name = "CreateProject")]
     public async Task<ActionResult<ProjectDto>> CreateProject([FromBody] ProjectDto project)
     {
@@ -265,7 +274,11 @@ public class ProjectController : BaseApiController
         [FromQuery] bool revenuesAllData,
         [FromQuery] DateTime? salesStartDate,
         [FromQuery] DateTime? salesEndDate,
-        [FromQuery] bool salesAllData)
+        [FromQuery] bool salesAllData,
+        // Management-fee inputs for ProjectReportDto.Summary. excludedBuildings is a comma-separated
+        // list (e.g. "A1,A2") — a single param avoids array query-string serialization quirks.
+        [FromQuery] decimal? mgmtFeePercent = null,
+        [FromQuery] string? excludedBuildings = null)
     {
         return HandleResult(Result<ProjectReportDto>.Success(await Mediator.Send(new GetProjectReport.Query
         {
@@ -278,8 +291,75 @@ public class ProjectController : BaseApiController
             RevenuesAllData = revenuesAllData,
             SalesStartDate = salesStartDate,
             SalesEndDate = salesEndDate,
-            SalesAllData = salesAllData
+            SalesAllData = salesAllData,
+            MgmtFeePercent = mgmtFeePercent ?? 12m,
+            ExcludedBuildings = SplitCsv(excludedBuildings)
         })));
+    }
+
+    private static List<string> SplitCsv(string? csv) =>
+        string.IsNullOrWhiteSpace(csv)
+            ? new List<string>()
+            : csv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+
+    /// <summary>
+    /// Server-rendered PDF of the whole project report (summary + all sections) via Telerik
+    /// Reporting. Replaces an earlier KendoReact Grid PDFExport attempt that could not shape or
+    /// bidi-reorder Arabic text — see docs/project-report-in-app-view-plan.md.
+    /// Takes the same filter params as <see cref="GetProjectReport"/> plus the display name the
+    /// screen already has (the report DTO itself carries no project name/id).
+    /// </summary>
+    [HttpGet("report/pdf")]
+    public async Task<IActionResult> GetProjectReportPdf(
+        [FromQuery] string projectId,
+        [FromQuery] string projectName,
+        [FromQuery] DateTime? expensesStartDate,
+        [FromQuery] DateTime? expensesEndDate,
+        [FromQuery] bool expensesAllData,
+        [FromQuery] DateTime? revenuesStartDate,
+        [FromQuery] DateTime? revenuesEndDate,
+        [FromQuery] bool revenuesAllData,
+        [FromQuery] DateTime? salesStartDate,
+        [FromQuery] DateTime? salesEndDate,
+        [FromQuery] bool salesAllData,
+        [FromQuery] decimal? mgmtFeePercent = null,
+        [FromQuery] string? excludedBuildings = null)
+    {
+        var dto = await Mediator.Send(new GetProjectReport.Query
+        {
+            ProjectId = projectId,
+            ExpensesStartDate = expensesStartDate,
+            ExpensesEndDate = expensesEndDate,
+            ExpensesAllData = expensesAllData,
+            RevenuesStartDate = revenuesStartDate,
+            RevenuesEndDate = revenuesEndDate,
+            RevenuesAllData = revenuesAllData,
+            SalesStartDate = salesStartDate,
+            SalesEndDate = salesEndDate,
+            SalesAllData = salesAllData,
+            MgmtFeePercent = mgmtFeePercent ?? 12m,
+            ExcludedBuildings = SplitCsv(excludedBuildings)
+        });
+
+        var period =
+            $"المصاريف: {FormatPeriod(expensesAllData, expensesStartDate, expensesEndDate)} · " +
+            $"الإيرادات: {FormatPeriod(revenuesAllData, revenuesStartDate, revenuesEndDate)} · " +
+            $"المبيعات: {FormatPeriod(salesAllData, salesStartDate, salesEndDate)}";
+
+        var bytes = _projectReportService.Render(dto, projectName, projectId, period);
+
+        var safeName = Regex.Replace(projectName ?? projectId, @"[^a-zA-Z0-9\u0600-\u06FF\s-]", "_").Trim();
+        return File(bytes, "application/pdf", $"Project_Report_{safeName}.pdf");
+    }
+
+    private static string FormatPeriod(bool allData, DateTime? start, DateTime? end) =>
+        allData ? "الكل" : $"{start?.ToString("yyyy-MM-dd")}_إلى_{end?.ToString("yyyy-MM-dd")}";
+
+    [HttpGet("buildings")]
+    public async Task<ActionResult<List<string>>> GetProjectBuildings([FromQuery] string projectId)
+    {
+        return HandleResult(Result<List<string>>.Success(
+            await Mediator.Send(new ListProjectBuildings.Query { ProjectId = projectId })));
     }
 
     [HttpGet("companyReport")]
@@ -292,7 +372,9 @@ public class ProjectController : BaseApiController
         [FromQuery] bool revenuesAllData,
         [FromQuery] DateTime? salesStartDate,
         [FromQuery] DateTime? salesEndDate,
-        [FromQuery] bool salesAllData)
+        [FromQuery] bool salesAllData,
+        [FromQuery] decimal? mgmtFeePercent = null,
+        [FromQuery] string? excludedBuildings = null)
     {
         return HandleResult(Result<ProjectReportDto>.Success(await Mediator.Send(new Application.Accounting.Reports.GetCompanyReport.Query
         {
@@ -304,7 +386,9 @@ public class ProjectController : BaseApiController
             RevenuesAllData = revenuesAllData,
             SalesStartDate = salesStartDate,
             SalesEndDate = salesEndDate,
-            SalesAllData = salesAllData
+            SalesAllData = salesAllData,
+            MgmtFeePercent = mgmtFeePercent ?? 12m,
+            ExcludedBuildings = SplitCsv(excludedBuildings)
         })));
     }
 

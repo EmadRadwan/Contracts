@@ -296,7 +296,7 @@
 /* Kendo Grid Resizing Support */
 .kendo-grid-styled .k-grid-content {
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: auto;
 }
 
 .kendo-grid-styled .k-grid-header-wrap {

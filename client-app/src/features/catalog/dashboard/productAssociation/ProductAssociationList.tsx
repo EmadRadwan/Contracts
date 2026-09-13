@@ -141,7 +141,7 @@ export default function ProductAssociationsList() {
                                 <Column field="productAssocTypeId" title="productAssocTypeId" width={0} />
                                 <Column field="productId" title="productId" width={0} />
                                 <Column
-                                    cell={productIdToCell}
+                                    cells={{ data: productIdToCell }}
                                     title="Associated Product"
                                     width={300}
                                 />

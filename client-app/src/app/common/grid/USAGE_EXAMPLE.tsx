@@ -70,7 +70,7 @@ export function GridStylingExample() {
                     width={150}
                     filterable={true}
                     filter="text"
-                    filterCell={TextFilterCell}  /* ← Custom text filter */
+                    cells={{ filterCell: TextFilterCell }}  /* ← Custom text filter */
                 />
 
                 {/* Text Filter Example */}
@@ -79,7 +79,7 @@ export function GridStylingExample() {
                     title="Name"
                     filterable={true}
                     filter="text"
-                    filterCell={TextFilterCell}  /* ← Custom text filter */
+                    cells={{ filterCell: TextFilterCell }}  /* ← Custom text filter */
                 />
 
                 {/* Date Filter Example */}
@@ -89,7 +89,7 @@ export function GridStylingExample() {
                     format="{0: dd/MM/yyyy}"
                     filterable={true}
                     filter="date"
-                    filterCell={DateFilterCell}  /* ← Custom date filter with operators */
+                    cells={{ filterCell: DateFilterCell }}  /* ← Custom date filter with operators */
                 />
 
                 {/* Numeric Filter Example */}
@@ -98,7 +98,7 @@ export function GridStylingExample() {
                     title="Amount"
                     filterable={true}
                     filter="numeric"
-                    filterCell={NumericFilterCell}  /* ← Custom numeric filter with operators */
+                    cells={{ filterCell: NumericFilterCell }}  /* ← Custom numeric filter with operators */
                 />
 
                 {/* Text Filter with Status */}
@@ -107,7 +107,7 @@ export function GridStylingExample() {
                     title="Status"
                     filterable={true}
                     filter="text"
-                    filterCell={TextFilterCell}  /* ← Custom text filter */
+                    cells={{ filterCell: TextFilterCell }}  /* ← Custom text filter */
                 />
             </KendoGrid>
 
@@ -115,9 +115,9 @@ export function GridStylingExample() {
                 <h3>Implementation Notes</h3>
                 <ul>
                     <li><code>className="kendo-grid-styled"</code> applies the CSS styling</li>
-                    <li><code>{'filterCell={TextFilterCell}'}</code> uses text-only filters (no dropdown)</li>
-                    <li><code>{'filterCell={DateFilterCell}'}</code> uses date picker with operator dropdown</li>
-                    <li><code>{'filterCell={NumericFilterCell}'}</code> uses number input with operator dropdown</li>
+                    <li><code>{'cells={{ filterCell: TextFilterCell }}'}</code> uses text-only filters (no dropdown)</li>
+                    <li><code>{'cells={{ filterCell: DateFilterCell }}'}</code> uses date picker with operator dropdown</li>
+                    <li><code>{'cells={{ filterCell: NumericFilterCell }}'}</code> uses number input with operator dropdown</li>
                     <li>All filter cells have a clear button to reset the filter</li>
                 </ul>
             </div>
@@ -132,9 +132,9 @@ import '../app/common/grid/grid.styles.css';
 <KendoGrid className="kendo-grid-styled" ...>
 
 // 3. Add filterCell to columns
-<Column field="name" filterable={true} filter="text" filterCell={TextFilterCell} />
-<Column field="date" filterable={true} filter="date" filterCell={DateFilterCell} />
-<Column field="amount" filterable={true} filter="numeric" filterCell={NumericFilterCell} />
+<Column field="name" filterable={true} filter="text" cells={{ filterCell: TextFilterCell }} />
+<Column field="date" filterable={true} filter="date" cells={{ filterCell: DateFilterCell }} />
+<Column field="amount" filterable={true} filter="numeric" cells={{ filterCell: NumericFilterCell }} />
 `}</pre>
             </div>
         </div>
@@ -174,5 +174,5 @@ export const CustomPhoneFilterCell = (props: GridFilterCellProps) => {
 
 /**
  * USAGE IN COMPONENT:
- * <Column field="phone" filterable={true} filter="text" filterCell={CustomPhoneFilterCell} />
+ * <Column field="phone" filterable={true} filter="text" cells={{ filterCell: CustomPhoneFilterCell }} />
  */

@@ -1,5 +1,5 @@
 import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
-import React, { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import {
   Grid as KendoGrid,
   GridCellProps,
@@ -7,7 +7,7 @@ import {
   GridPageChangeEvent,
   GridSortChangeEvent,
   GridCustomFooterCellProps,
-  GridToolbar, GridRowProps,
+  GridToolbar,
 } from "@progress/kendo-react-grid";
 import { handleDatesArray } from "../../../../app/util/utils";
 import { AcctgTransEntry } from "../../../../app/models/accounting/acctgTransEntry";
@@ -21,6 +21,10 @@ import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
 import AcctgTransEntryForm from "../form/AcctgTransEntryForm";
 import {useDeleteAcctgTransEntryMutation} from "../../../../app/store/apis";
+import { createStyledRow } from "../../../../app/common/grid";
+
+// Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
+const DebitCreditRow = createStyledRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag !== "C" ? "rgba(55, 180, 0, 0.32)" : "#ffffff" }));
 
 interface Props {
   acctgTrans?: AcctgTrans;
@@ -110,17 +114,6 @@ export default function AcctgTransEntryList({ acctgTrans }: Props) {
     }
   };
 
-  const rowRender = (
-    trElement: React.ReactElement<HTMLTableRowElement>,
-    props: GridRowProps
-  ) => {
-    const actionable = props.dataItem.debitCreditFlag !== "C";
-    const green = { backgroundColor: "rgba(55, 180, 0, 0.32)" };
-    const white = { backgroundColor: "#ffffff" };
-    const trProps: any = { style: actionable ? green : white };
-    return React.cloneElement(trElement, { ...trProps }, trElement.props.children);
-  };
-
   const TransEntryCell = (props: GridCellProps) => {
     return (
       <td>
@@ -206,7 +199,7 @@ export default function AcctgTransEntryList({ acctgTrans }: Props) {
             total={acctTransEntries?.length || 0}
             pageable={true}
             onPageChange={pageChange}
-            rowRender={rowRender}
+            rows={{ data: DebitCreditRow }}
         >
           {/* REFACTORED: Updated toolbar to use translated button, matching SalesOrderItemsList's GridToolbar */}
           <GridToolbar>
@@ -227,99 +220,97 @@ export default function AcctgTransEntryList({ acctgTrans }: Props) {
               field="acctgTransId"
               title={getTranslatedLabel(`${localizationKey}.transId`, "Acctg Trans")}
               width={100}
-              cell={TransEntryCell}
-              footerCell={TotalsFooterCell}
+              cells={{ data: TransEntryCell, footerCell: TotalsFooterCell }}
           />
           <Column
               field="acctgTransEntrySeqId"
               title={getTranslatedLabel(`${localizationKey}.seqId`, "Seq Id")}
               width={100}
-              footerCell={() => null}
+              cells={{ footerCell: () => null }}
           />
           <Column
               field="amount"
               title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")}
               width={100}
-              footerCell={() => null}
+              cells={{ footerCell: () => null }}
           />
           <Column
               field="origAmount"
               title={getTranslatedLabel(`${localizationKey}.origAmount`, "Orig Amount")}
               width={100}
-              footerCell={() => null}
+              cells={{ footerCell: () => null }}
           />
           <Column
               field="debitCreditFlag"
               title={getTranslatedLabel(`${localizationKey}.debitCredit`, "Debit/Credit")}
               width={70}
-              footerCell={() => null}
+              cells={{ footerCell: () => null }}
           />
           <Column
               field="glAccountId"
               title={getTranslatedLabel(`${localizationKey}.glAccount`, "GL Account")}
               width={100}
-              footerCell={() => null}
+              cells={{ footerCell: () => null }}
           />
           <Column
               field="glAccountTypeDescription"
               title={getTranslatedLabel(`${localizationKey}.accountName`, "Account Name")}
               width={220}
-              footerCell={() => null}
+              cells={{ footerCell: () => null }}
           />
           <Column
               field="productName"
               title={getTranslatedLabel(`${localizationKey}.product`, "Product")}
               width={200}
-              footerCell={() => null}
+              cells={{ footerCell: () => null }}
           />
           <Column
               field="isPosted"
               title={getTranslatedLabel(`${localizationKey}.isPosted`, "Is Posted")}
               width={100}
-              footerCell={() => null}
+              cells={{ footerCell: () => null }}
           />
           <Column
               field="glFiscalTypeId"
               title={getTranslatedLabel(`${localizationKey}.fiscalType`, "GL Fiscal Type")}
               width={100}
-              footerCell={() => null}
+              cells={{ footerCell: () => null }}
           />
           <Column
               field="acctgTransTypeDescription"
               title={getTranslatedLabel(`${localizationKey}.transType`, "Acctg Trans Type")}
               width={130}
-              footerCell={() => null}
+              cells={{ footerCell: () => null }}
           />
           <Column
               field="transactionDate"
               title={getTranslatedLabel(`${localizationKey}.transDate`, "Transaction Date")}
               width={150}
               format="{0: dd/MM/yyyy}"
-              footerCell={() => null}
+              cells={{ footerCell: () => null }}
           />
           <Column
               field="postedDate"
               title={getTranslatedLabel(`${localizationKey}.postedDate`, "Posted Date")}
               width={150}
               format="{0: dd/MM/yyyy}"
-              footerCell={() => null}
+              cells={{ footerCell: () => null }}
           />
           <Column
               field="glAccountClassDescription"
               title={getTranslatedLabel(`${localizationKey}.accountClass`, "Account Class")}
               width={140}
-              footerCell={() => null}
+              cells={{ footerCell: () => null }}
           />
           <Column
               field="origCurrencyUomId"
               title={getTranslatedLabel(`${localizationKey}.currency`, "Currency")}
               width={110}
-              footerCell={() => null}
+              cells={{ footerCell: () => null }}
           />
           <Column
-              cell={DeleteTransEntryCell}
+              cells={{ data: DeleteTransEntryCell, footerCell: () => null }}
               width="100px"
-              footerCell={() => null}
           />
         </KendoGrid>
       </Grid>
