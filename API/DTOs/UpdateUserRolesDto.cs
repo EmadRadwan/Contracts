@@ -7,5 +7,6 @@ public class UpdateUserDto
     public string DisplayName { get; set; }
     public string Email { get; set; }
     public string OrganizationPartyId { get; set; }
+    public string? PartyId { get; set; }   // required; validated in AccountController
     public string[] Roles { get; set; } = Array.Empty<string>();
 }

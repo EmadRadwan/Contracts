@@ -3059,6 +3059,10 @@ public class SeedContracts
                 "Accounting_View",
                 "Projects_View", "RunProjectReport",
                 "Sales_View", "CreateSalesRequest", "ViewSalesRequest", "ApproveSalesRequest", "DeleteSalesRequest", "CreateReserveRequest",
+                // Sales Commission roles - currently enforced in the frontend only (client-app/src/app/models/orders/salesCommissionRoles.ts);
+                // API-side [Authorize] is deferred to the version-2 enhancements.
+                "ViewSalesCommission", "CreateSalesCommission", "UpdateSalesCommission",
+                "ApproveSalesCommission", "ResetSalesCommission", "DeleteSalesCommission",
                 "Accounting_Invoices_View",
                 "Accounting_Payments_View",
                 "Accounting_Payments_Due_View",
@@ -3381,6 +3385,8 @@ public class SeedContracts
                     "Accounting_BillingAccounts_View",
                     "Accounting_MultiPaymentCertificates_View", "Process_Payment", "Duplicate_Payment", "CreateReserveRequest",
                     "CreateSalesRequest",
+                    "ViewSalesCommission", "CreateSalesCommission", "UpdateSalesCommission",
+                    "ApproveSalesCommission", "ResetSalesCommission", "DeleteSalesCommission",
                     // CRM Roles
                     "CRM_View",
                     "CRM_Leads_Create", "CRM_Leads_Edit",
@@ -3401,7 +3407,10 @@ public class SeedContracts
                     "Accounting_Transactions_View",
                     "Accounting_BillingAccounts_View",
                     "Accounting_MultiPaymentCertificates_View", "Process_Payment", "Duplicate_Payment", "CreateReserveRequest",
-                    "CreateSalesRequest"
+                    "CreateSalesRequest",
+                    // Only Ahmad holds the approve / reset / delete commission roles
+                    "ViewSalesCommission", "CreateSalesCommission", "UpdateSalesCommission",
+                    "ApproveSalesCommission", "ResetSalesCommission", "DeleteSalesCommission"
                 }
             },
             {
@@ -3417,14 +3426,17 @@ public class SeedContracts
                     "Accounting_Transactions_View",
                     "Accounting_BillingAccounts_View",
                     "Accounting_MultiPaymentCertificates_View", "Process_Payment", "Duplicate_Payment", "CreateReserveRequest",
-                    "CreateSalesRequest"
+                    "CreateSalesRequest",
+                    "ViewSalesCommission", "CreateSalesCommission", "UpdateSalesCommission"
                 }
             },
             {
                 "aadel@gmail.com", new[]
                 {
                     "Accounting_View", "Accounting_Payments_View",
-                    "Accounting_MultiPaymentCertificates_View", "Accounting_Invoices_View"
+                    "Accounting_MultiPaymentCertificates_View", "Accounting_Invoices_View",
+                    // Sales_View is the module wrapper the commission route lives under (already granted in the live DBs)
+                    "Sales_View", "ViewSalesCommission", "CreateSalesCommission", "UpdateSalesCommission"
                 }
             },
             {

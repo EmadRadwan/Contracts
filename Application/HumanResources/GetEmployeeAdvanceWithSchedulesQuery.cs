@@ -27,6 +27,7 @@ namespace Application.HumanResources
                 var advance = await _context.EmployeeAdvances
                     .AsNoTracking()
                     .Include(a => a.EmployeeAdvanceSchedules)
+                    .Include(a => a.Payment)
                     .FirstOrDefaultAsync(a => a.AdvanceId == request.AdvanceId, ct);
 
                 if (advance == null)
@@ -64,6 +65,8 @@ namespace Application.HumanResources
                     StatusDescription = statusDesc,
                     Description = advance.Description,
                     PayrollInvoiceId = advance.PayrollInvoiceId,
+                    PaymentId = advance.PaymentId,
+                    PaymentStatusId = advance.Payment?.StatusId,
 
                     // Schedules – ordered by InstallmentNumber
                     Schedules = advance.EmployeeAdvanceSchedules
@@ -105,6 +108,9 @@ namespace Application.HumanResources
         public string? StatusDescription { get; set; }
         public string? Description { get; set; }
         public string? PayrollInvoiceId { get; set; }
+        public string? PaymentId { get; set; }
+        /// <summary>Disbursement payment status; anything but PMNT_NOT_PAID locks the money fields.</summary>
+        public string? PaymentStatusId { get; set; }
 
         public List<ScheduleDto> Schedules { get; set; } = new();
     }

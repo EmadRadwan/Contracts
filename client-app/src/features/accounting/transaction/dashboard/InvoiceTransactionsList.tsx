@@ -21,10 +21,10 @@ import { AcctgTransEntry } from "../../../../app/models/accounting/acctgTransEnt
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import MermaidChart from "../../../manufacturing/dashboard/MermaidChart";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
-import { createStyledRow } from "../../../../app/common/grid";
+import { createReversalAwareRow, ReversalLegend } from "../../../../app/common/grid";
 
 // Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
-const DebitCreditRow = createStyledRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag !== "C" ? "rgba(55,180,0,0.32)" : "#fff" }));
+const DebitCreditRow = createReversalAwareRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag !== "C" ? "rgba(55,180,0,0.32)" : "#fff" }));
 
 interface Props {
     onClose: () => void;
@@ -127,6 +127,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                     <TabPanel value="1">
                         <Grid container>
                             <Grid item xs={12}>
+                                <ReversalLegend />
                                 <KendoGrid
                                     style={{  height: "450px", width: 850 }}
                                     data={orderBy(acctTransEntries, sort)}
@@ -172,6 +173,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                     <TabPanel value="2">
                         <Grid container>
                             <Grid item xs={12}>
+                                <ReversalLegend />
                                 <KendoGrid
                                     style={{ height: "450px", width: 850 }}
                                     data={orderBy(paymentTransEntries, sort)}

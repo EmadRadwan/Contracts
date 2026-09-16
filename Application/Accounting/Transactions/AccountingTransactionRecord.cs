@@ -36,4 +36,9 @@ public class AccountingTransactionRecord
     public string? ReceiptId { get; set; }
     public string? WorkEffortId { get; set; }
     public string? TheirAcctgTransId { get; set; }
+
+    /// <summary>Set on a reversing entry: the id of the transaction it cancels.</summary>
+    public string? ReversalOfAcctgTransId { get; set; }
+    /// <summary>Set on a transaction that has been reversed: the id of the reversal that cancelled it.</summary>
+    public string? ReversedByAcctgTransId { get; set; }
 }

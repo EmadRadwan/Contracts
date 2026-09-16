@@ -1,3 +1,4 @@
+using Application.Accounting.Services;
 using Application.Interfaces;
 using Domain;
 using FluentValidation;
@@ -26,11 +27,15 @@ namespace Application.Projects
         public class Handler : IRequestHandler<Command, Result<Unit>>
         {
             private readonly DataContext _context;
+        private readonly ILedgerHistoryService _ledgerHistory;
+        private readonly IAccountingPeriodGuard _periodGuard;
             private readonly IUserAccessor _userAccessor;
 
-            public Handler(DataContext context, IUserAccessor userAccessor)
+            public Handler(DataContext context, IUserAccessor userAccessor, IAccountingPeriodGuard periodGuard, ILedgerHistoryService ledgerHistory)
             {
                 _context = context;
+            _ledgerHistory = ledgerHistory;
+            _periodGuard = periodGuard;
                 _userAccessor = userAccessor;
             }
 
@@ -44,6 +49,7 @@ namespace Application.Projects
                     var certificateHeader = await _context.WorkEfforts
                         .Include(we => we.CurrentStatus)
                         .FirstOrDefaultAsync(we => we.WorkEffortId == request.WorkEffortId, cancellationToken);
+                    await _periodGuard.EnsureOpenForWorkEffortsAsync(new[] { request.WorkEffortId }, cancellationToken);
 
                     if (certificateHeader == null)
                     {
@@ -53,6 +59,66 @@ namespace Application.Projects
 
 
                     var relatedOrderId = certificateHeader.RelatedOrderId;
+
+                    // Step 3 (auditor soft-delete requirement): an approved certificate is reset first,
+                    // which reverses its postings; one that ever reached the ledger is then kept and
+                    // marked cancelled rather than removed. Only a never-posted draft is deleted.
+                    if (certificateHeader.CurrentStatusId == "WEPR_CANCELLED")
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                        return Result<Unit>.Failure("الشهادة ملغاة بالفعل. (Certificate is already cancelled.)");
+                    }
+                    if (certificateHeader.CurrentStatusId != "WEPR_CREATED")
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                        return Result<Unit>.Failure(
+                            "لا يمكن حذف شهادة معتمدة. أعد تعيين الشهادة أولاً (تُعكس قيودها) ثم احذفها. " +
+                            "(Reset the certificate first; approved certificates are not deleted.)");
+                    }
+
+                    var history = await _ledgerHistory.ForWorkEffortAsync(request.WorkEffortId, cancellationToken);
+                    if (!history.HasHistory && !string.IsNullOrEmpty(relatedOrderId))
+                    {
+                        var orderPaymentIds = await (from opp in _context.OrderPaymentPreferences
+                                join pm in _context.Payments on opp.OrderPaymentPreferenceId equals pm.PaymentPreferenceId
+                                where opp.OrderId == relatedOrderId
+                                select pm.PaymentId).ToListAsync(cancellationToken);
+                        var orderInvoiceIds = await _context.OrderItemBillings
+                            .Where(oib => oib.OrderId == relatedOrderId && oib.InvoiceId != null)
+                            .Select(oib => oib.InvoiceId!)
+                            .Distinct()
+                            .ToListAsync(cancellationToken);
+                        var viaPayments = await _ledgerHistory.ForPaymentsAsync(orderPaymentIds, cancellationToken);
+                        var viaInvoices = await _ledgerHistory.ForInvoicesAsync(orderInvoiceIds, cancellationToken);
+                        history.AcctgTransCount += viaPayments.AcctgTransCount + viaInvoices.AcctgTransCount;
+                    }
+
+                    if (history.HasHistory)
+                    {
+                        // Evidence (originals and their reversals) points at this certificate: keep it.
+                        var stamp = DateTime.UtcNow;
+                        certificateHeader.CurrentStatusId = "WEPR_CANCELLED";
+                        certificateHeader.LastStatusUpdate = stamp;
+                        certificateHeader.LastUpdatedStamp = stamp;
+                        var cancelledItems = await _context.WorkEfforts
+                            .Where(we => we.WorkEffortParentId == request.WorkEffortId)
+                            .ToListAsync(cancellationToken);
+                        foreach (var item in cancelledItems)
+                        {
+                            item.CurrentStatusId = "WEPR_CANCELLED";
+                            item.LastUpdatedStamp = stamp;
+                        }
+                        if (!string.IsNullOrEmpty(relatedOrderId))
+                        {
+                            var order = await _context.OrderHeaders
+                                .FirstOrDefaultAsync(oh => oh.OrderId == relatedOrderId, cancellationToken);
+                            if (order != null) order.StatusId = "ORDER_CANCELLED";
+                        }
+                        await _context.SaveChangesAsync(cancellationToken);
+                        await transaction.CommitAsync(cancellationToken);
+                        return Result<Unit>.Success(Unit.Value);
+                    }
+
                     certificateHeader.RelatedOrderId = null;
                     await _context.SaveChangesAsync(cancellationToken);
 
@@ -104,6 +170,12 @@ namespace Application.Projects
 
                         if (paymentPrefIds.Any())
                         {
+                            var certificatePaymentIds = await _context.Payments
+                                .Where(p => paymentPrefIds.Contains(p.PaymentPreferenceId))
+                                .Select(p => p.PaymentId)
+                                .ToListAsync(cancellationToken);
+                            await _periodGuard.EnsureOpenForPaymentsAsync(certificatePaymentIds, cancellationToken);
+
                             await _context.Payments
                                 .Where(p => paymentPrefIds.Contains(p.PaymentPreferenceId))
                                 .ExecuteDeleteAsync(cancellationToken);

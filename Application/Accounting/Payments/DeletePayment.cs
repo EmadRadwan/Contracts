@@ -1,3 +1,4 @@
+using Application.Accounting.Services;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
@@ -15,11 +16,15 @@ public class DeletePayment
     public class Handler : IRequestHandler<Command, Result<Unit>>
     {
         private readonly DataContext _context;
+        private readonly ILedgerHistoryService _ledgerHistory;
+        private readonly IAccountingPeriodGuard _periodGuard;
         private readonly ILogger<Handler> _logger;
 
-        public Handler(DataContext context, ILogger<Handler> logger)
+        public Handler(DataContext context, ILogger<Handler> logger, IAccountingPeriodGuard periodGuard, ILedgerHistoryService ledgerHistory)
         {
             _context = context;
+            _ledgerHistory = ledgerHistory;
+            _periodGuard = periodGuard;
             _logger = logger;
         }
 
@@ -105,6 +110,21 @@ public class DeletePayment
 
                     return Result<Unit>.Failure(message);
                 }
+
+                // Step 3: physical delete is for drafts only. A payment that has been sent or received,
+                // or that has any accounting transaction, is voided instead (kept, reversed, bank row
+                // cancelled) through the Void action on the payment form.
+                var history = await _ledgerHistory.ForPaymentAsync(request.PaymentId, cancellationToken);
+                if (payment.StatusId != "PMNT_NOT_PAID" || history.AcctgTransCount > 0)
+                {
+                    return Result<Unit>.Failure(
+                        $"لا يمكن حذف الدفعة {request.PaymentId} لأنها مرسلة/مستلمة أو لها قيود محاسبية. " +
+                        "استخدم إجراء \"إلغاء الدفعة\" من شاشة الدفعة؛ يُحتفظ بالدفعة وتُعكس قيودها. " +
+                        "(Sent, received or posted payments are voided, not deleted.)");
+                }
+
+                // Closed-period control on the rows about to be removed.
+                await _periodGuard.EnsureOpenForPaymentsAsync(new[] { request.PaymentId }, cancellationToken);
 
                 int cleanedAcctgTrans = 0;
                 int cleanedAcctgEntries = 0;

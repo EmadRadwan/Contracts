@@ -15,6 +15,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
 import {useLazyFetchAcctTransEntriesByDateRangeQuery} from "../../../../app/store/apis";
+import { applyReversalFill } from "../../../../app/common/grid";
 
 interface AccountingTransactionEntriesDateRangeExcelProps {
     companyId: string;
@@ -139,6 +140,7 @@ export const AccountingTransactionEntriesDateRangeExcel: React.FC<AccountingTran
                 utils.rtlEmbed(utils.safeString(entry.acctgTransactionTypeDescription ?? '')),
             ]);
             row.font = { name: 'Amiri', size: 10 };
+            applyReversalFill(row, entry);
             row.alignment = { horizontal: 'right', wrapText: true };
             row.height = 22;
         });

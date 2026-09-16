@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
+import { Button, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, TextField } from '@mui/material';
 import { Payment } from "../../../../app/models/accounting/payment";
 import {Can} from "../../../account/Can";
 
@@ -11,6 +11,9 @@ interface PaymentActionsProps {
     getTranslatedLabel: (key: string, defaultValue: string) => string;
     handleMenuSelect: (e: { item: { data: string } }) => void;
     handleReset: () => void;
+    handleVoid?: (reason: string) => void;
+    /** True when the payment has accounting entries (posted or reversed). */
+    hasLedgerHistory?: boolean;
     getAvailableStatusTransitions?: (payment?: Payment) => any;
     isProcessing?: boolean;
 }
@@ -22,12 +25,16 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                                                            getTranslatedLabel,
                                                            handleMenuSelect,
                                                            handleReset,
+                                                           handleVoid,
+                                                           hasLedgerHistory = false,
                                                            getAvailableStatusTransitions: getAvailableStatusTransitionsFromProp,
                                                            isProcessing = false
                                                        }) => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
     const [resetDialogOpen, setResetDialogOpen] = useState(false);
+    const [voidDialogOpen, setVoidDialogOpen] = useState(false);
+    const [voidReason, setVoidReason] = useState('');
 
     // use prop transitions if available, fallback to internal one
     const getTransitions = (p?: Payment) => {
@@ -80,9 +87,30 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
     const handleCancelReset = () => {
         setResetDialogOpen(false);
     };
+    const handleVoidClick = () => {
+        setVoidReason('');
+        setVoidDialogOpen(true);
+        handleClose();
+    };
+    const handleConfirmVoid = () => {
+        if (!voidReason.trim()) return;
+        handleVoid?.(voidReason.trim());
+        setVoidDialogOpen(false);
+    };
+    // Void replaces "delete" for a payment that has reached the ledger: any sent or received
+    // payment, and a draft only when it carries ledger entries (it was reset earlier, so it cannot
+    // be deleted). A clean draft is deleted from the list instead. A confirmed payment is settled
+    // with the bank and cannot be voided; an already-void one has nothing left to do.
+    const reachedLedger = ['PMNT_RECEIVED', 'PMNT_SENT'].includes(payment?.statusId ?? '') ||
+        (payment?.statusId === 'PMNT_NOT_PAID' && hasLedgerHistory);
+    const canVoid = payment && reachedLedger && formEditMode !== 1 && !!handleVoid;
+    const isVoided = payment?.statusId === 'PMNT_VOID';
 
-    const canViewApplications = payment?.statusId !== 'PMNT_NOT_PAID';
-    const canViewTransactions = payment?.statusId !== 'PMNT_NOT_PAID';
+    // Applications exist only while the payment is applied to something: not for a draft, and
+    // not after a void (they are removed). Transactions may exist for any saved payment, including
+    // a draft that was reset (original + reversal), so the view is always offered.
+    const canViewApplications = payment?.statusId !== 'PMNT_NOT_PAID' && !isVoided;
+    const canViewTransactions = !!payment?.paymentId && (payment?.statusId !== 'PMNT_NOT_PAID' || hasLedgerHistory);
 
     const canReset = payment &&
         ['PMNT_RECEIVED', 'PMNT_SENT'].includes(payment.statusId ?? '') &&
@@ -159,7 +187,7 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                     </>
                 </Can>
 
-                {payment?.paymentId && (
+                {payment?.paymentId && !isVoided && (
                     <Can perform={["Process_Payment", "Duplicate_Payment"]}>
                         <MenuItem onClick={() => onMenuSelect('duplicate')}>
                             {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.duplicate`, "Duplicate Payment")}
@@ -174,6 +202,16 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                             sx={{ color: '#d32f2f' }}
                         >
                             {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.reset`, "إعادة تعيين الدفعة")}
+                        </MenuItem>
+                    </Can>
+                )}
+                {canVoid && (
+                    <Can perform="Reset_Payment">
+                        <MenuItem
+                            onClick={handleVoidClick}
+                            sx={{ color: '#d32f2f' }}
+                        >
+                            {getTranslatedLabel(`${LOCALIZATION_KEY}.actions.void`, "إلغاء الدفعة (Void)")}
                         </MenuItem>
                     </Can>
                 )}
@@ -235,7 +273,7 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                     <DialogContentText id="reset-payment-dialog-description">
                         {getTranslatedLabel(
                             `${LOCALIZATION_KEY}.reset.dialogMessage`,
-                            "هل أنت متأكد من إعادة تعيين الدفعة رقم {paymentId}؟\n\nسيؤدي ذلك إلى:\n• إرجاع الحالة إلى \"غير مدفوع\"\n• حذف جميع تطبيقات الدفعة\n• حذف الحركات المحاسبية المرتبطة\n\nهذا الإجراء لا يمكن التراجع عنه."
+                            "هل أنت متأكد من إعادة تعيين الدفعة رقم {paymentId}؟\n\nسيؤدي ذلك إلى:\n• إرجاع الحالة إلى \"غير مدفوع\"\n• فك ربط الدفعة بالفواتير\n• عكس القيود المحاسبية المرحّلة بقيود عكسية مرتبطة (يبقى الأصل والعكس في الدفتر)\n\nيمكنك بعدها تعديل الدفعة وإرسالها من جديد."
                         ).replace("{paymentId}", payment?.paymentId || "")}
                     </DialogContentText>
                 </DialogContent>
@@ -253,6 +291,49 @@ const PaymentActions: React.FC<PaymentActionsProps> = ({
                         autoFocus
                     >
                         {getTranslatedLabel(`${LOCALIZATION_KEY}.reset.resetConfirm`, "إعادة تعيين الدفعة")}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+            <Dialog
+                open={voidDialogOpen}
+                onClose={() => setVoidDialogOpen(false)}
+                aria-labelledby="void-payment-dialog-title"
+                fullWidth
+                maxWidth="sm"
+            >
+                <DialogTitle id="void-payment-dialog-title">
+                    {getTranslatedLabel(`${LOCALIZATION_KEY}.void.dialogTitle`, "إلغاء الدفعة")}
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText sx={{ whiteSpace: 'pre-line', mb: 2 }}>
+                        {getTranslatedLabel(
+                            `${LOCALIZATION_KEY}.void.dialogMessage`,
+                            "سيتم إلغاء الدفعة رقم {paymentId} مع الاحتفاظ بها في السجل بحالة \"ملغاة\".\n\n• تُعكس قيودها المحاسبية بقيود عكسية مرتبطة\n• تُلغى حركتها البنكية\n• يُفك ربطها بالفواتير\n\nلا يُحذف أي سجل. اذكر سبب الإلغاء."
+                        ).replace("{paymentId}", payment?.paymentId || "")}
+                    </DialogContentText>
+                    <TextField
+                        id="void-payment-reason"
+                        autoFocus
+                        fullWidth
+                        multiline
+                        minRows={2}
+                        label={getTranslatedLabel(`${LOCALIZATION_KEY}.void.reason`, "سبب الإلغاء")}
+                        value={voidReason}
+                        onChange={(e) => setVoidReason(e.target.value)}
+                        inputProps={{ maxLength: 500 }}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setVoidDialogOpen(false)}>
+                        {getTranslatedLabel("global.cancel", "Cancel")}
+                    </Button>
+                    <Button
+                        onClick={handleConfirmVoid}
+                        color="error"
+                        variant="contained"
+                        disabled={!voidReason.trim() || isProcessing}
+                    >
+                        {getTranslatedLabel(`${LOCALIZATION_KEY}.void.confirm`, "إلغاء الدفعة")}
                     </Button>
                 </DialogActions>
             </Dialog>

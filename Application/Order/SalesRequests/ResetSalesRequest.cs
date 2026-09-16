@@ -1,3 +1,4 @@
+using Application.Accounting.Services;
 using Application.Accounting.Payments;
 using Application.Projects;
 using Domain;
@@ -17,10 +18,12 @@ public class ResetSalesRequest
     public class Handler : IRequestHandler<Command, Result<CreateSalesRequest.SalesRequestResponseDto>>
     {
         private readonly DataContext _context;
+        private readonly IAccountingPeriodGuard _periodGuard;
 
-        public Handler(DataContext context)
+        public Handler(DataContext context, IAccountingPeriodGuard periodGuard)
         {
             _context = context;
+            _periodGuard = periodGuard;
         }
 
         public async Task<Result<CreateSalesRequest.SalesRequestResponseDto>> Handle(Command request,
@@ -74,11 +77,30 @@ public class ResetSalesRequest
                 // hanging off them. Commission payments are excluded deliberately: an approved
                 // commission is refused above, so anything left with that type belongs to a record
                 // this handler must not silently destroy.
-                var payments = await _context.Payments
+                await _periodGuard.EnsureOpenForSalesRequestsAsync(new[] { salesRequestId }, ct);
+
+                var allPayments = await _context.Payments
                     .Where(p => p.SalesRequestId == salesRequestId
                                 && p.PaymentTypeId != CommissionPaymentCleanup.CommissionPaymentTypeId)
                     .ToListAsync(ct);
 
+                // Pragmatic policy (agreed Sep 2026): the approval postings may be unposted and
+                // re-posted only while no money has moved. Once an instalment is received the
+                // sale is settled; void that payment first (kept, reversed), or cancel the request.
+                var settled = allPayments
+                    .Where(p => p.StatusId != "PMNT_NOT_PAID" && p.StatusId != "PMNT_VOID")
+                    .Select(p => p.PaymentId)
+                    .ToList();
+                if (settled.Any())
+                {
+                    await transaction.RollbackAsync(ct);
+                    return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
+                        $"لا يمكن إعادة تعيين طلب المبيعات لأن دفعة مستلمة مسجلة عليه ({string.Join("، ", settled)}). " +
+                        "ألغِ الدفعة أولاً من شاشة الدفعة، أو ألغِ الطلب بدلاً من إعادة تعيينه.");
+                }
+
+                // Voided payments are evidence and stay.
+                var payments = allPayments.Where(p => p.StatusId != "PMNT_VOID").ToList();
                 await PaymentArtifactCleanup.PurgePaymentsAsync(_context, payments, ct);
 
                 // Ledger transactions booked against the request itself (APARTMENT_SALE_*,

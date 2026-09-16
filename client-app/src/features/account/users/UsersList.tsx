@@ -149,6 +149,12 @@ const UsersList = () => {
                                 width={200}
                                 filter="text"
                             />
+                            <Column
+                                field="partyName"
+                                title={getTranslatedLabel("users.list.employee", "Employee")}
+                                width={220}
+                                filter="text"
+                            />
                         </KendoGrid>
                     </div>
                 </Grid>

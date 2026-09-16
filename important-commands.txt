@@ -339,6 +339,9 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
   
 dotnet ef migrations add AddSalesCommissionAndProjectCommissionRate --project Persistence --startup-project API --verbose 
 
+export TELERIK_NUGET_KEY=42wvbLi8oUCmViiVziRj/g==.y5vjHWks5WSqEDdieynJ3AOKnMIV4gHWDHFiHQPIHLqk9BM/iHDG8GqLNLidzAkrPXfUyaunK+uKg9aJkukqsA==
+p
+
 PdfGenerationService
 
 ✳ Debug duplicate
@@ -367,9 +370,9 @@ second batch features
 Telerik report
 CRM v2
 trial balance
+soft delete
+ERP and HIS
 
-
-export TELERIK_NUGET_KEY=42wvbLi8oUCmViiVziRj/g==.y5vjHWks5WSqEDdieynJ3AOKnMIV4gHWDHFiHQPIHLqk9BM/iHDG8GqLNLidzAkrPXfUyaunK+uKg9aJkukqsA==
 
 
 

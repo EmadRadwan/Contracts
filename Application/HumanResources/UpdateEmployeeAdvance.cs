@@ -42,6 +42,7 @@ public class UpdateEmployeeAdvance
             // ────────────────────────────────────────────────────────────────
             var advance = await _context.EmployeeAdvances
                 .Include(a => a.EmployeeAdvanceSchedules)
+                .Include(a => a.Payment)
                 .FirstOrDefaultAsync(x => x.AdvanceId == dto.AdvanceId, ct);
 
             if (advance == null)
@@ -61,8 +62,37 @@ public class UpdateEmployeeAdvance
                     "ADVANCE_CLOSED");
             }
 
-            var isProcessedInPayroll = advance.PayrollInvoiceId != null || 
-                                       advance.EmployeeAdvanceSchedules.Any(s => s.PayrolInvoiceId != null);
+            // A schedule row is "processed" once a payroll run has deducted it. The run sets
+            // PayrolInvoiceId + "PAID" (BatchCreatePayrollInvoices); the invoice READY hook may also
+            // stamp "SCHED_PAID" (ApplyPayrollDeductionsToAdvances). Those rows are facts, never input.
+            var processedSchedules = advance.EmployeeAdvanceSchedules
+                .Where(EmployeeAdvanceScheduleRules.IsProcessed)
+                .ToList();
+            var pendingDbSchedules = advance.EmployeeAdvanceSchedules
+                .Where(s => !EmployeeAdvanceScheduleRules.IsProcessed(s))
+                .ToList();
+
+            var isProcessedInPayroll = advance.PayrollInvoiceId != null || processedSchedules.Any();
+
+            // Once the disbursement payment has left PMNT_NOT_PAID it is posted to the GL
+            // (CreateAccountingTransactionForEmployeeAdvance). Changing the money fields here would
+            // silently desync the ledger, so lock them; the deduction plan stays editable.
+            var isPaymentSent = advance.Payment != null && advance.Payment.StatusId != "PMNT_NOT_PAID";
+            if (isPaymentSent)
+            {
+                var moneyFieldChanged =
+                    (dto.Amount ?? advance.Amount) != advance.Amount
+                    || dto.AdvanceDate != advance.AdvanceDate
+                    || dto.PartyId != advance.PartyId
+                    || dto.AdvanceTypeId != advance.AdvanceTypeId;
+
+                if (moneyFieldChanged)
+                {
+                    return Results<EmployeeAdvanceDto>.Failure(
+                        "تم صرف السلفة بالفعل؛ لا يمكن تعديل المبلغ أو التاريخ أو الموظف أو النوع. يمكن تعديل جدول الخصم والوصف فقط.",
+                        "ADVANCE_PAYMENT_SENT");
+                }
+            }
 
             if (advance.AdvanceTypeId == "EMPLOYEE_ADVANCE" && advance.PayrollInvoiceId != null)
             {
@@ -208,47 +238,66 @@ public class UpdateEmployeeAdvance
                 }
             }
 
-            // Long-term: require and validate schedule if type is long-term
+            // Long-term: require and validate schedule if type is long-term.
+            // The form echoes already-deducted rows back with their PayrollInvoiceId; those are
+            // ignored as input — the DB copy is authoritative. Only the pending rows are validated.
+            List<EmployeeAdvanceScheduleDto> pendingDtoSchedules = new();
             if (isLongTerm)
             {
-                if (dto.CustomDeductionSchedules == null || !dto.CustomDeductionSchedules.Any())
+                pendingDtoSchedules = (dto.CustomDeductionSchedules ?? new List<EmployeeAdvanceScheduleDto>())
+                    .Where(s => string.IsNullOrEmpty(s.PayrollInvoiceId))
+                    .ToList();
+
+                if (!pendingDtoSchedules.Any() && !processedSchedules.Any())
                 {
                     return Results<EmployeeAdvanceDto>.Failure(
                         "السلفة طويلة الأجل تتطلب جدول سداد.",
                         "LONG_TERM_REQUIRES_SCHEDULE");
                 }
 
-                var totalScheduled = dto.CustomDeductionSchedules.Sum(s => s.ScheduledAmount);
-                if (Math.Abs((decimal)(totalScheduled - dto.Amount)) > 0.01m)
+                if (pendingDtoSchedules.Any(s => !s.DueDate.HasValue))
+                {
+                    return Results<EmployeeAdvanceDto>.Failure(
+                        "كل قسط في جدول الخصم يجب أن يكون له تاريخ استحقاق.",
+                        "SCHEDULE_DUE_DATE_REQUIRED");
+                }
+
+                var totalScheduled = processedSchedules.Sum(s => s.DeductedAmount > 0 ? s.DeductedAmount : s.ScheduledAmount)
+                                     + pendingDtoSchedules.Sum(s => s.ScheduledAmount);
+                if (Math.Abs(totalScheduled - (dto.Amount ?? 0)) > 0.01m)
                 {
                     return Results<EmployeeAdvanceDto>.Failure(
                         $"مجموع المبالغ المجدولة ({totalScheduled:N2}) لا يتطابق مع إجمالي السلفة ({dto.Amount:N2}).",
                         "SCHEDULE_TOTAL_MISMATCH");
                 }
 
-                foreach (var s in dto.CustomDeductionSchedules.Where(s => s.DueDate < DateHelper.Today))
+                // The payroll run (and PayrollRun.tsx) deduct exactly one installment per month, so a
+                // second row in the same month would silently never be collected.
+                var monthKeys = processedSchedules.Where(s => s.DueDate.HasValue).Select(s => EmployeeAdvanceScheduleRules.MonthKey(s.DueDate!.Value))
+                    .Concat(pendingDtoSchedules.Select(s => EmployeeAdvanceScheduleRules.MonthKey(s.DueDate!.Value)))
+                    .ToList();
+                var duplicateMonth = monthKeys.GroupBy(k => k).FirstOrDefault(g => g.Count() > 1);
+                if (duplicateMonth != null)
                 {
-                    var dueDate = s.DueDate!.Value;
-                    var monthStart = new DateOnly(dueDate.Year, dueDate.Month, 1);
-                    var monthEnd = monthStart.AddMonths(1).AddDays(-1);
-
-                    var isMonthProcessed = await _context.Invoices
-                        .AnyAsync(i => i.InvoiceTypeId == "PAYROL_INVOICE"
-                                       && i.InvoiceDate >= monthStart
-                                       && i.InvoiceDate <= monthEnd, ct);
-
-                    if (isMonthProcessed)
-                    {
-                        return Results<EmployeeAdvanceDto>.Failure(
-                            $"لا يمكن جدولة خصم في شهر تم معالجة الرواتب فيه ({dueDate:MM/yyyy}).",
-                            "PAST_DUE_DATE_NOT_ALLOWED");
-                    }
+                    return Results<EmployeeAdvanceDto>.Failure(
+                        $"لا يمكن جدولة أكثر من قسط واحد في نفس الشهر ({duplicateMonth.Key:MM/yyyy}).",
+                        "DUPLICATE_MONTH_INSTALLMENT");
                 }
-            }
-            else if (wasLongTerm && !isLongTerm)
-            {
-                // Changing from long-term → short-term: warn / require confirmation?
-                // For now: allow, but clear schedules
+
+                // Every pending row must sit in a month a future payroll run can still collect:
+                // after the advance date, after the employee's latest run, after the last deduction.
+                var earliestMonth = await EmployeeAdvanceScheduleRules.EarliestSchedulableMonthAsync(
+                    _context, employeeId, dto.AdvanceDate, processedSchedules, ct);
+
+                var tooEarly = pendingDtoSchedules
+                    .OrderBy(s => s.DueDate)
+                    .FirstOrDefault(s => EmployeeAdvanceScheduleRules.MonthKey(s.DueDate!.Value) < earliestMonth);
+                if (tooEarly != null)
+                {
+                    return Results<EmployeeAdvanceDto>.Failure(
+                        EmployeeAdvanceScheduleRules.MonthNotSchedulableMessage(tooEarly.DueDate!.Value, earliestMonth),
+                        "PAST_DUE_DATE_NOT_ALLOWED");
+                }
             }
 
             // Prevent increasing amount if deductions already started
@@ -260,30 +309,35 @@ public class UpdateEmployeeAdvance
                     "AMOUNT_LESS_THAN_DEDUCTED");
             }
 
-            if (dto.Amount > advance.Amount && advance.EmployeeAdvanceSchedules.Any(s => s.DeductedAmount > 0))
-            {
-                // Note: The user might still want to increase total amount even if deductions started.
-                // But the current logic says it's prohibited. I'll stick to existing rule unless it contradicts the new requirement.
-                // The new requirement says "maximum flexibility", so maybe we SHOULD allow increasing?
-                // But for now let's keep it as is or refine it.
-            }
-
             // ────────────────────────────────────────────────────────────────
             // 5. Apply changes
             // ────────────────────────────────────────────────────────────────
-            var companyPartyId = await _productStoreService.GetProductStorePayToPartId();
-            CreatePaymentParam paymentsToUpdate = new CreatePaymentParam
+            if (advance.Payment != null)
             {
-                PaymentId = advance.PaymentId,
-                PartyIdFrom = companyPartyId,
-                PartyIdTo = dto.PartyId,
-                Amount = dto.Amount,
-                EffectiveDate = dto.AdvanceDate,
-                PaymentTypeId = dto.AdvanceTypeId,
-                StatusId = "PMNT_NOT_PAID",
-                Comments = dto.Description,
-            };
-            await _paymentHelperService.UpdatePayment(paymentsToUpdate);
+                if (!isPaymentSent)
+                {
+                    var companyPartyId = await _productStoreService.GetProductStorePayToPartId();
+                    CreatePaymentParam paymentsToUpdate = new CreatePaymentParam
+                    {
+                        PaymentId = advance.PaymentId,
+                        PartyIdFrom = companyPartyId,
+                        PartyIdTo = dto.PartyId,
+                        Amount = dto.Amount,
+                        EffectiveDate = dto.AdvanceDate,
+                        PaymentTypeId = dto.AdvanceTypeId,
+                        StatusId = "PMNT_NOT_PAID",
+                        Comments = dto.Description,
+                    };
+                    await _paymentHelperService.UpdatePayment(paymentsToUpdate);
+                }
+                else if (dto.Description != null)
+                {
+                    // Posted payment: money fields are locked (checked above) and UpdatePayment would
+                    // null the cheque/ref fields, so only keep the narrative in sync.
+                    advance.Payment.Comments = dto.Description;
+                    advance.Payment.LastUpdatedStamp = DateTime.UtcNow;
+                }
+            }
 
             advance.PartyId = dto.PartyId;
             advance.AdvanceDate = dto.AdvanceDate;
@@ -294,62 +348,40 @@ public class UpdateEmployeeAdvance
 
             if (isLongTerm)
             {
-                // Replace schedules if new ones provided, but preserve processed ones
-                if (dto.CustomDeductionSchedules?.Any() == true)
+                // Rebuild the plan: keep processed rows as-is, replace every pending row with the
+                // submitted pending rows, then renumber the whole plan by due date.
+                _context.EmployeeAdvanceSchedules.RemoveRange(pendingDbSchedules);
+
+                var allFinalSchedules = new List<EmployeeAdvanceSchedule>(processedSchedules);
+                foreach (var schedDto in pendingDtoSchedules.OrderBy(s => s.DueDate))
                 {
-                    // 1. Identify processed schedules to keep
-                    var processedSchedules = advance.EmployeeAdvanceSchedules
-                        .Where(s => s.PayrolInvoiceId != null || s.StatusId == "PAID")
-                        .ToList();
-
-                    // 2. Remove ONLY pending schedules
-                    var pendingSchedules = advance.EmployeeAdvanceSchedules
-                        .Where(s => s.PayrolInvoiceId == null && s.StatusId != "PAID")
-                        .ToList();
-                    
-                    _context.EmployeeAdvanceSchedules.RemoveRange(pendingSchedules);
-
-                    // 3. Add new schedules from DTO, skipping those that were already processed
-                    int nextInstallment = processedSchedules.Count + 1;
-                    var allFinalSchedules = new List<EmployeeAdvanceSchedule>(processedSchedules);
-
-                    foreach (var schedDto in dto.CustomDeductionSchedules.OrderBy(s => s.DueDate))
+                    allFinalSchedules.Add(new EmployeeAdvanceSchedule
                     {
-                        // Check if this matches an already processed schedule (same date and processed)
-                        var isAlreadyProcessed = processedSchedules.Any(p => p.DueDate == schedDto.DueDate && !string.IsNullOrEmpty(p.PayrolInvoiceId));
-
-                        if (!isAlreadyProcessed && string.IsNullOrEmpty(schedDto.PayrollInvoiceId))
-                        {
-                            var schedule = new EmployeeAdvanceSchedule
-                            {
-                                ScheduleId = Guid.NewGuid().ToString(),
-                                AdvanceId = advance.AdvanceId,
-                                InstallmentNumber = 0, // Fixed below
-                                DueDate = schedDto.DueDate,
-                                ScheduledAmount = schedDto.ScheduledAmount,
-                                DeductedAmount = 0m,
-                                StatusId = "SCHEDULED",
-                                CreatedStamp = DateTime.UtcNow,
-                                LastUpdatedStamp = DateTime.UtcNow,
-                            };
-                            allFinalSchedules.Add(schedule);
-                        }
-                    }
-
-                    // Re-assign installment numbers based on DueDate
-                    int seq = 1;
-                    foreach (var s in allFinalSchedules.OrderBy(x => x.DueDate))
-                    {
-                        s.InstallmentNumber = seq++;
-                        if (_context.Entry(s).State == EntityState.Detached)
-                        {
-                            _context.EmployeeAdvanceSchedules.Add(s);
-                        }
-                    }
-
-                    advance.InstallmentCount = allFinalSchedules.Count;
-                    advance.StartDate = allFinalSchedules.Any() ? allFinalSchedules.Min(s => s.DueDate) : advance.StartDate;
+                        ScheduleId = Guid.NewGuid().ToString(),
+                        AdvanceId = advance.AdvanceId,
+                        InstallmentNumber = 0, // Fixed below
+                        DueDate = schedDto.DueDate,
+                        ScheduledAmount = schedDto.ScheduledAmount,
+                        DeductedAmount = 0m,
+                        StatusId = "SCHEDULED",
+                        CreatedStamp = DateTime.UtcNow,
+                        LastUpdatedStamp = DateTime.UtcNow,
+                    });
                 }
+
+                // Re-assign installment numbers based on DueDate
+                int seq = 1;
+                foreach (var s in allFinalSchedules.OrderBy(x => x.DueDate))
+                {
+                    s.InstallmentNumber = seq++;
+                    if (_context.Entry(s).State == EntityState.Detached)
+                    {
+                        _context.EmployeeAdvanceSchedules.Add(s);
+                    }
+                }
+
+                advance.InstallmentCount = allFinalSchedules.Count;
+                advance.StartDate = allFinalSchedules.Any() ? allFinalSchedules.Min(s => s.DueDate) : advance.StartDate;
             }
             else
             {

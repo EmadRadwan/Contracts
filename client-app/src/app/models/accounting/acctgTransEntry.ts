@@ -1,4 +1,8 @@
 export interface AcctgTransEntry {
+  /** set on a reversing entry: id of the transaction it cancels */
+  reversalOfAcctgTransId?: string | null;
+  /** set on a reversed original: id of the reversal that cancelled it */
+  reversedByAcctgTransId?: string | null;
     acctgTransId: string;
     acctgTransEntrySeqId: string;
     acctgTransEntryTypeId?: string | null;

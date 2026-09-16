@@ -14,10 +14,10 @@ import LoadingComponent from '../../../../app/layout/LoadingComponent';
 import {useFetchGlAccountTransactionDetailsQuery} from "../../../../app/store/apis/accounting/accountingReportsApi";
 import {GlAccountTransactionsExcel} from "../report/GlAccountTransactionsExcel";
 import { GlAccountTransactionsDateRangeExcel } from '../report/GlAccountTransactionsDateRangeExcel';
-import { createStyledRow } from '../../../../app/common/grid';
+import { createReversalAwareRow, ReversalLegend } from "../../../../app/common/grid";
 
 // Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
-const DebitCreditRow = createStyledRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag === 'D' ? 'rgba(55,180,0,0.32)' : '#fff' }));
+const DebitCreditRow = createReversalAwareRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag === 'D' ? 'rgba(55,180,0,0.32)' : '#fff' }));
 
 interface Props {
     onClose: () => void;
@@ -151,6 +151,7 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                             />
                         </Grid>
                         <Grid item xs={12}>
+                            <ReversalLegend />
                             <KendoGrid
                                 style={{ height: '300px' }}
                                 data={orderBy(accountingTransEntries ?? [], sort).slice(page.skip, page.take + page.skip)}

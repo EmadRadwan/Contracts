@@ -78,8 +78,7 @@ public class GeneralLedgerService : IGeneralLedgerService
     private readonly IProductStoreService _productStoreService;
     private readonly Lazy<IPaymentHelperService> _paymentHelperService;
     private readonly Lazy<IAcctgReportsService> _acctgReportsService;
-
-
+    private readonly IAccountingPeriodGuard _periodGuard;
     public GeneralLedgerService(DataContext context,
         IUtilityService utilityService,
         IInvoiceUtilityService invoiceUtilityService,
@@ -87,9 +86,10 @@ public class GeneralLedgerService : IGeneralLedgerService
         IAcctgMiscService acctgMiscService, ILogger<GeneralLedgerService> logger, ICostService costService,
         IInventoryService inventoryService, ICommonService commonService,
         Lazy<IPaymentHelperService> paymentHelperService, Lazy<IAcctgReportsService> acctgReportsService,
-        IProductStoreService productStoreService)
+        IProductStoreService productStoreService, IAccountingPeriodGuard periodGuard)
     {
         _context = context;
+        _periodGuard = periodGuard;
         _utilityService = utilityService;
         _acctgTransService = acctgTransService;
         _acctgMiscService = acctgMiscService;
@@ -481,10 +481,17 @@ public class GeneralLedgerService : IGeneralLedgerService
             // to PMNT_NOT_PAID without deleting its prior posting (the generic SetPaymentStatus
             // transition does this — only the dedicated Reset action cleans up AcctgTrans) and
             // then re-approves it will silently double-post the same amount to GL.
+            // Only a LIVE posting counts. After a Reset the original and its linked reversal are
+            // both still posted (auditor rule: never delete), so both must be ignored here or the
+            // re-send would be skipped and the payment would sit at SENT with a net-zero ledger.
+            var reversalMarkers = _context.AcctgTransAttributes
+                .Where(a => a.AttrName == "REVERSED_BY" || a.AttrName == "REVERSAL_OF")
+                .Select(a => a.AcctgTransId);
             var existingAcctgTransId = await _context.AcctgTrans
                 .Where(t => t.PaymentId == paymentId &&
                             t.AcctgTransTypeId == "INCOMING_PAYMENT" &&
-                            t.IsPosted == "Y")
+                            t.IsPosted == "Y" &&
+                            !reversalMarkers.Contains(t.AcctgTransId))
                 .Select(t => t.AcctgTransId)
                 .FirstOrDefaultAsync();
 
@@ -3570,10 +3577,17 @@ public class GeneralLedgerService : IGeneralLedgerService
             // is required: the generic SetPaymentStatus transition back to PMNT_NOT_PAID doesn't
             // clean up AcctgTrans, so a payment re-approved after that drift would otherwise be
             // posted to GL twice.
+            // Only a LIVE posting counts. After a Reset the original and its linked reversal are
+            // both still posted (auditor rule: never delete), so both must be ignored here or the
+            // re-send would be skipped and the payment would sit at SENT with a net-zero ledger.
+            var reversalMarkers = _context.AcctgTransAttributes
+                .Where(a => a.AttrName == "REVERSED_BY" || a.AttrName == "REVERSAL_OF")
+                .Select(a => a.AcctgTransId);
             var existingAcctgTransId = await _context.AcctgTrans
                 .Where(t => t.PaymentId == paymentId &&
                             t.AcctgTransTypeId == "OUTGOING_PAYMENT" &&
-                            t.IsPosted == "Y")
+                            t.IsPosted == "Y" &&
+                            !reversalMarkers.Contains(t.AcctgTransId))
                 .Select(t => t.AcctgTransId)
                 .FirstOrDefaultAsync();
 
@@ -5573,6 +5587,11 @@ public class GeneralLedgerService : IGeneralLedgerService
     }
 
     // Method to copy an AcctgTrans and its entries, optionally reversing debit/credit flags
+    /// <remarks>
+    /// For reversals use <see cref="IAcctgTransReversalService"/>: it links both transactions, records
+    /// the reason, carries every entry field, dates the contra deliberately and runs the period guard.
+    /// This copy keeps only the account, amount and side, and does not link back to the source.
+    /// </remarks>
     public async Task<GeneralServiceResult<string>> CopyAcctgTransAndEntries(string fromAcctgTransId, bool revert)
     {
         try
@@ -5678,7 +5697,7 @@ public class GeneralLedgerService : IGeneralLedgerService
             // Return success with the new acctgTransId
             // Technical: Returns the new transaction ID as ResultData
             // Business Purpose: Confirms the transaction and its entries were copied or reversed
-            return GeneralServiceResult<string>.Success();
+            return GeneralServiceResult<string>.Success(newAcctgTransId);
         }
         catch (Exception ex)
         {
@@ -6520,6 +6539,10 @@ public class GeneralLedgerService : IGeneralLedgerService
 
         if (existingTrans == null)
             return false;
+
+        // Pragmatic policy (agreed Sep 2026): a cheque still PMNT_NOT_PAID may have its CHECK_ISSUED
+        // memo re-posted in place while the period is open. A closed period refuses it.
+        await _periodGuard.EnsureOpenForAcctgTransAsync(new[] { existingTrans.AcctgTransId });
 
         // Option A: Hard delete (common if transaction is not yet posted/final)
         _context.AcctgTransEntries.RemoveRange(existingTrans.AcctgTransEntries);

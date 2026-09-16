@@ -27,10 +27,10 @@ import AccountingSummaryMenu from "../menu/AccountingSummaryMenu";
 import {useSelector} from "react-redux";
 import {useNavigate} from "react-router";
 import { AccountingTransactionEntriesDateRangeExcel } from "./AccountingTransactionEntriesDateRangeExcel";
-import { createStyledRow } from "../../../../app/common/grid";
+import { createReversalAwareRow, ReversalLegend } from "../../../../app/common/grid";
 
 // Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
-const DebitCreditRow = createStyledRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag === "D" ? "rgba(55, 180, 0, 0.32)" : "#ffffff" }));
+const DebitCreditRow = createReversalAwareRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag === "D" ? "rgba(55, 180, 0, 0.32)" : "#ffffff" }));
 
 export default function AccountingTransactionEntriesList() {
 
@@ -146,6 +146,7 @@ export default function AccountingTransactionEntriesList() {
 
                 <Grid item xs={12}>
                     <div className="div-container">
+                        <ReversalLegend />
                         <KendoGrid
                             resizable={true}
                             filterable={true}

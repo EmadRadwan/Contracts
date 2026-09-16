@@ -150,7 +150,7 @@ public class CreatePayment
             {
                 await transaction.RollbackAsync(cancellationToken);
 
-                return Result<PaymentDto>.Failure("Error creating Payment");
+                return Result<PaymentDto>.Failure($"Error creating Payment: {ex.Message}");
             }
         }
     }

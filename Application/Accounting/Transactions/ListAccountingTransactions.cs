@@ -102,6 +102,8 @@ public class ListAccountingTransactions
                     PaymentId = transaction.PaymentId,
                     TransactionDate = transaction.TransactionDate,
                     IsPosted = transaction.IsPosted,
+                    ReversalOfAcctgTransId = _context.AcctgTransAttributes.Where(a => a.AcctgTransId == transaction.AcctgTransId && a.AttrName == "REVERSAL_OF").Select(a => a.AttrValue).FirstOrDefault(),
+                    ReversedByAcctgTransId = _context.AcctgTransAttributes.Where(a => a.AcctgTransId == transaction.AcctgTransId && a.AttrName == "REVERSED_BY").Select(a => a.AttrValue).FirstOrDefault(),
                     PostedDate = transaction.PostedDate,
                     Description = transaction.Description,
                     InvoiceId = transaction.InvoiceId,

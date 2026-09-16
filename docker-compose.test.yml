@@ -1,0 +1,77 @@
+# Test / staging stack — a full copy of production (API + its own MySQL) that can run
+# EITHER on the prod box next to the prod stack, OR on its own box, unchanged.
+#
+#   docker compose -f docker-compose.test.yml up -d
+#
+# Isolation from production:
+#   - `name: contracts-test` → its own compose project, network and volume, so `up -d`
+#     here can never recreate the prod containers even though the service names match.
+#   - Service names are deliberately the SAME as prod (`web`, `mysql-contracts`) because
+#     appsettings.Production.json hard-codes `Server=mysql-contracts`; on this stack's private
+#     network that name resolves to the test DB, so no code/config change is needed.
+#   - Distinct container names, host ports (5200/8644, 3309), volume and log dirs.
+#
+# Image: run the exact image you are about to promote. Build it once as :test, verify here,
+# then `docker tag eradwan/contractsapp:test eradwan/contractsapp:1.0.1` and `up -d` prod —
+# no second build (see DEPLOY.md, "Test before promote").
+name: contracts-test
+
+services:
+  web:
+    container_name: contracts-app-test
+    restart: unless-stopped
+    image: ${CONTRACTS_TEST_IMAGE:-eradwan/contractsapp:test}
+    ports:
+      - '5200:5100'
+      - '8644:8544'
+    environment:
+      TokenKey: ${TokenKey:-lWwMN68UKbjuEJAAYq9ke9KYtPrabUTE9kghtxPrysPDfgaezEyfV3gjoA4F90TYcgYRhH5wXC0XhR5idy1n0w==}
+      TELERIK_LICENSE: ${TELERIK_LICENSE:-}
+      ASPNETCORE_URLS: "http://*:5100;https://*:8544"
+      ASPNETCORE_ENVIRONMENT: "Production"          # keep: selects appsettings.Production.json
+      Kestrel__Certificates__Default__Path: "/root/.aspnet/https/contracts/aspnetapp.pfx"
+      Kestrel_Certificate_Password_Contracts: ${Kestrel_Certificate_Password_Contracts:-Tmbtc202500}
+      SERILOG_LOG_PATH: "/app/logs"
+      Auditing__Enabled: "${Auditing_Enabled:-true}"
+      # No nightly purge of the copied audit history on the test copy.
+      Auditing__Retention__Enabled: "false"
+    volumes:
+      - /home/ubuntu/.aspnet/https/contracts:/root/.aspnet/https/contracts:ro
+      - /home/ubuntu/.aspnet/DataProtection-Keys-test:/root/.aspnet/DataProtection-Keys:rw
+      - /home/ubuntu/logs/contracts-test:/app/logs:rw
+    depends_on:
+      mysql-contracts:
+        condition: service_healthy
+    networks:
+      - erp-contracts-test-network
+
+  mysql-contracts:
+    container_name: erp-mysql-contracts-test
+    restart: unless-stopped
+    # Same tag as prod. On the prod box this resolves to the already-pulled image, so the
+    # two DBs run the identical server build; on a separate box, pin to prod's digest
+    # (`docker image inspect mysql:latest --format '{{index .RepoDigests 0}}'` on prod).
+    image: ${MYSQL_TEST_IMAGE:-mysql:latest}
+    ports:
+      - '3309:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD_Contracts:-Tmbtc202500}
+      MYSQL_DATABASE: erp_contracts
+    volumes:
+      - erp-mysql-volume-contracts-test:/var/lib/mysql
+      - /home/ubuntu/mysql-config/contracts/my.cnf:/etc/mysql/my.cnf:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD_Contracts:-Tmbtc202500}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - erp-contracts-test-network
+
+volumes:
+  erp-mysql-volume-contracts-test:
+    name: erp-mysql-volume-contracts-test
+
+networks:
+  erp-contracts-test-network:
+    driver: bridge

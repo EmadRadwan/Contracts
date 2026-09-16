@@ -35,6 +35,7 @@ import {
 } from "../../../../app/store/apis";
 import { EmployeeAdvance } from "../../../../app/models/humanResources/employeeAdvance";
 import FingerprintUpload from "./FingerprintUpload";
+import { apiErrorMessage } from "../../../../app/util/apiError";
 
 interface EmployeePayrollData {
     employeeId: string;
@@ -400,7 +401,7 @@ const PayrollRun: React.FC = () => {
             navigate("/invoicesDashboard");
         } catch (error) {
             console.error("Payroll Run failed", error);
-            toast.error(getTranslatedLabel("accounting.payroll.run.failed", "Payroll Run failed"));
+            toast.error(apiErrorMessage(error, getTranslatedLabel("accounting.payroll.run.failed", "Payroll Run failed")));
         }
     };
 
@@ -419,7 +420,7 @@ const PayrollRun: React.FC = () => {
             // Refreshing happens automatically via tag invalidation in RTK Query
         } catch (error) {
             console.error("Failed to delete payroll invoices", error);
-            toast.error(getTranslatedLabel("accounting.payroll.run.delete-failed", "Failed to delete payroll invoices"));
+            toast.error(apiErrorMessage(error, getTranslatedLabel("accounting.payroll.run.delete-failed", "Failed to delete payroll invoices")));
         }
     };
 

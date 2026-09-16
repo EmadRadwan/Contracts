@@ -170,6 +170,24 @@ public class TransactionsController : BaseApiController
         }));
     }
 
+    public class ReverseAcctgTransRequest
+    {
+        public string Reason { get; set; } = string.Empty;
+        public DateOnly? ReversalDate { get; set; }
+    }
+
+    /// <summary>Reverse instead of delete: writes a linked contra transaction; the original stays.</summary>
+    [HttpPost("reverseAcctgTrans/{acctgTransId}")]
+    public async Task<IActionResult> ReverseAcctgTrans(string acctgTransId, [FromBody] ReverseAcctgTransRequest body)
+    {
+        return HandleResult(await Mediator.Send(new ReverseAcctgTrans.Command
+        {
+            AcctgTransId = acctgTransId,
+            Reason = body?.Reason ?? string.Empty,
+            ReversalDate = body?.ReversalDate
+        }));
+    }
+
     [HttpPost("createMultiAcctgTransWithEntries")]
     public async Task<IActionResult> CreateMultiAcctgTransWithEntries(CreateMultiAcctgTransWithEntries.Command command)
     {

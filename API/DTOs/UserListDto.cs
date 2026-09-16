@@ -7,4 +7,6 @@ public class UserListDto
     public string DisplayName { get; set; }
     public string Email { get; set; }
     public string OrganizationPartyId { get; set; }
+    public string PartyId { get; set; }
+    public string PartyName { get; set; }
 }

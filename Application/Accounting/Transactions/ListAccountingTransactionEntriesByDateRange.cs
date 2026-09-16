@@ -82,6 +82,8 @@ public class ListAccountingTransactionEntriesByDateRange
                             Amount = te.Amount,
                             DebitCreditFlag = te.DebitCreditFlag,
                             IsPosted = trans.IsPosted,
+                            ReversalOfAcctgTransId = _context.AcctgTransAttributes.Where(a => a.AcctgTransId == trans.AcctgTransId && a.AttrName == "REVERSAL_OF").Select(a => a.AttrValue).FirstOrDefault(),
+                            ReversedByAcctgTransId = _context.AcctgTransAttributes.Where(a => a.AcctgTransId == trans.AcctgTransId && a.AttrName == "REVERSED_BY").Select(a => a.AttrValue).FirstOrDefault(),
                             PostedDate = trans.PostedDate,
                             TransactionDate = trans.TransactionDate,
                             GlFiscalTypeId = trans.GlFiscalTypeId,

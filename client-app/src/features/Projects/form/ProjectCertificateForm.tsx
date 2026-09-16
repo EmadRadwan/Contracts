@@ -38,6 +38,7 @@ import {useDeleteProjectCertificateMutation} from "../../../app/store/apis/proje
 import {ConfirmDialog} from "./ConfirmDialog";
 import ModalContainer from "../../../app/common/modals/ModalContainer";
 import CreatePartyModalForm from "../../parties/form/CreatePartyModalForm";
+import { apiErrorMessage } from "../../../app/util/apiError";
 
 interface ProjectCertificateFormProps {
     editMode: number; // 0: view, 1: create, 2: edit (CREATED), 3: edit (APPROVED), 4: edit (COMPLETED)
@@ -115,10 +116,7 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
 
             setDeleteDialogOpen(false);
         } catch (err: any) {
-            toast.error(
-                err?.data?.message ||
-                getTranslatedLabel('projects.certificate.deleteFailed', 'Failed to delete certificate')
-            );
+            toast.error(apiErrorMessage(err, getTranslatedLabel('projects.certificate.deleteFailed', 'Failed to delete certificate')));
         } finally {
             setDeleteLoading(false);
         }
@@ -190,7 +188,7 @@ const CertificateActionsMenu: React.FC<CertificateActionsMenuProps> = ({
                 title={getTranslatedLabel('projects.certificate.confirmDeleteTitle', 'Delete Certificate')}
                 message={getTranslatedLabel(
                     'projects.certificate.confirmDeleteMessage',
-                    'Are you sure you want to delete this certificate and all related data (items, purchase order, etc.)? This action cannot be undone.'
+                    'Are you sure you want to remove this certificate? Only a certificate in Created status can be removed (reset an approved one first). If it never reached the ledger it is deleted with its items and purchase order; if it did, it is kept and marked Cancelled.'
                 )}
                 confirmText={getTranslatedLabel('common.delete', 'Delete')}
                 cancelText={getTranslatedLabel('common.cancel', 'Cancel')}

@@ -7,6 +7,8 @@ export interface UserListDto {
     displayName: string;
     email: string;
     organizationPartyId: string;
+    partyId?: string | null;    // linked employee party (stamped as createdBy/approvedBy)
+    partyName?: string | null;
 }
 
 export interface RoleDto {
@@ -28,6 +30,7 @@ export interface CreateUserDto {
     userName: string;
     displayName: string;
     organizationPartyId: string;
+    partyId?: string;
     roles?: string[];
 }
 
@@ -37,6 +40,7 @@ export interface UpdateUserDto {
     displayName: string;
     email: string;
     organizationPartyId: string;
+    partyId?: string;
     roles: string[];
 }
 

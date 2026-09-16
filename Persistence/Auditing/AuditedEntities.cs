@@ -46,6 +46,12 @@ public static class AuditedEntities
         "SalesCommission",
         "SalesRequest",
 
+        // Employee advances. The deduction plan can be re-spread across months after
+        // installments have already been collected (advance 10170, Sep 2026) — the auditor
+        // needs the before/after of every pending row, not just the advance header.
+        "EmployeeAdvance",
+        "EmployeeAdvanceSchedule",
+
         // Stock
         "InventoryItem",
         "InventoryItemDetail",

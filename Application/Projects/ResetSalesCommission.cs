@@ -1,3 +1,4 @@
+using Application.Accounting.Services;
 using Application.Core;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -15,10 +16,12 @@ public class ResetSalesCommission
     public class Handler : IRequestHandler<Command, Result<Unit>>
     {
         private readonly DataContext _context;
+        private readonly IPaymentVoidService _voidService;
 
-        public Handler(DataContext context)
+        public Handler(DataContext context, IPaymentVoidService voidService)
         {
             _context = context;
+            _voidService = voidService;
         }
 
         public async Task<Result<Unit>> Handle(Command request, CancellationToken ct)
@@ -39,7 +42,7 @@ public class ResetSalesCommission
                 // Wipe the generated payments and everything they produced — including payments that
                 // were already disbursed. The confirmation dialog states this outright, so a reset is
                 // a deliberate discard of that history, not an accounting reversal.
-                await CommissionPaymentCleanup.PurgeAsync(_context, commission.SalesRequestId, ct);
+                await CommissionPaymentCleanup.PurgeOrVoidAsync(_context, _voidService, commission.SalesRequestId, "Sales commission reset", ct);
 
                 commission.StatusId = "COMMISSION_PENDING";
                 commission.LastUpdatedStamp = DateTime.UtcNow;

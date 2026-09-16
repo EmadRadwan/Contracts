@@ -1,3 +1,4 @@
+using Application.Accounting.Services;
 using Domain;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
@@ -30,6 +31,10 @@ internal static class PaymentArtifactCleanup
 
         // Materialise once — EF translates Contains against a List parameter reliably.
         var ids = acctgTransIds as List<string> ?? acctgTransIds.ToList();
+
+        // Closed-period control: rows in a closed period are never purged (throws).
+        await new AccountingPeriodGuard(context).EnsureOpenForAcctgTransAsync(ids, ct);
+
 
         var acctgTransList = await context.AcctgTrans
             .Include(t => t.AcctgTransEntries)

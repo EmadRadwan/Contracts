@@ -3,6 +3,7 @@ import React, { useCallback } from 'react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { Button } from '@mui/material';
+import { applyReversalFill } from "../../../../app/common/grid";
 
 // REFACTOR: Mirror PartyFinancialHistoryExcel / TrialBalanceExcel pattern
 // Purpose: Consistent RTL, Amiri, logo, number formatting, final totals
@@ -203,6 +204,7 @@ export const GlAccountTransactionsExcel: React.FC<GlAccountTransactionsExcelProp
                 utils.rtlEmbed(utils.safeString(r.description)),
             ]);
             row.font = { name: 'Amiri', size: 9 };
+            applyReversalFill(row, r);
             row.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
             row.eachCell(c => c.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } });
         });

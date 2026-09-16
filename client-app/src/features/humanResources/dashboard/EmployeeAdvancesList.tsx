@@ -22,6 +22,7 @@ import {
 import EmployeeAdvanceForm from "../form/EmployeeAdvanceForm";
 import EmployeeAdvanceMenu from "../menu/EmployeeAdvanceMenu";
 import { EmployeeAdvancesDateRangeExcel } from "../report/EmployeeAdvancesDateRangeExcel";
+import { apiErrorMessage } from "../../../app/util/apiError";
 
 function EmployeeAdvancesList() {
     const [viewMode, setViewMode] = React.useState<"list" | "form">("list");
@@ -58,6 +59,17 @@ function EmployeeAdvancesList() {
 
     const dataStateChange = (e: GridDataStateChangeEvent) => {
         setDataState(e.dataState);
+    };
+
+    // The create/update responses are slim (no schedules, no paymentStatusId); the form needs the
+    // detail shape to keep the deduction plan and the payment-sent lock in sync after a save.
+    const reloadDetail = async (adv: EmployeeAdvance): Promise<EmployeeAdvance> => {
+        try {
+            return await triggerGetDetail(adv.advanceId).unwrap();
+        } catch (err) {
+            console.error("Failed to reload advance detail:", err);
+            return adv;
+        }
     };
 
     const startEdit = async (adv?: EmployeeAdvance) => {
@@ -116,9 +128,11 @@ function EmployeeAdvancesList() {
         if (advanceToDelete) {
             try {
                 await deleteAdvance({ advanceId: advanceToDelete.advanceId, dropPayment: hasSentPayment }).unwrap();
-                toast.success(getTranslatedLabel("general.deleteSuccess", "Record deleted successfully"));
+                toast.success(hasSentPayment
+                    ? getTranslatedLabel("party.employeeAdvance.delete.cancelledSuccess", "تم إلغاء السلفة وإلغاء دفعتها مع عكس قيودها")
+                    : getTranslatedLabel("general.deleteSuccess", "Record deleted successfully"));
             } catch (err: any) {
-                const message = err?.data?.title || err?.data?.error || getTranslatedLabel("general.deleteFailed", "Delete failed");
+                const message = apiErrorMessage(err, getTranslatedLabel("general.deleteFailed", "Delete failed"));
                 toast.error(message);
                 console.error("Delete failed:", err);
             } finally {
@@ -163,12 +177,12 @@ function EmployeeAdvancesList() {
                 advance={editMode === 1 ? undefined : selectedAdvance}
                 editMode={editMode}
                 cancelEdit={cancelEdit}
-                onAdvanceCreated={(newAdv) => {
-                    setSelectedAdvance(newAdv);
+                onAdvanceCreated={async (newAdv) => {
+                    setSelectedAdvance(await reloadDetail(newAdv));
                     setEditMode(2);
                 }}
-                onAdvanceUpdated={(updated) => {
-                    setSelectedAdvance(updated);
+                onAdvanceUpdated={async (updated) => {
+                    setSelectedAdvance(await reloadDetail(updated));
                 }}
             />
         );
@@ -241,7 +255,7 @@ function EmployeeAdvancesList() {
                         {hasSentPayment
                             ? getTranslatedLabel(
                                 "party.employeeAdvance.delete.hasSentPayment",
-                                "هذه السلفة مرتبطة بدفعة مُرسلة. سيتم حذف السلفة والدفعة وجميع القيود المحاسبية المرتبطة بها. هل تريد المتابعة؟"
+                                "هذه السلفة مرتبطة بدفعة مُرسلة. لن يُحذف شيء: ستُعلَّم السلفة كملغاة، وتُلغى الدفعة مع عكس قيودها المحاسبية بقيود عكسية مرتبطة وإلغاء حركتها البنكية. هل تريد المتابعة؟"
                             )
                             : getTranslatedLabel("general.confirmDelete", "Are you sure you want to delete this record?")}
                     </DialogContentText>

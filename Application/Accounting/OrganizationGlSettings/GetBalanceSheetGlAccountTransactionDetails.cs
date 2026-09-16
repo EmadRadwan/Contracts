@@ -97,6 +97,8 @@ namespace Application.Accounting.OrganizationGlSettings
                             ProductName = prod != null ? prod.ProductName : null,
                             CertificateNumber = we != null ? we.CertificateNumber : null,
                             IsPosted = act.IsPosted,
+                            ReversalOfAcctgTransId = _context.AcctgTransAttributes.Where(a => a.AcctgTransId == act.AcctgTransId && a.AttrName == "REVERSAL_OF").Select(a => a.AttrValue).FirstOrDefault(),
+                            ReversedByAcctgTransId = _context.AcctgTransAttributes.Where(a => a.AcctgTransId == act.AcctgTransId && a.AttrName == "REVERSED_BY").Select(a => a.AttrValue).FirstOrDefault(),
                             PostedDate = act.PostedDate,
                             // Add any other fields you need for the modal
                         };

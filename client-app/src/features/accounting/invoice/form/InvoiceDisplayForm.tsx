@@ -33,6 +33,7 @@ import {toast} from "react-toastify";
 import {Ribbon, RibbonContainer} from "react-ribbons";
 import {useInvoiceTotal} from "../hook/useInvoiceTotal";
 import {InvoiceExcel} from "../report/InvoiceExcel";
+import { apiErrorMessage } from "../../../../app/util/apiError";
 
 interface Props {
     invoiceId?: string;
@@ -268,7 +269,7 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
             refetchInvoiceEntries();
             refetchPaymentAppEntries();
         } catch (e) {
-            toast.error(getTranslatedLabel(`${localizationKey}.error`, "Something went wrong during reset"));
+            toast.error(apiErrorMessage(e, getTranslatedLabel(`${localizationKey}.reset-failed`, "فشل إعادة تعيين الفاتورة")));
             console.error(e);
         }
     };

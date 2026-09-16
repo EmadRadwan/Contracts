@@ -1,3 +1,4 @@
+using Application.Accounting.Services;
 using Application.Core;
 using Application.Interfaces;
 using Domain;
@@ -27,13 +28,15 @@ public class CompleteSalesOrderPayments
     public class Handler : IRequestHandler<Command, Result<PaymentsDto>>
     {
         private readonly DataContext _context;
+        private readonly ILedgerHistoryService _ledgerHistory;
         private readonly IUserAccessor _userAccessor;
         private readonly IUtilityService _utilityService;
 
-        public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService)
+        public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService, ILedgerHistoryService ledgerHistory)
         {
             _userAccessor = userAccessor;
             _context = context;
+            _ledgerHistory = ledgerHistory;
             _utilityService = utilityService;
         }
 
@@ -79,6 +82,16 @@ public class CompleteSalesOrderPayments
 
                         if (updatedPayment.IsPaymentDeleted)
                         {
+                            // Physical delete only while nothing has touched the ledger or the bank book
+                            // (the DeleteParty rule); anything with history must be voided instead.
+                            var history = await _ledgerHistory.ForPaymentAsync(savedPayment.PaymentId, cancellationToken);
+                            if (history.HasHistory)
+                            {
+                                await transaction.RollbackAsync(cancellationToken);
+                                return Result<PaymentsDto>.Failure(
+                                    new LedgerHistoryExistsException(history, $"الدفعة {savedPayment.PaymentId}").Message);
+                            }
+
                             _context.OrderStatuses.RemoveRange(orderStatuses);
                             _context.OrderPaymentPreferences.RemoveRange(orderPaymentPreferences);
 

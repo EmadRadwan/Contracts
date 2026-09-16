@@ -14,6 +14,7 @@ import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
+import { applyReversalFill } from "../../../../app/common/grid";
 
 interface TransactionRow {
     acctgTransId: string;
@@ -252,6 +253,7 @@ export const GlAccountTransactionsDateRangeExcel: React.FC<GlAccountTransactions
                 utils.rtlEmbed(utils.safeString(r.description)),
             ]);
             row.font = { name: 'Amiri', size: 9 };
+            applyReversalFill(row, r);
             row.alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
             row.eachCell(c => c.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } });
         });

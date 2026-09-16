@@ -184,23 +184,37 @@ public class CreateEmployeeAdvance
                         "SCHEDULE_TOTAL_MISMATCH");
                 }
 
-                foreach (var s in dto.CustomDeductionSchedules.Where(s => s.DueDate < DateHelper.Today))
+                if (dto.CustomDeductionSchedules.Any(s => !s.DueDate.HasValue))
                 {
-                    var dueDate = s.DueDate!.Value;
-                    var monthStart = new DateOnly(dueDate.Year, dueDate.Month, 1);
-                    var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+                    return Results<EmployeeAdvanceDto>.Failure(
+                        "كل قسط في جدول الخصم يجب أن يكون له تاريخ استحقاق.",
+                        "SCHEDULE_DUE_DATE_REQUIRED");
+                }
 
-                    var isMonthProcessed = await _context.Invoices
-                        .AnyAsync(i => i.InvoiceTypeId == "PAYROL_INVOICE"
-                                       && i.InvoiceDate >= monthStart
-                                       && i.InvoiceDate <= monthEnd, ct);
+                // The payroll run deducts exactly one installment per month.
+                var duplicateMonth = dto.CustomDeductionSchedules
+                    .GroupBy(s => EmployeeAdvanceScheduleRules.MonthKey(s.DueDate!.Value))
+                    .FirstOrDefault(g => g.Count() > 1);
+                if (duplicateMonth != null)
+                {
+                    return Results<EmployeeAdvanceDto>.Failure(
+                        $"لا يمكن جدولة أكثر من قسط واحد في نفس الشهر ({duplicateMonth.Key:MM/yyyy}).",
+                        "DUPLICATE_MONTH_INSTALLMENT");
+                }
 
-                    if (isMonthProcessed)
-                    {
-                        return Results<EmployeeAdvanceDto>.Failure(
-                            $"لا يمكن جدولة خصم في شهر تم معالجة الرواتب فيه ({dueDate:MM/yyyy}).",
-                            "PAST_DUE_DATE_NOT_ALLOWED");
-                    }
+                // Every installment must sit in a month a future payroll run can still collect:
+                // after the advance date and after the employee's latest payroll run.
+                var earliestMonth = await EmployeeAdvanceScheduleRules.EarliestSchedulableMonthAsync(
+                    _context, employeeId, dto.AdvanceDate, Enumerable.Empty<EmployeeAdvanceSchedule>(), ct);
+
+                var tooEarly = dto.CustomDeductionSchedules
+                    .OrderBy(s => s.DueDate)
+                    .FirstOrDefault(s => EmployeeAdvanceScheduleRules.MonthKey(s.DueDate!.Value) < earliestMonth);
+                if (tooEarly != null)
+                {
+                    return Results<EmployeeAdvanceDto>.Failure(
+                        EmployeeAdvanceScheduleRules.MonthNotSchedulableMessage(tooEarly.DueDate!.Value, earliestMonth),
+                        "PAST_DUE_DATE_NOT_ALLOWED");
                 }
             }
 

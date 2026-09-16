@@ -153,6 +153,7 @@ import ReserveRequestsList from "../../features/orders/form/request/dashboard/Re
 import ProjectCommissionRatesList from "../../features/orders/form/request/dashboard/ProjectCommissionRatesList";
 import SalesCommissionsList from "../../features/orders/form/request/dashboard/SalesCommissionsList";
 import RequireRole from "./RequireRole";
+import { SALES_COMMISSION_ENTRY_ROLES } from "../models/orders/salesCommissionRoles";
 import ChangePasswordPage from "../../features/account/ChangePasswordPage";
 import SalesOpportunityDashboard from "../../features/CRM/sales-opportunities/SalesOpportunityDashboard";
 import LeadsDashboard from "../../features/CRM/leads/LeadsDashboard"
@@ -439,7 +440,12 @@ export const routes: RouteObject[] = [
                                 ],
                             },
                             {path: "project-commission-rates", element: <ProjectCommissionRatesList/>},
-                            {path: "sales-commissions", element: <SalesCommissionsList/>},
+                            {
+                                element: <RequireRole allowedRoles={SALES_COMMISSION_ENTRY_ROLES} />,
+                                children: [
+                                    {path: "sales-commissions", element: <SalesCommissionsList/>},
+                                ],
+                            },
                         ],
                     },
 

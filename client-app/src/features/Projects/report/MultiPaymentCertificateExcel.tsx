@@ -5,6 +5,7 @@ import { saveAs } from 'file-saver';
 import { Button } from '@mui/material';
 import { MultiPaymentCertificate, MultiPaymentItem } from '../../../app/models/project/MultiPaymentCertificate';
 import { AcctgTransEntry } from '../../../app/models/accounting/acctgTransEntry';
+import { applyReversalFill } from "../../../app/common/grid";
 
 /* ------------------------------------------------------------------ */
 /* PROPS */
@@ -192,7 +193,7 @@ export const MultiPaymentCertificateExcel: React.FC<MultiPaymentCertificateExcel
             transHeader.eachCell(c => c.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } });
 
             transactions.forEach(t => {
-                ws.addRow([
+                const row = ws.addRow([
                     t.acctgTransId,
                     t.acctgTransEntrySeqId,
                     t.glAccountId,
@@ -202,6 +203,7 @@ export const MultiPaymentCertificateExcel: React.FC<MultiPaymentCertificateExcel
                     t.origCurrencyUomId,
                     utils.formatDate(t.transactionDate),
                 ]);
+                applyReversalFill(row, t);
             });
             ws.getRow(ws.lastRow!.number).eachCell(c => c.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } });
         }

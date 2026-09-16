@@ -20,16 +20,22 @@ public class AcctgTransService : IAcctgTransService
 {
     private readonly DataContext _context;
     private readonly IUtilityService _utilityService;
+    private readonly IAccountingPeriodGuard _periodGuard;
 
-    public AcctgTransService(DataContext context, IUtilityService utilityService)
+    public AcctgTransService(DataContext context, IUtilityService utilityService, IAccountingPeriodGuard periodGuard)
     {
         _context = context;
         _utilityService = utilityService;
+        _periodGuard = periodGuard;
     }
 
     public async Task<string> CreateAcctgTrans(CreateAcctgTransParams parameters)
     {
-        // Create an accounting transaction
+        // Period control on the way in. Every transaction in the system is created here, so this
+        // is the one place a closed period is enforced for inserts (throws ClosedAccountingPeriodException).
+        if (parameters.TransactionDate.HasValue)
+            await _periodGuard.EnsureOpenAsync(parameters.TransactionDate.Value.ToStartOfDay());
+
         var stamp = DateTime.UtcNow;
         var newSeqParam = parameters.AcctgTransTypeId == "GENERAL_JOURNAL" ? "AcctgTransGeneralJournal" : "AcctgTrans";
         
@@ -218,6 +224,12 @@ public class AcctgTransService : IAcctgTransService
             messages.Add("AccountingTransactionHasBeenAlreadyPosted");
             return messages; // <check-errors/>
         }
+
+        // Moving an unposted transaction into (or out of) a closed period is refused like an insert.
+        if (lookedUpValue.TransactionDate.HasValue)
+            await _periodGuard.EnsureOpenAsync(lookedUpValue.TransactionDate.Value);
+        if (parameters.TransactionDate.HasValue)
+            await _periodGuard.EnsureOpenAsync(parameters.TransactionDate.Value);
 
         // 3) <set-nonpk-fields map="parameters" value-field="lookedUpValue"/>
         //    We copy non-PK fields from our params object to `lookedUpValue`.

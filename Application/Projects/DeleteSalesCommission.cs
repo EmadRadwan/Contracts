@@ -1,3 +1,4 @@
+using Application.Accounting.Services;
 using Application.Core;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -15,10 +16,12 @@ public class DeleteSalesCommission
     public class Handler : IRequestHandler<Command, Result<Unit>>
     {
         private readonly DataContext _context;
+        private readonly IPaymentVoidService _voidService;
 
-        public Handler(DataContext context)
+        public Handler(DataContext context, IPaymentVoidService voidService)
         {
             _context = context;
+            _voidService = voidService;
         }
 
         public async Task<Result<Unit>> Handle(Command request, CancellationToken ct)
@@ -37,7 +40,7 @@ public class DeleteSalesCommission
                 //    (ledger entries, bank transactions, reconciliation rows, attributes).
                 //    Already-disbursed payments are included — the confirmation dialog says so.
                 if (commission.StatusId == "COMMISSION_APPROVED")
-                    await CommissionPaymentCleanup.PurgeAsync(_context, commission.SalesRequestId, ct);
+                    await CommissionPaymentCleanup.PurgeOrVoidAsync(_context, _voidService, commission.SalesRequestId, "Sales commission deleted", ct);
 
                 // 2. Hard delete the commission record
                 _context.SalesCommissions.Remove(commission);

@@ -1,4 +1,6 @@
 using Application.Accounting.Payments;
+using Application.Accounting.Services;
+using Application.Core;
 using Application.Projects;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -6,28 +8,44 @@ using Persistence;
 
 namespace Application.Order.SalesRequests;
 
+/// <summary>
+/// Removes an apartment sales request.
+///
+/// Step 3 of the auditor's soft-delete requirement (Sep 2026). Two outcomes:
+///  - Nothing has reached the ledger (no posted transaction, every payment still a draft): the
+///    request, its draft payments and its instalment schedule are physically deleted, as before.
+///  - Anything has been posted or received: the request is kept and marked
+///    SALES_REQUEST_CANCELLED. Sent or received payments are voided (kept, reversed, bank rows
+///    cancelled); draft payments are purged; every posted transaction booked against the request
+///    itself is reversed. Nothing posted is removed.
+/// In both cases the apartment goes back to available.
+/// </summary>
 public class DeleteSalesRequest
 {
-    // -----------------------------------------------------------------
-    // Command – returns Unit because nothing is returned on success
-    // -----------------------------------------------------------------
     public class Command : IRequest<Result<Unit>>
     {
         public string SalesRequestId { get; set; } = null!;
+        public string? Reason { get; set; }
     }
 
-    // -----------------------------------------------------------------
-    // Handler
-    // -----------------------------------------------------------------
     public class Handler : IRequestHandler<Command, Result<Unit>>
     {
         private readonly DataContext _context;
+        private readonly IAccountingPeriodGuard _periodGuard;
+        private readonly IPaymentVoidService _voidService;
+        private readonly IAcctgTransReversalService _reversal;
+        private readonly ILedgerHistoryService _ledgerHistory;
 
-        private const string ApartmentAvailableStatusId = "APARTMENT_AVAILABLE"; // adjust if needed
+        private const string ApartmentAvailableStatusId = "APARTMENT_AVAILABLE";
 
-        public Handler(DataContext context)
+        public Handler(DataContext context, IAccountingPeriodGuard periodGuard, IPaymentVoidService voidService,
+            IAcctgTransReversalService reversal, ILedgerHistoryService ledgerHistory)
         {
             _context = context;
+            _periodGuard = periodGuard;
+            _voidService = voidService;
+            _reversal = reversal;
+            _ledgerHistory = ledgerHistory;
         }
 
         public async Task<Result<Unit>> Handle(Command request, CancellationToken ct)
@@ -35,90 +53,105 @@ public class DeleteSalesRequest
             var salesRequestId = request.SalesRequestId;
 
             await using var transaction = await _context.Database.BeginTransactionAsync(ct);
-
             try
             {
-                // 1. Load SalesRequest
                 var sr = await _context.SalesRequests
-                    .Include(s => s.Installments) // ← NEW: Load custom installments
+                    .Include(s => s.Installments)
                     .FirstOrDefaultAsync(x => x.SalesRequestId == salesRequestId, ct);
 
                 if (sr == null)
                     return Result<Unit>.Failure("Sales request not found");
 
-                // Optional: prevent deletion if already approved and payments exist, etc.
-                // You can add more business rules here if needed.
+                if (sr.StatusId == "SALES_REQUEST_CANCELLED")
+                    return Result<Unit>.Failure("طلب المبيعات ملغى بالفعل. (Sales request is already cancelled.)");
 
-                // 2. Load related apartment to clear reservation
                 var apartment = await _context.Products
                     .FirstOrDefaultAsync(p => p.ProductId == sr.ProductId && p.ProductTypeId == "APARTMENT", ct);
 
                 if (apartment == null)
                     return Result<Unit>.Failure("Associated apartment not found");
 
-                // -----------------------------------------------------------------
-                // 3. Clean up related artifacts
-                // -----------------------------------------------------------------
-                // REFACTOR: the cleanup used to run only for SALES_REQUEST_APPROVED. Artifacts can
-                //           outlive that status (a commission approved against the request, a
-                //           half-finished reset), and the FKs below are all NO ACTION, so anything
-                //           left behind rejects the whole delete. Purge unconditionally instead —
-                //           the queries are no-ops when there is nothing to remove.
+                await _periodGuard.EnsureOpenForSalesRequestsAsync(new[] { salesRequestId }, ct);
 
-                // 3a. Commission first. SALES_COMMISSION.FK_SALES_COMM_SR is Restrict, so an
-                //     approved commission blocks the delete outright, and the ledger rows its
-                //     payments produced carry no SALES_REQUEST_ID — only the commission cleanup
-                //     knows how to find them (via PAYMENT_ID / FIN_ACCOUNT_TRANS_ID).
-                await CommissionPaymentCleanup.PurgeAsync(_context, salesRequestId, ct);
+                var reason = string.IsNullOrWhiteSpace(request.Reason)
+                    ? $"Sales request {salesRequestId} cancelled"
+                    : request.Reason.Trim();
+
+                var history = await _ledgerHistory.ForSalesRequestAsync(salesRequestId, ct);
+                var anyMoneyMoved = await _context.Payments
+                    .AnyAsync(p => p.SalesRequestId == salesRequestId
+                                   && p.StatusId != "PMNT_NOT_PAID" && p.StatusId != "PMNT_VOID", ct);
+                var mustKeep = history.PostedAcctgTransCount > 0 || anyMoneyMoved;
+
+                // Commission payments: drafts purged, disbursed ones voided.
+                await CommissionPaymentCleanup.PurgeOrVoidAsync(_context, _voidService, salesRequestId, reason, ct);
 
                 var commissions = await _context.SalesCommissions
                     .Where(c => c.SalesRequestId == salesRequestId)
                     .ToListAsync(ct);
-
                 if (commissions.Any())
                     _context.SalesCommissions.RemoveRange(commissions);
 
-                // 3b. Customer payments (advance, installments, maintenance deposit) and every
-                //     artifact hanging off them.
+                // Customer payments: voided when they reached the ledger, purged while still drafts.
                 var payments = await _context.Payments
                     .Where(p => p.SalesRequestId == salesRequestId
                                 && p.PaymentTypeId != CommissionPaymentCleanup.CommissionPaymentTypeId)
                     .ToListAsync(ct);
 
-                await PaymentArtifactCleanup.PurgePaymentsAsync(_context, payments, ct);
-
-                // 3c. Ledger transactions booked against the request itself (APARTMENT_SALE_*,
-                //     APARTMENT_MAINTENANCE_DEPOSIT) — these carry no PAYMENT_ID, so 3b misses them.
-                var acctgTransIds = await _context.AcctgTrans
-                    .Where(t => t.SalesRequestId == salesRequestId)
-                    .Select(t => t.AcctgTransId)
-                    .ToListAsync(ct);
-
-                await PaymentArtifactCleanup.PurgeAcctgTransAsync(_context, acctgTransIds, ct);
-
-                if (sr.Installments.Any())
+                var drafts = new List<Domain.Payment>();
+                foreach (var payment in payments)
                 {
-                    _context.SalesRequestInstallments.RemoveRange(sr.Installments);
+                    if (payment.StatusId == "PMNT_VOID") continue;
+
+                    var paymentHistory = await _ledgerHistory.ForPaymentAsync(payment.PaymentId, ct);
+                    if (payment.StatusId == "PMNT_NOT_PAID" && paymentHistory.PostedAcctgTransCount == 0)
+                    {
+                        drafts.Add(payment);
+                        continue;
+                    }
+
+                    var voided = await _voidService.VoidPaymentAsync(payment.PaymentId, reason, ct);
+                    if (!voided.IsSuccess)
+                    {
+                        await transaction.RollbackAsync(ct);
+                        return Result<Unit>.Failure(voided.ErrorMessage);
+                    }
+                }
+                await PaymentArtifactCleanup.PurgePaymentsAsync(_context, drafts, ct);
+
+                // Postings booked against the request itself (sale recognition, maintenance deposit).
+                var reversible = await _reversal.FindReversibleForSalesRequestAsync(salesRequestId, ct);
+                var reversed = await _reversal.ReverseManyAsync(reversible,
+                    new ReverseAcctgTransOptions { Reason = reason }, ct);
+                if (!reversed.IsSuccess)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return Result<Unit>.Failure(reversed.ErrorMessage);
                 }
 
-                // -----------------------------------------------------------------
-                // 4. Clear apartment reservation
-                // -----------------------------------------------------------------
-                // REFACTOR: Restore apartment to available state before deleting the request.
-                //           Ensures no dangling reservation remains after hard delete.
+                var unpostedOwn = await _context.AcctgTrans
+                    .Where(t => t.SalesRequestId == salesRequestId && t.IsPosted != "Y")
+                    .Select(t => t.AcctgTransId)
+                    .ToListAsync(ct);
+                await PaymentArtifactCleanup.PurgeAcctgTransAsync(_context, unpostedOwn, ct);
+
+                // The instalment schedule is a plan, not a financial record.
+                if (sr.Installments.Any())
+                    _context.SalesRequestInstallments.RemoveRange(sr.Installments);
+
                 apartment.ApartmentStatusId = ApartmentAvailableStatusId;
                 apartment.ReservedBySalesRequestId = null;
 
-                // -----------------------------------------------------------------
-                // 5. Hard delete the SalesRequest
-                // -----------------------------------------------------------------
-                // REFACTOR: Physical removal instead of soft-delete (status change).
-                //           Meets requirement: no response DTO needed because entity is gone.
-                _context.SalesRequests.Remove(sr);
+                if (mustKeep)
+                {
+                    sr.StatusId = "SALES_REQUEST_CANCELLED";
+                    sr.LastUpdatedStamp = DateTime.UtcNow;
+                }
+                else
+                {
+                    _context.SalesRequests.Remove(sr);
+                }
 
-                // -----------------------------------------------------------------
-                // 6. Persist all changes atomically
-                // -----------------------------------------------------------------
                 var saved = await _context.SaveChangesAsync(ct) > 0;
                 if (!saved)
                 {
@@ -127,15 +160,16 @@ public class DeleteSalesRequest
                 }
 
                 await transaction.CommitAsync(ct);
-
-                // Success with no content
                 return Result<Unit>.Success(Unit.Value);
+            }
+            catch (ClosedAccountingPeriodException ex)
+            {
+                await transaction.RollbackAsync(ct);
+                return Result<Unit>.Failure(ex.Message);
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(ct);
-                // Surface the innermost provider message — an FK violation's detail sits there, and
-                // the UI shows this text verbatim.
                 var detail = ex.GetBaseException().Message;
                 return Result<Unit>.Failure($"Failed to delete sales request: {detail}");
             }

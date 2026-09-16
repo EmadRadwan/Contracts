@@ -92,18 +92,44 @@ public class AccountController : ControllerBase
     [HttpGet("listUsers")]
     public async Task<ActionResult<List<UserListDto>>> ListUsers()
     {
-        var users = await _userManager.Users
-            .Select(u => new UserListDto
-            {
-                Id = u.Id,
-                UserName = u.UserName,
-                DisplayName = u.DisplayName,
-                Email = u.Email,
-                OrganizationPartyId = u.OrganizationPartyId
-            })
+        var users = await (from u in _context.Users
+                join p in _context.Parties on u.PartyId equals p.PartyId into pJoin
+                from p in pJoin.DefaultIfEmpty()
+                select new UserListDto
+                {
+                    Id = u.Id,
+                    UserName = u.UserName,
+                    DisplayName = u.DisplayName,
+                    Email = u.Email,
+                    OrganizationPartyId = u.OrganizationPartyId,
+                    PartyId = u.PartyId,
+                    PartyName = p != null ? p.Description : null
+                })
             .ToListAsync();
 
         return Ok(users);
+    }
+
+    // Every app login belongs to a person: PartyId is what "Created By" / "Approved By" resolve
+    // through, and PaymentHelperService refuses to create/approve payments for an unlinked login.
+    // (The Power BI reader is a MySQL user, not an app user, so nothing legitimate is unlinked.)
+    private async Task<bool> ValidateEmployeePartyAsync(string? partyId)
+    {
+        if (string.IsNullOrWhiteSpace(partyId))
+        {
+            ModelState.AddModelError("partyId", "Employee is required — the user must be linked to an employee party.");
+            return false;
+        }
+
+        var isEmployee = await _context.PartyRoles
+            .AnyAsync(pr => pr.PartyId == partyId && pr.RoleTypeId == "EMPLOYEE");
+        if (!isEmployee)
+        {
+            ModelState.AddModelError("partyId", $"Party {partyId} does not exist or is not an employee.");
+            return false;
+        }
+
+        return true;
     }
 
     private async Task<UserDto> CreateUserObject(AppUserLogin user)
@@ -250,6 +276,9 @@ public class AccountController : ControllerBase
             return ValidationProblem();
         }
 
+        if (!await ValidateEmployeePartyAsync(createUserDto.PartyId))
+            return ValidationProblem();
+
          var dateNow = DateTime.UtcNow;
         var nowDateTime = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day, dateNow.Hour, dateNow.Minute,
             dateNow.Second, 0, DateTimeKind.Utc);
@@ -260,6 +289,8 @@ public class AccountController : ControllerBase
             Email = createUserDto.Email,
             UserName = createUserDto.UserName,
             OrganizationPartyId = string.IsNullOrWhiteSpace(createUserDto.OrganizationPartyId) ? null : createUserDto.OrganizationPartyId,
+            // Employee party — stamped as CreatedByPartyId / ApprovedByPartyId on payments etc.
+            PartyId = createUserDto.PartyId,
             EmailConfirmed = true,
             CreatedStamp = nowDateTime,
             LastUpdatedStamp = nowDateTime
@@ -289,7 +320,8 @@ public class AccountController : ControllerBase
                 UserName = user.UserName,
                 DisplayName = user.DisplayName,
                 Email = user.Email,
-                OrganizationPartyId = user.OrganizationPartyId
+                OrganizationPartyId = user.OrganizationPartyId,
+                PartyId = user.PartyId
             });
         }
 
@@ -344,7 +376,8 @@ public class AccountController : ControllerBase
             UserName = u.UserName,
             DisplayName = u.DisplayName,
             Email = u.Email,
-            OrganizationPartyId = u.OrganizationPartyId
+            OrganizationPartyId = u.OrganizationPartyId,
+            PartyId = u.PartyId
         }).ToList();
 
         return Ok(result);
@@ -378,6 +411,9 @@ public class AccountController : ControllerBase
             }
         }
 
+        if (!await ValidateEmployeePartyAsync(dto.PartyId))
+            return ValidationProblem();
+
          var dateNow = DateTime.UtcNow;
         var nowDateTime = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day, dateNow.Hour, dateNow.Minute,
             dateNow.Second, 0, DateTimeKind.Utc);
@@ -387,6 +423,7 @@ public class AccountController : ControllerBase
         user.DisplayName = dto.DisplayName ?? user.DisplayName;
         user.Email = dto.Email ?? user.Email;
         user.OrganizationPartyId = string.IsNullOrWhiteSpace(dto.OrganizationPartyId) ? null : dto.OrganizationPartyId;
+        user.PartyId = dto.PartyId;
         user.LastUpdatedStamp = nowDateTime;
 
         var updateResult = await _userManager.UpdateAsync(user);

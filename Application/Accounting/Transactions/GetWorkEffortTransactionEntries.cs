@@ -61,6 +61,8 @@ public class GetWorkEffortTransactionEntries
                         DebitCreditFlag           = x.joined.AcctgTransEntry.DebitCreditFlag,
                         ProductName               = x.Products.FirstOrDefault().ProductName,
                         IsPosted                  = x.joined.AcctgTrans.IsPosted,
+                        ReversalOfAcctgTransId = _context.AcctgTransAttributes.Where(a => a.AcctgTransId == x.joined.AcctgTrans.AcctgTransId && a.AttrName == "REVERSAL_OF").Select(a => a.AttrValue).FirstOrDefault(),
+                        ReversedByAcctgTransId = _context.AcctgTransAttributes.Where(a => a.AcctgTransId == x.joined.AcctgTrans.AcctgTransId && a.AttrName == "REVERSED_BY").Select(a => a.AttrValue).FirstOrDefault(),
                         GlFiscalTypeId            = x.joined.AcctgTrans.GlFiscalTypeId,
                         TransactionDate           = x.joined.AcctgTrans.TransactionDate,
                         PostedDate                = x.joined.AcctgTrans.PostedDate,

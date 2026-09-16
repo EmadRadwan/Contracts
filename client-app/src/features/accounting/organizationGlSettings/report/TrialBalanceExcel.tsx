@@ -68,8 +68,12 @@ export const TrialBalanceExcel: React.FC<TrialBalanceExcelProps> = ({
         ws.getColumn(1).font = { name: 'Amiri', size: 10 };
 
         // ---- logo rows --------------------------------------------------
-        if (logoId) {
-            ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 120, height: 100 } });
+        // ExcelJS.addImage() returns the image's 0-based index, so a successful FIRST image
+        // returns 0 -- falsy in JS. A plain `if (logoId)` treats that success as failure.
+        const hasLogo = logoId !== null;
+
+        if (hasLogo) {
+            ws.addImage(logoId!, { tl: { col: 0, row: 0 }, ext: { width: 120, height: 100 } });
             ws.getRow(1).height = 75; ws.getRow(2).height = 20; ws.getRow(3).height = 20;
             ws.addRow([]); ws.addRow([]); ws.addRow([]);
         } else {
@@ -77,7 +81,7 @@ export const TrialBalanceExcel: React.FC<TrialBalanceExcelProps> = ({
         }
 
         // ---- title ------------------------------------------------------
-        const titleRow = logoId ? 4 : 2;
+        const titleRow = hasLogo ? 4 : 2;
         ws.addRow([getTranslatedLabel('accounting.orgGL.reports.trial-balance.title', 'Trial Balance') + ': ' + utils.rtlEmbed(utils.safeString(companyName))]);
         ws.mergeCells(`A${titleRow}:G${titleRow}`);
         ws.getRow(titleRow).font = { name: 'Amiri', size: 14, bold: true };

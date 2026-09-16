@@ -12,6 +12,7 @@ import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {Payment} from "../../../../app/models/accounting/payment";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import {setFormEditMode, setPaymentType} from "../slice/paymentsUiSlice";
+import {useFetchPaymentAcctTransEntriesQuery} from "../../../../app/store/apis";
 import { Box, Grid, Paper} from "@mui/material";
 import PaymentTransactionsList from "../../transaction/dashboard/PaymentTransactionsList";
 import {RibbonContainer} from "react-ribbons";
@@ -133,13 +134,20 @@ export default function PaymentForm({
     const formRef = useRef<any>(null);
     const partyInputRef = useRef<HTMLInputElement>(null);
     const selectedPayment = useAppSelector((s) => s.accountingSharedUi.selectedPayment);
+    // Whether this payment has ever touched the ledger. A draft that was reset still carries its
+    // original entry and its reversal, so it cannot be deleted; Void is the way to retire it.
+    const {data: paymentAcctgEntries} = useFetchPaymentAcctTransEntriesQuery(
+        selectedPayment?.paymentId ?? "",
+        {skip: !selectedPayment?.paymentId}
+    );
+    const hasLedgerHistory = (paymentAcctgEntries?.length ?? 0) > 0;
     
     const {
         payment,
         handleCreate, handleDuplicate,
         handleUpdate,
         handleStatusChange,
-        isLoading: hookLoading, handleReset
+        isLoading: hookLoading, handleReset, handleVoid
     } = usePayment({
         editMode,
         selectedPayment,
@@ -335,6 +343,8 @@ export default function PaymentForm({
                             handleMenuSelect={handleMenuSelect}
                             getAvailableStatusTransitions={getAvailableStatusTransitions}
                             handleReset={handleReset}
+                            handleVoid={handleVoid}
+                            hasLedgerHistory={hasLedgerHistory}
                             isProcessing={hookLoading}
                         />
                     </Grid>

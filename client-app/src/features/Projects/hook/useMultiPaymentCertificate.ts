@@ -9,6 +9,7 @@ import {
     useDuplicateMultiPaymentCertificateMutation
 } from "../../../app/store/apis/multiPaymentCertificateApi";
 import {useAppSelector} from "../../../app/store/configureStore";
+import { apiErrorMessage } from "../../../app/util/apiError";
 
 interface UseMultiPaymentCertificateProps {
     selectedCertificate?: MultiPaymentCertificate;
@@ -241,7 +242,7 @@ export default function useMultiPaymentCertificate({
                 toast.success("Certificate reset successfully");
                 return { success: true, certificate: response };
             } catch (error: any) {
-                toast.error("Error resetting certificate: " + (error?.data?.message || error.message));
+                toast.error(apiErrorMessage(error, "Error resetting certificate"));
                 return { success: false };
             } finally {
                 setIsLoading(false);

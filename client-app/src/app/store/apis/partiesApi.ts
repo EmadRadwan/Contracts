@@ -296,6 +296,7 @@ const partiesApi = createApi({
             }),
             getEmployeeAdvanceDetail: builder.query<EmployeeAdvanceDetail, string>({
                 query: (advanceId) => `humanResources/${advanceId}`,
+                providesTags: ['EmployeeAdvance'],
             }),
             fetchEmployeeAdvancesByDateRange: builder.query<EmployeeAdvancesResponse, { fromDate: string, toDate: string }>({
                 query: ({ fromDate, toDate }) => `/humanResources/getEmployeeAdvancesByDateRange?fromDate=${fromDate}&toDate=${toDate}`,

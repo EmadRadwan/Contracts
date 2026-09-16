@@ -1,3 +1,4 @@
+using Application.Accounting.Services;
 using Application.Core;
 using Domain;
 using FluentValidation;
@@ -26,11 +27,13 @@ public class ResetProjectCertificate
     public class Handler : IRequestHandler<Command, Result<Unit>>
     {
         private readonly DataContext _context;
+        private readonly IAccountingPeriodGuard _periodGuard;
         private readonly ILogger<Handler> _logger;
 
-        public Handler(DataContext context, ILogger<Handler> logger)
+        public Handler(DataContext context, ILogger<Handler> logger, IAccountingPeriodGuard periodGuard)
         {
             _context = context;
+            _periodGuard = periodGuard;
             _logger = logger;
         }
 
@@ -53,6 +56,9 @@ public class ResetProjectCertificate
                 {
                     return Result<Unit>.Failure("Certificate is already in Created status");
                 }
+
+                // Closed-period control on everything the reset is about to remove.
+                await _periodGuard.EnsureOpenForWorkEffortsAsync(new[] { request.WorkEffortId }, cancellationToken);
 
                 var category = workEffort.CertificateCategory;
                 var relatedOrderId = workEffort.RelatedOrderId;
@@ -109,10 +115,33 @@ public class ResetProjectCertificate
 
                     var oppIds = paymentPrefs.Select(opp => opp.OrderPaymentPreferenceId).ToList();
 
-                    var payments = await _context.Payments
+                    var allOrderPayments = await _context.Payments
                         .Where(p => oppIds.Contains(p.PaymentPreferenceId))
                         .ToListAsync(cancellationToken);
 
+                    // Pragmatic policy (agreed Sep 2026): the approval accrual may be unposted and
+                    // re-posted only while no money has moved. A sent or received payment settles
+                    // the certificate; void it first (kept, reversed) and then reset.
+                    var settled = allOrderPayments
+                        .Where(p => p.StatusId != "PMNT_NOT_PAID" && p.StatusId != "PMNT_VOID")
+                        .Select(p => p.PaymentId)
+                        .ToList();
+                    if (settled.Any())
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                        return Result<Unit>.Failure(
+                            $"لا يمكن إعادة تعيين الشهادة لأن دفعة مرسلة أو مستلمة مسجلة عليها ({string.Join("، ", settled)}). " +
+                            "ألغِ الدفعة أولاً من شاشة الدفعة (يُحتفظ بها وتُعكس قيودها) ثم أعد التعيين. " +
+                            "(A sent or received payment exists on this certificate; void it first, then reset.)");
+                    }
+
+                    // Voided payments are evidence and stay, together with the preference they hang off.
+                    var payments = allOrderPayments.Where(p => p.StatusId != "PMNT_VOID").ToList();
+                    var keptPreferenceIds = allOrderPayments
+                        .Where(p => p.StatusId == "PMNT_VOID")
+                        .Select(p => p.PaymentPreferenceId)
+                        .ToHashSet();
+                    paymentPrefs = paymentPrefs.Where(pp => !keptPreferenceIds.Contains(pp.OrderPaymentPreferenceId)).ToList();
                     var paymentIds = payments.Select(p => p.PaymentId).ToList();
 
                     // Cleanup Payment related artifacts (Accounting Transactions, etc. from ResetPayment.cs)
@@ -126,6 +155,7 @@ public class ResetProjectCertificate
 
                         var paymentTrans = await _context.AcctgTrans.Where(at => paymentIds.Contains(at.PaymentId))
                             .ToListAsync(cancellationToken);
+                        await _periodGuard.EnsureOpenForAcctgTransAsync(paymentTrans.Select(t => t.AcctgTransId), cancellationToken);
                         _context.AcctgTrans.RemoveRange(paymentTrans);
                     }
 
@@ -180,6 +210,7 @@ public class ResetProjectCertificate
                                 _context.AcctgTransEntries.RemoveRange(entries);
                             }
 
+                            await _periodGuard.EnsureOpenForAcctgTransAsync(trans.Select(t => t.AcctgTransId), cancellationToken);
                             _context.AcctgTrans.RemoveRange(trans);
 
                             _context.InventoryItemDetails.RemoveRange(details);
@@ -241,6 +272,7 @@ public class ResetProjectCertificate
                                         _context.AcctgTransEntries.RemoveRange(entries);
                                     }
 
+                                    await _periodGuard.EnsureOpenForAcctgTransAsync(trans.Select(t => t.AcctgTransId), cancellationToken);
                                     _context.AcctgTrans.RemoveRange(trans);
 
                                     _context.InventoryItemDetails.RemoveRange(details);
@@ -339,6 +371,7 @@ public class ResetProjectCertificate
                             _context.AcctgTransEntries.RemoveRange(entries);
                         }
 
+                        await _periodGuard.EnsureOpenForAcctgTransAsync(shipTrans.Select(t => t.AcctgTransId), cancellationToken);
                         _context.AcctgTrans.RemoveRange(shipTrans);
 
                         var shipmentStatuses = await _context.ShipmentStatuses
@@ -451,6 +484,7 @@ public class ResetProjectCertificate
                         _context.AcctgTransEntries.RemoveRange(entries);
                     }
 
+                    await _periodGuard.EnsureOpenForAcctgTransAsync(trans.Select(t => t.AcctgTransId), cancellationToken);
                     _context.AcctgTrans.RemoveRange(trans);
 
                     _context.InventoryItemDetails.RemoveRange(details);
@@ -549,6 +583,7 @@ public class ResetProjectCertificate
 
             var invoiceTrans = await _context.AcctgTrans.Where(at => invoiceIds.Contains(at.InvoiceId))
                 .ToListAsync(cancellationToken);
+            await _periodGuard.EnsureOpenForAcctgTransAsync(invoiceTrans.Select(t => t.AcctgTransId), cancellationToken);
             _context.AcctgTrans.RemoveRange(invoiceTrans);
 
             _context.InvoiceItems.RemoveRange(invoiceItems);

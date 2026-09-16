@@ -1,3 +1,4 @@
+using Application.Accounting.Services;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
@@ -14,10 +15,12 @@ namespace Application.Accounting.Transactions
         public class Handler : IRequestHandler<Command, Result<Unit>>
         {
             private readonly DataContext _context;
+        private readonly IAccountingPeriodGuard _periodGuard;
 
-            public Handler(DataContext context)
+            public Handler(DataContext context, IAccountingPeriodGuard periodGuard)
             {
                 _context = context;
+            _periodGuard = periodGuard;
             }
 
             public async Task<Result<Unit>> Handle(Command request, CancellationToken cancellationToken)
@@ -33,9 +36,15 @@ namespace Application.Accounting.Transactions
                     if (header == null)
                         return Result<Unit>.Failure("Transaction not found");
 
-                    // Optional: Prevent deletion if posted (uncomment if needed)
-                    // if (header.IsPosted == "Y")
-                    //     return Result<Unit>.Failure("Cannot delete posted transactions");
+                    // Step 3 (auditor soft-delete requirement): a posted transaction is never deleted.
+                    // It is cancelled by a linked reversal through ReverseAcctgTrans.
+                    if (header.IsPosted == "Y")
+                        return Result<Unit>.Failure(
+                            $"القيد {request.AcctgTransId} مرحّل ولا يمكن حذفه. استخدم إجراء \"عكس القيد\" بدلاً من الحذف. " +
+                            "(Posted transactions are reversed, not deleted.)");
+
+                    // Closed-period control on the unposted draft being removed.
+                    await _periodGuard.EnsureOpenForAcctgTransAsync(new[] { request.AcctgTransId }, cancellationToken);
 
                     // Delete all entries
                     var entries = await _context.AcctgTransEntries

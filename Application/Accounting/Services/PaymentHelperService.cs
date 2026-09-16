@@ -49,15 +49,15 @@ public class PaymentHelperService : IPaymentHelperService
     private readonly Lazy<IFinAccountService> _finAccountService;
     private readonly ILogger _logger;
         private readonly IUserAccessor _userAccessor;
-
-
+    private readonly Lazy<IPaymentVoidService> _paymentVoidService;
     public PaymentHelperService(DataContext context, IUtilityService utilityService,
         IInvoiceService invoiceService, IInvoiceUtilityService invoiceUtilityService,
         IAcctgMiscService acctgMiscService, IGeneralLedgerService generalLedgerService,
         IPaymentApplicationService paymentApplicationService, Lazy<IFinAccountService> finAccountService,
-        ILogger<PaymentService> logger, IUserAccessor userAccessor)
+        ILogger<PaymentService> logger, IUserAccessor userAccessor, Lazy<IPaymentVoidService> paymentVoidService)
     {
         _context = context;
+        _paymentVoidService = paymentVoidService;
         _utilityService = utilityService;
         _invoiceService = invoiceService;
         _acctgMiscService = acctgMiscService;
@@ -69,6 +69,28 @@ public class PaymentHelperService : IPaymentHelperService
         _userAccessor = userAccessor;
     }
 
+
+    private const string UserNotLinkedMessage =
+        "حسابك غير مرتبط بموظف، لذا لا يمكن تسجيل اسمك في خانة (أنشئ/اعتمد بواسطة). اطلب من مسؤول النظام ربط حسابك بالموظف من شاشة المستخدمين. " +
+        "Your login is not linked to an employee, so it cannot be recorded as the creator/approver. Ask an administrator to link it on the Users screen.";
+
+    // AspNetUsers.PartyId is what "Created By" / "Approved By" resolve through; a NULL here used
+    // to be stamped silently and only surfaced weeks later as blank names in reports.
+    private async Task<string?> FindCurrentUserPartyIdAsync()
+    {
+        var username = _userAccessor.GetUsername();
+        var partyId = await _context.Users
+            .Where(x => x.UserName == username)
+            .Select(x => x.PartyId)
+            .FirstOrDefaultAsync();
+        return string.IsNullOrWhiteSpace(partyId) ? null : partyId;
+    }
+
+    private async Task<string> GetCurrentUserPartyIdAsync()
+    {
+        return await FindCurrentUserPartyIdAsync()
+               ?? throw new InvalidOperationException(UserNotLinkedMessage);
+    }
 
     public async Task<Payment> CreatePayment(CreatePaymentParam parameters)
     {
@@ -105,8 +127,7 @@ public class PaymentHelperService : IPaymentHelperService
             throw new Exception($"No accounting preferences found for party: {organizationPartyId}");
         }
 
-        var user = await _context.Users
-            .FirstOrDefaultAsync(x => x.UserName == _userAccessor.GetUsername());
+        var createdByPartyId = await GetCurrentUserPartyIdAsync();
 
         var payment = new Payment
         {
@@ -132,7 +153,7 @@ public class PaymentHelperService : IPaymentHelperService
             IsBankTransfer = parameters.IsBankTransfer,
             PaymentRefNum = parameters.PaymentRefNum,
             Comments = parameters.Comments,
-            CreatedByPartyId = user?.PartyId,
+            CreatedByPartyId = createdByPartyId,
             CreatedStamp = stamp,
             LastUpdatedStamp = stamp
         };
@@ -243,6 +264,10 @@ public class PaymentHelperService : IPaymentHelperService
         if (!string.IsNullOrEmpty(param.StatusId) && param.StatusId != statusIdSave)
         {
             var statusResult = await SetPaymentStatus(payment.PaymentId, param.StatusId);
+            // A refused transition used to be dropped silently here (the payment saved with its
+            // old status and no error). Surface it so the caller's transaction rolls back.
+            if (!statusResult.Success)
+                throw new InvalidOperationException(statusResult.ErrorMessage ?? statusResult.ErrorCode);
         }
 
         return payment;
@@ -264,6 +289,19 @@ public class PaymentHelperService : IPaymentHelperService
         }
 
         var oldStatusId = payment.StatusId;
+
+        // Every status change is stamped as ApprovedByPartyId; refuse before touching anything
+        // rather than writing NULL and leaving "Approved By" blank (Sep 2026 aghali case).
+        var approvedByPartyId = await FindCurrentUserPartyIdAsync();
+        if (approvedByPartyId == null)
+        {
+            return new PaymentStatusChangeResult
+            {
+                Success = false,
+                ErrorCode = "USER_NOT_LINKED_TO_EMPLOYEE",
+                ErrorMessage = UserNotLinkedMessage
+            };
+        }
 
         // Retrieve the new status item
         var statusItem = await _context.StatusItems.SingleOrDefaultAsync(s => s.StatusId == statusId);
@@ -372,12 +410,8 @@ public class PaymentHelperService : IPaymentHelperService
             }
         }
         
-        var user = await _context.Users
-            .FirstOrDefaultAsync(x => x.UserName == _userAccessor.GetUsername());
-        
-
         // Update the payment status
-        payment.ApprovedByPartyId = user?.PartyId;
+        payment.ApprovedByPartyId = approvedByPartyId;
         payment.StatusId = statusId;
         payment.LastUpdatedStamp = DateTime.UtcNow;
 
@@ -1553,122 +1587,30 @@ public class PaymentHelperService : IPaymentHelperService
     }
     */
 
+    /// <summary>
+    /// OFBiz voidPayment port, now delegating to <see cref="IPaymentVoidService"/> so the cheque-run
+    /// cancel path and the Void Payment command behave identically: linked reversals (not blind
+    /// copies), bank transactions cancelled, applications removed, period guard enforced.
+    /// </summary>
     public async Task<GeneralServiceResult<VoidPaymentResult>> VoidPayment(string paymentId)
     {
         try
         {
-            // Query the Payment entity
-            // Technical: Uses LINQ to retrieve Payment by paymentId
-            // Business Purpose: Ensures the payment exists before voiding
-            var payment = await _context.Payments
-                .Where(p => p.PaymentId == paymentId)
-                .SingleOrDefaultAsync();
-
-            // Check if payment was found
-            // Technical: Verifies payment is not null
-            // Business Purpose: Prevents voiding non-existent payments
-            if (payment == null)
+            var result = await _paymentVoidService.Value.VoidPaymentAsync(paymentId, "Payment group cancelled");
+            if (!result.IsSuccess)
             {
-                return GeneralServiceResult<VoidPaymentResult>.Error("AccountingNoPaymentsfound");
+                return GeneralServiceResult<VoidPaymentResult>.Error(result.ErrorMessage);
             }
 
-            // Store paymentId for use
-            // Technical: Assigns paymentId for clarity
-            // Business Purpose: Links related records
-            string localPaymentId = payment.PaymentId;
-
-            // Set payment status to PMNT_VOID
-            // Technical: Calls setPaymentStatus with paymentId and status
-            // Business Purpose: Voids the payment to invalidate it
-            await SetPaymentStatus(localPaymentId, "PMNT_VOID");
-
-
-            // Query PaymentApplications for the payment
-            // Technical: Uses LINQ to retrieve PaymentApplications
-            // Business Purpose: Identifies applications to remove and invoices to update
-            var paymentApplications = await _context.PaymentApplications
-                .Where(pa => pa.PaymentId == localPaymentId)
-                .ToListAsync();
-
-            // Process each PaymentApplication
-            // Technical: Iterates over applications
-            // Business Purpose: Updates invoices and removes applications
-            foreach (var paymentApplication in paymentApplications)
-            {
-                // Query the Invoice
-                // Technical: Retrieves Invoice by InvoiceId
-                // Business Purpose: Checks if invoice needs status update
-                var invoice = await _context.Invoices
-                    .Where(i => i.InvoiceId == paymentApplication.InvoiceId)
-                    .SingleOrDefaultAsync();
-
-                // Check if invoice is paid and update status
-                // Technical: Calls setInvoiceStatus if invoice is paid
-                // Business Purpose: Reverts invoice to READY if payment is voided
-                if (invoice?.StatusId == "INVOICE_PAID")
-                {
-                    await _invoiceUtilityService.SetInvoiceStatus(invoice.InvoiceId, "INVOICE_READY", null);
-                }
-
-                // Remove the PaymentApplication
-                // Technical: Calls removePaymentApplication
-                // Business Purpose: Disconnects payment from invoice
-                await _paymentApplicationService.RemovePaymentApplication(paymentApplication.PaymentApplicationId);
-            }
-
-            // Query AcctgTrans for the payment
-            // Technical: Retrieves AcctgTrans with null invoiceId
-            // Business Purpose: Identifies transactions to reverse
-            var acctgTransList = await _context.AcctgTrans
-                .Where(at => at.InvoiceId == null && at.PaymentId == localPaymentId)
-                .ToListAsync();
-
-            // Process each AcctgTrans
-            // Technical: Iterates over transactions
-            // Business Purpose: Reverses accounting entries
-            foreach (var acctgTrans in acctgTransList)
-            {
-                // Copy and revert AcctgTrans
-                // Technical: Calls copyAcctgTransAndEntries
-                // Business Purpose: Creates reversing entries
-                var result = await _generalLedgerService.CopyAcctgTransAndEntries(acctgTrans.AcctgTransId, true);
-                if (result.IsSuccess)
-                {
-                    // Type-safe access to ResultData as string
-                    string newAcctgTransId = result.ResultData; // No casting needed
-                    Console.WriteLine($"New transaction ID: {newAcctgTransId}");
-                }
-                else
-                {
-                    Console.WriteLine($"Error: {result.ErrorMessage}");
-                }
-
-                // Post the new transaction if original was posted
-                // Technical: Calls postAcctgTrans if isPosted is Y
-                // Business Purpose: Ensures reversing entries are posted
-                if (acctgTrans.IsPosted == "Y")
-                {
-                    string newAcctgTransId = result.ResultData;
-                    _generalLedgerService.PostAcctgTrans(newAcctgTransId);
-                }
-            }
-
-            // Return success with finAccountTransId and status
-            // Technical: Returns result with data
-            // Business Purpose: Confirms payment voided and transaction canceled
             return GeneralServiceResult<VoidPaymentResult>.Success(new VoidPaymentResult
             {
-                //FinAccountTransId = payment.FinAccountTransId,
                 StatusId = "FINACT_TRNS_CANCELED"
             });
         }
         catch (Exception ex)
         {
-            // Log and return error
-            // Technical: Logs exception
-            // Business Purpose: Tracks voiding errors
             _logger.LogError(ex, "Error in voidPayment for paymentId: {PaymentId}", paymentId);
-            return GeneralServiceResult<VoidPaymentResult>.Error("Failed to void payment.");
+            return GeneralServiceResult<VoidPaymentResult>.Error($"Failed to void payment: {ex.Message}");
         }
     }
 }

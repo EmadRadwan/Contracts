@@ -26,4 +26,9 @@ public class TransactionEntryDto
     public decimal RunningBalance { get; set; }
     public string CostCenterDescription { get; set; }
     public string PaymentRefNum { get; set; }
+
+    /// <summary>Set on a reversing entry: the id of the transaction it cancels.</summary>
+    public string? ReversalOfAcctgTransId { get; set; }
+    /// <summary>Set on a transaction that has been reversed: the id of the reversal that cancelled it.</summary>
+    public string? ReversedByAcctgTransId { get; set; }
 }

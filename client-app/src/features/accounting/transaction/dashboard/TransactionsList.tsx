@@ -17,10 +17,10 @@ import { nonDeletedAcctgTransEntriesSelector } from "../../slice/accountingSelec
 import { useSelector } from "react-redux";
 import { AcctgTrans } from "../../../../app/models/accounting/acctgTrans";
 import { Grid, Typography } from "@mui/material";
-import { createStyledRow } from "../../../../app/common/grid";
+import { createReversalAwareRow, ReversalLegend } from "../../../../app/common/grid";
 
 // Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
-const DebitCreditRow = createStyledRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag !== "C" ? "rgba(55, 180, 0, 0.32)" : "#ffffff" }));
+const DebitCreditRow = createReversalAwareRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag !== "C" ? "rgba(55, 180, 0, 0.32)" : "#ffffff" }));
 
 interface Props {
   acctgTrans?: AcctgTrans;
@@ -101,6 +101,7 @@ export default function TransactionsList({ acctgTrans }: Props) {
 
   return (
       <Fragment>
+        <ReversalLegend />
         <KendoGrid
             style={{ height: "50vh", width: "60vw" }}
             data={orderBy(acctTransEntries || [], sort).slice(

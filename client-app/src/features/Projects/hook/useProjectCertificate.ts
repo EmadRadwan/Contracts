@@ -16,6 +16,7 @@ import {useAppDispatch, useAppSelector} from "../../../app/store/configureStore"
 import {useSelector} from "react-redux";
 import {nonDeletedCertificateItemsSelector} from "../slice/certificateSelectors";
 import {useReceiveInventoryFromPurchaseOrderMutation} from "../../../app/store/apis";
+import { apiErrorMessage } from "../../../app/util/apiError";
 
 type UseProjectCertificateProps = {
     selectedMenuItem: string;
@@ -470,7 +471,7 @@ const useProjectCertificate = ({
                     return { success: false };
                 }
             } catch (error: any) {
-                toast.error(error?.data?.message || "Failed to process certificate action");
+                toast.error(apiErrorMessage(error, "Failed to process certificate action"));
                 return { success: false };
             } finally {
                 setIsLoading(false);

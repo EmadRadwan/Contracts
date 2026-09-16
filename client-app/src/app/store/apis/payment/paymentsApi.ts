@@ -330,6 +330,23 @@ const paymentsApi = createApi({
                 }),
                 invalidatesTags: (result, error, paymentId) => [
                     { type: "Payments", id: paymentId },
+                    "Payments",
+                    "PaymentApplications",
+                    "AccountingTransactions",
+                ],
+            }),
+            // Void instead of delete: payment kept with status PMNT_VOID, ledger reversed, bank row cancelled.
+            voidPayment: builder.mutation<
+                { paymentId: string; previousStatusId: string; statusId: string; reversedTransactions: any[]; cancelledFinAccountTrans: number; removedPaymentApplications: number },
+                { paymentId: string; reason: string }
+            >({
+                query: ({ paymentId, reason }) => ({
+                    url: `/payments/void/${paymentId}`,
+                    method: "POST",
+                    body: { reason },
+                }),
+                invalidatesTags: (result, error, paymentId) => [
+                    { type: "Payments", id: paymentId },
                     "Payments",           // list
                     "PaymentApplications",
                     "AccountingTransactions",
@@ -366,7 +383,7 @@ export const {
     useLazyGetPaymentReportPdfV2Query,
     useLazyFetchPaymentsByDateRangeQuery,
     useDeletePaymentMutation,
-    useDuplicatePaymentMutation, useResetPaymentMutation,
+    useDuplicatePaymentMutation, useResetPaymentMutation, useVoidPaymentMutation,
     useLazyFetchPaymentsForExportQuery,
 } = paymentsApi;
 export {paymentsApi};

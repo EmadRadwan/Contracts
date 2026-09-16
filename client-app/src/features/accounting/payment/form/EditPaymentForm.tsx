@@ -190,7 +190,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
     }, [hasBillingAccountIssueForToast]);
 
 
-    const nonEditableStatuses = ['PMNT_RECEIVED', 'PMNT_SENT', 'PMNT_CONFIRMED' /*, 'PMNT_CANCELLED' */];
+    const nonEditableStatuses = ['PMNT_RECEIVED', 'PMNT_SENT', 'PMNT_CONFIRMED', 'PMNT_VOID', 'PMNT_CANCELLED'];
     const isFormDisabled = payment && nonEditableStatuses.includes(payment.statusId);
     const {user} = useAppSelector((state) => state.account);
     const companyId = user?.organizationPartyId || "";
@@ -265,6 +265,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
         'PMNT_SENT': 'Sent',
         'PMNT_CONFIRMED': 'Confirmed',
         'PMNT_CANCELLED': 'Cancelled',
+        'PMNT_VOID': 'Voided',
     }[payment?.statusId] || payment?.statusId), [payment?.statusId]);
 
 

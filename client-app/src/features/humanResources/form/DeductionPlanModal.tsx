@@ -32,6 +32,19 @@ interface EditModalData {
     index: number;
 }
 
+// Step a YYYY-MM-DD string by whole months, clamping the day to the target month's length.
+// Date.setMonth() overflows instead ("Feb 30" → Mar 2), which silently skipped February and
+// then drifted every later installment to the 2nd — and the payroll run keys installments by month.
+const addMonthsClamped = (isoDate: string, months: number): string => {
+    const [y, m, d] = isoDate.split("-").map(Number);
+    const monthIndex = m - 1 + months;
+    const year = y + Math.floor(monthIndex / 12);
+    const month = ((monthIndex % 12) + 12) % 12;
+    const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    const day = Math.min(d, daysInMonth);
+    return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+};
+
 interface DeductionPlanModalProps {
     onClose: () => void;
     totalAdvance: number;           // total amount to be deducted
@@ -41,6 +54,9 @@ interface DeductionPlanModalProps {
     onApply: (schedules: Array<{ dueDate: string; scheduledAmount: number }>) => void;
     isPreview?: boolean;
     isReadOnly?: boolean;
+    /** YYYY-MM-DD: pending rows may not fall before this month (advance date). The server also
+     *  enforces "after the employee's latest payroll run". */
+    minDueDate?: string | null;
 }
 
 export default function DeductionPlanModal({
@@ -52,6 +68,7 @@ export default function DeductionPlanModal({
                                                onApply,
                                                isPreview = false,
                                                isReadOnly = false,
+                                               minDueDate = null,
                                            }: DeductionPlanModalProps) {
     const { getTranslatedLabel } = useTranslationHelper();
 
@@ -75,8 +92,10 @@ export default function DeductionPlanModal({
                     number: idx + 1,
                 }))
             );
-            // Also sync hint with actual count
-            setInstallmentCountHint(initialSchedules.length);
+            // Hint = how many installments "Generate" would (re)create: the pending ones only,
+            // since deducted rows are pinned.
+            const pendingCount = initialSchedules.filter(s => !s.payrollInvoiceId).length;
+            setInstallmentCountHint(pendingCount > 0 ? pendingCount : initialSchedules.length);
             return;
         }
 
@@ -98,12 +117,49 @@ export default function DeductionPlanModal({
         [rows]
     );
 
-    const isAnyProcessed = useMemo(() => rows.some(r => !!r.payrollInvoiceId), [rows]);
-
-    const isValid = useMemo(
-        () => Math.abs(totalScheduled - totalAdvance) < 0.01,
-        [totalScheduled, totalAdvance]
+    // Rows a payroll run already deducted. They are pinned: never regenerated, edited or removed —
+    // the remaining balance is what gets re-spread.
+    const processedRows = useMemo(() => rows.filter(r => !!r.payrollInvoiceId), [rows]);
+    const isAnyProcessed = processedRows.length > 0;
+    const processedTotal = useMemo(
+        () => processedRows.reduce((sum, r) => sum + r.scheduledAmount, 0),
+        [processedRows]
     );
+    const remainingToSchedule = Math.round((totalAdvance - processedTotal) * 100) / 100;
+
+    // The payroll run deducts one installment per month (mirrors DUPLICATE_MONTH_INSTALLMENT server-side).
+    const duplicateMonth = useMemo(() => {
+        const seen = new Set<string>();
+        for (const r of rows) {
+            const key = r.dueDate?.substring(0, 7);
+            if (!key) continue;
+            if (seen.has(key)) return key;
+            seen.add(key);
+        }
+        return null;
+    }, [rows]);
+
+    // Earliest month (YYYY-MM) a pending row may use: the advance month, and strictly after the last
+    // deducted installment. Runs are sequential, so anything earlier can never be collected.
+    const earliestPendingMonth = useMemo(() => {
+        let earliest = minDueDate ? minDueDate.substring(0, 7) : "";
+        if (processedRows.length > 0) {
+            const lastProcessed = [...processedRows].sort((a, b) => a.dueDate.localeCompare(b.dueDate))[processedRows.length - 1].dueDate;
+            const afterLast = addMonthsClamped(lastProcessed, 1).substring(0, 7);
+            if (afterLast > earliest) earliest = afterLast;
+        }
+        return earliest;
+    }, [minDueDate, processedRows]);
+
+    const tooEarlyRow = useMemo(
+        () => earliestPendingMonth
+            ? rows.find(r => !r.payrollInvoiceId && r.dueDate && r.dueDate.substring(0, 7) < earliestPendingMonth) ?? null
+            : null,
+        [rows, earliestPendingMonth]
+    );
+
+    const totalMatches = Math.abs(totalScheduled - totalAdvance) < 0.01;
+    const isValid = totalMatches && !duplicateMonth && !tooEarlyRow;
 
     const validateRow = (row: DeductionRow): { dateError: string; amountError: string } => {
         let dateErr = "";
@@ -111,6 +167,8 @@ export default function DeductionPlanModal({
 
         if (!row.dueDate) {
             dateErr = getTranslatedLabel("validation.dateRequired", "Due date is required");
+        } else if (earliestPendingMonth && row.dueDate.substring(0, 7) < earliestPendingMonth) {
+            dateErr = `${getTranslatedLabel("party.employeeAdvance.deductionPlan.tooEarly", "Earliest month that can still be deducted is")} ${earliestPendingMonth}`;
         }
 
         if (!row.scheduledAmount || row.scheduledAmount <= 0) {
@@ -123,35 +181,68 @@ export default function DeductionPlanModal({
     // ────────────────────────────────────────────────
     // Generate equal monthly deductions
     // ────────────────────────────────────────────────
+    // With processed rows present, `count` is the number of NEW installments and they start the
+    // month after the last deducted one; only the remaining balance is spread.
     const generateEqualPlan = (count: number, firstDateStr: string) => {
-        if (count < 1 || !firstDateStr || totalAdvance <= 0) return;
+        if (count < 1 || totalAdvance <= 0) return;
 
-        const amountEach = totalAdvance / count;
+        const pinned = rows.filter(r => !!r.payrollInvoiceId);
+        const pinnedTotal = pinned.reduce((s, r) => s + r.scheduledAmount, 0);
+        const amountToSpread = Math.round((totalAdvance - pinnedTotal) * 100) / 100;
+        if (amountToSpread <= 0) return;
+
+        let anchor: string;
+        let firstOffset: number;
+        if (pinned.length > 0) {
+            anchor = [...pinned].sort((a, b) => a.dueDate.localeCompare(b.dueDate))[pinned.length - 1].dueDate;
+            firstOffset = 1;
+        } else {
+            if (!firstDateStr) return;
+            anchor = firstDateStr;
+            firstOffset = 0;
+        }
+
+        const amountEach = amountToSpread / count;
         const newRows: DeductionRow[] = [];
-
-        let current = new Date(firstDateStr);
 
         for (let i = 1; i <= count; i++) {
             newRows.push({
                 id: `gen-${i}`,
-                number: i,
-                dueDate: current.toISOString().split("T")[0],
+                number: 0, // renumbered below
+                dueDate: addMonthsClamped(anchor, firstOffset + i - 1),
                 scheduledAmount: Math.round(amountEach * 100) / 100,
             });
-            current.setMonth(current.getMonth() + 1);
         }
 
         // Fix rounding difference on last installment
         const sumSoFar = newRows.slice(0, -1).reduce((s, r) => s + r.scheduledAmount, 0);
-        newRows[newRows.length - 1].scheduledAmount = Math.round((totalAdvance - sumSoFar) * 100) / 100;
+        newRows[newRows.length - 1].scheduledAmount = Math.round((amountToSpread - sumSoFar) * 100) / 100;
 
-        setRows(newRows);
+        const all = [...pinned, ...newRows]
+            .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+            .map((r, idx) => ({ ...r, number: idx + 1 }));
+
+        setRows(all);
         setInstallmentCountHint(count);
     };
 
     const openEdit = (dataItem: DeductionRow) => {
         const idx = rows.findIndex((r) => r.id === dataItem.id);
+        const { dateError, amountError } = validateRow(dataItem);
+        setDateError(dateError);
+        setAmountError(amountError);
         setEditModal({ row: { ...dataItem }, index: idx });
+    };
+
+    // Validate as the user types so a fixed value re-enables Save (errors used to be recomputed
+    // only on Save, which was disabled while an error was showing).
+    const updateEditRow = (patch: Partial<DeductionRow>) => {
+        if (!editModal) return;
+        const row = { ...editModal.row, ...patch };
+        const { dateError, amountError } = validateRow(row);
+        setDateError(dateError);
+        setAmountError(amountError);
+        setEditModal({ ...editModal, row });
     };
 
     const saveEdit = () => {
@@ -165,22 +256,26 @@ export default function DeductionPlanModal({
         setRows((prev) => {
             const copy = [...prev];
             copy[editModal.index] = { ...editModal.row };
-            return copy;
+            // Keep the grid in due-date order after a date edit (the server renumbers the same way).
+            return copy
+                .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+                .map((r, idx) => ({ ...r, number: idx + 1 }));
         });
 
         setEditModal(null);
     };
 
     const addRow = () => {
-        const lastDate = rows.length > 0 ? new Date(rows[rows.length - 1].dueDate) : new Date();
-        lastDate.setMonth(lastDate.getMonth() + 1);
+        const lastDueDate = rows.length > 0
+            ? rows[rows.length - 1].dueDate
+            : new Date().toISOString().split("T")[0];
 
         setRows((prev) => [
             ...prev,
             {
                 id: `manual-${prev.length + 1}`,
                 number: prev.length + 1,
-                dueDate: lastDate.toISOString().split("T")[0],
+                dueDate: addMonthsClamped(lastDueDate, 1),
                 scheduledAmount: 0,
             },
         ]);
@@ -206,25 +301,6 @@ export default function DeductionPlanModal({
         onClose();
     };
 
-    // ==================== DEBUG LOGS ====================
-    console.log("=== DeductionPlanModal Debug ===");
-    console.log("Props:", {
-        isReadOnly,
-        isPreview,
-        totalAdvance,
-        initialSchedulesCount: initialSchedules.length,
-        initialInstallmentCount
-    });
-
-    console.log("State:", {
-        rowsCount: rows.length,
-        totalScheduled,
-        isValid,
-        isAnyProcessed
-    });
-    console.log("=====================================");
-    // ===================================================
-
     return (
         <Grid container spacing={2} sx={{ p: 3, minWidth: 800 }}>
             {isReadOnly && (
@@ -246,7 +322,30 @@ export default function DeductionPlanModal({
                 <Typography variant="body2" color="text.secondary">
                     {getTranslatedLabel("party.employeeAdvance.deductionPlan.totalToDeduct", "Total to deduct")}: {totalAdvance.toLocaleString(undefined, { minimumFractionDigits: 2 })} {getTranslatedLabel("general.currency.egp", "EGP")}
                 </Typography>
+                {isAnyProcessed && (
+                    <Typography variant="body2" color="text.secondary">
+                        {getTranslatedLabel("party.employeeAdvance.deductionPlan.alreadyDeducted", "Already deducted")}: {processedTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        {" · "}
+                        {getTranslatedLabel("party.employeeAdvance.deductionPlan.remainingToSchedule", "Remaining to schedule")}: {remainingToSchedule.toLocaleString(undefined, { minimumFractionDigits: 2 })} {getTranslatedLabel("general.currency.egp", "EGP")}
+                    </Typography>
+                )}
             </Grid>
+
+            {duplicateMonth && (
+                <Grid item xs={12}>
+                    <Alert severity="error">
+                        {getTranslatedLabel("party.employeeAdvance.deductionPlan.duplicateMonth", "Only one installment is allowed per month")} ({duplicateMonth})
+                    </Alert>
+                </Grid>
+            )}
+
+            {tooEarlyRow && (
+                <Grid item xs={12}>
+                    <Alert severity="error">
+                        {getTranslatedLabel("party.employeeAdvance.deductionPlan.tooEarly", "Earliest month that can still be deducted is")} {earliestPendingMonth} ({tooEarlyRow.dueDate})
+                    </Alert>
+                </Grid>
+            )}
 
             {/* Quick generation controls */}
             {!isReadOnly && (
@@ -281,9 +380,11 @@ export default function DeductionPlanModal({
                                     new Date().toISOString().split("T")[0];
                                 generateEqualPlan(installmentCountHint, effectiveDate);
                             }}
-                            disabled={totalAdvance <= 0 || installmentCountHint < 1 || isAnyProcessed}
+                            disabled={totalAdvance <= 0 || installmentCountHint < 1 || (isAnyProcessed && remainingToSchedule <= 0)}
                         >
-                            {getTranslatedLabel("party.employeeAdvance.deductionPlan.generateEqual", "Generate Equal Plan")}
+                            {isAnyProcessed
+                                ? getTranslatedLabel("party.employeeAdvance.deductionPlan.generateRemaining", "Re-spread Remaining")
+                                : getTranslatedLabel("party.employeeAdvance.deductionPlan.generateEqual", "Generate Equal Plan")}
                         </Button>
 
                         <Button
@@ -353,14 +454,14 @@ export default function DeductionPlanModal({
                     <Typography>
                         {getTranslatedLabel("party.employeeAdvance.deductionPlan.scheduled", "Scheduled")}: {totalScheduled.toLocaleString(undefined, { minimumFractionDigits: 2 })} {getTranslatedLabel("general.currency.egp", "EGP")}
                     </Typography>
-                    <Typography fontWeight="bold" color={isValid ? "success.main" : "error.main"}>
-                        {isValid 
-                            ? getTranslatedLabel("party.employeeAdvance.deductionPlan.matchesTotal", "✓ Matches total") 
+                    <Typography fontWeight="bold" color={totalMatches ? "success.main" : "error.main"}>
+                        {totalMatches
+                            ? getTranslatedLabel("party.employeeAdvance.deductionPlan.matchesTotal", "✓ Matches total")
                             : `${getTranslatedLabel("party.employeeAdvance.deductionPlan.difference", "Difference")}: ${(totalAdvance - totalScheduled).toFixed(2)} ${getTranslatedLabel("general.currency.egp", "EGP")}`}
                     </Typography>
                 </Box>
 
-                {!isValid && totalScheduled > 0 && (
+                {!totalMatches && totalScheduled > 0 && (
                     <Alert severity="warning" sx={{ mt: 1 }}>
                         {getTranslatedLabel("party.employeeAdvance.deductionPlan.mustMatchTotal", "Total scheduled must equal advance amount to apply.")}
                     </Alert>
@@ -391,12 +492,7 @@ export default function DeductionPlanModal({
                                     type="date"
                                     fullWidth
                                     value={editModal.row.dueDate}
-                                    onChange={(e) =>
-                                        setEditModal({
-                                            ...editModal,
-                                            row: { ...editModal.row, dueDate: e.target.value },
-                                        })
-                                    }
+                                    onChange={(e) => updateEditRow({ dueDate: e.target.value })}
                                     InputLabelProps={{ shrink: true }}
                                     error={!!dateError}
                                     helperText={dateError}
@@ -408,12 +504,7 @@ export default function DeductionPlanModal({
                                     type="number"
                                     fullWidth
                                     value={editModal.row.scheduledAmount}
-                                    onChange={(e) =>
-                                        setEditModal({
-                                            ...editModal,
-                                            row: { ...editModal.row, scheduledAmount: Number(e.target.value) || 0 },
-                                        })
-                                    }
+                                    onChange={(e) => updateEditRow({ scheduledAmount: Number(e.target.value) || 0 })}
                                     InputProps={{
                                         startAdornment: <InputAdornment position="start">{getTranslatedLabel("general.currency.egp", "EGP")}</InputAdornment>,
                                         inputProps: { step: "0.01", min: "0.01" },

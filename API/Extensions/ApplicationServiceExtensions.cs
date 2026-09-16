@@ -107,6 +107,11 @@ public static class ApplicationServiceExtensions
         services.AddScoped<ICommonService, CommonService>();
         services.AddScoped<IGeneralLedgerService, GeneralLedgerService>();
         services.AddScoped<IAcctgTransService, AcctgTransService>();
+        // Ledger-integrity primitives (auditor soft-delete requirement, Sep 2026)
+        services.AddScoped<IAccountingPeriodGuard, AccountingPeriodGuard>();
+        services.AddScoped<IAcctgTransReversalService, AcctgTransReversalService>();
+        services.AddScoped<ILedgerHistoryService, LedgerHistoryService>();
+        services.AddScoped<IPaymentVoidService, PaymentVoidService>();
         services.AddScoped<IAcctgReportsService, AcctgReportsService>();
         services.AddScoped<IAcctgMiscService, AcctgMiscService>();
         services.AddScoped<ITaxService, TaxService>();
@@ -170,6 +175,8 @@ public static class ApplicationServiceExtensions
             new Lazy<IPaymentHelperService>(() => sp.GetRequiredService<IPaymentHelperService>()));
         services.AddScoped<Lazy<IFinAccountService>>(sp =>
             new Lazy<IFinAccountService>(() => sp.GetRequiredService<IFinAccountService>()));
+        services.AddScoped<Lazy<IPaymentVoidService>>(sp =>
+            new Lazy<IPaymentVoidService>(() => sp.GetRequiredService<IPaymentVoidService>()));
         services.AddScoped<Lazy<IOrderHelperService>>(sp =>
             new Lazy<IOrderHelperService>(() => sp.GetRequiredService<IOrderHelperService>()));
 

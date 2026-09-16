@@ -35,6 +35,7 @@ import dayjs, { Dayjs } from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DesktopDatePicker } from "@mui/x-date-pickers/DesktopDatePicker";
+import { apiErrorMessage } from "../../../app/util/apiError";
 
 export default function MultiPaymentCertificatesList() {
     const [certificates, setCertificates] = useState<DataResult>({ data: [], total: 0 });
@@ -107,11 +108,7 @@ export default function MultiPaymentCertificatesList() {
                 getTranslatedLabel("projects.multiPaymentCertificate.list.deleteSuccess", "Certificate deleted successfully")
             );
         } catch (err: any) {
-            let errorMessage = getTranslatedLabel("projects.multiPaymentCertificate.list.deleteFailed", "Failed to delete certificate");
-            if (err?.data?.message) {
-                errorMessage = err.data.message;
-            }
-            toast.error(errorMessage);
+            toast.error(apiErrorMessage(err, getTranslatedLabel("projects.multiPaymentCertificate.list.deleteFailed", "Failed to delete certificate")));
             console.error('Delete certificate failed:', err);
         } finally {
             setDeleteDialogOpen(false);
@@ -379,7 +376,7 @@ export default function MultiPaymentCertificatesList() {
                                     <DialogContentText id="delete-certificate-dialog-description">
                                         {getTranslatedLabel(
                                             "projects.multiPaymentCertificate.list.deleteDialogMessage",
-                                            "Are you sure you want to delete certificate {0}? This action cannot be undone."
+                                            "Are you sure you want to remove certificate {0}? A certificate that was never approved is deleted. One that has been posted to the ledger is kept and marked Cancelled, and its posting is reversed by a linked entry."
                                         ).replace("{0}", certificateToDelete || "")}
                                     </DialogContentText>
                                 </DialogContent>

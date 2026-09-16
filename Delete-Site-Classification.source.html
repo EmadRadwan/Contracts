@@ -1,0 +1,368 @@
+<title>Ledger Delete-Site Classification</title>
+<meta charset="utf-8">
+<style>
+  :root {
+    --paper: #ffffff; --ink: #1a1a1a; --muted: #46525f; --faint: #6b7785;
+    --navy: #12395e; --rule: #d6dbe1; --band: #f3f5f8; --code-bg: #f0f2f5; --code-ink: #0f2f4d;
+    --c-reverse: #9a6b00; --c-reverse-bg: #fff6df;
+    --c-void: #8a2020; --c-void-bg: #fbeaea;
+    --c-delete: #2e6b3a; --c-delete-bg: #e6f3e8;
+    --c-edit: #3a6ea5; --c-edit-bg: #e7eff8;
+    --c-retire: #5b5f66; --c-retire-bg: #ebedf0;
+    --warn: #8a2020;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #14181d; --ink: #e8e6e1; --muted: #b3bac4; --faint: #8b94a0;
+      --navy: #8fb3d9; --rule: #2c333c; --band: #1b2128; --code-bg: #1f262e; --code-ink: #c9d8ea;
+      --c-reverse: #e3b64a; --c-reverse-bg: #2b2410;
+      --c-void: #e58a8a; --c-void-bg: #331a1a;
+      --c-delete: #7fcb92; --c-delete-bg: #14291a;
+      --c-edit: #8fb8e6; --c-edit-bg: #172432;
+      --c-retire: #a9afb8; --c-retire-bg: #23282e;
+      --warn: #e58a8a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #14181d; --ink: #e8e6e1; --muted: #b3bac4; --faint: #8b94a0;
+    --navy: #8fb3d9; --rule: #2c333c; --band: #1b2128; --code-bg: #1f262e; --code-ink: #c9d8ea;
+    --c-reverse: #e3b64a; --c-reverse-bg: #2b2410;
+    --c-void: #e58a8a; --c-void-bg: #331a1a;
+    --c-delete: #7fcb92; --c-delete-bg: #14291a;
+    --c-edit: #8fb8e6; --c-edit-bg: #172432;
+    --c-retire: #a9afb8; --c-retire-bg: #23282e;
+    --warn: #e58a8a;
+  }
+  @page { size: A4; margin: 16mm 14mm; }
+  html { background: var(--paper); }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 15px; line-height: 1.5; color: var(--ink); background: var(--paper); margin: 0; padding-block: 32px 64px; padding-inline: 20px; }
+  .page { max-width: 860px; margin: 0 auto; }
+  h1,h2,h3,h4 { font-family: Georgia, "Times New Roman", serif; margin: 0; text-wrap: balance; }
+  h1 { font-size: 38px; line-height: 1.12; letter-spacing: -0.4px; }
+  h2 { font-size: 24px; margin: 44px 0 12px; padding-bottom: 5px; border-bottom: 2px solid var(--navy); color: var(--navy); break-after: avoid; }
+  h3 { font-size: 18px; margin: 26px 0 8px; color: var(--navy); break-after: avoid; }
+  h4 { font-size: 15.5px; margin: 16px 0 6px; color: var(--ink); break-after: avoid; }
+  p { margin: 0 0 12px; max-width: 70ch; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; max-width: 70ch; }
+  li { margin-bottom: 4px; }
+  code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.86em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; color: var(--code-ink); }
+  pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; background: var(--band); border-left: 3px solid var(--navy); padding: 10px 14px; margin: 0 0 14px; white-space: pre-wrap; line-height: 1.45; border-radius: 0 4px 4px 0; color: var(--ink); }
+  .cover .kicker { font-size: 12px; letter-spacing: 2.4px; text-transform: uppercase; color: var(--faint); margin-bottom: 12px; }
+  .cover .sub { font-size: 17px; color: var(--muted); margin-top: 12px; font-style: italic; max-width: 62ch; }
+  .meta { display: flex; flex-wrap: wrap; gap: 28px; margin: 26px 0 8px; padding: 14px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .meta .lbl { font-size: 10.5px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--faint); }
+  .meta .val { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tblwrap { overflow-x: auto; margin: 0 0 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: var(--navy); color: #fff; text-align: left; padding: 7px 9px; font-weight: 600; font-size: 12px; vertical-align: bottom; }
+  :root[data-theme="dark"] th { color: #0e1319; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) th { color: #0e1319; } }
+  td { padding: 7px 9px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  tr:nth-child(even) td { background: var(--band); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.ref { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+  .pill { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; white-space: nowrap; border: 1px solid currentColor; }
+  .reverse { color: var(--c-reverse); background: var(--c-reverse-bg); }
+  .void { color: var(--c-void); background: var(--c-void-bg); }
+  .delete { color: var(--c-delete); background: var(--c-delete-bg); }
+  .edit { color: var(--c-edit); background: var(--c-edit-bg); }
+  .retire { color: var(--c-retire); background: var(--c-retire-bg); }
+  .tally { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 16px 0 20px; break-inside: avoid; }
+  .tally > div { padding: 12px 14px; border-radius: 6px; border: 1px solid var(--rule); break-inside: avoid; }
+  .tally .n { font-family: Georgia, serif; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .tally .k { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-top: 6px; }
+  .tally .d { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+  .site { margin: 18px 0 22px; padding: 0 0 14px; border-bottom: 1px solid var(--rule); break-inside: avoid; }
+  .site h4 { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: Georgia, serif; font-size: 16.5px; }
+  .site h4 .id { color: var(--faint); font-size: 13px; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 400; }
+  .site dl { display: grid; grid-template-columns: 120px 1fr; gap: 5px 14px; margin: 8px 0 0; font-size: 13.5px; }
+  .site dt { color: var(--faint); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding-top: 3px; }
+  .site dd { margin: 0; max-width: 78ch; }
+  .site dd.route { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12px; color: var(--muted); }
+  .gap { color: var(--warn); font-weight: 600; }
+  .callout { border-left: 3px solid var(--c-reverse); background: var(--band); padding: 10px 14px; margin: 14px 0; max-width: 78ch; }
+  .footnote { font-size: 12.5px; color: var(--faint); font-style: italic; }
+  @media (max-width: 560px) { .site dl { grid-template-columns: 1fr; gap: 2px; } .site dt { padding-top: 8px; } h1 { font-size: 30px; } }
+  @media print {
+    body { font-size: 9.4pt; padding: 0; }
+    .page { max-width: none; }
+    h1 { font-size: 25pt; } h2 { font-size: 14pt; margin-top: 20pt; } h3 { font-size: 11pt; } h4 { font-size: 10pt; }
+    table { font-size: 8.2pt; } th { font-size: 8pt; padding: 4pt 6pt; } td { padding: 4pt 6pt; }
+    .site dl { font-size: 8.6pt; } .site dd.route, td.ref { font-size: 7.4pt; }
+    .tally .n { font-size: 20pt; }
+    .site h4 { font-size: 11pt; }
+    .site { break-inside: avoid; }
+    h2 { break-before: auto; }
+  }
+</style>
+<div class="page">
+<div class="cover">
+  <div class="kicker">Contracts ERP · Ledger integrity · Step 1 of the auditor's finding</div>
+  <h1>Where the ledger can still be erased</h1>
+  <p class="sub">A classification of every code path that physically removes posted accounting rows, into the four operations professional practice distinguishes: edit, reverse, void, delete. Prepared as the sizing step before any reversal service is written.</p>
+  <div class="meta">
+    <div><div class="lbl">Date</div><div class="val">13 September 2026</div></div>
+    <div><div class="lbl">Build</div><div class="val">master @ eeb49e0e</div></div>
+    <div><div class="lbl">Sites classified</div><div class="val">19</div></div>
+    <div><div class="lbl">Ledger reachable</div><div class="val">5,194 of 5,213 posted</div></div>
+    <div><div class="lbl">Periods closed</div><div class="val">0 of 6</div></div>
+  </div>
+</div>
+
+<h2>1. Summary</h2>
+<p>The 6 September report counted 13 delete paths. A full sweep of the Application layer for any statement that removes <code>AcctgTrans</code>, <code>AcctgTransEntry</code>, <code>FinAccountTrans</code> or <code>Payment</code> rows found six more, bringing the register to 19. Each was read in full, its precondition and its blast radius recorded, and its exposure measured against the live database.</p>
+<p>Classification is by what the artifact is allowed to become, not by what the code does today. Seven sites must become <strong>reversals</strong>, six must become <strong>voids</strong>, three keep a physical delete behind a guard, two are edit paths that must refuse once posted, and one is dead code to retire. No site is correct as written. The one handler that already gets it right, <code>DeleteParty</code>, refuses when ledger rows exist and is the pattern every guarded delete copies.</p>
+
+<div class="tally">
+  <div class="reverse"><div class="n">7</div><div class="k">Reverse</div><div class="d">Posted and legitimately re-openable. Contra transaction, original stays.</div></div>
+  <div class="void"><div class="n">6</div><div class="k">Void</div><div class="d">Artifact should never have existed. Status → cancelled, plus reversal. Row never removed.</div></div>
+  <div class="delete"><div class="n">3</div><div class="k">Delete, guarded</div><div class="d">Physical delete stays, but only while nothing is posted and nothing refers to it.</div></div>
+  <div class="edit"><div class="n">2</div><div class="k">Edit only unposted</div><div class="d">In-place change of ledger rows. Refuse once posted.</div></div>
+  <div class="retire"><div class="n">1</div><div class="k">Retire</div><div class="d">Unreachable code that still carries a delete.</div></div>
+</div>
+
+<h2>2. The rule applied</h2>
+<p>The auditor's instruction, "deletes should be marked as deleted, not removed", is applied with the boundary agreed in the September report: it governs anything that has ever touched the general ledger, plus anything referenced by something that has. Drafts that never posted may still be removed outright. Four operations follow from that, and every site below is assigned exactly one, sometimes with a second for its draft state.</p>
+<div class="tblwrap"><table>
+<tr><th>Operation</th><th>Precondition</th><th>What happens to the ledger</th><th>What happens to the artifact</th></tr>
+<tr><td><span class="pill edit">Edit</span></td><td>Nothing posted yet</td><td>Nothing</td><td>Changed in place</td></tr>
+<tr><td><span class="pill reverse">Reverse</span></td><td>Posted, period open, artifact will be corrected and re-posted</td><td>New contra transaction, opposite signs, dated in the open period, linked to the original. Both visible.</td><td>Returns to its editable status</td></tr>
+<tr><td><span class="pill void">Void</span></td><td>Posted, artifact should never have existed</td><td>Same reversal as above</td><td>Status → <code>*_CANCELLED</code> / <code>PMNT_VOID</code>. Row stays, excluded from operational lists.</td></tr>
+<tr><td><span class="pill delete">Delete</span></td><td>Never posted, nothing references it</td><td>Nothing to do</td><td>Physically removed. Refused otherwise.</td></tr>
+</table></div>
+
+<h2>3. Exposure by anchor</h2>
+<p>Every transaction carries the id of the artifact that created it. Counting posted transactions by that anchor shows which sites hold the most evidence. Figures are from the local <code>erp_contracts</code> database on 13 September.</p>
+<div class="tblwrap"><table>
+<tr><th>Anchor on <code>ACCTG_TRANS</code></th><th class="num">Rows</th><th class="num">Posted</th><th>Sites that delete them</th></tr>
+<tr><td>Payment</td><td class="num">3,351</td><td class="num">3,351</td><td>ResetPayment, DeletePayment, DeleteEmployeeAdvance, payroll wipes, certificate resets, sales-request purges</td></tr>
+<tr><td>Work effort (certificate)</td><td class="num">1,767</td><td class="num">1,767</td><td>ResetProjectCertificate, ResetMultiPaymentCertificate, DeleteMultiPaymentCertificate</td></tr>
+<tr><td>Sales request</td><td class="num">952</td><td class="num">952</td><td>DeleteSalesRequest, ResetSalesRequest</td></tr>
+<tr><td>Invoice</td><td class="num">550</td><td class="num">550</td><td>ResetInvoice, payroll wipes, ResetProjectCertificate</td></tr>
+<tr><td>Shipment or receipt</td><td class="num">242</td><td class="num">242</td><td>ResetProjectCertificate</td></tr>
+<tr><td>Manual journal (no anchor)</td><td class="num">242</td><td class="num">223</td><td>DeleteAcctgTrans, DeleteAcctgTransEntry</td></tr>
+<tr><td><strong>All</strong></td><td class="num"><strong>5,213</strong></td><td class="num"><strong>5,194</strong></td><td>Only 19 transactions in the whole ledger are unposted</td></tr>
+</table></div>
+<p class="footnote">Anchors overlap, so the rows do not sum to the total. The point is the shape: payments and certificates hold four-fifths of the evidence.</p>
+
+<h2>4. The register</h2>
+<p>Each site records the entry point, what the code refuses today, what it removes, the live exposure, the classification, and the change that classification implies. A <span class="gap">flagged</span> line is a defect independent of the auditor's finding.</p>
+
+<h3>Payments</h3>
+
+<div class="site">
+<h4><span class="id">1</span>ResetPayment <span class="pill reverse">Reverse</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">POST /payments/reset/{id} · Payment form action "إعادة تعيين الدفعة", gated by Can perform="Reset_Payment"</dd>
+<dt>Refuses today</dt><dd>Status <code>PMNT_VOIDED</code>, <code>PMNT_CANCELLED</code>, <code>PMNT_CONFIRMED</code>. <span class="gap">PMNT_VOIDED is not a seeded status; the seeded id is PMNT_VOID, so a voided payment is not actually refused.</span></dd>
+<dt>Removes</dt><dd>Payment applications, then every transaction and entry keyed by the payment id. Status back to <code>PMNT_NOT_PAID</code>, override account cleared.</dd>
+<dt>Leaves behind</dt><dd>The FinAccountTrans row is not touched, which is correct: it is created with the payment at draft time and belongs to the payment, not to its posting. Invoices the payment had settled stay <code>INVOICE_PAID</code>. Transactions anchored only by fin-account-trans id are missed.</dd>
+<dt>Exposure</dt><dd>2,978 sent or received payments can be reset.</dd>
+<dt>Becomes</dt><dd>Posted → reversal linked to the original, applications removed and their invoices returned to <code>INVOICE_READY</code>, status <code>PMNT_NOT_PAID</code>. The bank row stays with the payment. Draft → nothing to do. Refused in a closed period.</dd>
+</dl></div>
+
+<div class="site">
+<h4><span class="id">2</span>DeletePayment <span class="pill void">Void</span> <span class="pill delete">Delete while draft</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">DELETE /payments/{id}</dd>
+<dt>Refuses today</dt><dd>Linked to a sales request, an employee advance, a project certificate, or applied to an invoice. <span class="gap">No status guard: a PMNT_SENT payment with bank and ledger rows is deleted whole.</span></dd>
+<dt>Removes</dt><dd>Transactions and entries by payment id, fin-account rows, then the payment.</dd>
+<dt>Becomes</dt><dd>Draft with no ledger or bank rows → physical delete, guarded the DeleteParty way. Anything else → <code>PMNT_VOID</code> plus reversal, fin-account row to <code>FINACT_TRNS_CANCELED</code>. The OFBiz port <code>PaymentHelperService.VoidPayment</code> already does most of this and is the primitive to promote (section 6).</dd>
+</dl></div>
+
+<div class="site">
+<h4><span class="id">3</span>DeleteEmployeeAdvance <span class="pill void">Void</span> <span class="pill delete">Delete while draft</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">DELETE /humanresources/{id}?dropPayment=</dd>
+<dt>Refuses today</dt><dd>Advance already on a payroll invoice, or any deduction started.</dd>
+<dt>Removes</dt><dd>Schedules, the advance, and, when its payment is draft <em>or</em> <code>DropPayment</code> is passed, the payment with its transactions and bank row. <span class="gap">The DropPayment override deletes a disbursed payment.</span></dd>
+<dt>Exposure</dt><dd>288 advances, 287 of them with a payment beyond draft.</dd>
+<dt>Becomes</dt><dd>Payment disbursed → advance <code>ADVANCE_CANCELLED</code> and the payment voided through the same primitive as site 2. Payment still draft → delete both. The override goes.</dd>
+</dl></div>
+
+<div class="site">
+<h4><span class="id">4</span>UpdatePayment → DeletePostdatedChequeAccountingTransaction <span class="pill reverse">Reverse and re-post</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">PUT /payments (edit form) · GeneralLedgerService.DeletePostdatedChequeAccountingTransaction</dd>
+<dt>Trigger</dt><dd>Editing a cheque's amount, account or details deletes the <code>CHECK_ISSUED</code> transaction and creates a fresh one; clearing the bank account removes the fin-account row. The method's own comment names reversal as "Option B, safer audit trail".</dd>
+<dt>Becomes</dt><dd>Reverse the existing transaction, then post the new one, so the edit is visible as three linked rows. If the auditor accepts the pragmatic pre-send exception from the September report, this path can stay as is while the payment is <code>PMNT_NOT_PAID</code> and the period is open. Needs the written agreement either way.</dd>
+</dl></div>
+
+<div class="site">
+<h4><span class="id">5</span>CompleteSalesOrderPayments · UpdateOrApproveOrderPayments <span class="pill delete">Delete, guarded</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">Sales-order payment grid, IsPaymentDeleted flag on a row</dd>
+<dt>Removes</dt><dd>The payment, its order payment preference and order status rows. Does not look at the ledger at all.</dd>
+<dt>Exposure</dt><dd>Low for this client: the sales-order flow is barely used, and foreign keys would stop the delete if a transaction existed. It is listed because the flag is an unguarded delete of a financial artifact.</dd>
+<dt>Becomes</dt><dd>Keep the delete, add the DeleteParty refusal when any transaction or fin-account row references the payment.</dd>
+</dl></div>
+
+<h3>Payroll</h3>
+
+<div class="site">
+<h4><span class="id">6</span>ResetInvoice <span class="pill reverse">Reverse</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">POST /invoices/reset/{id} · Invoice display form and accounting menu</dd>
+<dt>Refuses today</dt><dd>Anything but <code>INVOICE_READY</code>.</dd>
+<dt>Removes</dt><dd>Status history other than in-process, all transactions by invoice id, and every payment application on the invoice. <span class="gap">Applications are deleted without touching the payments on the other side, so a sent payment silently becomes unapplied.</span> The status history is itself audit evidence and should not be erased.</dd>
+<dt>Exposure</dt><dd>550 invoice-anchored posted transactions. All 158 payroll invoices are posted, because the batch sets them <code>INVOICE_READY</code> at generation.</dd>
+<dt>Becomes</dt><dd>Refuse when any application points at a payment beyond draft. Otherwise reverse the accrual, set <code>INVOICE_IN_PROCESS</code>, keep the status history. Under the pragmatic policy (before payment sent, period open) unpost-edit-repost may be allowed instead; that is the one decision to get from the auditor in writing.</dd>
+</dl></div>
+
+<div class="site">
+<h4><span class="id">7</span>DeletePayrollInvoices <span class="pill delete">Delete, guarded</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">POST /invoices/deletePayrollInvoices · Payroll run screen</dd>
+<dt>Refuses today</dt><dd>Nothing.</dd>
+<dt>Removes</dt><dd>The whole month for the organisation: invoices, items, roles, attributes, status history and their transactions; the aggregate payments addressed to the staff party with their transactions, bank rows and group memberships; advances and schedules put back to scheduled.</dd>
+<dt>Becomes</dt><dd>The re-run window is legitimate, so the delete stays, but only while every payroll payment of the month is <code>PMNT_NOT_PAID</code> and the period is open. Once anything has been sent, refuse; corrections go through site 6 per invoice, or the next run.</dd>
+</dl></div>
+
+<div class="site">
+<h4><span class="id">8</span>BatchCreatePayrollInvoices → DeletePayrollInvoicesSafelyAsync <span class="pill delete">Delete, guarded</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">POST /invoices/batchCreatePayrollInvoices, the re-run branch</dd>
+<dt>Removes</dt><dd>Same wipe as site 7, scoped to the employees in the request. <span class="gap">The payment deletion is not scoped: re-running for a subset of employees deletes every staff-party payment for the month.</span></dd>
+<dt>Becomes</dt><dd>Same guard as site 7, plus scope the payment deletion to the run being replaced. Do not re-run a month after this guard trips; the September report's warning about June stands.</dd>
+</dl></div>
+
+<h3>Ledger, direct</h3>
+
+<div class="site">
+<h4><span class="id">9</span>DeleteAcctgTrans <span class="pill reverse">Reverse</span> <span class="pill delete">Delete while unposted</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">DELETE /transactions/deleteAcctgTrans/{id} · Transactions list</dd>
+<dt>Refuses today</dt><dd>Nothing. <span class="gap">The posted guard exists in the source and is commented out.</span> Any of the 5,194 posted transactions can be removed from this screen.</dd>
+<dt>Becomes</dt><dd>Posted → this endpoint becomes "Reverse", the natural home of the reversal service. Unposted (19 rows today) → delete. Journal-entry users are the audience the auditor is most concerned with.</dd>
+</dl></div>
+
+<div class="site">
+<h4><span class="id">10</span>DeleteAcctgTransEntry · UpdateMultiAcctgTransWithEntries <span class="pill edit">Edit only unposted</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">DELETE /transactions/deleteAcctgTransEntry · PUT multi-entry editor</dd>
+<dt>Removes</dt><dd>Individual entries from a header, in place, with no posted check.</dd>
+<dt>Becomes</dt><dd>Allowed only while <code>IS_POSTED = 'N'</code>; posted → reverse and re-enter. Because <code>CreateAcctgTransAndEntries</code> stamps posted at creation, a true edit window for manual journals requires creating unposted and posting explicitly. That is a design decision for step 2, not a guard.</dd>
+</dl></div>
+
+<div class="site">
+<h4><span class="id">11</span>RecordInstallmentPaymentAccounting <span class="pill retire">Retire</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">None. No controller, handler or frontend call references the command.</dd>
+<dt>Removes</dt><dd>Deletes the existing <code>INCOMING_PAYMENT</code> transaction for a payment and posts a fresh one.</dd>
+<dt>Becomes</dt><dd>Dead code; remove it so it cannot be wired back in. If revived, it is a reverse-and-repost.</dd>
+</dl></div>
+
+<h3>Construction certificates</h3>
+
+<div class="site">
+<h4><span class="id">12</span>ResetProjectCertificate <span class="pill reverse">Reverse</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">POST /project/resetCertificate/{id}</dd>
+<dt>Refuses today</dt><dd>Only a certificate already in <code>WEPR_CREATED</code>. A 300-second command timeout is set, which says how much it removes.</dd>
+<dt>Removes</dt><dd>The order's payments with their transactions, applications and preferences; linked certificates; shipment receipts, inventory item details and their transactions; the invoices it generated, with their transactions and applications; shipments and their transactions. Then the header goes back to created.</dd>
+<dt>Exposure</dt><dd>497 approved project certificates; 1,767 work-effort-anchored and 242 shipment-or-receipt-anchored posted transactions.</dd>
+<dt>Becomes</dt><dd>Refuse while any payment on the certificate is beyond draft; those are voided individually first (site 2). Then reverse the approval's transaction set and set <code>WEPR_CREATED</code>. Generated invoices become <code>INVOICE_CANCELLED</code> with a reversal rather than disappearing.</dd>
+</dl></div>
+
+<div class="site">
+<h4><span class="id">13</span>DeleteProjectCertificate <span class="pill void">Void</span> <span class="pill delete">Delete while created</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">DELETE /project/deleteProjectCertificate/{id}</dd>
+<dt>Refuses today</dt><dd>Nothing. Deletes the header, its items, the purchase order and all order dependents including payments and payment preferences. It does not remove transactions, so on an approved certificate it fails on a foreign key rather than by design.</dd>
+<dt>Becomes</dt><dd><code>WEPR_CREATED</code> with no transactions (1 row today) → delete. Approved → <code>WEPR_CANCELLED</code> plus reversal.</dd>
+</dl></div>
+
+<div class="site">
+<h4><span class="id">14</span>UpdateProjectCertificate <span class="pill edit">Edit only created</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">PUT /project/updateProjectCertificate/{id}</dd>
+<dt>Removes</dt><dd>On every edit, deletes the old purchase order and its dependents, payments and preferences included, and recreates them. No approval-status check.</dd>
+<dt>Becomes</dt><dd>Allowed only in <code>WEPR_CREATED</code>. An approved certificate is reset first (site 12), then edited.</dd>
+</dl></div>
+
+<div class="site">
+<h4><span class="id">15</span>ResetMultiPaymentCertificate <span class="pill reverse">Reverse</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">POST /project/resetMultiPaymentCertificate/{id}</dd>
+<dt>Refuses today</dt><dd>Anything but <code>WEPR_APPROVED</code>, which is the right precondition.</dd>
+<dt>Removes</dt><dd>Every transaction anchored to the work effort, then sets header and items to created.</dd>
+<dt>Exposure</dt><dd>188 approved multi-payment certificates.</dd>
+<dt>Becomes</dt><dd>Reverse instead of remove. Otherwise unchanged; this is the smallest conversion in the register.</dd>
+</dl></div>
+
+<div class="site">
+<h4><span class="id">16</span>DeleteMultiPaymentCertificate <span class="pill void">Void</span> <span class="pill delete">Delete while created</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">DELETE /project/multiPaymentCertificate/{id}</dd>
+<dt>Refuses today</dt><dd>Nothing. Removes transactions, items and the header regardless of status.</dd>
+<dt>Becomes</dt><dd>Created with no transactions (2 rows today) → delete. Approved → <code>WEPR_CANCELLED</code> plus reversal.</dd>
+</dl></div>
+
+<h3>Apartment sales</h3>
+
+<div class="site">
+<h4><span class="id">17</span>DeleteSalesRequest <span class="pill void">Void</span> <span class="pill delete">Delete while created</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">DELETE /salesrequests/{id}</dd>
+<dt>Refuses today</dt><dd>Nothing.</dd>
+<dt>Removes</dt><dd>Commission payments, disbursed ones included; commission records; every customer payment with its bank rows, applications, attributes, allocations and contents; every sales-request-anchored transaction, including reconciliation entries; the instalment schedule; the request itself. The apartment goes back to available.</dd>
+<dt>Exposure</dt><dd>137 sales requests, all approved; 952 posted transactions; 798 received customer payments system-wide.</dd>
+<dt>Becomes</dt><dd>Request → cancelled, each received payment voided with its reversal, commission payments voided, apartment released. A <code>SALES_REQUEST_CANCELLED</code> status does not exist yet; only created and approved are seeded. Delete only while created with no payment beyond draft.</dd>
+</dl></div>
+
+<div class="site">
+<h4><span class="id">18</span>ResetSalesRequest <span class="pill reverse">Reverse</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">Sales request form, reset action</dd>
+<dt>Refuses today</dt><dd>Anything but approved; any commission approved or paid. Good preconditions.</dd>
+<dt>Removes</dt><dd>Every payment and every anchored transaction through the shared purge helper, then status back to created and the apartment to reserved.</dd>
+<dt>Becomes</dt><dd>Also refuse while any customer payment has been received. Then reverse the approval postings only and return to created.</dd>
+</dl></div>
+
+<div class="site">
+<h4><span class="id">19</span>DeleteSalesCommission · ResetSalesCommission → CommissionPaymentCleanup <span class="pill void">Void</span> <span class="pill delete">Delete while draft</span></h4>
+<dl>
+<dt>Entry</dt><dd class="route">Commission screen, delete and reset actions</dd>
+<dt>Removes</dt><dd>Every <code>COMMISSION_PAYMENT</code> on the sales request through the shared purge helper, regardless of whether it was disbursed. Reset is limited to approved commissions; delete purges whenever the commission is approved.</dd>
+<dt>Exposure</dt><dd>184 disbursed commission payments; 22 approved commissions.</dd>
+<dt>Becomes</dt><dd>Draft commission payments → delete. Disbursed → void through the payment primitive. This is the same gap the withholding-tax follow-up already recorded.</dd>
+</dl></div>
+
+<h2>5. Defects surfaced on the way</h2>
+<p>These are not part of the auditor's finding but were confirmed while reading the sites, and two of them change how step 2 is built.</p>
+<ol>
+<li><strong>Status id mismatch.</strong> <code>ResetPayment</code> guards on <code>PMNT_VOIDED</code>; the seeded status and the void routine both use <code>PMNT_VOID</code>. One of them is wrong, and today the guard never fires. Settle on <code>PMNT_VOID</code>, which is the OFBiz id.</li>
+<li><strong>Bank rows on draft payments are by design, not a leak.</strong> 90 fin-account rows sit on payments in <code>PMNT_NOT_PAID</code>. Checked on 14 September: the bank row is created together with a cheque payment at draft time (88 of the 206 draft cheque payments carry one), so Reset must leave it alone and only Void cancels it. The earlier reading of these rows as a ResetPayment leak was wrong and no cleanup is needed.</li>
+<li><strong>The commented-out guard.</strong> <code>DeleteAcctgTrans</code> carries the posted check as a comment. Whoever removed it made the decision the auditor is now reversing.</li>
+<li><strong>No orphans, by luck.</strong> Zero transactions point at a missing payment or invoice. Foreign keys, not the handlers, are what has kept the ledger internally consistent.</li>
+<li><strong>Nothing has ever been closed.</strong> Six time periods, none closed, unchanged since the September report.</li>
+</ol>
+
+<h2>6. What this sizes for step 2</h2>
+<p>The classification reduces to five building blocks. Every site in the register is one of these applied to one artifact type, which is why the primitives come before any handler is touched.</p>
+<div class="tblwrap"><table>
+<tr><th>Primitive</th><th>Used by sites</th><th>Starting point in the code</th><th>Gap to close</th></tr>
+<tr><td><strong>ReverseAcctgTrans</strong>: linked contra transaction</td><td>1, 4, 6, 9, 12, 15, 18 and every void</td><td><code>GeneralLedgerService.CopyAcctgTransAndEntries(id, revert: true)</code> already clones a transaction with debit and credit swapped.</td><td>No link back to the original (copies <code>TheirAcctgTransId</code> verbatim). Date is "now" with no period check. Description not marked as a reversal. Never posted through a guard.</td></tr>
+<tr><td><strong>VoidPayment</strong> as a command and endpoint</td><td>2, 3, 13, 16, 17, 19</td><td><code>PaymentHelperService.VoidPayment</code>: sets status, removes applications, returns paid invoices to ready, reverses transactions.</td><td>Only reachable from the cheque-run cancel path. Ignores fin-account rows. Only reverses transactions with no invoice id. Uses the reversal above, so inherits its gaps.</td></tr>
+<tr><td><strong>HasLedgerHistory</strong> refusal</td><td>5, 7, 8, and the draft branch of every void</td><td><code>DeleteParty</code>'s check for <code>AcctgTrans</code> rows.</td><td>Extract to one query covering transactions, entries and fin-account rows, and call it from every physical delete.</td></tr>
+<tr><td><strong>Period guard</strong> that throws</td><td>Every site</td><td>The warning inside <code>PostAcctgTrans</code>.</td><td>Must run on create, reverse and delete paths, and must block, not warn.</td></tr>
+<tr><td><strong>Cancelled statuses</strong></td><td>13, 16, 17, 19</td><td><code>WEPR_CANCELLED</code>, <code>ADVANCE_CANCELLED</code>, <code>INVOICE_CANCELLED</code>, <code>PMNT_VOID</code> are seeded.</td><td><code>SALES_REQUEST_CANCELLED</code> is missing. List queries need to exclude cancelled rows where they feed operations.</td></tr>
+</table></div>
+<div class="callout"><strong>The one decision needed before building.</strong> Whether the pragmatic exception stands: within an open period, before any payment is sent, may an invoice accrual be unposted, edited and re-posted rather than reversed? It affects sites 4, 6, 7 and 8 and nothing else. The September report recommended pragmatic before send, strict after, and asked for the auditor's written agreement. That agreement is the input to step 2.</div>
+
+<h2>7. How this was verified</h2>
+<p>Every handler in the register was read in full at <code>master @ eeb49e0e</code>, not sampled. The sweep that extended the list from 13 to 19 searched the Application layer for any <code>ExecuteDeleteAsync</code>, <code>RemoveRange</code> or <code>Remove</code> applied to the four financial tables, including the multi-line form where the table and the delete sit on different lines. Entry points were traced to their controller routes; frontend gating was checked for the payment reset. Counts were read from the local database with the queries below.</p>
+<pre>-- posted transactions by anchor
+SELECT COUNT(*), SUM(IS_POSTED='Y') FROM ACCTG_TRANS WHERE PAYMENT_ID IS NOT NULL;      -- 3351 / 3351
+SELECT COUNT(*), SUM(IS_POSTED='Y') FROM ACCTG_TRANS WHERE WORK_EFFORT_ID IS NOT NULL;  -- 1767 / 1767
+SELECT COUNT(*), SUM(IS_POSTED='Y') FROM ACCTG_TRANS WHERE SALES_REQUEST_ID IS NOT NULL;-- 952 / 952
+SELECT COUNT(*), SUM(IS_POSTED='Y') FROM ACCTG_TRANS WHERE INVOICE_ID IS NOT NULL;      -- 550 / 550
+
+-- the reset-payment leak
+SELECT COUNT(*) FROM FIN_ACCOUNT_TRANS f JOIN PAYMENT p USING (PAYMENT_ID)
+WHERE p.STATUS_ID = 'PMNT_NOT_PAID';                                                    -- 90
+
+-- seeded void status (not PMNT_VOIDED)
+SELECT STATUS_ID FROM STATUS_ITEM WHERE STATUS_TYPE_ID='PMNT_STATUS' AND STATUS_ID LIKE '%VOID%'; -- PMNT_VOID</pre>
+<p class="footnote">Prepared 13 September 2026. Follows Part II of "Payroll: Status and Way Forward" (6 September 2026), which this document's numbering of steps refers to. Sections 4 to 6 are findings and recommendations, not committed work.</p>
+</div>

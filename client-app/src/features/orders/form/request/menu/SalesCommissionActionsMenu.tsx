@@ -7,6 +7,8 @@ import {
 } from "../../../../../app/store/apis/salesCommissionsApi";
 import { toast } from "react-toastify";
 import Button from "@mui/material/Button";
+import { Can } from "../../../../account/Can";
+import { SALES_COMMISSION_ROLES } from "../../../../../app/models/orders/salesCommissionRoles";
 import {
     CircularProgress,
     Dialog,
@@ -135,21 +137,28 @@ export const SalesCommissionActionsMenu: React.FC<SalesCommissionActionsMenuProp
                 anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
                 transformOrigin={{ vertical: "top", horizontal: "right" }}
             >
-                <MenuItem onClick={handleApproveClick} disabled={isApproveDisabled || isApproving}>
-                    {getTranslatedLabel("salesCommission.form.approve", "اعتماد")}
-                </MenuItem>
+                {/* Each action is role-gated on its own so a user can e.g. approve without being able to reset/delete. */}
+                <Can perform={SALES_COMMISSION_ROLES.approve}>
+                    <MenuItem onClick={handleApproveClick} disabled={isApproveDisabled || isApproving}>
+                        {getTranslatedLabel("salesCommission.form.approve", "اعتماد")}
+                    </MenuItem>
+                </Can>
 
-                <MenuItem onClick={handleResetClick} disabled={isResetDisabled || isResetting}>
-                    {getTranslatedLabel("salesCommission.form.reset", "إعادة تعيين")}
-                </MenuItem>
+                <Can perform={SALES_COMMISSION_ROLES.reset}>
+                    <MenuItem onClick={handleResetClick} disabled={isResetDisabled || isResetting}>
+                        {getTranslatedLabel("salesCommission.form.reset", "إعادة تعيين")}
+                    </MenuItem>
+                </Can>
 
-                <MenuItem
-                    onClick={handleDeleteClick}
-                    disabled={!salesCommissionId || isDeleting}
-                    sx={{ color: "error.main" }}
-                >
-                    {getTranslatedLabel("salesCommission.form.delete", "حذف")}
-                </MenuItem>
+                <Can perform={SALES_COMMISSION_ROLES.delete}>
+                    <MenuItem
+                        onClick={handleDeleteClick}
+                        disabled={!salesCommissionId || isDeleting}
+                        sx={{ color: "error.main" }}
+                    >
+                        {getTranslatedLabel("salesCommission.form.delete", "حذف")}
+                    </MenuItem>
+                </Can>
             </Menu>
 
             {/* Approve Confirmation */}

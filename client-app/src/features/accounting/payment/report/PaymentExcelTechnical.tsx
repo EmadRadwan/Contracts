@@ -3,6 +3,7 @@ import React, { useCallback } from 'react';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { Button } from '@mui/material';
+import { applyReversalFill } from "../../../../app/common/grid";
 
 
 interface PaymentRow {
@@ -215,7 +216,7 @@ export const PaymentExcelTechnical: React.FC<PaymentExcelProps> = ({
             transHeader.eachCell(c => c.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } });
 
             transactions.forEach(t => {
-                ws.addRow([
+                const row = ws.addRow([
                     t.acctgTransId,
                     t.acctgTransEntrySeqId,
                     t.glAccountId,
@@ -225,6 +226,7 @@ export const PaymentExcelTechnical: React.FC<PaymentExcelProps> = ({
                     t.currency,
                     utils.formatDate(t.transactionDate),
                 ]);
+                applyReversalFill(row, t);
             });
             ws.getRow(ws.lastRow!.number).eachCell(c => c.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } });
         }

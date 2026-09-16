@@ -6,5 +6,6 @@ public class CreateUserDto
     public string UserName { get; set; }
     public string DisplayName { get; set; }
     public string OrganizationPartyId { get; set; }
+    public string? PartyId { get; set; }   // required; validated in AccountController
     public string[] Roles { get; set; } = Array.Empty<string>();
 }

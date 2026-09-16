@@ -36,6 +36,14 @@ interface Props {
     onAdvanceUpdated?: (updated: EmployeeAdvance) => void;
 }
 
+// Local-date YYYY-MM-DD (not toISOString, which shifts the day across UTC).
+const toIsoDate = (value: unknown): string | null => {
+    if (!value) return null;
+    const d = value instanceof Date ? value : new Date(value as string);
+    if (isNaN(d.getTime())) return null;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
 // -----------------------------------------------------------------
 // Main Form Component
 // -----------------------------------------------------------------
@@ -65,7 +73,10 @@ function EmployeeAdvanceForm({
         || advance?.statusId === "ADVANCE_PARTIALLY_PAID";
 
     const isCreate = editMode === 1;
-    const isEdit = editMode === 2;
+
+    // Once the disbursement payment is sent it is posted to the GL, so amount/date/employee/type
+    // are locked server-side (ADVANCE_PAYMENT_SENT). The deduction plan and description stay open.
+    const isPaymentSent = !isCreate && !!advance?.paymentStatusId && advance.paymentStatusId !== "PMNT_NOT_PAID";
 
     const employeeAdvanceTypes = [{advanceTypeId: "EMPLOYEE_ADVANCE", description: "سلفة راتب"}, {advanceTypeId: "EMPLOYEE_LONG_TERM_ADVANCE", description: "سلفة طويلة الأجل "}]
 
@@ -159,7 +170,11 @@ function EmployeeAdvanceForm({
                 description: values.description,
                 installmentCount: isLongTerm ? customSchedules.length : values.installmentCount,
                 startDate: isLongTerm ? null : values.startDate,
-                customDeductionSchedules: isLongTerm && customSchedules.length > 0 ? customSchedules : undefined,
+                // Already-deducted rows are facts owned by the payroll run; the server keeps its own
+                // copy and only reads the pending rows from us.
+                customDeductionSchedules: isLongTerm && customSchedules.length > 0
+                    ? customSchedules.filter(s => !s.payrollInvoiceId)
+                    : undefined,
             };
 
             if (isCreate) {
@@ -244,22 +259,7 @@ function EmployeeAdvanceForm({
                         const isProcessed = !!(advance?.payrollInvoiceId || advance?.schedules?.some(s => s.payrollInvoiceId));
                         
                         const isInstallmentDisabled = !isLongTermAdvance || isReadOnly || isSubmitting || isProcessed;
-
-                        // ==================== DEBUG LOGS ====================
-                        console.log("=== EmployeeAdvanceForm Debug ===");
-                        console.log("Mode:", { isCreate, isEdit, isReadOnly, editMode });
-                        console.log("Status:", advance?.statusId);
-                        console.log("isProcessed:", isProcessed);
-                        console.log("advance:", advance);
-                        console.log("isLongTermAdvance:", isLongTermAdvance);
-                        console.log("canEditSchedules:", canEditSchedules);
-                        console.log("totalAmount:", totalAmount);
-                        console.log("customSchedules count:", customSchedules.length);
-                        console.log("canOpenPlan:", canOpenPlan);
-                        console.log("isSubmitting:", isSubmitting);
-                        console.log("Form valid/modified:", { valid, modified });
-                        console.log("=====================================");
-                        // ===================================================
+                        const isMoneyLocked = isReadOnly || isSubmitting || isPaymentSent;
 
                         return (
                             <FormElement>
@@ -274,7 +274,7 @@ function EmployeeAdvanceForm({
                                                 valueField="fromPartyId"
                                                 textField="fromPartyName"
                                                 validator={requiredValidator}
-                                                disabled={isReadOnly || isSubmitting || isProcessed}
+                                                disabled={isMoneyLocked || isProcessed}
                                             />
                                         </Grid>
                                         <Grid item xs={12} sm={6} md={4}>
@@ -287,7 +287,7 @@ function EmployeeAdvanceForm({
                                                 textField="description"
                                                 data={employeeAdvanceTypes}
                                                 validator={requiredValidator}
-                                                disabled={isReadOnly || isSubmitting || isProcessed}
+                                                disabled={isMoneyLocked || isProcessed}
                                             />
                                         </Grid>
                                         <Grid item xs={12} sm={6} md={4}>
@@ -297,7 +297,7 @@ function EmployeeAdvanceForm({
                                                 component={FormDatePicker}
                                                 format="dd/MM/yyyy"
                                                 validator={requiredValidator}
-                                                disabled={isReadOnly || isSubmitting || (advanceTypeId === "EMPLOYEE_ADVANCE" && isProcessed)}
+                                                disabled={isMoneyLocked || (advanceTypeId === "EMPLOYEE_ADVANCE" && isProcessed)}
                                             />
                                         </Grid>
                                         <Grid item xs={12} sm={6} md={4}>
@@ -307,9 +307,18 @@ function EmployeeAdvanceForm({
                                                 component={FormNumericTextBox}
                                                 format="n2"
                                                 validator={requiredValidator}
-                                                disabled={isReadOnly || isSubmitting || (advanceTypeId === "EMPLOYEE_ADVANCE" && isProcessed)}
+                                                disabled={isMoneyLocked || (advanceTypeId === "EMPLOYEE_ADVANCE" && isProcessed)}
                                             />
                                         </Grid>
+                                        {isPaymentSent && (
+                                            <Grid item xs={12}>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {getTranslatedLabel(
+                                                        "party.employeeAdvance.form.paymentSentLock",
+                                                        "The advance has been disbursed; amount, date and employee are locked. Only the deduction plan and description can be edited.")}
+                                                </Typography>
+                                            </Grid>
+                                        )}
 
                                         {/* Installments & Start Date (disabled for long-term) */}
                                         <Grid item xs={12} sm={6} md={4}>
@@ -452,6 +461,7 @@ function EmployeeAdvanceForm({
                                             }}
                                             isPreview={isReadOnly || customSchedules.length > 0}
                                             isReadOnly={isReadOnly}
+                                            minDueDate={toIsoDate(valueGetter("advanceDate"))}
                                         />
                                     </ModalContainer>
                                 )}

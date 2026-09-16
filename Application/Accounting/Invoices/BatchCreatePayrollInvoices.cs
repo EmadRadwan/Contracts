@@ -43,11 +43,13 @@ public class BatchCreatePayrollInvoices
         private readonly IInvoiceHelperService _invoiceHelperService;
         private readonly IInvoiceUtilityService _invoiceUtilityService;
         private readonly IPaymentHelperService _paymentHelperService;
-
+        private readonly IAccountingPeriodGuard _periodGuard;
         public Handler(DataContext context, IInvoiceHelperService invoiceHelperService,
-            IInvoiceUtilityService invoiceUtilityService, IPaymentHelperService paymentHelperService)
+            IInvoiceUtilityService invoiceUtilityService, IPaymentHelperService paymentHelperService,
+            IAccountingPeriodGuard periodGuard)
         {
             _context = context;
+            _periodGuard = periodGuard;
             _invoiceHelperService = invoiceHelperService;
             _invoiceUtilityService = invoiceUtilityService;
             _paymentHelperService =
@@ -102,6 +104,8 @@ public class BatchCreatePayrollInvoices
 
             if (paymentIds.Any())
             {
+                await _periodGuard.EnsureOpenForPaymentsAsync(paymentIds, ct);
+
                 // Delete accounting entries for payments
                 await _context.AcctgTransEntries
                     .Where(ate => _context.AcctgTrans
@@ -208,6 +212,17 @@ public class BatchCreatePayrollInvoices
 
                 if (existingInvoiceIds.Any())
                 {
+                    // Pragmatic payroll policy: a month may be re-run only while its run payments are
+                    // still drafts and the period is open. Refuse otherwise instead of wiping a settled month.
+                    var sentRunPayments = await PayrollRunGuard.SentRunPaymentIdsAsync(
+                        _context, request.OrganizationPartyId, monthStart, monthEnd, cancellationToken);
+                    if (sentRunPayments.Any())
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                        return Result<Unit>.Failure(PayrollRunGuard.SettledMessage(monthStart, sentRunPayments));
+                    }
+                    await _periodGuard.EnsureOpenForInvoicesAsync(existingInvoiceIds, cancellationToken);
+
                     // Revert deductions on advances and schedules first
                     await RevertPayrollDeductionsForInvoices(existingInvoiceIds);
 

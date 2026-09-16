@@ -182,3 +182,57 @@ In `Persistence/SeedContracts.cs`:
 - The `requiredRoles` string array + role-creation loop runs **unconditionally on every startup** — adding a new role name there is enough for the role to exist in any environment (including production) after a deploy.
 - The `userRoles` dictionary + `AssignRoles(...)` call that grants specific roles to specific seeded emails only runs **when `AppUserLogins` is completely empty** (fresh DB). On any environment with existing users, editing this dictionary has **no effect** — it never re-runs against existing users.
 - **Consequence:** to grant a new role to an existing user outside a fresh DB (staging/production), assign it through the live Users admin UI (`/users` → edit user → add role) — not by editing `SeedContracts.cs`, which only seeds brand-new databases.
+
+---
+
+## ExcelJS Report Exports — Logo Embedding Gotcha
+
+`workbook.addImage()` returns the image's **0-based index** — for the first (often only) image in a
+workbook, that's `0`, which is falsy in JavaScript. A common but broken pattern:
+
+```ts
+let logoId: number | null = null;
+try {
+    const resp = await fetch('/goldenlandlogo.jpg');
+    if (resp.ok) {
+        const buf = await (await resp.blob()).arrayBuffer();
+        logoId = workbook.addImage({ buffer: buf, extension: 'jpeg' });
+    }
+} catch (e) { console.warn('Logo failed', e); }
+
+// BROKEN: logoId === 0 on a successful fetch, so this always takes the "else" branch
+if (logoId) {
+    ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 120, height: 100 } });
+} else {
+    ws.addRow(['Logo Unavailable']);
+}
+```
+
+This fetches and registers the image bytes into the workbook (so `xl/media/image1.jpeg` exists if you
+unzip the resulting `.xlsx`) but never anchors it to the sheet — the export deterministically shows
+"Logo Unavailable" on every single run, not intermittently, even though the network request itself
+succeeds with a 200. Checking network status or console errors alone won't catch this — you have to
+open the generated file (or unzip it and check for `xl/drawings/drawing1.xml`) to see the bug.
+
+**Fix:** track success independently of the returned id:
+```ts
+const hasLogo = logoId !== null;
+if (hasLogo) {
+    ws.addImage(logoId!, { tl: { col: 0, row: 0 }, ext: { width: 120, height: 100 } });
+} else {
+    ws.addRow(['Logo Unavailable']);
+}
+```
+Or check the raw fetched buffer instead of the numeric id (the pattern used in
+`Projects/report/buildProjectReportWorkbook.ts`, which never had this bug):
+```ts
+let logoBuffer: ArrayBuffer | null = null;
+// ...fetch into logoBuffer...
+if (logoBuffer) {
+    const imageId = workbook.addImage({ buffer: logoBuffer, extension: 'jpeg' });
+    ws.addImage(imageId, { ... });
+}
+```
+
+Fixed 2026-09-13 in `report/TrialBalanceExcel.tsx` and `report/TrialBalanceByLevelExcel.tsx`. Grep for
+`if (logoId)` (or any `if (<id-returned-by-addImage>)`) before copying this pattern into a new report.

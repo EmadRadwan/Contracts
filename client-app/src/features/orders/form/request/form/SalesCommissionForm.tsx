@@ -43,6 +43,9 @@ import QuickCreatePartyDialog, { PartyRole } from "../../../../../app/common/for
 import SalesRequestMenu from "../menu/SalesRequestMenu";
 import LoadingComponent from "../../../../../app/layout/LoadingComponent";
 import { SALE_TYPE_OPTIONS, COMMISSION_STATUS_RIBBON_COLORS } from "../../../../../app/models/orders/salesCommissionLabels";
+import { SALES_COMMISSION_ROLES, SALES_COMMISSION_ACTION_ROLES } from "../../../../../app/models/orders/salesCommissionRoles";
+import { Can } from "../../../../account/Can";
+import { useAppSelector } from "../../../../../app/store/configureStore";
 
 function formatEGP(value: number | null | undefined) {
     return Math.round(value ?? 0).toLocaleString("ar-SA");
@@ -596,6 +599,12 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
     }, [activeCommission]);
 
     const isApproved = activeCommission?.statusId === "COMMISSION_APPROVED";
+    // Role gate (frontend only for now): new records need CreateSalesCommission, existing ones
+    // UpdateSalesCommission. Without the matching role the form renders read-only, same as approved.
+    // user.roles is typed Role[] in models/party/user.ts but the API actually sends string[] (see Can.tsx / RequireRole.tsx)
+    const userRoles = (useAppSelector(state => state.account.user?.roles) ?? []) as unknown as string[];
+    const canEdit = userRoles.includes(editMode === 1 ? SALES_COMMISSION_ROLES.create : SALES_COMMISSION_ROLES.update);
+    const isLocked = isApproved || !canEdit;
 
     const ribbonBg = COMMISSION_STATUS_RIBBON_COLORS;
     const ribbonLabels: Record<string, string> = {
@@ -622,7 +631,9 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                             <Typography variant="h4" color={editMode === 1 ? "green" : "black"}>
                                 {editMode === 1
                                     ? getTranslatedLabel("salesCommission.form.new", "عمولة مبيعات جديدة")
-                                    : getTranslatedLabel("salesCommission.form.edit", "تعديل العمولة")}
+                                    : canEdit
+                                        ? getTranslatedLabel("salesCommission.form.edit", "تعديل العمولة")
+                                        : getTranslatedLabel("salesCommission.form.view", "عرض العمولة")}
                                 {activeCommission?.salesCommissionId && (
                                     <Typography component="span" variant="h5" color="grey" sx={{ ml: 1 }}>
                                         ({activeCommission.salesCommissionId})
@@ -630,15 +641,17 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                 )}
                             </Typography>
                             {editMode === 2 && activeCommission?.salesCommissionId && (
-                                <SalesCommissionActionsMenu
-                                    salesCommissionId={activeCommission.salesCommissionId}
-                                    currentStatusId={activeCommission.statusId}
-                                    disabled={false}
-                                    unassignedParties={unassignedSavedParties}
-                                    onCommissionApproved={cancelEdit}
-                                    onCommissionReset={cancelEdit}
-                                    onCommissionDeleted={cancelEdit}
-                                />
+                                <Can perform={SALES_COMMISSION_ACTION_ROLES}>
+                                    <SalesCommissionActionsMenu
+                                        salesCommissionId={activeCommission.salesCommissionId}
+                                        currentStatusId={activeCommission.statusId}
+                                        disabled={false}
+                                        unassignedParties={unassignedSavedParties}
+                                        onCommissionApproved={cancelEdit}
+                                        onCommissionReset={cancelEdit}
+                                        onCommissionDeleted={cancelEdit}
+                                    />
+                                </Can>
                             )}
                         </Box>
                     </Grid>
@@ -744,7 +757,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                 label={getTranslatedLabel("salesCommission.form.salesRequest", "طلب البيع")}
                                                 component={FormComboBoxVirtualSalesRequest}
                                                 validator={requiredValidator}
-                                                disabled={!!resolvedSalesRequestId || !!activeCommission || isApproved}
+                                                disabled={!!resolvedSalesRequestId || !!activeCommission || isLocked}
                                                 onSalesRequestIdChange={setSelectedSrId}
                                             />
                                         </Grid>
@@ -758,7 +771,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                 textField="description"
                                                 data={SALE_TYPE_OPTIONS}
                                                 validator={requiredValidator}
-                                                disabled={isApproved}
+                                                disabled={isLocked}
                                                 onAfterChange={setSelectedSaleTypeId}
                                             />
                                         </Grid>
@@ -890,8 +903,8 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                         partyComponent={FormComboBoxVirtualPartySalesRep}
                                         percentValidators={validators(repValidator, makePercentRequiredValidator(repSelected, "المندوب الأول"))}
                                         partySelected={repSelected}
-                                        disabled={isApproved}
-                                        showQuickCreate={!isApproved && isIndirect}
+                                        disabled={isLocked}
+                                        showQuickCreate={!isLocked && isIndirect}
                                         quickCreateTooltip="إنشاء مندوب جديد"
                                         onQuickCreate={() => openQuickCreate("SALES_REP", "salesRepParty")}
                                         amountRoleLabel={getTranslatedLabel("salesCommission.form.salesRep1Amount", "مبلغ المندوب الأول")}
@@ -916,8 +929,8 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                             partyComponent={FormComboBoxVirtualPartySalesRep}
                                             percentValidators={validators(rep2Validator, makePercentRequiredValidator(rep2Selected, "المندوب الثاني"))}
                                             partySelected={rep2Selected}
-                                            disabled={isApproved}
-                                            showQuickCreate={!isApproved && isIndirect}
+                                            disabled={isLocked}
+                                            showQuickCreate={!isLocked && isIndirect}
                                             quickCreateTooltip="إنشاء مندوب جديد"
                                             onQuickCreate={() => openQuickCreate("SALES_REP", "salesRep2Party")}
                                             amountRoleLabel={getTranslatedLabel("salesCommission.form.salesRep2Amount", "مبلغ المندوب الثاني")}
@@ -937,8 +950,8 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                         partyComponent={FormComboBoxVirtualPartySalesManager}
                                         percentValidators={validators(mgrValidator, makePercentRequiredValidator(mgrSelected, "المدير الأول"))}
                                         partySelected={mgrSelected}
-                                        disabled={isApproved}
-                                        showQuickCreate={!isApproved && isIndirect}
+                                        disabled={isLocked}
+                                        showQuickCreate={!isLocked && isIndirect}
                                         quickCreateTooltip="إنشاء مدير جديد"
                                         onQuickCreate={() => openQuickCreate("SALES_MANAGER", "managerParty")}
                                         amountRoleLabel={getTranslatedLabel("salesCommission.form.manager1Amount", "مبلغ المدير الأول")}
@@ -963,8 +976,8 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                             partyComponent={FormComboBoxVirtualPartySalesManager}
                                             percentValidators={validators(mgr2Validator, makePercentRequiredValidator(mgr2Selected, "المدير الثاني"))}
                                             partySelected={mgr2Selected}
-                                            disabled={isApproved}
-                                            showQuickCreate={!isApproved && isIndirect}
+                                            disabled={isLocked}
+                                            showQuickCreate={!isLocked && isIndirect}
                                             quickCreateTooltip="إنشاء مدير جديد"
                                             onQuickCreate={() => openQuickCreate("SALES_MANAGER", "manager2Party")}
                                             amountRoleLabel={getTranslatedLabel("salesCommission.form.manager2Amount", "مبلغ المدير الثاني")}
@@ -990,7 +1003,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                             <Checkbox
                                                                 checked={hasWithholdingTaxExemption}
                                                                 onChange={(e) => setHasWithholdingTaxExemption(e.target.checked)}
-                                                                disabled={isApproved}
+                                                                disabled={isLocked}
                                                             />
                                                         }
                                                         label={getTranslatedLabel("salesCommission.form.hasWithholdingTaxExemption", "إعفاء من ضريبة الاستقطاع")}
@@ -1002,7 +1015,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                             <Checkbox
                                                                 checked={taxInvoiceRaised}
                                                                 onChange={(e) => setTaxInvoiceRaised(e.target.checked)}
-                                                                disabled={isApproved}
+                                                                disabled={isLocked}
                                                             />
                                                         }
                                                         label={getTranslatedLabel("salesCommission.form.taxInvoiceRaised", "تم رفع الفاتورة الضريبية")}
@@ -1015,7 +1028,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         label={getTranslatedLabel("salesCommission.form.vatPercent", "نسبة ضريبة القيمة المضافة %")}
                                                         component={FormNumericTextBox}
                                                         min={0} max={100} format="n2"
-                                                        disabled={isApproved}
+                                                        disabled={isLocked}
                                                     />
                                                 </Grid>
                                                 <Grid item xs={6} md={2}>
@@ -1025,7 +1038,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         label={getTranslatedLabel("salesCommission.form.withholdingTaxPercent", "نسبة ضريبة الاستقطاع %")}
                                                         component={FormNumericTextBox}
                                                         min={0} max={100} format="n2"
-                                                        disabled={isApproved}
+                                                        disabled={isLocked}
                                                     />
                                                 </Grid>
                                             </Grid>
@@ -1040,11 +1053,11 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                                 name="externalCompanyParty"
                                                                 label={getTranslatedLabel("salesCommission.form.externalCompany", "شركة الوسيط")}
                                                                 component={FormComboBoxVirtualPartyBroker}
-                                                                disabled={isApproved}
+                                                                disabled={isLocked}
                                                             />
                                                         </Grid>
                                                         <Grid item xs={1}>
-                                                            {!isApproved && (
+                                                            {!isLocked && (
                                                                 <Tooltip title="إنشاء وسيط جديد">
                                                                     <IconButton size="small" onClick={() => openQuickCreate("BROKER", "externalCompanyParty")}>
                                                                         <AddCircleOutlineIcon fontSize="small" />
@@ -1061,7 +1074,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         label={getTranslatedLabel("salesCommission.form.externalCompanyPercent", "نسبة الوسيط %")}
                                                         component={FormNumericTextBox}
                                                         min={0} max={100} format="n4"
-                                                        disabled={isApproved}
+                                                        disabled={isLocked}
                                                         validator={validators(extValidator, makePercentRequiredValidator(extCompanySelected, "الوسيط"))}
                                                     />
                                                 </Grid>
@@ -1079,7 +1092,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                     partySelected={extCompanySelected}
                                                     finalGross={activeCommission?.externalCompanyGrossAmount}
                                                     finalNet={activeCommission?.externalCompanyNetAmount}
-                                                    disabled={isApproved}
+                                                    disabled={isLocked}
                                                 />
                                             </Grid>
 
@@ -1093,11 +1106,11 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                                 name="externalSalesRepParty"
                                                                 label={getTranslatedLabel("salesCommission.form.externalSalesRep", "مندوب الوسيط")}
                                                                 component={FormComboBoxVirtualPartyExternalSalesRep}
-                                                                disabled={isApproved}
+                                                                disabled={isLocked}
                                                             />
                                                         </Grid>
                                                         <Grid item xs={1}>
-                                                            {!isApproved && (
+                                                            {!isLocked && (
                                                                 <Tooltip title="إنشاء مندوب وسيط جديد">
                                                                     <IconButton size="small" onClick={() => openQuickCreate("EXTERNAL_SALES_REP", "externalSalesRepParty")}>
                                                                         <AddCircleOutlineIcon fontSize="small" />
@@ -1114,7 +1127,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         label={getTranslatedLabel("salesCommission.form.externalSalesRepPercent", "نسبة مندوب الوسيط %")}
                                                         component={FormNumericTextBox}
                                                         min={0} max={100} format="n4"
-                                                        disabled={isApproved}
+                                                        disabled={isLocked}
                                                         validator={validators(extRepValidator, makePercentRequiredValidator(extRepSelected, "مندوب الوسيط"))}
                                                     />
                                                 </Grid>
@@ -1124,7 +1137,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                             <Checkbox
                                                                 checked={hasExternalSalesRepWhtExemption}
                                                                 onChange={(e) => setHasExternalSalesRepWhtExemption(e.target.checked)}
-                                                                disabled={isApproved}
+                                                                disabled={isLocked}
                                                                 size="small"
                                                             />
                                                         }
@@ -1137,7 +1150,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         name="externalSalesRepNationalId"
                                                         label={getTranslatedLabel("salesCommission.form.externalSalesRepNationalId", "الرقم القومي (مندوب الوسيط)")}
                                                         component={FormInput}
-                                                        disabled={isApproved}
+                                                        disabled={isLocked}
                                                     />
                                                 </Grid>
                                                 <ExternalAmountInfo
@@ -1152,7 +1165,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                     partySelected={extRepSelected}
                                                     finalGross={activeCommission?.externalSalesRepAmount}
                                                     finalNet={activeCommission?.externalSalesRepNetAmount}
-                                                    disabled={isApproved}
+                                                    disabled={isLocked}
                                                 />
                                             </Grid>
 
@@ -1166,11 +1179,11 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                                 name="externalManagerParty"
                                                                 label={getTranslatedLabel("salesCommission.form.externalManager", "مدير الوسيط")}
                                                                 component={FormComboBoxVirtualPartyExternalSalesManager}
-                                                                disabled={isApproved}
+                                                                disabled={isLocked}
                                                             />
                                                         </Grid>
                                                         <Grid item xs={1}>
-                                                            {!isApproved && (
+                                                            {!isLocked && (
                                                                 <Tooltip title="إنشاء مدير وسيط جديد">
                                                                     <IconButton size="small" onClick={() => openQuickCreate("EXTERNAL_SALES_MANAGER", "externalManagerParty")}>
                                                                         <AddCircleOutlineIcon fontSize="small" />
@@ -1187,7 +1200,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         label={getTranslatedLabel("salesCommission.form.externalManagerPercent", "نسبة مدير الوسيط %")}
                                                         component={FormNumericTextBox}
                                                         min={0} max={100} format="n4"
-                                                        disabled={isApproved}
+                                                        disabled={isLocked}
                                                         validator={validators(extMgrValidator, makePercentRequiredValidator(extMgrSelected, "مدير الوسيط"))}
                                                     />
                                                 </Grid>
@@ -1197,7 +1210,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                             <Checkbox
                                                                 checked={hasExternalManagerWhtExemption}
                                                                 onChange={(e) => setHasExternalManagerWhtExemption(e.target.checked)}
-                                                                disabled={isApproved}
+                                                                disabled={isLocked}
                                                                 size="small"
                                                             />
                                                         }
@@ -1210,7 +1223,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         name="externalManagerNationalId"
                                                         label={getTranslatedLabel("salesCommission.form.externalManagerNationalId", "الرقم القومي (مدير الوسيط)")}
                                                         component={FormInput}
-                                                        disabled={isApproved}
+                                                        disabled={isLocked}
                                                     />
                                                 </Grid>
                                                 <ExternalAmountInfo
@@ -1225,7 +1238,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                     partySelected={extMgrSelected}
                                                     finalGross={activeCommission?.externalManagerAmount}
                                                     finalNet={activeCommission?.externalManagerNetAmount}
-                                                    disabled={isApproved}
+                                                    disabled={isLocked}
                                                 />
                                             </Grid>
                                         </>
@@ -1239,13 +1252,13 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                 name="notes"
                                                 label={getTranslatedLabel("salesCommission.form.notes", "ملاحظات")}
                                                 component={FormInput}
-                                                disabled={isApproved}
+                                                disabled={isLocked}
                                             />
                                         </Grid>
                                     </Grid>
 
                                     {/* Unassigned parties — savable, but they earn nothing until named */}
-                                    {!isApproved && unassignedParties.length > 0 && (
+                                    {!isLocked && unassignedParties.length > 0 && (
                                         <Alert severity="warning" sx={{ mt: 2 }}>
                                             {getTranslatedLabel(
                                                 "salesCommission.form.unassignedParties",
@@ -1262,7 +1275,7 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                     {/* Action Buttons */}
                                     <div className="k-form-buttons" style={{ marginTop: "20px" }}>
                                         <Grid container spacing={1}>
-                                            {!isApproved && (
+                                            {!isLocked && (
                                                 <Grid item>
                                                     <Button
                                                         type="submit"

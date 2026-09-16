@@ -1,0 +1,119 @@
+<title>Ledger Integrity Step 2</title>
+<meta charset="utf-8">
+<style>
+  :root {
+    --paper: #ffffff; --ink: #1a1a1a; --muted: #46525f; --faint: #6b7785;
+    --navy: #12395e; --rule: #d6dbe1; --band: #f3f5f8; --code-bg: #f0f2f5; --code-ink: #0f2f4d; --accent: #9a6b00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #14181d; --ink: #e8e6e1; --muted: #b3bac4; --faint: #8b94a0;
+      --navy: #8fb3d9; --rule: #2c333c; --band: #1b2128; --code-bg: #1f262e; --code-ink: #c9d8ea; --accent: #e3b64a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #14181d; --ink: #e8e6e1; --muted: #b3bac4; --faint: #8b94a0;
+    --navy: #8fb3d9; --rule: #2c333c; --band: #1b2128; --code-bg: #1f262e; --code-ink: #c9d8ea; --accent: #e3b64a;
+  }
+  @page { size: A4; margin: 18mm 16mm; }
+  html { background: var(--paper); }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 15.5px; line-height: 1.55; color: var(--ink); background: var(--paper); margin: 0; padding-block: 32px 64px; padding-inline: 20px; }
+  .page { max-width: 720px; margin: 0 auto; }
+  h1,h2 { font-family: Georgia, "Times New Roman", serif; margin: 0; text-wrap: balance; }
+  h1 { font-size: 34px; line-height: 1.12; letter-spacing: -0.4px; }
+  h2 { font-size: 22px; margin: 36px 0 10px; padding-bottom: 5px; border-bottom: 2px solid var(--navy); color: var(--navy); break-after: avoid; }
+  p { margin: 0 0 12px; max-width: 66ch; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; max-width: 66ch; }
+  li { margin-bottom: 6px; }
+  code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.86em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; color: var(--code-ink); }
+  .kicker { font-size: 12px; letter-spacing: 2.4px; text-transform: uppercase; color: var(--faint); margin-bottom: 12px; }
+  .sub { font-size: 17px; color: var(--muted); margin-top: 12px; font-style: italic; max-width: 56ch; }
+  .meta { display: flex; flex-wrap: wrap; gap: 28px; margin: 24px 0 8px; padding: 14px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+  .meta .lbl { font-size: 10.5px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--faint); }
+  .meta .val { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tblwrap { overflow-x: auto; margin: 0 0 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { background: var(--navy); color: #fff; text-align: left; padding: 7px 9px; font-weight: 600; font-size: 12px; }
+  :root[data-theme="dark"] th { color: #0e1319; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) th { color: #0e1319; } }
+  td { padding: 7px 9px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tools { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 14px 0 6px; }
+  .tools > div { border: 1px solid var(--rule); border-radius: 6px; padding: 10px 13px; }
+  .tools .h { font-family: Georgia, serif; font-size: 16.5px; color: var(--navy); margin-bottom: 4px; }
+  .tools .d { font-size: 13.5px; color: var(--muted); }
+  .callout { border-left: 3px solid var(--accent); background: var(--band); padding: 10px 14px; margin: 14px 0; max-width: 66ch; }
+  .footnote { font-size: 12.5px; color: var(--faint); font-style: italic; }
+  @media (max-width: 480px) { .tools { grid-template-columns: 1fr; } h1 { font-size: 28px; } }
+  @media print {
+    body { font-size: 10pt; padding: 0; } .page { max-width: none; }
+    h1 { font-size: 23pt; } h2 { font-size: 13.5pt; margin-top: 16pt; }
+    table { font-size: 8.8pt; } th { font-size: 8.2pt; padding: 4pt 6pt; } td { padding: 4pt 6pt; }
+    .tools, .callout, tr { break-inside: avoid; }
+  }
+</style>
+<div class="page">
+<div class="kicker">Contracts ERP · Ledger integrity · Step 2</div>
+<h1>Step 2: the tools are built, nothing is switched on yet</h1>
+<p class="sub">What was added to the system, what a user will notice, and what still remains, in plain language.</p>
+<div class="meta">
+  <div><div class="lbl">Date</div><div class="val">13 September 2026</div></div>
+  <div><div class="lbl">Build</div><div class="val">compiles clean</div></div>
+  <div><div class="lbl">Files</div><div class="val">6 new · 22 changed</div></div>
+  <div><div class="lbl">Migration</div><div class="val">none</div></div>
+</div>
+
+<h2>The idea in three lines</h2>
+<p>The auditor asked that financial records be marked as cancelled, never erased, and that their accounting entries be reversed rather than deleted.</p>
+<p>Step 1 found the 19 places in the code that erase. Step 2 builds the four tools those places will use, and turns on one control: a closed accounting period is now locked.</p>
+<p>The 19 places still behave as before. Switching them over is step 3.</p>
+
+<h2>The four tools</h2>
+<div class="tools">
+  <div><div class="h">Period lock</div><div class="d">Once a month or quarter is closed, nothing can be written into it and nothing can be deleted out of it. It checks every new entry and every delete.</div></div>
+  <div><div class="h">Reversal</div><div class="d">Cancels a posted entry by writing its mirror image, linked to the original. Both stay in the ledger. The same entry cannot be reversed twice.</div></div>
+  <div><div class="h">History check</div><div class="d">Asks one question before a delete: has this record ever touched the ledger or the bank book? If yes, it may not be deleted.</div></div>
+  <div><div class="h">Void a payment</div><div class="d">Marks the payment void, reverses what it posted, cancels its bank rows and detaches it from invoices. The payment stays on file.</div></div>
+</div>
+<p class="footnote">Voiding is available to the API today. No screen calls it yet; that comes with step 3.</p>
+
+<h2>What a user will notice</h2>
+<p>Four refusals, each with a message that says why and what to do instead. Everything else works exactly as before.</p>
+<ol>
+  <li><strong>Payroll.</strong> A month cannot be deleted or re-run once its salary payment has been sent. This is the pragmatic rule you chose: free to correct before sending, settled after.</li>
+  <li><strong>Invoices.</strong> An invoice cannot be reset while a sent or received payment is applied to it. Its status history is now kept instead of erased.</li>
+  <li><strong>Sales-order payments.</strong> The delete tick is refused for a payment that has ledger or bank history.</li>
+  <li><strong>Closed periods.</strong> Any write into, or delete from, a closed period is refused. No period is closed yet, so this fires nowhere today.</li>
+</ol>
+
+<div class="callout"><strong>What did not change.</strong> Reset still deletes and Delete still deletes on every screen. Those flips are step 3 and must arrive together with the new screen actions, otherwise users would be refused with nowhere to go.</div>
+
+<h2>Small fixes made on the way</h2>
+<ul>
+  <li>Reset payment checked for a status name that does not exist, so a voided payment was never actually protected. Fixed.</li>
+  <li>An old copy-and-reverse routine reported success but lost the new entry's number. Fixed.</li>
+</ul>
+
+<h2>The database script you ran</h2>
+<p>It added the one missing "cancelled" status, for sales requests, with its allowed transitions. Nothing else in the database changed. Copy the script to the production folder when you apply it there.</p>
+<p>The same script lists 90 bank rows that sit on payments still in draft. Checked on 14 September: they are by design. A cheque payment gets its bank row when it is created, not when it is sent, so these rows belong to their payments and need no cleanup. The "46 leak rows" in the first version of this report were a misreading.</p>
+
+<h2>Where the code changed</h2>
+<div class="tblwrap"><table>
+<tr><th>Area</th><th>Files</th><th>What</th></tr>
+<tr><td>New services</td><td class="n">5</td><td>The four tools, plus the payroll "month is settled" rule</td></tr>
+<tr><td>New command and endpoint</td><td class="n">2</td><td>Void a payment</td></tr>
+<tr><td>Accounting services</td><td class="n">3</td><td>Period lock on every new entry; old void routine now uses the new one</td></tr>
+<tr><td>Delete and reset handlers</td><td class="n">17</td><td>Each gained the period lock; three gained the refusals above</td></tr>
+<tr><td>Service registration</td><td class="n">1</td><td>Makes the tools available</td></tr>
+</table></div>
+<p class="footnote">Full file list in the working tree; the previous version of this document carried it by path.</p>
+
+<h2>Step 3</h2>
+<ol>
+  <li>Switch each of the 19 places to its class: Reset reverses, Delete voids, physical delete only for drafts that never posted.</li>
+  <li>Add the screen actions: Void on the payment form with a reason box, Reverse instead of Delete on posted journal entries.</li>
+    <li>Create monthly periods and start closing them, so the lock has something to lock.</li>
+</ol>
+<p class="footnote">Prepared 13 September 2026. Follows "Ledger Delete-Site Classification" (step 1) and Part II of "Payroll: Status and Way Forward".</p>
+</div>

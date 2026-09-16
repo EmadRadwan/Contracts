@@ -21,10 +21,10 @@ import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
 import AcctgTransEntryForm from "../form/AcctgTransEntryForm";
 import {useDeleteAcctgTransEntryMutation} from "../../../../app/store/apis";
-import { createStyledRow } from "../../../../app/common/grid";
+import { createReversalAwareRow, ReversalLegend } from "../../../../app/common/grid";
 
 // Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
-const DebitCreditRow = createStyledRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag !== "C" ? "rgba(55, 180, 0, 0.32)" : "#ffffff" }));
+const DebitCreditRow = createReversalAwareRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag !== "C" ? "rgba(55, 180, 0, 0.32)" : "#ffffff" }));
 
 interface Props {
   acctgTrans?: AcctgTrans;
@@ -187,6 +187,7 @@ export default function AcctgTransEntryList({ acctgTrans }: Props) {
       )}
       <Grid container columnSpacing={1} direction="column" alignItems={"center"} sx={{ mt: 1 }}>
         {/* REFACTORED: Updated grid to use pagination and styling from SalesOrderItemsList */}
+        <ReversalLegend />
         <KendoGrid
             className="main-grid"
             style={{ height: "40vh", width: "60vw" }}

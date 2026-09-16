@@ -750,7 +750,12 @@
           "receive": "Status to Received",
           "confirm": "Status to Confirmed",
           "transactions": "Transactions",
-          "applications": "Payment Applications"
+          "applications": "Payment Applications",
+          "send": "Status to Sent",
+          "duplicate": "Duplicate Payment",
+          "reset": "Reset Payment",
+          "void": "Void Payment",
+          "history": "Change History"
         },
         "new-incoming": "New Incoming Payment",
         "new-outgoing": "New Outgoing Payment",
@@ -766,7 +771,33 @@
         "amount": "Amount *",
         "date": "Effective Date *",
         "comments": "Comments",
-        "loading": "Processing Payment..."
+        "loading": "Processing Payment...",
+        "statuses": {
+          "new": "New",
+          "not-paid": "Not Paid",
+          "received": "Received",
+          "sent": "Sent",
+          "confirmed": "Confirmed",
+          "cancelled": "Cancelled",
+          "voided": "Voided",
+          "unknown": "Unknown"
+        },
+        "reset": {
+          "dialogTitle": "Confirm Payment Reset",
+          "dialogMessage": "Reset payment {paymentId}?\n\nThis will:\n• return the status to \"Not Paid\"\n• detach the payment from its invoices\n• reverse its posted accounting entries with linked reversing entries (both stay in the ledger)\n\nYou can then correct the payment and send it again.",
+          "resetConfirm": "Reset Payment",
+          "resetSuccess": "Payment reset; its accounting entries were reversed",
+          "resetFailed": "Failed to reset payment"
+        },
+        "void": {
+          "dialogTitle": "Void Payment",
+          "dialogMessage": "Payment {paymentId} will be voided and kept on file with status \"Voided\".\n\n• its accounting entries are reversed with linked entries\n• its bank transaction is cancelled\n• it is detached from invoices\n\nNothing is deleted. Give a reason.",
+          "reason": "Reason",
+          "confirm": "Void Payment",
+          "success": "Payment voided; its accounting entries were reversed",
+          "failed": "Failed to void payment",
+          "reasonRequired": "A reason is required"
+        }
       }
     },
     "pay-groups": {
@@ -836,6 +867,10 @@
             "recon": "Account Reconciliation",
             "reports": "Reports",
             "checks": "Checks"
+          },
+          "txns": {
+            "reversalOf": "Reversal of {0}",
+            "reversedBy": "Reversed by {0}"
           }
         }
       },
@@ -996,7 +1031,17 @@
           "invoice-date": "Invoice Date:",
           "total": "Total:",
           "billing-account": "Billing Account:",
-          "status": "Status:",
+          "status": {
+            "new": "New",
+            "in-process": "In Process",
+            "approved": "Approved",
+            "ready": "Ready",
+            "received": "Received",
+            "paid": "Paid",
+            "writeoff": "Write Off",
+            "cancelled": "Cancelled",
+            "unknown": "Unknown"
+          },
           "to-party": "Party To:",
           "due-date": "Due Date:",
           "paid-date": "Paid Date:",
@@ -1025,17 +1070,7 @@
             "dialogMessage": "Are you sure you want to reset invoice {invoiceId}?\n\nThis will:\n• Return status to 'In Process'\n• Delete all payment applications\n• Delete related accounting transactions\n\nThis action cannot be undone.",
             "resetConfirm": "Reset Invoice"
           },
-          "status": {
-            "new": "New",
-            "in-process": "In Process",
-            "approved": "Approved",
-            "ready": "Ready",
-            "received": "Received",
-            "paid": "Paid",
-            "writeoff": "Write Off",
-            "cancelled": "Cancelled",
-            "unknown": "Unknown"
-          }
+          "reset-failed": "Failed to reset invoice"
         }
       }
     },
@@ -1067,6 +1102,14 @@
         "thruDate": "End Date",
         "availableBalance": "Available Balance",
         "description": "Description"
+      }
+    },
+    "transactions": {
+      "reversal": {
+        "legend": {
+          "reversal": "Reversal entry",
+          "reversed": "Reversed (cancelled by a reversal)"
+        }
       }
     }
   },
@@ -1150,6 +1193,13 @@
           "completionDate": "Please enter a valid completion date.",
           "dateOrder": "Completion date cannot be earlier than start date."
         }
+      }
+    }
+  },
+  "party": {
+    "employeeAdvance": {
+      "delete": {
+        "cancelledSuccess": "Advance cancelled; its payment was voided and its entries reversed"
       }
     }
   }

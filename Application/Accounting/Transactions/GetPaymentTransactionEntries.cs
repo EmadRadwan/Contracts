@@ -78,6 +78,8 @@ public class GetPaymentTransactionEntries
                         SettlementTermId = c.joinedData.AcctgTransEntry.SettlementTermId,
                         IsSummary = c.joinedData.AcctgTransEntry.IsSummary,
                         IsPosted = c.joinedData.AcctgTrans.IsPosted,
+                        ReversalOfAcctgTransId = _context.AcctgTransAttributes.Where(a => a.AcctgTransId == c.joinedData.AcctgTrans.AcctgTransId && a.AttrName == "REVERSAL_OF").Select(a => a.AttrValue).FirstOrDefault(),
+                        ReversedByAcctgTransId = _context.AcctgTransAttributes.Where(a => a.AcctgTransId == c.joinedData.AcctgTrans.AcctgTransId && a.AttrName == "REVERSED_BY").Select(a => a.AttrValue).FirstOrDefault(),
                         ProductName = c.Products.FirstOrDefault() != null ? c.Products.First().ProductName : null,
                         GlFiscalTypeId = c.joinedData.AcctgTrans.GlFiscalTypeId,
                         TransactionDate = c.joinedData.AcctgTrans.TransactionDate,

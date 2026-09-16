@@ -248,17 +248,18 @@ export default function MultiPaymentCertificateForm({
         if (certificate?.statusDescription && certificate?.statusDescriptionArabic) {
             return {
                 label: language === "ar" ? certificate.statusDescriptionArabic : certificate.statusDescription,
-                backgroundColor: status === "WEPR_CREATED" ? "blue" : "green",
+                backgroundColor: status === "WEPR_CREATED" ? "blue" : status === "WEPR_CANCELLED" ? "gray" : "green",
                 foreColor: "#ffffff",
             };
         }
         const statusLabels: { [key: string]: { en: string; ar: string } } = {
             WEPR_CREATED: {en: "Created", ar: "تم الإنشاء"},
             WEPR_APPROVED: {en: "Approved", ar: "تمت الموافقة"},
+            WEPR_CANCELLED: {en: "Cancelled", ar: "ملغاة"},
         };
         return {
             label: language === "ar" ? statusLabels[status]?.ar || "غير معروف" : statusLabels[status]?.en || "Unknown",
-            backgroundColor: status === "WEPR_CREATED" ? "blue" : "green",
+            backgroundColor: status === "WEPR_CREATED" ? "blue" : status === "WEPR_CANCELLED" ? "gray" : "green",
             foreColor: "#ffffff",
         };
     }, [certificate, language]);

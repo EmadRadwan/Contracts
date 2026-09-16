@@ -61,15 +61,19 @@ export const TrialBalanceByLevelExcel: React.FC<TrialBalanceByLevelExcelProps> =
         ws.views = [{ rightToLeft: true }];
         ws.getColumn(1).font = { name: 'Amiri', size: 10 };
 
-        if (logoId) {
-            ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: 120, height: 100 } });
+        // ExcelJS.addImage() returns the image's 0-based index, so a successful FIRST image
+        // returns 0 -- falsy in JS. A plain `if (logoId)` treats that success as failure.
+        const hasLogo = logoId !== null;
+
+        if (hasLogo) {
+            ws.addImage(logoId!, { tl: { col: 0, row: 0 }, ext: { width: 120, height: 100 } });
             ws.getRow(1).height = 75; ws.getRow(2).height = 20; ws.getRow(3).height = 20;
             ws.addRow([]); ws.addRow([]); ws.addRow([]);
         } else {
             ws.addRow(['Logo Unavailable']).getCell(1).font = { color: { argb: 'FF0000' } };
         }
 
-        const titleRow = logoId ? 4 : 2;
+        const titleRow = hasLogo ? 4 : 2;
         ws.addRow([getTranslatedLabel('accounting.orgGL.reports.trial-balance-by-level.title', 'Trial Balance By Level') + ': ' + utils.rtlEmbed(utils.safeString(companyName))]);
         ws.mergeCells(`A${titleRow}:H${titleRow}`);
         ws.getRow(titleRow).font = { name: 'Amiri', size: 14, bold: true };

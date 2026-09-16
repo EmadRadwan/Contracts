@@ -59,10 +59,12 @@ public class GetMultiPaymentCertificate
                         ? (we.CurrentStatusId == "WEPR_CREATED" ? "تم الإنشاء"
                             : we.CurrentStatusId == "WEPR_APPROVED" ? "تمت الموافقة"
                             : we.CurrentStatusId == "WEPR_COMPLETE" ? "مكتمل"
+                                        : we.CurrentStatusId == "WEPR_CANCELLED" ? "ملغاة"
                             : "غير معروف")
                         : (we.CurrentStatusId == "WEPR_CREATED" ? "Created"
                             : we.CurrentStatusId == "WEPR_APPROVED" ? "Approved"
                             : we.CurrentStatusId == "WEPR_COMPLETE" ? "Complete"
+                                        : we.CurrentStatusId == "WEPR_CANCELLED" ? "Cancelled"
                             : "Unknown"),
                     GlAccountId = we.GlAccountId,
                     AccountName = gl != null ? gl.AccountNameArabic : null,

@@ -12,10 +12,10 @@ import { useFetchPaymentAcctTransEntriesQuery } from "../../../../app/store/apis
 import { handleDatesArray } from "../../../../app/util/utils";
 import {AcctgTransEntry} from "../../../../app/models/accounting/acctgTransEntry";
 import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
-import { createStyledRow } from "../../../../app/common/grid";
+import { createReversalAwareRow, ReversalLegend } from "../../../../app/common/grid";
 
 // Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
-const DebitCreditRow = createStyledRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag !== "C" ? "rgb(55, 180, 0,0.32)" : "#ffffff" }));
+const DebitCreditRow = createReversalAwareRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag !== "C" ? "rgb(55, 180, 0,0.32)" : "#ffffff" }));
 
 interface Props {
     onClose: () => void;
@@ -108,6 +108,7 @@ export default function PaymentTransactionsList({ onClose, paymentId }: Props) {
                 </Grid>*/}
                 <Grid container>
                     <div className="div-container">
+                        <ReversalLegend />
                         <KendoGrid
                             style={{ height: "450px", width: "850px" }}
                             data={orderBy(acctTransEntries || [], sort).slice(page.skip, page.take + page.skip)}

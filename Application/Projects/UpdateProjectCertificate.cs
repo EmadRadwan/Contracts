@@ -1,3 +1,4 @@
+using Application.Accounting.Services;
 using Application.Core;
 using FluentValidation;
 using MediatR;
@@ -51,15 +52,17 @@ namespace Application.Projects
             private readonly IUtilityService _utilityService;
             private readonly IOrderService _orderService; // REFACTOR: Added
             private readonly IProductStoreService _productStoreService; // REFACTOR: Added
-
+            private readonly IAccountingPeriodGuard _periodGuard;
             public Handler(
                 DataContext context,
                 IUserAccessor userAccessor,
                 IUtilityService utilityService,
                 IOrderService orderService,
-                IProductStoreService productStoreService)
+                IProductStoreService productStoreService,
+                IAccountingPeriodGuard periodGuard)
             {
                 _context = context;
+                _periodGuard = periodGuard;
                 _userAccessor = userAccessor;
                 _utilityService = utilityService;
                 _orderService = orderService; // REFACTOR: Injected
@@ -84,6 +87,17 @@ namespace Application.Projects
                     {
                         await transaction.RollbackAsync(cancellationToken);
                         return Result<ProjectCertificateDto>.Failure("Certificate not found");
+                    }
+
+                    // Step 3 (auditor soft-delete requirement): the update path rebuilds the purchase
+                    // order and its payments. That is an edit of an unposted draft; an approved
+                    // certificate is reset first (its postings reversed) and then edited.
+                    if (workEffortQuery.CurrentStatusId != "WEPR_CREATED")
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                        return Result<ProjectCertificateDto>.Failure(
+                            "لا يمكن تعديل شهادة معتمدة أو ملغاة. أعد تعيين الشهادة أولاً ثم عدّلها. " +
+                            "(Only certificates in Created status can be edited; reset first.)");
                     }
 
                     // REFACTOR: Update header fields (same as before)
@@ -229,8 +243,16 @@ namespace Application.Projects
                                 .Where(p => p.OrderId == oldOrderId).Select(p => p.OrderPaymentPreferenceId)
                                 .ToListAsync(cancellationToken);
                             if (prefIds.Any())
+                            {
+                                var oldOrderPaymentIds = await _context.Payments
+                                    .Where(p => prefIds.Contains(p.PaymentPreferenceId))
+                                    .Select(p => p.PaymentId)
+                                    .ToListAsync(cancellationToken);
+                                await _periodGuard.EnsureOpenForPaymentsAsync(oldOrderPaymentIds, cancellationToken);
+
                                 await _context.Payments.Where(p => prefIds.Contains(p.PaymentPreferenceId))
                                     .ExecuteDeleteAsync(cancellationToken);
+                            }
 
                             await _context.OrderPaymentPreferences.Where(p => p.OrderId == oldOrderId)
                                 .ExecuteDeleteAsync(cancellationToken);

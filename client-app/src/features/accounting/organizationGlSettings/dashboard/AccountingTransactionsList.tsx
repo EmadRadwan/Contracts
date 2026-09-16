@@ -9,7 +9,8 @@ import {
 } from "@progress/kendo-react-grid";
 import { DataResult, State } from "@progress/kendo-data-query";
 import Button from "@mui/material/Button";
-import { Grid, Paper } from "@mui/material";
+import { toast } from "react-toastify";
+import { Grid, Paper, TextField } from "@mui/material";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import { MenuSelectEvent } from "@progress/kendo-react-layout";
 import { handleDatesArray, normalizeNumeric } from "../../../../app/util/utils";
@@ -37,8 +38,10 @@ import AccountingSummaryMenu from "../menu/AccountingSummaryMenu";
 import { useSelector } from "react-redux";
 import { router } from "../../../../app/router/Routes";
 import { useNavigate } from "react-router";
-import {useDeleteAcctgTransMutation} from "../../../../app/store/apis";
+import {useDeleteAcctgTransMutation, useReverseAcctgTransMutation} from "../../../../app/store/apis";
+import { ReversalRow, ReversalLegend } from "../../../../app/common/grid";
 import {Can} from "../../../account/Can";
+import { apiErrorMessage } from "../../../../app/util/apiError";
 
 export default function AccountingTransactionsList() {
   const { user } = useAppSelector((state) => state.account);
@@ -62,6 +65,30 @@ export default function AccountingTransactionsList() {
   const [transToDelete, setTransToDelete] = useState<string | null>(null);
 
   const [deleteAcctgTrans, { isLoading: isDeleting }] = useDeleteAcctgTransMutation();
+  const [reverseAcctgTrans, { isLoading: isReversing }] = useReverseAcctgTransMutation();
+  const [reverseDialogOpen, setReverseDialogOpen] = useState(false);
+  const [transToReverse, setTransToReverse] = useState<string | null>(null);
+  const [reverseReason, setReverseReason] = useState("");
+  const handleReverseClick = (acctgTransId: string) => {
+    setTransToReverse(acctgTransId);
+    setReverseReason("");
+    setReverseDialogOpen(true);
+  };
+  const handleConfirmReverse = async () => {
+    if (!transToReverse || !reverseReason.trim()) return;
+    try {
+      const r = await reverseAcctgTrans({ acctgTransId: transToReverse, reason: reverseReason.trim() }).unwrap();
+      toast.success(
+          getTranslatedLabel("accounting.orgGL.accounting.summary.txns.reverseSuccess", "تم عكس القيد {0} بالقيد {1}")
+              .replace("{0}", r.originalAcctgTransId).replace("{1}", r.reversalAcctgTransId)
+      );
+      setReverseDialogOpen(false);
+      setTransToReverse(null);
+    } catch (err: any) {
+      toast.error(apiErrorMessage(err, getTranslatedLabel("accounting.orgGL.accounting.summary.txns.reverseFailed", "فشل عكس القيد")));
+      console.error('Reverse failed:', err);
+    }
+  };
 
   const handleDeleteClick = (acctgTransId: string) => {
     setTransToDelete(acctgTransId);
@@ -73,12 +100,11 @@ export default function AccountingTransactionsList() {
 
     try {
       await deleteAcctgTrans(transToDelete).unwrap();
-      // Optional: show success toast/notification
       setDeleteDialogOpen(false);
       setTransToDelete(null);
-    } catch (err) {
+    } catch (err: any) {
+      toast.error(apiErrorMessage(err, getTranslatedLabel("accounting.orgGL.accounting.summary.txns.deleteFailed", "فشل حذف القيد")));
       console.error('Delete failed:', err);
-      // Optional: show error toast
     }
   };
 
@@ -101,18 +127,42 @@ export default function AccountingTransactionsList() {
             {...navigationAttributes}
         >
           <Can perform="deleteAcctgTrans">
-            <Button
-                size="small"
-                color="error"
-                variant="outlined"
-                onClick={() => handleDeleteClick(props.dataItem.acctgTransId)}
-                disabled={isDeleting}
-            >
-              {getTranslatedLabel(
-                  "accounting.orgGL.accounting.summary.txns.deleteButton",
-                  "Delete"
-              )}
-            </Button>
+            {props.dataItem.isPosted === "Y" && (props.dataItem.reversalOfAcctgTransId || props.dataItem.reversedByAcctgTransId) ? (
+                // A cancelled pair (an original and its reversal) is closed history: neither side is
+                // reversible again. Re-opening the original is done by re-posting, not by reversing the reversal.
+                <span style={{ fontSize: 12, color: "#6b7785" }}>
+                  {props.dataItem.reversalOfAcctgTransId
+                      ? getTranslatedLabel("accounting.orgGL.accounting.summary.txns.reversalOf", "عكس للقيد {0}").replace("{0}", props.dataItem.reversalOfAcctgTransId)
+                      : getTranslatedLabel("accounting.orgGL.accounting.summary.txns.reversedBy", "معكوس بالقيد {0}").replace("{0}", props.dataItem.reversedByAcctgTransId)}
+                </span>
+            ) : props.dataItem.isPosted === "Y" ? (
+                // Posted: never deleted. Reverse writes a linked contra entry; both stay in the ledger.
+                <Button
+                    size="small"
+                    color="warning"
+                    variant="outlined"
+                    onClick={() => handleReverseClick(props.dataItem.acctgTransId)}
+                    disabled={isReversing}
+                >
+                  {getTranslatedLabel(
+                      "accounting.orgGL.accounting.summary.txns.reverseButton",
+                      "عكس القيد"
+                  )}
+                </Button>
+            ) : (
+                <Button
+                    size="small"
+                    color="error"
+                    variant="outlined"
+                    onClick={() => handleDeleteClick(props.dataItem.acctgTransId)}
+                    disabled={isDeleting}
+                >
+                  {getTranslatedLabel(
+                      "accounting.orgGL.accounting.summary.txns.deleteButton",
+                      "Delete"
+                  )}
+                </Button>
+            )}
           </Can>
         </td>
     );
@@ -289,7 +339,9 @@ export default function AccountingTransactionsList() {
 
           <Grid item xs={12}>
             <div className="div-container">
+              <ReversalLegend />
               <KendoGrid
+                rows={{ data: ReversalRow }}
                 resizable={true}
                 filterable={true}
                 sortable={true}
@@ -476,6 +528,49 @@ export default function AccountingTransactionsList() {
                             "accounting.orgGL.accounting.summary.txns.deleteConfirm",
                             "Delete"
                         )}
+                  </Button>
+                </DialogActions>
+              </Dialog>
+              <Dialog
+                  open={reverseDialogOpen}
+                  onClose={() => setReverseDialogOpen(false)}
+                  aria-labelledby="reverse-dialog-title"
+                  fullWidth
+                  maxWidth="sm"
+              >
+                <DialogTitle id="reverse-dialog-title">
+                  {getTranslatedLabel("accounting.orgGL.accounting.summary.txns.reverseDialogTitle", "عكس القيد المحاسبي")}
+                </DialogTitle>
+                <DialogContent>
+                  <DialogContentText sx={{ whiteSpace: 'pre-line', mb: 2 }}>
+                    {getTranslatedLabel(
+                        "accounting.orgGL.accounting.summary.txns.reverseDialogMessage",
+                        "سيتم إنشاء قيد عكسي مرتبط بالقيد {0} بنفس البنود مع تبديل المدين والدائن. يبقى القيد الأصلي والقيد العكسي في الدفتر. لا يُحذف شيء.\n\nاذكر سبب العكس."
+                    ).replace("{0}", transToReverse || "")}
+                  </DialogContentText>
+                  <TextField
+                      id="reverse-acctg-trans-reason"
+                      autoFocus
+                      fullWidth
+                      multiline
+                      minRows={2}
+                      label={getTranslatedLabel("accounting.orgGL.accounting.summary.txns.reverseReason", "سبب العكس")}
+                      value={reverseReason}
+                      onChange={(e) => setReverseReason(e.target.value)}
+                      inputProps={{ maxLength: 500 }}
+                  />
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => setReverseDialogOpen(false)} disabled={isReversing}>
+                    {getTranslatedLabel("global.cancel", "Cancel")}
+                  </Button>
+                  <Button
+                      onClick={handleConfirmReverse}
+                      color="warning"
+                      variant="contained"
+                      disabled={isReversing || !reverseReason.trim()}
+                  >
+                    {getTranslatedLabel("accounting.orgGL.accounting.summary.txns.reverseConfirm", "عكس القيد")}
                   </Button>
                 </DialogActions>
               </Dialog>

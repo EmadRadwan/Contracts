@@ -49,6 +49,15 @@ public class CreatePaymentAndFinAccountTrans
 
                 var paymentResult = await _paymentHelperService.CreatePaymentAndFinAccountTrans(req);
 
+                // The service swallows exceptions into a failed Result; committing here regardless used to
+                // turn every such failure into a bodiless 404 (Success with a null Value), hiding the reason.
+                if (!paymentResult.IsSuccess || paymentResult.Value == null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Results<CreatePaymentAndFinAccountTransResponse>.Failure(
+                        paymentResult.Error ?? "فشل إنشاء الدفعة",
+                        errorCode: "PAYMENT_CREATION_FAILED");
+                }
 
                 await _context.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);

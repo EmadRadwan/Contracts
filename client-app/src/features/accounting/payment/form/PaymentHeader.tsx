@@ -30,6 +30,7 @@ const PaymentHeader: React.FC<PaymentHeaderProps> = ({
             4: { key: "sent", backgroundColor: "blue", foreColor: "#ffffff" },
             5: { key: "confirmed", backgroundColor: "yellow", foreColor: "#000000" },
             6: { key: "cancelled", backgroundColor: "red", foreColor: "#ffffff" },
+            7: { key: "voided", backgroundColor: "gray", foreColor: "#ffffff" },
             default: { key: "unknown", backgroundColor: "gray", foreColor: "#ffffff" },
         };
         const statusKey = statuses[formEditMode] || statuses.default;

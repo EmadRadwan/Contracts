@@ -2,7 +2,7 @@ import {useEffect, useMemo, useRef, useState} from "react";
 import { toast } from "react-toastify";
 import { Payment } from "../../../../app/models/accounting/payment";
 import {
-  useCreatePaymentAndFinAccountTransMutation, useDuplicatePaymentMutation, useResetPaymentMutation,
+  useCreatePaymentAndFinAccountTransMutation, useDuplicatePaymentMutation, useResetPaymentMutation, useVoidPaymentMutation,
   useSetPaymentStatusMutation,
   useUpdatePaymentMutation,
 } from "../../../../app/store/apis";
@@ -41,6 +41,7 @@ const statusToEditMode: Record<string, number> = {
   [PAYMENT_STATUSES.SENT]: 4,
   [PAYMENT_STATUSES.CONFIRMED]: 5,
   [PAYMENT_STATUSES.CANCELLED]: 6,
+  PMNT_VOID: 7,
 };
 
 // REFACTOR: Map backend error codes to user-friendly messages
@@ -99,9 +100,10 @@ export default function usePayment({
       useSetPaymentStatusMutation();
   const [duplicatePayment, { isLoading: isDuplicating }] = useDuplicatePaymentMutation();
   const [resetPayment, { isLoading: isResetting }] = useResetPaymentMutation();
+  const [voidPayment, { isLoading: isVoiding }] = useVoidPaymentMutation();
   const {getTranslatedLabel} = useTranslationHelper();
   const localizationKey = "accounting.payments.form";
-  const isLoading = isCreateLoading || isUpdateLoading || isStatusLoading || isDuplicating || isResetting;
+  const isLoading = isCreateLoading || isUpdateLoading || isStatusLoading || isDuplicating || isResetting || isVoiding;
 
   
   const defaultNewPayment = useMemo(() => ({
@@ -169,9 +171,16 @@ export default function usePayment({
    */
   const handleApiError = (error: any, defaultMessage: string) => {
     // REFACTOR: Select localized message based on language from Redux store
-    const errorCode = error?.data?.errorCode || "DEFAULT";
-    const errorMessage = error?.data?.title || defaultMessage;
-    const localizedMessage = errorMessages[language][errorCode] || errorMessage || defaultMessage;
+    // Precedence: a known error code -> the server's own message (title) -> generic fallback.
+    // The server message must win over DEFAULT, otherwise explanatory failures (e.g. "your login
+    // is not linked to an employee") collapse into "unexpected error".
+    const errorCode: string | undefined = error?.data?.errorCode;
+    const serverMessage: string | undefined = error?.data?.title;
+    const localizedMessage =
+        (errorCode && errorMessages[language][errorCode]) ||
+        serverMessage ||
+        errorMessages[language].DEFAULT ||
+        defaultMessage;
     toast.error(localizedMessage);
     console.error(error);
     setIsLoading(false);
@@ -209,8 +218,9 @@ export default function usePayment({
       finalizePayment(resetedPayment, PAYMENT_STATUSES.NOT_PAID);
 
       toast.success(
-          getTranslatedLabel("accounting.payments.form.reset.resetSuccess", "تم إعادة تعيين الدفعة بنجاح")
+          getTranslatedLabel("accounting.payments.form.reset.resetSuccess", "تمت إعادة تعيين الدفعة وعكس قيودها المحاسبية")
       );
+      dispatch(acctTransApi.util.invalidateTags(["Payments", "PTransactions"]));
 
     } catch (err: any) {
       const msg =
@@ -399,6 +409,32 @@ const handleCreate = async (data: {
     await updatePaymentData(updated);
   };
 
+  // Void = the auditor's replacement for deleting a payment that reached the ledger:
+  // the row stays as PMNT_VOID, its entries are reversed, its bank row is cancelled.
+  const handleVoid = async (reason: string) => {
+    if (!payment?.paymentId) {
+      toast.error(getTranslatedLabel("accounting.payments.noPayment", "No payment selected"));
+      return;
+    }
+    if (!reason?.trim()) {
+      toast.warning(getTranslatedLabel("accounting.payments.form.void.reasonRequired", "سبب الإلغاء مطلوب"));
+      return;
+    }
+    try {
+      setIsLoading(true);
+      await voidPayment({ paymentId: payment.paymentId, reason: reason.trim() }).unwrap();
+      finalizePayment({ ...payment, statusId: "PMNT_VOID", statusDescription: "Voided" }, "PMNT_VOID");
+      toast.success(
+          getTranslatedLabel("accounting.payments.form.void.success", "تم إلغاء الدفعة وعكس قيودها المحاسبية")
+      );
+      dispatch(acctTransApi.util.invalidateTags(["Payments", "PTransactions"]));
+    } catch (err: any) {
+      handleApiError(err, getTranslatedLabel("accounting.payments.form.void.failed", "فشل إلغاء الدفعة"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleStatusChange = async (data: {
     menuItem: string;
   }) => {
@@ -420,6 +456,6 @@ const handleCreate = async (data: {
     handleCreate, handleDuplicate,
     handleUpdate,
     handleStatusChange,
-    isLoading, handleReset,
+    isLoading, handleReset, handleVoid,
   };
 }

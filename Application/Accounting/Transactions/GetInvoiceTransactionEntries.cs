@@ -77,6 +77,8 @@ namespace Application.Shipments.Transactions
                             DueDate = ate.DueDate,
 
                             IsPosted = at.IsPosted,
+                            ReversalOfAcctgTransId = _context.AcctgTransAttributes.Where(a => a.AcctgTransId == at.AcctgTransId && a.AttrName == "REVERSAL_OF").Select(a => a.AttrValue).FirstOrDefault(),
+                            ReversedByAcctgTransId = _context.AcctgTransAttributes.Where(a => a.AcctgTransId == at.AcctgTransId && a.AttrName == "REVERSED_BY").Select(a => a.AttrValue).FirstOrDefault(),
                             TransactionDate = at.TransactionDate,
                             PostedDate = at.PostedDate,
 

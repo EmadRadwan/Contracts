@@ -298,7 +298,10 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
                   color="error"
                   variant="outlined"
                   onClick={() => handleDeleteClick(props.dataItem.paymentId)}
-                  disabled={isDeleting}
+                  disabled={isDeleting || props.dataItem.statusId !== "PMNT_NOT_PAID"}
+                  title={props.dataItem.statusId !== "PMNT_NOT_PAID"
+                      ? getTranslatedLabel("accounting.payments.list.deleteOnlyDrafts", "تُحذف الدفعات غير المدفوعة فقط؛ الدفعات المرسلة/المستلمة تُلغى من شاشة الدفعة")
+                      : undefined}
               >
                 {getTranslatedLabel("accounting.payments.list.deleteButton", "Delete")}
               </Button>

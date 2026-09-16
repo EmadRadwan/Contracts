@@ -21,6 +21,7 @@ import {
 } from "@mui/material";
 import {Can} from "../../../../account/Can";
 import {RecordChequesDialog} from "./RecordChequesDialog";
+import { apiErrorMessage } from "../../../../../app/util/apiError";
 
 interface SalesRequestActionsMenuProps {
     salesRequestId: string | undefined;
@@ -93,7 +94,7 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
         } catch (err: any) {
             // Show what the server actually said (FK violations, business-rule blocks) instead of
             // swallowing every failure behind the same generic sentence.
-            toast.error(err?.data?.title ?? getTranslatedLabel("salesRequest.deleteError", "Failed to delete sales request"));
+            toast.error(apiErrorMessage(err, getTranslatedLabel("salesRequest.deleteError", "Failed to delete sales request")));
         } finally {
             setConfirmDeleteOpen(false);  // Always close dialog
         }
@@ -112,7 +113,7 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
             toast.success(getTranslatedLabel("salesRequest.form.resetSuccess", "Sales Request Reset Successfully"));
             onSalesRequestUpdated?.(updatedSalesRequest as unknown as SalesRequest);
         } catch (err: any) {
-            toast.error(err?.data?.title ?? getTranslatedLabel("salesRequest.form.resetError", "Failed to reset sales request"));
+            toast.error(apiErrorMessage(err, getTranslatedLabel("salesRequest.form.resetError", "Failed to reset sales request")));
         } finally {
             setConfirmResetOpen(false);
         }
@@ -190,10 +191,11 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
                 <DialogContent>
                     <DialogContentText>
                         {getTranslatedLabel('salesRequest.form.deleteConfirmMessage',
-                            'Are you sure you want to permanently delete this Sales Request? ' +
-                            'This action will also remove all related payments and accounting entries, ' +
-                            'including the sales commission record for this request and every commission ' +
-                            'payment it generated — even ones already disbursed. This cannot be undone.'
+                            'Are you sure you want to remove this Sales Request? ' +
+                            'If nothing has been posted or received yet, the request and its draft payments are deleted. ' +
+                            'Otherwise the request is kept and marked Cancelled: received payments and disbursed commission ' +
+                            'payments are voided (kept, with reversing entries), draft payments are removed, and the ' +
+                            'accounting entries booked at approval are reversed. The apartment becomes available again.'
                         )}
                     </DialogContentText>
                 </DialogContent>
@@ -229,10 +231,10 @@ export const SalesRequestActionsMenu: React.FC<SalesRequestActionsMenuProps> = (
                     <DialogContentText>
                         {getTranslatedLabel('salesRequest.form.resetConfirmMessage',
                             'Are you sure you want to reset this Sales Request? ' +
-                            'This will delete all customer payments and accounting entries generated during approval, ' +
-                            'and set the status back to Created. ' +
-                            'If a sales commission has already been approved for this request, the reset is refused — ' +
-                            'reset or delete that commission first.'
+                            'This removes the draft payments and the accounting entries generated during approval, ' +
+                            'and sets the status back to Created. ' +
+                            'It is refused once any instalment has been received (void that payment first) ' +
+                            'or if a sales commission has already been approved for this request.'
                         )}
                     </DialogContentText>
                 </DialogContent>

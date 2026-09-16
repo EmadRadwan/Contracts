@@ -7,6 +7,7 @@ import PercentIcon from '@mui/icons-material/Percent';
 import { useAppDispatch } from "../../../../../app/store/configureStore";
 import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
 import {Can} from "../../../../account/Can";
+import { SALES_COMMISSION_ENTRY_ROLES } from "../../../../../app/models/orders/salesCommissionRoles";
 
 // ---------------------------------------------------------------
 // Props – includes callback that notifies the list page
@@ -51,7 +52,7 @@ const links = [
         key: "salesRequest.menu.salesCommissions",
         translationKey: "salesRequest.menu.salesCommissions",
         icon: <PercentIcon sx={{ color: "#FF9800" }} />,
-        requiredRole: "CreateSalesRequest" as const,
+        requiredRole: SALES_COMMISSION_ENTRY_ROLES,
     },
 ];
 

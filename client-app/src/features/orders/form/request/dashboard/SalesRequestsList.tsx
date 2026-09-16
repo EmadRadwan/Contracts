@@ -24,6 +24,8 @@ import {SalesRequest} from "../../../../../app/models/order/SalesRequest";
 import SalesRequestForm from "../form/SalesRequestForm";
 import LoadingComponent from "../../../../../app/layout/LoadingComponent";
 import SalesRequestMenu from "../menu/SalesRequestMenu";
+import { Can } from "../../../../account/Can";
+import { SALES_COMMISSION_ENTRY_ROLES } from "../../../../../app/models/orders/salesCommissionRoles";
 import {handleDatesArray} from "../../../../../app/util/utils";
 import InstallmentPriceCalculatorModal from "./InstallmentPriceCalculatorModal";
 import ModalContainer from "../../../../../app/common/modals/ModalContainer";
@@ -238,14 +240,16 @@ function SalesRequestsList() {
                 aria-colindex={props.ariaColumnIndex} aria-selected={props.isSelected}
                 {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }} {...navigationAttributes}>
                 {isApproved && (
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        color="warning"
-                        onClick={() => navigate("/sales-commissions", { state: { salesRequestId: props.dataItem.salesRequestId } })}
-                    >
-                        عمولة
-                    </Button>
+                    <Can perform={SALES_COMMISSION_ENTRY_ROLES}>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            color="warning"
+                            onClick={() => navigate("/sales-commissions", { state: { salesRequestId: props.dataItem.salesRequestId } })}
+                        >
+                            عمولة
+                        </Button>
+                    </Can>
                 )}
             </td>
         );

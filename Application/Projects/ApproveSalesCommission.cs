@@ -178,7 +178,7 @@ public class ApproveSalesCommission
             {
                 await transaction.RollbackAsync(cancellationToken);
                 _logger.LogError(ex, "Failed to approve commission {Id}", request.SalesCommissionId);
-                return Result<SalesCommissionDto>.Failure("Failed to approve commission");
+                return Result<SalesCommissionDto>.Failure($"Failed to approve commission: {ex.Message}");
             }
         }
     }

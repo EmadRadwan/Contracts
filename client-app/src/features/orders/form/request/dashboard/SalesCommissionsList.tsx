@@ -9,6 +9,7 @@ import {
 } from "@progress/kendo-react-grid";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
 import { Grid, Paper, Button, Chip } from "@mui/material";
+import { useAppSelector } from "../../../../../app/store/configureStore";
 import { DataResult, State } from "@progress/kendo-data-query";
 import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHelper";
 import {
@@ -21,12 +22,19 @@ import SalesRequestMenu from "../menu/SalesRequestMenu";
 import SalesCommissionForm from "../form/SalesCommissionForm";
 import SalesCommissionsDateRangeExcel from "../report/SalesCommissionsDateRangeExcel";
 import { SALE_TYPE_LABELS, COMMISSION_STATUS_CHIP_COLORS } from "../../../../../app/models/orders/salesCommissionLabels";
+import { Can } from "../../../../account/Can";
+import { SALES_COMMISSION_ROLES, SALES_COMMISSION_ACTION_ROLES } from "../../../../../app/models/orders/salesCommissionRoles";
 
 export default function SalesCommissionsList() {
     const location = useLocation();
     const initialSalesRequestId: string | undefined = (location.state as any)?.salesRequestId;
+    // The "عمولة" button on the sales-requests grid lands here in create mode; users without the
+    // create role only get the list (the form's fields lock themselves as well).
+    // user.roles is typed Role[] in models/party/user.ts but the API actually sends string[] (see Can.tsx / RequireRole.tsx)
+    const userRoles = (useAppSelector(state => state.account.user?.roles) ?? []) as unknown as string[];
+    const canCreate = userRoles.includes(SALES_COMMISSION_ROLES.create);
 
-    const [editMode, setEditMode] = useState<0 | 1 | 2>(initialSalesRequestId ? 1 : 0);
+    const [editMode, setEditMode] = useState<0 | 1 | 2>(initialSalesRequestId && canCreate ? 1 : 0);
     const [selectedCommission, setSelectedCommission] = useState<SalesCommission | undefined>(undefined);
     const [openSalesRequestId, setOpenSalesRequestId] = useState<string | undefined>(initialSalesRequestId);
     const [commissions, setCommissions] = useState<DataResult>({ data: [], total: 0 });
@@ -126,14 +134,16 @@ export default function SalesCommissionsList() {
             <td className={props.className} style={props.style} colSpan={props.colSpan} role="gridcell"
                 aria-colindex={props.ariaColumnIndex} aria-selected={props.isSelected}
                 {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }} {...navigationAttributes}>
-                <SalesCommissionActionsMenu
-                    salesCommissionId={props.dataItem.salesCommissionId}
-                    currentStatusId={props.dataItem.statusId}
-                    disabled={false}
-                    onCommissionApproved={refetch}
-                    onCommissionReset={refetch}
-                    onCommissionDeleted={refetch}
-                />
+                <Can perform={SALES_COMMISSION_ACTION_ROLES}>
+                    <SalesCommissionActionsMenu
+                        salesCommissionId={props.dataItem.salesCommissionId}
+                        currentStatusId={props.dataItem.statusId}
+                        disabled={false}
+                        onCommissionApproved={refetch}
+                        onCommissionReset={refetch}
+                        onCommissionDeleted={refetch}
+                    />
+                </Can>
             </td>
         );
     };
@@ -166,13 +176,15 @@ export default function SalesCommissionsList() {
                     <GridToolbar>
                         <Grid container alignItems="center">
                             <Grid item xs={5}>
-                                <Button
-                                    color="secondary"
-                                    onClick={() => { setOpenSalesRequestId(undefined); setEditMode(1); }}
-                                    variant="outlined"
-                                >
-                                    {getTranslatedLabel("salesCommission.list.create", "إنشاء عمولة جديدة")}
-                                </Button>
+                                <Can perform={SALES_COMMISSION_ROLES.create}>
+                                    <Button
+                                        color="secondary"
+                                        onClick={() => { setOpenSalesRequestId(undefined); setEditMode(1); }}
+                                        variant="outlined"
+                                    >
+                                        {getTranslatedLabel("salesCommission.list.create", "إنشاء عمولة جديدة")}
+                                    </Button>
+                                </Can>
                             </Grid>
                             <Grid item>
                                 <SalesCommissionsDateRangeExcel dataState={dataState} />

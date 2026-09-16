@@ -235,6 +235,19 @@ const acctTransApi = createApi({
                 invalidatesTags: ['Transactions'], // This will auto-refetch the list
             }),
 
+            // Posted transactions are reversed (linked contra entry), never deleted.
+            reverseAcctgTrans: builder.mutation<
+                { originalAcctgTransId: string; reversalAcctgTransId: string },
+                { acctgTransId: string; reason: string; reversalDate?: string }
+            >({
+                query: ({ acctgTransId, reason, reversalDate }) => ({
+                    url: `/transactions/reverseAcctgTrans/${acctgTransId}`,
+                    method: 'POST',
+                    body: { reason, reversalDate },
+                }),
+                invalidatesTags: ['Transactions', 'ITransactions', 'PTransactions'],
+            }),
+
             createInitialBalanceTrans: builder.mutation<
                 CreateInitialBalanceTransResponse,
                 CreateInitialBalanceTransParams
@@ -263,7 +276,7 @@ export const {
     useCreateMultiAcctgTransWithEntriesMutation,
     useUpdateMultiAcctgTransWithEntriesMutation,
     useCreateInitialBalanceTransMutation,
-    useDeleteAcctgTransMutation, useDuplicateAcctgTransMutation, useUnpostAcctgTransMutation,
+    useDeleteAcctgTransMutation, useReverseAcctgTransMutation, useDuplicateAcctgTransMutation, useUnpostAcctgTransMutation,
 } = acctTransApi;
 
 export {acctTransApi};

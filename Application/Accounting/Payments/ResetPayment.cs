@@ -1,3 +1,4 @@
+using Application.Accounting.Services;
 using Application.Core;
 using Domain;
 using MediatR;
@@ -7,22 +8,40 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Accounting.Payments;
 
+/// <summary>
+/// Returns a sent or received payment to draft so it can be corrected and re-sent.
+///
+/// Step 3 of the auditor's soft-delete requirement (Sep 2026): the posted accounting transactions
+/// are no longer deleted. Each is cancelled by a linked reversing transaction, so the ledger keeps
+/// the original, the reversal, and later the re-posted entry. Payment applications are removed
+/// through the service that also returns paid invoices to READY. The bank transaction row is left
+/// alone: it is created with the payment at draft time and belongs to the payment, not to its
+/// posting.
+/// </summary>
 public class ResetPayment
 {
     public class Command : IRequest<Results<PaymentDto>>
     {
         public string PaymentId { get; set; } = string.Empty;
+        public string? Reason { get; set; }
     }
 
     public class Handler : IRequestHandler<Command, Results<PaymentDto>>
     {
         private readonly DataContext _context;
         private readonly ILogger<Handler> _logger;
+        private readonly IAccountingPeriodGuard _periodGuard;
+        private readonly IAcctgTransReversalService _reversal;
+        private readonly IPaymentApplicationService _paymentApplicationService;
 
-        public Handler(DataContext context, ILogger<Handler> logger)
+        public Handler(DataContext context, ILogger<Handler> logger, IAccountingPeriodGuard periodGuard,
+            IAcctgTransReversalService reversal, IPaymentApplicationService paymentApplicationService)
         {
             _context = context;
             _logger = logger;
+            _periodGuard = periodGuard;
+            _reversal = reversal;
+            _paymentApplicationService = paymentApplicationService;
         }
 
         public async Task<Results<PaymentDto>> Handle(Command request, CancellationToken ct)
@@ -36,120 +55,134 @@ public class ResetPayment
 
             try
             {
-                // 1. Fetch the current payment (to validate + get reference data)
-                var original = await _context.Payments
-                    .AsNoTracking()
-                    .Include(p => p.PaymentPreference) // optional - if you need it later
+                var payment = await _context.Payments
                     .FirstOrDefaultAsync(p => p.PaymentId == request.PaymentId, ct);
 
-                if (original == null)
+                if (payment == null)
                 {
                     return Results<PaymentDto>.Failure("Payment not found", "PAYMENT_NOT_FOUND");
                 }
 
-                // Optional guard: prevent reset on final/closed statuses
-                if (original.StatusId is "PMNT_VOIDED" or "PMNT_CANCELLED" or "PMNT_CONFIRMED")
+                if (payment.StatusId is "PMNT_VOID" or "PMNT_CANCELLED" or "PMNT_CONFIRMED")
                 {
                     return Results<PaymentDto>.Failure(
-                        $"Cannot reset payment in status '{original.StatusId}'",
+                        $"Cannot reset payment in status '{payment.StatusId}'",
                         "INVALID_PAYMENT_STATUS"
                     );
                 }
 
-                // 2. Reset core fields on the payment
-                var paymentToUpdate = new Payment { PaymentId = request.PaymentId };
-                _context.Attach(paymentToUpdate);
+                // Closed-period control on the posted rows about to be reversed.
+                await _periodGuard.EnsureOpenForPaymentsAsync(new[] { request.PaymentId }, ct);
 
-                paymentToUpdate.StatusId           = "PMNT_NOT_PAID";
-                paymentToUpdate.OverrideGlAccountId = null; // optional - clear override if desired
-                paymentToUpdate.LastUpdatedStamp   = DateTime.UtcNow;
-                paymentToUpdate.LastUpdatedTxStamp = DateTime.UtcNow;
+                var stamp = DateTime.UtcNow;
+                var reason = string.IsNullOrWhiteSpace(request.Reason)
+                    ? $"Reset payment {request.PaymentId} to draft"
+                    : request.Reason.Trim();
 
-                // 3. Delete related PaymentApplications (outgoing - payment → invoice)
-                await _context.PaymentApplications
-                    .Where(pa => pa.PaymentId == request.PaymentId)
-                    .ExecuteDeleteAsync(ct);
+                // 1. Detach from invoices and other payments. RemovePaymentApplication returns a
+                //    fully paid invoice to INVOICE_READY, which the old ExecuteDelete never did.
+                var applicationIds = await _context.PaymentApplications
+                    .Where(pa => pa.PaymentId == request.PaymentId || pa.ToPaymentId == request.PaymentId)
+                    .Select(pa => pa.PaymentApplicationId)
+                    .ToListAsync(ct);
 
-                // Optional: also clean incoming side (toPaymentId) if used in your system
-                // await _context.PaymentApplications
-                //     .Where(pa => pa.ToPaymentId == request.PaymentId)
-                //     .ExecuteDeleteAsync(ct);
-
-                // 4. Delete accounting transactions (entries first, then headers)
-                await _context.AcctgTransEntries
-                    .Where(ate => _context.AcctgTrans
-                        .Any(at => at.AcctgTransId == ate.AcctgTransId &&
-                                   at.PaymentId == request.PaymentId))
-                    .ExecuteDeleteAsync(ct);
-
-                await _context.AcctgTrans
-                    .Where(at => at.PaymentId == request.PaymentId)
-                    .ExecuteDeleteAsync(ct);
-
-                // 5. Optional: reset linked OrderPaymentPreference status
-                if (!string.IsNullOrEmpty(original.PaymentPreferenceId))
+                foreach (var applicationId in applicationIds)
                 {
-                    var preferenceToUpdate = new OrderPaymentPreference
+                    var removed = await _paymentApplicationService.RemovePaymentApplication(applicationId);
+                    if (!removed.IsSuccess)
                     {
-                        OrderPaymentPreferenceId = original.PaymentPreferenceId
-                    };
-                    _context.Attach(preferenceToUpdate);
-                    preferenceToUpdate.StatusId = "PMNT_NOT_PAID";
-                    preferenceToUpdate.LastModifiedDate = DateTime.UtcNow;
+                        await transaction.RollbackAsync(ct);
+                        return Results<PaymentDto>.Failure(removed.ErrorMessage, "APPLICATION_REMOVE_FAILED");
+                    }
                 }
 
-                // 6. Save all changes
+                // 2. Reverse, never delete. Unposted rows (none in practice) are removed as drafts.
+                var reversible = await _reversal.FindReversibleForPaymentAsync(request.PaymentId, ct);
+                var reversed = await _reversal.ReverseManyAsync(reversible,
+                    new ReverseAcctgTransOptions { Reason = reason }, ct);
+                if (!reversed.IsSuccess)
+                {
+                    await transaction.RollbackAsync(ct);
+                    return Results<PaymentDto>.Failure(reversed.ErrorMessage, "REVERSAL_FAILED");
+                }
+
+                var unposted = await _context.AcctgTrans
+                    .Include(t => t.AcctgTransEntries)
+                    .Where(t => t.PaymentId == request.PaymentId && t.IsPosted != "Y")
+                    .ToListAsync(ct);
+                foreach (var draft in unposted)
+                {
+                    _context.AcctgTransEntries.RemoveRange(draft.AcctgTransEntries);
+                    _context.AcctgTrans.Remove(draft);
+                }
+
+                // 3. Back to draft. Status is set directly: SetPaymentStatus refuses SENT/RECEIVED -> NOT_PAID
+                //    by design and points here.
+                payment.StatusId = "PMNT_NOT_PAID";
+                // The override GL account is part of what the user entered, not of the posting, so
+                // it survives a reset. Clearing it (as the old handler did) made the re-send fall
+                // back to the payment type's default account: O18087 went to 150000 instead of the
+                // employee's custody account 100073 on 2026-09-15.
+                payment.LastUpdatedStamp = stamp;
+                payment.LastUpdatedTxStamp = stamp;
+
+                if (!string.IsNullOrEmpty(payment.PaymentPreferenceId))
+                {
+                    var preference = await _context.OrderPaymentPreferences
+                        .FirstOrDefaultAsync(opp => opp.OrderPaymentPreferenceId == payment.PaymentPreferenceId, ct);
+                    if (preference != null)
+                    {
+                        preference.StatusId = "PMNT_NOT_PAID";
+                        preference.LastModifiedDate = stamp;
+                    }
+                }
+
                 await _context.SaveChangesAsync(ct);
 
-                // 7. Reload the updated payment entity
-                var updatedPayment = await _context.Payments
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(p => p.PaymentId == request.PaymentId, ct);
-
-                if (updatedPayment == null)
-                {
-                    throw new InvalidOperationException("Failed to reload updated payment after reset");
-                }
-
-                // 8. Load party names for DTO (same pattern as UpdatePayment)
                 var fromPartyName = await _context.Parties
-                    .Where(p => p.PartyId == updatedPayment.PartyIdFrom)
+                    .Where(p => p.PartyId == payment.PartyIdFrom)
                     .Select(p => p.Description)
                     .FirstOrDefaultAsync(ct);
 
                 var toPartyName = await _context.Parties
-                    .Where(p => p.PartyId == updatedPayment.PartyIdTo)
+                    .Where(p => p.PartyId == payment.PartyIdTo)
                     .Select(p => p.Description)
                     .FirstOrDefaultAsync(ct);
 
-                // 9. Build DTO to return
                 var paymentDto = new PaymentDto
                 {
-                    PaymentId          = updatedPayment.PaymentId,
-                    StatusId           = updatedPayment.StatusId,
-                    StatusDescription  = "Not Paid", // or load from StatusItem if needed
-                    Amount             = updatedPayment.Amount,
-                    EffectiveDate      = updatedPayment.EffectiveDate,
-                    Comments           = updatedPayment.Comments,
-                    PaymentMethodId    = updatedPayment.PaymentMethodId,
-                    PaymentTypeId      = updatedPayment.PaymentTypeId,
-                    PartyIdFrom        = updatedPayment.PartyIdFrom,
-                    PartyIdFromName    = fromPartyName,
-                    PartyIdTo          = updatedPayment.PartyIdTo,
-                    PartyIdToName      = toPartyName,
-                    OverrideGlAccountId = updatedPayment.OverrideGlAccountId,
-                    ChequeNumber       = updatedPayment.ChequeNumber,
-                    ChequeDate         = updatedPayment.ChequeDate,
-                    PaymentRefNum      = updatedPayment.PaymentRefNum,
-                    CostCenterId       = updatedPayment.CostCenterId,
-                    IsBankTransfer     = updatedPayment.IsBankTransfer,
+                    PaymentId = payment.PaymentId,
+                    StatusId = payment.StatusId,
+                    StatusDescription = "Not Paid",
+                    Amount = payment.Amount,
+                    EffectiveDate = payment.EffectiveDate,
+                    Comments = payment.Comments,
+                    PaymentMethodId = payment.PaymentMethodId,
+                    PaymentTypeId = payment.PaymentTypeId,
+                    PartyIdFrom = payment.PartyIdFrom,
+                    PartyIdFromName = fromPartyName,
+                    PartyIdTo = payment.PartyIdTo,
+                    PartyIdToName = toPartyName,
+                    OverrideGlAccountId = payment.OverrideGlAccountId,
+                    ChequeNumber = payment.ChequeNumber,
+                    ChequeDate = payment.ChequeDate,
+                    PaymentRefNum = payment.PaymentRefNum,
+                    CostCenterId = payment.CostCenterId,
+                    IsBankTransfer = payment.IsBankTransfer,
                 };
 
                 await transaction.CommitAsync(ct);
 
-                _logger.LogInformation("Payment {PaymentId} successfully reset", request.PaymentId);
+                _logger.LogInformation(
+                    "Payment {PaymentId} reset to draft: {Reversed} transactions reversed, {Apps} applications removed",
+                    request.PaymentId, reversed.ResultData.Count(r => r.ReversalAcctgTransId != null), applicationIds.Count);
 
                 return Results<PaymentDto>.Success(paymentDto);
+            }
+            catch (ClosedAccountingPeriodException ex)
+            {
+                await transaction.RollbackAsync(ct);
+                return Results<PaymentDto>.Failure(ex.Message, "PERIOD_CLOSED");
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -160,25 +193,12 @@ public class ResetPayment
                     "CONCURRENCY_ERROR"
                 );
             }
-            catch (DbUpdateException ex)
-            {
-                await transaction.RollbackAsync(ct);
-                _logger.LogError(ex, "Database error while resetting payment {PaymentId}", request.PaymentId);
-
-                string userMessage = "Failed to reset payment due to a database error.";
-                if (ex.InnerException?.Message.Contains("FK_") == true)
-                {
-                    userMessage = "Cannot reset payment – it is referenced by other records.";
-                }
-
-                return Results<PaymentDto>.Failure(userMessage, "DATABASE_ERROR");
-            }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(ct);
                 _logger.LogError(ex, "Unexpected error resetting payment {PaymentId}", request.PaymentId);
                 return Results<PaymentDto>.Failure(
-                    "An unexpected error occurred while resetting the payment.",
+                    $"An unexpected error occurred while resetting the payment: {ex.GetBaseException().Message}",
                     "UNEXPECTED_ERROR"
                 );
             }

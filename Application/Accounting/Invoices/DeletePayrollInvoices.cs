@@ -1,3 +1,4 @@
+using Application.Accounting.Services;
 using Application.Core;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -16,10 +17,12 @@ public class DeletePayrollInvoices
     public class Handler : IRequestHandler<Command, Result<Unit>>
     {
         private readonly DataContext _context;
+        private readonly IAccountingPeriodGuard _periodGuard;
 
-        public Handler(DataContext context)
+        public Handler(DataContext context, IAccountingPeriodGuard periodGuard)
         {
             _context = context;
+            _periodGuard = periodGuard;
         }
 
         public async Task<Result<Unit>> Handle(Command request, CancellationToken cancellationToken)
@@ -40,6 +43,16 @@ public class DeletePayrollInvoices
 
                 if (existingInvoiceIds.Any())
                 {
+                    // Pragmatic payroll policy: refuse once a run payment has been sent; closed period refuses too.
+                    var sentRunPayments = await PayrollRunGuard.SentRunPaymentIdsAsync(
+                        _context, request.OrganizationPartyId, monthStart, monthEnd, cancellationToken);
+                    if (sentRunPayments.Any())
+                    {
+                        await transaction.RollbackAsync(cancellationToken);
+                        return Result<Unit>.Failure(PayrollRunGuard.SettledMessage(monthStart, sentRunPayments));
+                    }
+                    await _periodGuard.EnsureOpenForInvoicesAsync(existingInvoiceIds, cancellationToken);
+
                     // 1. Revert Long-term Advance Schedules
                     await _context.EmployeeAdvanceSchedules
                         .Where(s => existingInvoiceIds.Contains(s.PayrolInvoiceId))
@@ -71,6 +84,8 @@ public class DeletePayrollInvoices
 
                     if (paymentIds.Any())
                     {
+                        await _periodGuard.EnsureOpenForPaymentsAsync(paymentIds, cancellationToken);
+
                         // Delete accounting entries for payments
                         await _context.AcctgTransEntries
                             .Where(ate => _context.AcctgTrans

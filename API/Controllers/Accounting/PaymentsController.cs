@@ -100,6 +100,22 @@ public class PaymentsController : BaseApiController
         }));
     }
 
+    public class VoidPaymentRequest
+    {
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    /// <summary>Void instead of delete: status PMNT_VOID, ledger reversed, bank transactions cancelled. Row kept.</summary>
+    [HttpPost("void/{paymentId}")]
+    public async Task<IActionResult> VoidPayment(string paymentId, [FromBody] VoidPaymentRequest body)
+    {
+        return HandleResult(await Mediator.Send(new VoidPayment.Command
+        {
+            PaymentId = paymentId,
+            Reason = body?.Reason ?? string.Empty
+        }));
+    }
+
     [HttpPut("updatePayment", Name = "UpdatePayment")]
     public async Task<IActionResult> UpdatePayment(PaymentDto paymentDto)
     {

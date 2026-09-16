@@ -16,6 +16,7 @@ import {
     useUpdateUserMutation,
     useCreateRoleMutation,
     useFetchInternalAccountingOrganizationsLovQuery,
+    useFetchPartiesEmployeesLovQuery,
     UserListDto,
     RoleDto,
 } from "../../../app/store/apis";
@@ -32,9 +33,12 @@ export default function UserForm({ user, cancelEdit, editMode }: Props) {
     const [buttonFlag, setButtonFlag] = useState(false);
     const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
     const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>("");
+    const [selectedPartyId, setSelectedPartyId] = useState<string>("");
 
     const { data: allRoles, isLoading: rolesLoading } = useFetchAllRolesQuery();
     const { data: organizations, isLoading: organizationsLoading } = useFetchInternalAccountingOrganizationsLovQuery({});
+    const { data: employeesLov, isLoading: employeesLoading } = useFetchPartiesEmployeesLovQuery();
+    const employees = employeesLov?.parties ?? [];
     const { data: userRoles, isLoading: userRolesLoading } = useFetchUserRolesQuery(
         user?.id ?? "",
         { skip: !user?.id }
@@ -60,12 +64,20 @@ export default function UserForm({ user, cancelEdit, editMode }: Props) {
         }
     }, [user?.organizationPartyId]);
 
+    useEffect(() => {
+        setSelectedPartyId(user?.partyId ?? "");
+    }, [user?.partyId]);
+
     const handleRolesChange = (event: MultiSelectChangeEvent) => {
         setSelectedRoles(event.value);
     };
 
     const handleOrganizationChange = (event: DropDownListChangeEvent) => {
         setSelectedOrganizationId(event.value?.partyId || "");
+    };
+
+    const handleEmployeeChange = (event: DropDownListChangeEvent) => {
+        setSelectedPartyId(event.value?.fromPartyId || "");
     };
 
     async function handleSubmitData(data: any) {
@@ -77,6 +89,7 @@ export default function UserForm({ user, cancelEdit, editMode }: Props) {
                 userName: data.userName,
                 displayName: data.displayName,
                 organizationPartyId: selectedOrganizationId,
+                partyId: selectedPartyId,
                 roles: selectedRoles,
             }).unwrap();
             toast.success(
@@ -103,6 +116,7 @@ export default function UserForm({ user, cancelEdit, editMode }: Props) {
                 displayName: data.displayName,
                 email: data.email,
                 organizationPartyId: selectedOrganizationId,
+                partyId: selectedPartyId,
                 roles: selectedRoles,
             }).unwrap();
 
@@ -140,7 +154,7 @@ export default function UserForm({ user, cancelEdit, editMode }: Props) {
         setIsCreatingRole(false);
     }
 
-    if (rolesLoading || organizationsLoading || (editMode === 2 && userRolesLoading)) {
+    if (rolesLoading || organizationsLoading || employeesLoading || (editMode === 2 && userRolesLoading)) {
         return <LoadingComponent message={getTranslatedLabel("users.form.loading", "Loading...")} />;
     }
 
@@ -214,6 +228,28 @@ export default function UserForm({ user, cancelEdit, editMode }: Props) {
                                         style={{ width: "100%" }}
                                     />
                                 </Grid>
+                                <Grid item xs={12} md={4}>
+                                    <label className="k-label">
+                                        {getTranslatedLabel("users.form.employee", "Employee (Created By / Approved By name)")} *
+                                    </label>
+                                    {/* Required: the party stamped on payments as createdBy/approvedBy. The API rejects an
+                                        unlinked user, and payments refuse to be created/approved by one. */}
+                                    <DropDownList
+                                        data={employees}
+                                        dataItemKey="fromPartyId"
+                                        textField="fromPartyName"
+                                        value={employees.find(e => e.fromPartyId === selectedPartyId) || null}
+                                        onChange={handleEmployeeChange}
+                                        valid={!!selectedPartyId}
+                                        required
+                                        style={{ width: "100%" }}
+                                    />
+                                    {!selectedPartyId && (
+                                        <Typography variant="caption" color="error">
+                                            {getTranslatedLabel("users.form.employeeRequired", "Employee is required")}
+                                        </Typography>
+                                    )}
+                                </Grid>
                                 <Grid item xs={12}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                                         <label className="k-label" style={{ margin: 0 }}>
@@ -274,7 +310,7 @@ export default function UserForm({ user, cancelEdit, editMode }: Props) {
                                             type={editMode === 1 ? "submit" : "button"}
                                             color="success"
                                             variant="contained"
-                                            disabled={buttonFlag || (editMode === 1 && !formRenderProps.allowSubmit)}
+                                            disabled={buttonFlag || !selectedPartyId || (editMode === 1 && !formRenderProps.allowSubmit)}
                                             onClick={editMode === 2 ? () => handleUpdateUser({
                                                 userName: formRenderProps.valueGetter("userName"),
                                                 displayName: formRenderProps.valueGetter("displayName"),
