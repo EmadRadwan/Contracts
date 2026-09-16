@@ -47,17 +47,41 @@ need to delete it by hand, and one commit per deploy is enough.
 ssh ubuntu@129.146.22.240
 tmux new -s build                    # the build survives a dropped connection
 
+source ~/.telerik/telerik.env        # Telerik NuGet key + license (see box below) — REQUIRED
 cd ~/erp-contracts
 git fetch origin && git reset --hard origin/master && git clean -fd
 git log --oneline -1                 # must match what you just pushed
 
 DOCKER_BUILDKIT=0 sudo docker build -f Dockerfile.vm --cpuset-cpus 0 \
+  --build-arg TELERIK_NUGET_KEY="$TELERIK_NUGET_KEY" \
+  --build-arg TELERIK_LICENSE="$TELERIK_LICENSE" \
   -t eradwan/contractsapp:1.0.1 . 2>&1 | tee ~/diag/build.log
 
 sudo docker images eradwan/contractsapp   # the image ID MUST differ from the last deploy
-docker compose -f docker-compose.vm.yml up -d
+docker compose -f docker-compose.vm.yml down
+docker compose -f docker-compose.vm.yml up -d   # same shell: compose reads $TELERIK_LICENSE for the runtime env
 docker compose -f docker-compose.vm.yml ps
 ```
+
+> **Telerik secrets (since the Sep 2026 Telerik Reporting upgrade).** `nuget.config` pulls
+> `Telerik.*` from the private Telerik feed with `%TELERIK_NUGET_KEY%` as the password, and the
+> app needs `TELERIK_LICENSE` (file *contents*) at build and run time or reports get a trial
+> watermark. Without the two `--build-arg`s, `dotnet restore` fails with
+> `Value cannot be null or empty string. (Parameter 'password')`.
+> Keep them **outside the repo** — `git clean -fd` would delete a `.env` in `~/erp-contracts`.
+> One-time setup on the server:
+> ```bash
+> mkdir -p ~/.telerik && chmod 700 ~/.telerik
+> nano ~/.telerik/telerik-license.txt     # paste your Mac's ~/.telerik/telerik-license.txt (one line)
+> cat > ~/.telerik/telerik.env <<'EOF'
+> export TELERIK_NUGET_KEY='<key from https://www.telerik.com/account/downloads/nuget-keys>'
+> export TELERIK_LICENSE="$(cat ~/.telerik/telerik-license.txt)"
+> EOF
+> chmod 600 ~/.telerik/telerik.env ~/.telerik/telerik-license.txt
+> ```
+> `sudo` drops the environment, but `"$TELERIK_NUGET_KEY"` is expanded by your shell before
+> sudo runs, so the values still reach the build. A `401` from restore means the key is
+> wrong/expired — regenerate it on the nuget-keys page.
 
 tmux: detach with **Ctrl-b** then **d**, come back with `tmux attach -t build`.
 
