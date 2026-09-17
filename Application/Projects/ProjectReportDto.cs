@@ -16,6 +16,9 @@ namespace Application.Projects
         public List<PaymentRecord> Payroll { get; set; } = new();
         public List<SalesRequestOrApartmentRecord> ApartmentSales { get; set; } = new();
         public List<ProjectCommissionPaymentRecord> PaidCommissions { get; set; } = new();
+        // One row per GL entry of every AcctgTrans linked (AcctgTrans.PaymentId) to a payment in
+        // PaidCommissions — the ledger side of the commissions sheet, for the auditor's cross-check.
+        public List<ProjectCommissionAcctgEntryRecord> PaidCommissionAcctgEntries { get; set; } = new();
 
         /// <summary>
         /// Server-computed roll-ups for the report's summary. Authoritative — the in-app screen and
@@ -195,6 +198,47 @@ namespace Application.Projects
         public string? ChequeNumber { get; set; }
         public DateOnly? ChequeDate { get; set; }
         public string? Comments { get; set; }
+        // Payment.CostCenterId + its description.
+        public string? CostCenterId { get; set; }
+        public string? CostCenterDescription { get; set; }
+        // Payment.OverrideGlAccountId (the expense account the posting used instead of the
+        // payment-type default) and the account's code / Arabic name. All null when no override.
+        public string? OverrideGlAccountId { get; set; }
+        public string? OverrideGlAccountCode { get; set; }
+        public string? OverrideGlAccountNameArabic { get; set; }
+    }
+
+    // Ledger detail for a commission payment: one row per AcctgTransEntry. Debit/Credit are split
+    // from Amount + DebitCreditFlag so the sheet can subtotal each side and prove the trans balances.
+    public class ProjectCommissionAcctgEntryRecord
+    {
+        public string PaymentId { get; set; } = null!;
+        public string? SalesCommissionId { get; set; }
+        public string? SalesRequestId { get; set; }
+        public string? ApartmentName { get; set; }
+        public string? PayeeName { get; set; }
+        public string AcctgTransId { get; set; } = null!;
+        public string? AcctgTransTypeId { get; set; }
+        public string? AcctgTransTypeDescription { get; set; }
+        public DateTime? TransactionDate { get; set; }
+        public string? IsPosted { get; set; }
+        public DateTime? PostedDate { get; set; }
+        public string? GlFiscalTypeId { get; set; }
+        public string? TransDescription { get; set; }
+        public string? CostCenterId { get; set; }
+        public string? CostCenterDescription { get; set; }
+        public string? AcctgTransEntrySeqId { get; set; }
+        public string? GlAccountId { get; set; }
+        public string? AccountCode { get; set; }
+        public string? AccountName { get; set; }
+        public string? AccountNameArabic { get; set; }
+        public string? GlAccountTypeId { get; set; }
+        public string? DebitCreditFlag { get; set; }
+        public decimal Debit { get; set; }
+        public decimal Credit { get; set; }
+        public string? EntryPartyId { get; set; }
+        public string? EntryPartyName { get; set; }
+        public string? EntryDescription { get; set; }
     }
 
     public class ProjectExpenseRecord

@@ -354,6 +354,7 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
       title: getTranslatedLabel(`${localizationKey}.amount`, "Amount"),
       width: 130,
       filter: "numeric",
+      format: "{0:n2}",
     },
   ];
 

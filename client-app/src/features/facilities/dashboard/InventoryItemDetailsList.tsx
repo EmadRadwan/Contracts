@@ -9,7 +9,7 @@ import {
     useFetchFacilityInventoriesByInventoryItemDetailsQuery,
 } from "../../../app/store/configureStore";
 import {DataResult, State} from "@progress/kendo-data-query";
-import {handleDatesArray} from "../../../app/util/utils";
+import {handleDatesArray, formatNumber} from "../../../app/util/utils";
 import { selectProductById, setSelectedProductName } from "../slice/facilityInventoryUiSlice";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
@@ -112,7 +112,7 @@ export default function InventoryItemDetailsList() {
                             }}
                         />
                     )}
-                    <span>{value}</span>
+                    <span>{formatNumber(value)}</span>
                 </div>
             </td>
         );
@@ -166,11 +166,11 @@ export default function InventoryItemDetailsList() {
                                 <Column field="productName" title={getTranslatedLabel("facility.details.product", "Product")} />
                                 <Column field="facilityName" title={getTranslatedLabel("facility.details.facility", "Facility")} />
                                 <Column
-                                    field="quantityOnHandTotal"
+                                    field="quantityOnHandTotal" format="{0:n2}"
                                     title={getTranslatedLabel("facility.details.qohTotal", "QOH Total")}
                                 />
                                 <Column
-                                    field="availableToPromiseTotal"
+                                    field="availableToPromiseTotal" format="{0:n2}"
                                     title={getTranslatedLabel("facility.details.atpTotal", "ATP Total")}
                                 />
                                 <Column

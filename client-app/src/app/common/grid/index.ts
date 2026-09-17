@@ -1,5 +1,7 @@
 export { TextFilterCell } from './TextFilterCell';
 export { DateFilterCell } from './DateFilterCell';
+export { createDateRangeFilterCell, useDateRangeFilterCell, readDateRange, applyDateRange } from './DateRangeFilterCell';
+export type { DateRange, DateRangeFilterCellOptions, UseDateRangeFilterCellArgs } from './DateRangeFilterCell';
 export { NumericFilterCell } from './NumericFilterCell';
 export { createSelectFilterCell } from './SelectFilterCell';
 export type { SelectFilterOption } from './SelectFilterCell';

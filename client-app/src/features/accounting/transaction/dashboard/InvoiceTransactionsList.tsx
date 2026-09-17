@@ -16,7 +16,7 @@ import {
     useFetchInvoiceAcctTransEntriesQuery,
     useGetGlAccountDiagramQuery,
 } from "../../../../app/store/apis";
-import { handleDatesArray } from "../../../../app/util/utils";
+import { handleDatesArray, formatNumber } from "../../../../app/util/utils";
 import { AcctgTransEntry } from "../../../../app/models/accounting/acctgTransEntry";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import MermaidChart from "../../../manufacturing/dashboard/MermaidChart";
@@ -86,7 +86,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
 
     const TotalsFooterCell = () => (
         <td colSpan={15} style={{ fontWeight: "bold", color: "#1565C0" }}>
-            {getTranslatedLabel("accounting.transactions.totalDebit", "Total Debit")}: {totalDebit.toFixed(2)} | {getTranslatedLabel("accounting.transactions.totalCredit", "Total Credit")}: {totalCredit.toFixed(2)}
+            {getTranslatedLabel("accounting.transactions.totalDebit", "Total Debit")}: {formatNumber(totalDebit)} | {getTranslatedLabel("accounting.transactions.totalCredit", "Total Credit")}: {formatNumber(totalCredit)}
         </td>
     );
 
@@ -107,7 +107,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
 
     const PaymentTotalsFooterCell = () => (
         <td colSpan={15} style={{ fontWeight: "bold", color: "#1565C0" }}>
-            {getTranslatedLabel("accounting.transactions.totalDebit", "Total Debit")}: {totalDebitPayment.toFixed(2)} | {getTranslatedLabel("accounting.transactions.totalCredit", "Total Credit")}: {totalCreditPayment.toFixed(2)}
+            {getTranslatedLabel("accounting.transactions.totalDebit", "Total Debit")}: {formatNumber(totalDebitPayment)} | {getTranslatedLabel("accounting.transactions.totalCredit", "Total Credit")}: {formatNumber(totalCreditPayment)}
         </td>
     );
 
@@ -144,7 +144,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                                         width={100}
                                         cells={{ footerCell: TotalsFooterCell }}
                                     />
-                                    <Column field="amount" title={getTranslatedLabel("accounting.payments.transactions.columns.origAmount", "Orig Amount")} width={100} />
+                                    <Column field="amount" format="{0:n2}" title={getTranslatedLabel("accounting.payments.transactions.columns.origAmount", "Orig Amount")} width={100} />
                                     <Column field="debitCreditFlag" title={getTranslatedLabel("accounting.payments.transactions.columns.debitCreditFlag", "Debit/Credit")} width={90} />
                                     <Column field="glAccountId" title={getTranslatedLabel("accounting.payments.transactions.columns.glAccountId", "GL Account")} width={100} />
                                     <Column field="glAccountTypeDescription" title={getTranslatedLabel("accounting.payments.transactions.columns.glAccountTypeDescription", "Account Name")} width={400} />
@@ -192,7 +192,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                                         width={100}
                                         cells={{ footerCell: PaymentTotalsFooterCell }}
                                     />
-                                    <Column field="amount" title={getTranslatedLabel("accounting.transactions.origAmount", "Orig Amount")} width={100} />
+                                    <Column field="amount" format="{0:n2}" title={getTranslatedLabel("accounting.transactions.origAmount", "Orig Amount")} width={100} />
                                     <Column field="debitCreditFlag" title={getTranslatedLabel("accounting.transactions.debitCredit", "Debit/Credit")} width={90} />
                                     <Column field="glAccountId" title={getTranslatedLabel("accounting.transactions.glAccountId", "GL Account")} width={100} />
                                     <Column field="glAccountTypeDescription" title={getTranslatedLabel("accounting.transactions.accountName", "Account Name")} width={300} />

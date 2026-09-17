@@ -17,5 +17,12 @@ public class GlAccountTransactionDetails
     // like 110100, but it would silently run the balance math backwards for a credit account.
     // Backend already computes this (see IsDebitAccount below); this just exposes it.
     public bool IsDebit { get; set; }
+
+    // Period the details were computed for — the PDF export (Telerik) prints these in its running
+    // header; the modal only ever had the CustomTimePeriodId, not the display name/dates.
+    public string? OrganizationName { get; set; }
+    public string? PeriodName { get; set; }
+    public DateTime? PeriodFromDate { get; set; }
+    public DateTime? PeriodThruDate { get; set; }
     public List<TransactionEntryDto> Transactions { get; set; }
 }

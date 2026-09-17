@@ -145,10 +145,10 @@ const PhysicalInventoryList = () => {
                   reorderable={true}
                 >
                   <Column field="inventoryItemId" title={getTranslatedLabel("facility.physical.invItem", "Inventory Item")} />
-                  <Column field="itemATP" title={getTranslatedLabel("facility.physical.itemATP", "Item ATP")} />
-                  <Column field="itemQOH" title={getTranslatedLabel("facility.physical.itemQOH", "Item QOH")} />
-                  <Column field="productATP" title={getTranslatedLabel("facility.physical.productATP", "Product ATP")} />
-                  <Column field="productQOH" title={getTranslatedLabel("facility.physical.productQOH", "Product QOH")} />
+                  <Column field="itemATP" format="{0:n2}" title={getTranslatedLabel("facility.physical.itemATP", "Item ATP")} />
+                  <Column field="itemQOH" format="{0:n2}" title={getTranslatedLabel("facility.physical.itemQOH", "Item QOH")} />
+                  <Column field="productATP" format="{0:n2}" title={getTranslatedLabel("facility.physical.productATP", "Product ATP")} />
+                  <Column field="productQOH" format="{0:n2}" title={getTranslatedLabel("facility.physical.productQOH", "Product QOH")} />
                   <Column cells={{ data: CommandCell }} />
                 </KendoGrid>
                 {isFetching && (

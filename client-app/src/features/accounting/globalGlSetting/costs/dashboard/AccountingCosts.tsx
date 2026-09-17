@@ -95,8 +95,8 @@ const AccountingCosts = () => {
                                 <Column field="costComponentCalcId" title="Routing Id" cells={{ data: CostComponentCalcIdCell }} width={200}
                                         locked={true}/>
                                 <Column field="description" title="Description" width={350}/>
-                                <Column field="fixedCost" title="Fixed Cost" width={150} filter={"numeric"}/>
-                                <Column field="variableCost" title="Variable Cost" width={150} filter={"numeric"}/>
+                                <Column field="fixedCost" format="{0:n2}" title="Fixed Cost" width={150} filter={"numeric"}/>
+                                <Column field="variableCost" format="{0:n2}" title="Variable Cost" width={150} filter={"numeric"}/>
                                 <Column field="perMilliSecond" title="Per Milli Second" width={150} filter={"numeric"}/>
                                 <Column field="currencyUomId" title="Currency" width={250}/>
 

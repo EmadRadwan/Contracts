@@ -125,8 +125,8 @@ const FinancialAccountsList = () => {
                                         <Column field="finAccountId" title="Fin Account"
                                                 cells={{ data: FinancialAccountCell }} width={220}
                                                 locked={true}/>
-                                        <Column field="availableBalance" title="Available Balance" />
-                                        <Column field="actualBalance" title="Actual Balance" />
+                                        <Column field="availableBalance" format="{0:n2}" title="Available Balance" />
+                                        <Column field="actualBalance" format="{0:n2}" title="Actual Balance" />
                                         <Column field="currencyUomDescription" title="Currency" width={160} />
                                         <Column field="finAccountTypeDescription" title="Financial Account Type"/>
                                         <Column field="organizationPartyName" title="Org. Party" />

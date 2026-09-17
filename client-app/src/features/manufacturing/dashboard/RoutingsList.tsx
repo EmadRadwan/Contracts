@@ -160,7 +160,7 @@ function RoutingsList() {
                                     width={350}
                                 />
                                 <Column
-                                    field="quantityToProduce"
+                                    field="quantityToProduce" format="{0:n2}"
                                     title={getTranslatedLabel(
                                         "manufacturing.routings.list.quantityToProduce",
                                         "Quantity To Produce"

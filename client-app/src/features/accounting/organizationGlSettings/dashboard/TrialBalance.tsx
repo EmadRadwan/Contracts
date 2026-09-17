@@ -27,6 +27,7 @@ import {
   filterBy,
   CompositeFilterDescriptor,
 } from "@progress/kendo-data-query";
+import { formatNumber } from "../../../../app/util/utils";
 
 const TrialBalance = () => {
   const { getTranslatedLabel } = useTranslationHelper();
@@ -193,14 +194,14 @@ const TrialBalance = () => {
                     <Typography variant="body1">
                       {getTranslatedLabel(`${localizationKey}.debits`, "Debits total: ")}
                       <Box component="span" fontWeight="bold" color="success.main">
-                        {data.postedDebitsTotal}
+                        {formatNumber(data.postedDebitsTotal)}
                       </Box>
                     </Typography>
 
                     <Typography variant="body1">
                       {getTranslatedLabel(`${localizationKey}.credits`, "Credits total: ")}
                       <Box component="span" fontWeight="bold" color="error.main">
-                        {data.postedCreditsTotal}
+                        {formatNumber(data.postedCreditsTotal)}
                       </Box>
                     </Typography>
 

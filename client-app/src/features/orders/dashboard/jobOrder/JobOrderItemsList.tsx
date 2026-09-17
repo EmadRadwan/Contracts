@@ -32,6 +32,7 @@ import {JobOrderItemFormMemo} from "../../form/order/JobOrder/JobOrderItemFormMe
 import JobQuoteMarketingPkgItemsList from "../../../services/dashboard/JobQuoteMarketingPkgItemsList";
 import ServiceItemSpecificationRateForm from "../../../services/form/ServiceItemSpecificationRateForm";
 import {JobOrderItemAdjustmentsListMemo} from "./JobOrderItemAdjustmentsList";
+import { formatNumber } from "../../../../app/util/utils";
 
 interface Props {
     orderFormEditMode: number;
@@ -131,7 +132,7 @@ export default function JobOrderItemsList({
                     }}
                 >
                     {props.dataItem.totalItemAdjustments
-                        ? props.dataItem.totalItemAdjustments.toFixed(2)
+                        ? formatNumber(props.dataItem.totalItemAdjustments)
                         : 0}
                 </Button>
             </td>
@@ -373,8 +374,8 @@ export default function JobOrderItemsList({
                                 width={300}
                             />
                             <Column field="orderItemSeqId" title="orderItemSeqId" width={0}/>
-                            <Column field="unitListPrice" title="List Price" width={110}/>
-                            <Column field="quantity" title="Quantity" width={120}/>
+                            <Column field="unitListPrice" format="{0:n2}" title="List Price" width={110}/>
+                            <Column field="quantity" format="{0:n2}" title="Quantity" width={120}/>
                             <Column
                                 cells={{ data: ItemAdjustmentCommandCell }}
                                 title="Adjustments"

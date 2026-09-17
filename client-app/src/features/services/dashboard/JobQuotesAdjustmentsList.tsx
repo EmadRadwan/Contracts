@@ -173,7 +173,7 @@ export default function JobQuoteAdjustmentsList({showList, onClose, quoteId, wid
                                                 cells={{ data: JobQuoteAdjustmentCell }} width={150}/>
                                         <Column field="quoteId" title="jobQuoteId" width={0}/>
                                         <Column field="quoteItemSeqId" title="jobQuoteItemSeqId" width={0}/>
-                                        <Column field="amount" title="Amount" width={130}/>
+                                        <Column field="amount" format="{0:n2}" title="Amount" width={130}/>
                                         <Column field="sourcePercentage" title="Percentage" width={140}/>
                                         <Column field="description" title="Description" width={140}/>
                                         <Column cells={{ data: CommandCell }} width="60px"/>

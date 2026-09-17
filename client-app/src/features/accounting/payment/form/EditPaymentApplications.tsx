@@ -12,6 +12,7 @@ import PaymentApplicationsInvGrid from "./PaymentApplicationsInvGrid";
 import NotAppliedInvoicesGrid from "./NotAppliedInvoicesGrid";
 import AddPaymentApplicationForm from "./AddPaymentApplicationForm";
 import {PaymentApplication} from "../../../../app/models/accounting/paymentApplication";
+import { formatNumber } from "../../../../app/util/utils";
 
 
 interface EditPaymentApplicationsProps {
@@ -98,11 +99,11 @@ const EditPaymentApplications: React.FC<EditPaymentApplicationsProps> = ({paymen
                     </Typography>
                     <Typography variant="h6">
                         {getTranslatedLabel(`${localizationKey}.amountTotal`, "Total Amount")}:{" "}
-                        {payment.amount.toFixed(2)} {payment.currencyUomId}
+                        {formatNumber(payment.amount)} {payment.currencyUomId}
                     </Typography>
                     <Typography variant="h6">
                         {getTranslatedLabel(`${localizationKey}.amountNotApplied`, "Amount Not Applied")}:{" "}
-                        {notAppliedAmount.toFixed(2)} {payment.currencyUomId}
+                        {formatNumber(notAppliedAmount)} {payment.currencyUomId}
                     </Typography>
                 </MuiGrid>
 

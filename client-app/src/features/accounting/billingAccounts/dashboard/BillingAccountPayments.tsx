@@ -120,7 +120,7 @@ const BillingAccountPayments = () => {
                 format="{0: c2}"
                 filter={"numeric"}
               />
-              <Column field="amount" title="Total" filter={"numeric"} />
+              <Column field="amount" format="{0:n2}" title="Total" filter={"numeric"} />
             </KendoGrid>
           </div>
         </Grid>

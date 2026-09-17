@@ -28,6 +28,7 @@ import { useAppSelector } from "../../../app/store/configureStore";
 import { FormSimpleComboBoxVirtualProduct } from "../../../app/common/form/FormSimpleComboBoxVirtualProduct";
 import { FormComboBoxVirtualUOM } from "../../../app/common/form/FormComboBoxVirtualUOM";
 import { v4 as uuidv4 } from "uuid";
+import { formatNumber } from "../../../app/util/utils";
 
 interface Props {
     onClose: () => void;
@@ -330,7 +331,7 @@ const BulkAddRowItem: React.FC<BulkAddRowItemProps> = memo(({
 
             {/* Totals (Read-only) */}
             <TableCell sx={{ minWidth: 100 }}>
-                <Typography variant="body2">{(row.net || 0).toFixed(2)}</Typography>
+                <Typography variant="body2">{formatNumber(row.net || 0)}</Typography>
             </TableCell>
 
             {/* Delete */}

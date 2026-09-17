@@ -491,6 +491,8 @@ namespace Application.Accounting.Reports
                         on pyt.CostCenterId equals cc.CostCenterId into ccJoin
                     from cc in ccJoin.DefaultIfEmpty()
                     where pyt.OverrideGlAccountId != null
+                          // Voided/cancelled payments are retired under the auditor's soft-delete rule.
+                          && pyt.StatusId != "PMNT_VOID" && pyt.StatusId != "PMNT_CANCELLED"
                           && (ptt.ParentTypeId == "DISBURSEMENT" || ptt.PaymentTypeId == "DISBURSEMENT")
                           // Payroll has its own section (GetPayroll, from PAYROL_INVOICE accruals);
                           // exclude payroll payments so salary isn't double-counted here.

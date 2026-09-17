@@ -92,7 +92,7 @@ export default function ProductionRunProducedInventoryList({
               title="Facility"
             /> 
             <Column 
-              field="unitCost"
+              field="unitCost" format="{0:n2}"
               title="Unit Cost"
             />
             <Column 
@@ -101,11 +101,11 @@ export default function ProductionRunProducedInventoryList({
               format="{0: dd/MM/yyyy HH:mm}"
             />
             <Column 
-              field="quantityOnHandTotal"
+              field="quantityOnHandTotal" format="{0:n2}"
               title="QOH Total"
             />
             <Column 
-              field="availableToPromiseTotal"
+              field="availableToPromiseTotal" format="{0:n2}"
               title="ATP Total"
             />
         </KendoGrid>

@@ -16,6 +16,7 @@ import {useAppDispatch} from "../../../../../app/store/configureStore";
 import {Typography} from "@mui/material";
 import {useTranslationHelper} from "../../../../../app/hooks/useTranslationHelper";
 import { useGetProductPriceQuery} from "../../../../../app/store/apis";
+import { formatNumber } from "../../../../../app/util/utils";
 
 
 interface Props {
@@ -240,7 +241,7 @@ function SalesOrderItemForm({
                                                         <>
                                                             <Grid item>
                                                                 <Typography variant="body1" component="div">
-                                                                    <strong>{getTranslatedLabel(`${localizationKey}.price`, "Price")}:</strong> {productPrice.price.toFixed(2)}
+                                                                    <strong>{getTranslatedLabel(`${localizationKey}.price`, "Price")}:</strong> {formatNumber(productPrice.price)}
                                                                 </Typography>
                                                             </Grid>
                                                             <Grid item>

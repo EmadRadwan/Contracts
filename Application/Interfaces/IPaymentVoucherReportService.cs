@@ -3,9 +3,8 @@ using Application.Reports;
 namespace Application.Interfaces;
 
 /// <summary>
-/// Renders the payment voucher (بيان دفعة) through Telerik Reporting.
-/// Parallel to <see cref="IPdfGenerationService"/> (QuestPDF) — both are driven by the same
-/// <see cref="GetPaymentForReport"/> query so the two engines can be compared side by side.
+/// Renders the payment voucher (بيان دفعة) through Telerik Reporting, driven by the
+/// <see cref="GetPaymentForReport"/> query. The only PDF engine since QuestPDF was removed (2026-09-17).
 /// </summary>
 public interface IPaymentVoucherReportService
 {

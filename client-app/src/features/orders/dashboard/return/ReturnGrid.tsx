@@ -5,6 +5,7 @@ import { useTableKeyboardNavigation } from '@progress/kendo-react-data-tools';
 import { Button, Box } from '@mui/material';
 import { GetTranslatedLabel } from '../../../../app/hooks/useTranslationHelper';
 import { ReturnRow } from '../OrderReturnItems';
+import { formatNumber } from "../../../../app/util/utils";
 
 // REFACTOR: Extract grid and cell rendering into a separate component
 // Purpose: Isolate grid logic for better maintainability
@@ -109,10 +110,10 @@ export const ReturnGrid: React.FC<ReturnGridProps> = ({
         const { dataItem } = props;
         if (dataItem.type === 'item') {
             const item = dataItem.item!;
-            return <td>{item.returnPrice?.toFixed(2)}</td>;
+            return <td>{formatNumber(item.returnPrice)}</td>;
         } else {
             const adjustment = dataItem.adjustment!;
-            return <td align="right">{adjustment.amount?.toFixed(2)}</td>;
+            return <td align="right">{formatNumber(adjustment.amount)}</td>;
         }
     };
 
@@ -122,7 +123,7 @@ export const ReturnGrid: React.FC<ReturnGridProps> = ({
         const item = dataItem.item!;
         return (
             <td>
-                {(item.returnQuantity && item.returnPrice) ? (item.returnQuantity * item.returnPrice).toFixed(2) : 'N/A'}
+                {(item.returnQuantity && item.returnPrice) ? formatNumber(item.returnQuantity * item.returnPrice) : 'N/A'}
             </td>
         );
     };

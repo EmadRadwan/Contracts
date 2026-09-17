@@ -33,6 +33,7 @@ import {
     ProjectReportSummary,
 } from "../../../app/store/apis/projectsApi";
 import { buildProjectReportWorkbook } from "../report/buildProjectReportWorkbook";
+import PdfPreviewDialog from "../../../app/common/modals/PdfPreviewDialog";
 
 interface Props {
     projectId: string;
@@ -200,7 +201,39 @@ const commissionColumns: ColDef[] = [
     { field: "paymentMethodTypeArabic", title: "طريقة الدفع", width: 160 },
     { field: "effectiveDate", title: "التاريخ", width: 120, format: DATE },
     { field: "chequeNumber", title: "رقم الشيك", width: 140 },
+    { field: "paymentId", title: "رقم الدفعة", width: 150 },
+    { field: "costCenterId", title: "مركز التكلفة", width: 140 },
+    { field: "costCenterDescription", title: "وصف مركز التكلفة", width: 200 },
+    { field: "overrideGlAccountId", title: "رقم الحساب البديل", width: 150 },
+    { field: "overrideGlAccountCode", title: "كود الحساب البديل", width: 140 },
+    { field: "overrideGlAccountNameArabic", title: "اسم الحساب البديل", width: 240 },
     { field: "comments", title: "ملاحظات", width: 360 },
+];
+
+// Ledger entries behind the paid commissions — mirrors the قيود العمولات المدفوعة sheet.
+const commissionEntryColumns: ColDef[] = [
+    { field: "salesCommissionId", title: "رقم العمولة", width: 150 },
+    { field: "salesRequestId", title: "رقم طلب البيع", width: 150 },
+    { field: "apartmentName", title: "الوحدة", width: 200 },
+    { field: "payeeName", title: "المستفيد", width: 240 },
+    { field: "paymentId", title: "رقم الدفعة", width: 150 },
+    { field: "acctgTransId", title: "رقم القيد", width: 150 },
+    { field: "acctgTransTypeDescription", title: "نوع القيد", width: 200 },
+    { field: "transactionDate", title: "تاريخ القيد", width: 120, format: DATE },
+    { field: "isPosted", title: "مرحّل", width: 90, cell: (d) => (d.isPosted === "Y" ? "نعم" : "لا") },
+    { field: "postedDate", title: "تاريخ الترحيل", width: 120, format: DATE },
+    { field: "glFiscalTypeId", title: "النوع المالي", width: 120 },
+    { field: "transDescription", title: "وصف القيد", width: 300 },
+    { field: "costCenterId", title: "مركز التكلفة", width: 140 },
+    { field: "costCenterDescription", title: "وصف مركز التكلفة", width: 200 },
+    { field: "acctgTransEntrySeqId", title: "تسلسل", width: 90 },
+    { field: "glAccountId", title: "رقم الحساب", width: 140 },
+    { field: "accountCode", title: "كود الحساب", width: 130 },
+    { field: "accountNameArabic", title: "اسم الحساب", width: 240, cell: (d) => d.accountNameArabic || d.accountName || "" },
+    { field: "debit", title: "مدين", width: 140, format: MONEY },
+    { field: "credit", title: "دائن", width: 140, format: MONEY },
+    { field: "entryPartyName", title: "طرف البند", width: 220, cell: (d) => d.entryPartyName || d.entryPartyId || "" },
+    { field: "entryDescription", title: "وصف البند", width: 300 },
 ];
 
 // ---- one grid per section (client-side sort / filter / page) --------------------
@@ -429,6 +462,8 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
     const [tab, setTab] = useState(0);
     const [exporting, setExporting] = useState(false);
     const [exportingPdf, setExportingPdf] = useState(false);
+    const [showPdfViewer, setShowPdfViewer] = useState(false);
+    const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
 
     const { data: projectBuildings = [] } = useFetchProjectBuildingsQuery(projectId);
     const buildingsInitialised = useRef(false);
@@ -490,23 +525,29 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
 
     // Server-rendered (Telerik Reporting) — KendoReact Grid PDFExport could not shape/reorder
     // Arabic text at all, so PDF is generated on the server via the same pipeline already proven
-    // correct for the payment voucher, instead of client-side.
+    // correct for the payment voucher, instead of client-side. Opens in the shared
+    // view / print / download dialog (same UX as the voucher and the GL transactions PDF)
+    // rather than saving straight to disk.
+    const pdfFileName = `Project_Report_${projectName.replace(/[^a-zA-Z0-9\u0600-\u06FF\s-]/g, "_").trim()}.pdf`;
+
     const handleExportPdf = async () => {
         if (!report) return;
         setExportingPdf(true);
+        setPdfBlob(null);
+        setShowPdfViewer(true);
         try {
             const buffer = await triggerPdf({ ...buildArgs(), projectName }).unwrap();
-            const safe = projectName.replace(/[^a-zA-Z0-9\u0600-\u06FF\s-]/g, "_").trim();
-            saveAs(
-                new Blob([buffer], { type: "application/pdf" }),
-                `Project_Report_${safe}.pdf`
-            );
+            setPdfBlob(new Blob([buffer], { type: "application/pdf" }));
         } catch (e) {
             console.error("PDF export failed:", e);
-            alert("فشل تصدير PDF.");
         } finally {
             setExportingPdf(false);
         }
+    };
+
+    const handleClosePdfViewer = () => {
+        setShowPdfViewer(false);
+        setPdfBlob(null);
     };
 
     const agreedRevenues = useMemo(
@@ -529,6 +570,7 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
             { label: "وديعة الصيانة", rows: maintenanceRevenues, columns: revenueColumns("المجدول") },
             { label: "مبيعات الوحدات", rows: report?.apartmentSales, columns: salesColumns },
             { label: "العمولات المدفوعة", rows: report?.paidCommissions, columns: commissionColumns },
+            { label: "قيود العمولات المدفوعة", rows: report?.paidCommissionAcctgEntries, columns: commissionEntryColumns },
         ],
         [report, agreedRevenues, maintenanceRevenues]
     );
@@ -629,10 +671,21 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
                         onClick={handleExportPdf}
                         disabled={!report || isFetching || exportingPdf}
                     >
-                        {exportingPdf ? "جاري التصدير..." : "تصدير PDF"}
+                        {exportingPdf ? "جاري الإنشاء..." : "معاينة PDF"}
                     </Button>
                 </Box>
             </Paper>
+
+            <PdfPreviewDialog
+                open={showPdfViewer}
+                onClose={handleClosePdfViewer}
+                title={`تقرير المشروع - ${projectName}`}
+                blob={pdfBlob}
+                loading={exportingPdf}
+                fileName={pdfFileName}
+                loadingMessage="جاري إنشاء ملف PDF..."
+                errorMessage="فشل إنشاء ملف PDF. حاول مرة أخرى."
+            />
 
             {isError && (
                 <Typography color="error" sx={{ mb: 2 }}>

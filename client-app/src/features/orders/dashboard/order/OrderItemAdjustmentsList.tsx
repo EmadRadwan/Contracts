@@ -189,7 +189,7 @@ function OrderItemAdjustmentsList({
 
                     <Column field="orderAdjustmentTypeDescription" title={getTranslatedLabel(`${localizationKey}.type`, "Adjustment Type")}
                             cells={{ data: orderAdjustmentCell }} width={180}/>
-                    <Column field="amount" title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")} width={120}/>
+                    <Column field="amount" format="{0:n2}" title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")} width={120}/>
                     <Column field="sourcePercentage" title={getTranslatedLabel(`${localizationKey}.percentage`, "Percentage")} width={140}/>
                     <Column field="isManual" title={getTranslatedLabel(`${localizationKey}.userEntered`, "User Entered")} width={150}/>
                     <Column cells={{ data: CommandCell }} width="100px"/>

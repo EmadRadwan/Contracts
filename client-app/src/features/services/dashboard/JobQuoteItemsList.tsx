@@ -30,6 +30,7 @@ import {QuoteItem} from "../../../app/models/order/quoteItem";
 import {QuoteAdjustment} from "../../../app/models/order/quoteAdjustment";
 import QuoteItemForm from "../../orders/form/quote/QuoteItemForm";
 import {setSelectProductOrService} from "../../orders/slice/sharedOrderUiSlice";
+import { formatNumber } from "../../../app/util/utils";
 
 interface Props {
     quoteFormEditMode: number;
@@ -137,7 +138,7 @@ export default function JobQuoteItemsList({
                         setShowItemAdjustmentList(true);
                     }}
                 >
-                    {props.dataItem.discountAndPromotionAdjustments ? props.dataItem.discountAndPromotionAdjustments.toFixed(2) : 0}
+                    {props.dataItem.discountAndPromotionAdjustments ? formatNumber(props.dataItem.discountAndPromotionAdjustments) : 0}
 
                 </Button>
             </td>
@@ -377,7 +378,7 @@ export default function JobQuoteItemsList({
                         />
                         <Column field="quoteItemSeqId" title="quoteItemSeqId" width={0}/>
                         <Column
-                            field="unitPrice"
+                            field="unitPrice" format="{0:n2}"
                             title="Price"
                             width={110}
                         />

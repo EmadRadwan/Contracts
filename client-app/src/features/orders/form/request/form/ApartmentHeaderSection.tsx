@@ -7,6 +7,7 @@ import { FormComboBoxVirtualCustomer } from "../../../../../app/common/form/Form
 import { FormComboBoxVirtualPartyEmployee } from "../../../../../app/common/form/FormComboBoxVirtualPartyEmployee";
 import { requiredValidator } from "../../../../../app/common/form/Validators";
 import { SalesRequest } from "../../../../../app/models/order/SalesRequest";
+import { formatNumber } from "../../../../../app/util/utils";
 
 interface ApartmentHeaderSectionProps {
     formRenderProps: FormRenderProps;
@@ -167,7 +168,7 @@ export const ApartmentHeaderSection: React.FC<ApartmentHeaderSectionProps> = Rea
                             {getTranslatedLabel("salesRequest.form.gardenM2", "Garden / Terrace m²")}
                         </Typography>
                         <Typography>
-                            {hasGardenArea ? Number(selectedApartment?.gardenSpaceM2).toFixed(2) : "-"}
+                            {hasGardenArea ? formatNumber(selectedApartment?.gardenSpaceM2) : "-"}
                         </Typography>
                     </Grid>
 

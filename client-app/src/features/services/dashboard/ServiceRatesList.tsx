@@ -179,7 +179,7 @@ export default function ServiceRatesList() {
                                             locked={true}/>
                                     <Column field="modelDescription" title="Model" />
                                     <Column field="productStoreName" title="Workshop" />
-                                    <Column field="rate" title="Service Rate in Workshop Currency" />
+                                    <Column field="rate" format="{0:n2}" title="Service Rate in Workshop Currency" />
                                     <Column field="fromDate" title="From" 
                                             filter="date" format="{0: dd/MM/yyyy}"/>
                                     <Column field="thruDate" title="To" 

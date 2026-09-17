@@ -121,9 +121,9 @@ export default function ProductFacilitiesList() {
                                 </GridToolbar>
 
                                 <Column field="facilityName" title="Product Facility" cells={{ data: productFacilityCell }} width={220} />
-                                <Column field="minimumStock" title="Minimum Stock" width={140} />
-                                <Column field="reorderQuantity" title="Reorder Quantity" width={140} />
-                                <Column field="lastInventoryCount" title="Last Inventory Count" width={0} />
+                                <Column field="minimumStock" format="{0:n2}" title="Minimum Stock" width={140} />
+                                <Column field="reorderQuantity" format="{0:n2}" title="Reorder Quantity" width={140} />
+                                <Column field="lastInventoryCount" format="{0:n2}" title="Last Inventory Count" width={0} />
                                 <Column field="productId" title="productId" width={0} />
                                 <Column field="facilityId" title="facilityId" width={0} />
                             </KendoGrid>

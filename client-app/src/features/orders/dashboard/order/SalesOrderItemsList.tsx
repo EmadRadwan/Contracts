@@ -34,6 +34,7 @@ import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper
 import store from "../../../../app/store/store";
 import {SalesOrderItemFormBarcodeMemo} from "../../form/order/SalesOrder/SalesOrderItemFormBarcode";
 import "../../../../app/common/grid/grid.styles.css";
+import { formatNumber } from "../../../../app/util/utils";
 
 interface Props {
     orderFormEditMode: number
@@ -181,13 +182,11 @@ export default function SalesOrderItemsList({orderFormEditMode, orderId}: Props)
               }}
               title={
                 showBreakdown
-                  ? `Discount: ${finalDiscount.toFixed(
-                      2
-                    )}\nTax: ${finalTax.toFixed(2)}`
+                  ? `Discount: ${formatNumber(finalDiscount)}\nTax: ${formatNumber(finalTax)}`
                   : undefined
               }
             >
-              {totalAdjustments.toFixed(2)}
+              {formatNumber(totalAdjustments)}
               {showBreakdown && (
                 <span
                   style={{
@@ -200,7 +199,7 @@ export default function SalesOrderItemsList({orderFormEditMode, orderId}: Props)
                     borderRadius: "4px", // Rounded corners
                   }}
                 >
-                  (D: {finalDiscount.toFixed(2)}, T: {finalTax.toFixed(2)})
+                  (D: {formatNumber(finalDiscount)}, T: {formatNumber(finalTax)})
                 </span>
               )}
             </Button>
@@ -246,7 +245,7 @@ export default function SalesOrderItemsList({orderFormEditMode, orderId}: Props)
         
         return (
             <td>
-                {(props.dataItem.subTotal + finalTax + finalDiscount).toFixed(2)}
+                {formatNumber(props.dataItem.subTotal + finalTax + finalDiscount)}
             </td>
         )
     }
@@ -259,7 +258,7 @@ export default function SalesOrderItemsList({orderFormEditMode, orderId}: Props)
         return (
             <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Typography>{dataItem.quantity.toFixed(2)}</Typography>
+                    <Typography>{formatNumber(dataItem.quantity)}</Typography>
                     {dataItem.isBackOrdered && (
                         <Chip
                             label={getTranslatedLabel(`${localizationKey}.backordered`, "Backordered")}
@@ -515,7 +514,7 @@ export default function SalesOrderItemsList({orderFormEditMode, orderId}: Props)
                             title={getTranslatedLabel(`${localizationKey}.quantity`, "Quantity")}
                             
                             cells={{ data: QuantityCell }}
-                        /> <Column field="quantity" title={getTranslatedLabel(`${localizationKey}.quantity`,"Quantity")} />
+                        /> <Column field="quantity" format="{0:n2}" title={getTranslatedLabel(`${localizationKey}.quantity`,"Quantity")} />
                         <Column cells={{ data: ItemDiscountCommandCell }} title={getTranslatedLabel(`${localizationKey}.discount`,"Discounts/Tax")} />
                         <Column field="subTotal" cells={{ data: SubtotalDisplayCell }} title={getTranslatedLabel(`${localizationKey}.total`,"Item Total")}  format="{0:c}"/>
                         <Column cells={{ data: CommandCell }} />

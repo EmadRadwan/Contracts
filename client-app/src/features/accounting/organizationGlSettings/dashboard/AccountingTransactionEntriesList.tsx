@@ -171,7 +171,7 @@ export default function AccountingTransactionEntriesList() {
                                     "Amount"
                                 )}
                                 width={100}
-                                format="{0:n}"
+                                format="{0:n2}"
                                 filter={"numeric"}
                             />
 

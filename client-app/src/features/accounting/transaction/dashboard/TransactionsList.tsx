@@ -138,8 +138,8 @@ export default function TransactionsList({ acctgTrans }: Props) {
               cells={{ footerCell: TotalsFooterCell }}
           />
           <Column field="acctgTransEntrySeqId" title="Acctg Trans Seq Id" width={0} cells={{ footerCell: () => null }} />
-          <Column field="amount" title="Amount" width={100} cells={{ footerCell: () => null }} />
-          <Column field="origAmount" title="Orig Amount" width={100} cells={{ footerCell: () => null }} />
+          <Column field="amount" format="{0:n2}" title="Amount" width={100} cells={{ footerCell: () => null }} />
+          <Column field="origAmount" format="{0:n2}" title="Orig Amount" width={100} cells={{ footerCell: () => null }} />
           <Column field="debitCreditFlag" title="Debit/Credit" width={70} cells={{ footerCell: () => null }} />
           <Column field="glAccountId" title="GL Account" width={100} cells={{ footerCell: () => null }} />
           <Column field="glAccountTypeDescription" title="Account Name" width={220} cells={{ footerCell: () => null }} />

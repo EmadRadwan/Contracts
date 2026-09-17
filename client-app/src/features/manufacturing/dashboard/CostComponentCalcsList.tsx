@@ -119,12 +119,12 @@ const [editMode, setEditMode] = useState(0)
                           width={350}
                       />
                       <Column
-                          field="fixedCost"
+                          field="fixedCost" format="{0:n2}"
                           title={getTranslatedLabel(`${localizationKey}.fixedCost`, 'Fixed Cost')}
                           width={150}
                       />
                       <Column
-                          field="variableCost"
+                          field="variableCost" format="{0:n2}"
                           title={getTranslatedLabel(`${localizationKey}.variableCost`, 'Variable Cost')}
                           width={150}
                       />

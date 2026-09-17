@@ -28,6 +28,7 @@ import {Can} from "../../../account/Can";
 import {useGetCostCentersQuery} from "../../../../app/store/apis/accounting/paymentTypesApi";
 import CreateCostCenterModal from "../../payment/form/CreateCostCenterModal";
 import { createStyledRow } from "../../../../app/common/grid";
+import { formatNumber } from "../../../../app/util/utils";
 
 // Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
 const DebitCreditRow = createStyledRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag === "D" ? "rgba(55, 180, 0, 0.32)" : "#ffffff" }));
@@ -716,9 +717,9 @@ export default function MultiAcctgTransEntryForm() {
                                                                     color: "#1565C0"
                                                                 }}>
                                                                     {getTranslatedLabel(`${localizationKey}.totalDebit`, "Total Debit")}:{" "}
-                                                                    {totalDebit.toFixed(2)} |{" "}
+                                                                    {formatNumber(totalDebit)} |{" "}
                                                                     {getTranslatedLabel(`${localizationKey}.totalCredit`, "Total Credit")}:{" "}
-                                                                    {totalCredit.toFixed(2)}
+                                                                    {formatNumber(totalCredit)}
                                                                 </td>
                                                             ) }}
                                                     />

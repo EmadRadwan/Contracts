@@ -624,7 +624,7 @@ export default function ProductionRunTasksList({
             cells={{ data: TimeDisplayCell }}
           />
           <Column
-            field="quantityToProduce"
+            field="quantityToProduce" format="{0:n2}"
             title={getTranslatedLabel(
               "manufacturing.jobshop.prodruntasks.list.quantityToProduced",
               "Quantity To Produced"
@@ -632,7 +632,7 @@ export default function ProductionRunTasksList({
             width={150}
           />
           <Column
-            field="quantityProduced"
+            field="quantityProduced" format="{0:n2}"
             title={getTranslatedLabel(
               "manufacturing.jobshop.prodruntasks.list.quantityProduced",
               "Quantity Produced"

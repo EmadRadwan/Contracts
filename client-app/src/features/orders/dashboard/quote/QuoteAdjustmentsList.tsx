@@ -177,7 +177,7 @@ export default function QuoteAdjustmentsList({onClose}: Props) {
                                 cells={{ data: quoteAdjustmentCell }} width={140}/>
                         <Column field="quoteId" title="quoteId" width={0}/>
                         <Column field="quoteItemSeqId" title="quoteItemSeqId" width={0}/>
-                        <Column field="amount" title="Amount" width={130}/>
+                        <Column field="amount" format="{0:n2}" title="Amount" width={130}/>
                         <Column field="description" title="Description" width={140}/>
                         <Column field="sourcePercentage" title="Percentage" width={150}/>
                         <Column field="isManual" title="User Entered" width={110}/>

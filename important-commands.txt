@@ -340,12 +340,7 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
 dotnet ef migrations add AddSalesCommissionAndProjectCommissionRate --project Persistence --startup-project API --verbose 
 
 export TELERIK_NUGET_KEY=42wvbLi8oUCmViiVziRj/g==.y5vjHWks5WSqEDdieynJ3AOKnMIV4gHWDHFiHQPIHLqk9BM/iHDG8GqLNLidzAkrPXfUyaunK+uKg9aJkukqsA==
-p
 
-printf '%s\n' \
-  "export TELERIK_NUGET_KEY=42wvbLi8oUCmViiVziRj/g==.y5vjHWks5WSqEDdieynJ3AOKnMIV4gHWDHFiHQPIHLqk9BM/iHDG8GqLNLidzAkrPXfUyaunK+uKg9aJkukqsA==p" \
-  'export TELERIK_LICENSE="$(cat ~/.telerik/telerik-license.txt)"' \
-  > ~/.telerik/telerik.env
   
 PdfGenerationService
 
@@ -377,7 +372,10 @@ CRM v2
 trial balance
 soft delete
 ERP and HIS
+build test environment
 
 
 
-
+active directory
+integration with smart care
+integration with Saudi services like Nafees

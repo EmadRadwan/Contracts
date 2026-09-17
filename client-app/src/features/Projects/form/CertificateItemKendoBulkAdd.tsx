@@ -12,6 +12,7 @@ import { FormSimpleComboBoxVirtualProduct } from "../../../app/common/form/FormS
 import { FormComboBoxVirtualUOM } from "../../../app/common/form/FormComboBoxVirtualUOM";
 
 import { v4 as uuidv4 } from "uuid";
+import { formatNumber } from "../../../app/util/utils";
 
 interface Props {
     onClose: () => void;
@@ -391,25 +392,25 @@ const CertificateItemKendoBulkAdd: React.FC<Props> = ({
                 editable={false}
                 locked={true}
                 width={100}
-                cells={{ data: (props) => <td><strong>{(props.dataItem.net || 0).toFixed(2)}</strong></td> }}
+                cells={{ data: (props) => <td><strong>{formatNumber(props.dataItem.net || 0)}</strong></td> }}
             />,
             <Column key="productId" field="productId" title={getTranslatedLabel(`${itemFormLocalizationKey}.product`, "Product")} cells={{ data: ProductCell }} width={280} />,
             <Column key="uomId" field="uomId" title={getTranslatedLabel(`${itemFormLocalizationKey}.unitOfMeasure`, "UOM")} cells={{ data: UomCell }} width={180} />,
             <Column key="description" field="description" title={getTranslatedLabel(`${itemFormLocalizationKey}.description`, "Description")} width={250} />,
-            <Column key="quantity" field="quantity" title={getTranslatedLabel(`${itemFormLocalizationKey}.quantity`, "Qty")} editor="numeric" width={100} />,
+            <Column key="quantity" field="quantity" format="{0:n2}" title={getTranslatedLabel(`${itemFormLocalizationKey}.quantity`, "Qty")} editor="numeric" width={100} />,
         ];
 
         if (isContracting) {
             cols.push(
-                <Column key="materialPrice" field="materialPrice" title={getTranslatedLabel(`${itemFormLocalizationKey}.materialPrice`, "Mat. Price")} editor="numeric" width={130} />,
-                <Column key="laborPrice" field="laborPrice" title={getTranslatedLabel(`${itemFormLocalizationKey}.laborPrice`, "Lab. Price")} editor="numeric" width={130} />,
+                <Column key="materialPrice" field="materialPrice" format="{0:n2}" title={getTranslatedLabel(`${itemFormLocalizationKey}.materialPrice`, "Mat. Price")} editor="numeric" width={130} />,
+                <Column key="laborPrice" field="laborPrice" format="{0:n2}" title={getTranslatedLabel(`${itemFormLocalizationKey}.laborPrice`, "Lab. Price")} editor="numeric" width={130} />,
                 <Column key="achievementPercentage" field="achievementPercentage" title={getTranslatedLabel(`${itemFormLocalizationKey}.achievementPercentage`, "Ach. %")} editor="numeric" width={110} />,
-                <Column key="total" field="totalAmount" title={getTranslatedLabel(`${itemFormLocalizationKey}.totalAmount`, "Total")} editable={false} width={110} cells={{ data: (p) => <td>{(p.dataItem.totalAmount || 0).toFixed(2)}</td> }} />,
-                <Column key="deserved" field="deserved" title={getTranslatedLabel(`${itemFormLocalizationKey}.deserved`, "Deserved")} editable={false} width={110} cells={{ data: (p) => <td>{(p.dataItem.deserved || 0).toFixed(2)}</td> }} />
+                <Column key="total" field="totalAmount" title={getTranslatedLabel(`${itemFormLocalizationKey}.totalAmount`, "Total")} editable={false} width={110} cells={{ data: (p) => <td>{formatNumber(p.dataItem.totalAmount || 0)}</td> }} />,
+                <Column key="deserved" field="deserved" title={getTranslatedLabel(`${itemFormLocalizationKey}.deserved`, "Deserved")} editable={false} width={110} cells={{ data: (p) => <td>{formatNumber(p.dataItem.deserved || 0)}</td> }} />
             );
         } else {
             cols.push(
-                <Column key="unitPrice" field="unitPrice" title={getTranslatedLabel(`${itemFormLocalizationKey}.unitPrice`, "Unit Price")} editor="numeric" width={130} />,
+                <Column key="unitPrice" field="unitPrice" format="{0:n2}" title={getTranslatedLabel(`${itemFormLocalizationKey}.unitPrice`, "Unit Price")} editor="numeric" width={130} />,
                 <Column key="procurementDate" field="procurementDate" title={getTranslatedLabel(`${itemFormLocalizationKey}.procurementDate`, "Date")} editor="date" format="{0:yyyy-MM-dd}" width={0} />
             );
         }
@@ -417,23 +418,23 @@ const CertificateItemKendoBulkAdd: React.FC<Props> = ({
         // Discount / Insurance columns
         if (isSupplyProcurement) {
             cols.push(
-                <Column key="discount" field="discount" title={getTranslatedLabel(`${itemFormLocalizationKey}.discount`, "Discount")} editor="numeric" width={170} />
+                <Column key="discount" field="discount" format="{0:n2}" title={getTranslatedLabel(`${itemFormLocalizationKey}.discount`, "Discount")} editor="numeric" width={170} />
             );
         }
 
         if (isContracting) {
             cols.push(
-                <Column key="insurance" field="insurance" title={getTranslatedLabel(`${itemFormLocalizationKey}.insurance`, "Insurance")} editor="numeric" width={170} />,
-                <Column key="additionalInsurance" field="additionalInsurance" title={getTranslatedLabel(`${itemFormLocalizationKey}.additionalInsurance`, "Add. Ins.")} editor="numeric" width={170} />,
-                <Column key="deductions" field="deductions" title={getTranslatedLabel(`${itemFormLocalizationKey}.deductions`, "Deduc.")} editor="numeric" width={110} />,
+                <Column key="insurance" field="insurance" format="{0:n2}" title={getTranslatedLabel(`${itemFormLocalizationKey}.insurance`, "Insurance")} editor="numeric" width={170} />,
+                <Column key="additionalInsurance" field="additionalInsurance" format="{0:n2}" title={getTranslatedLabel(`${itemFormLocalizationKey}.additionalInsurance`, "Add. Ins.")} editor="numeric" width={170} />,
+                <Column key="deductions" field="deductions" format="{0:n2}" title={getTranslatedLabel(`${itemFormLocalizationKey}.deductions`, "Deduc.")} editor="numeric" width={110} />,
                 <Column key="deductionDescription" field="deductionDescription" title={getTranslatedLabel(`${itemFormLocalizationKey}.deductionDescription`, "Deduc. Desc.")} width={220} />
             );
         }
 
         if (!isContracting) {
             cols.push(
-                <Column key="transportationExpenses" field="transportationExpenses" title={getTranslatedLabel(`${itemFormLocalizationKey}.transportationExpenses`, "Transp.")} editor="numeric" width={110} />,
-                <Column key="gratuities" field="gratuities" title={getTranslatedLabel(`${itemFormLocalizationKey}.gratuities`, "Grat.")} editor="numeric" width={110} />
+                <Column key="transportationExpenses" field="transportationExpenses" format="{0:n2}" title={getTranslatedLabel(`${itemFormLocalizationKey}.transportationExpenses`, "Transp.")} editor="numeric" width={110} />,
+                <Column key="gratuities" field="gratuities" format="{0:n2}" title={getTranslatedLabel(`${itemFormLocalizationKey}.gratuities`, "Grat.")} editor="numeric" width={110} />
             );
         }
 
@@ -445,7 +446,7 @@ const CertificateItemKendoBulkAdd: React.FC<Props> = ({
                 title={getTranslatedLabel(`${itemFormLocalizationKey}.net`, "Net")}
                 editable={false}
                 width={120}
-                cells={{ data: (props) => <td><strong>{(props.dataItem.net || 0).toFixed(2)}</strong></td> }}
+                cells={{ data: (props) => <td><strong>{formatNumber(props.dataItem.net || 0)}</strong></td> }}
             />
         );
 
@@ -478,7 +479,7 @@ const CertificateItemKendoBulkAdd: React.FC<Props> = ({
 
                         <Typography variant="h6" fontWeight="bold">
                             {getTranslatedLabel("projects.certificate.list.totalAmount", "Total Net")}:{" "}
-                            {totalNet.toFixed(2)}
+                            {formatNumber(totalNet)}
                         </Typography>
                     </Box>
                 </GridToolbar>

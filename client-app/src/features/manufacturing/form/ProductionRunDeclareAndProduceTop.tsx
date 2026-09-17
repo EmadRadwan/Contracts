@@ -16,6 +16,7 @@ import React, { useMemo, useRef, useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { setInventoryProduced } from "../slice/manufacturingSharedUiSlice";
 import { useDebouncedCallback } from 'use-debounce';
+import { formatNumber } from "../../../app/util/utils";
 
 interface Props {
     productId: string; // WIP template, e.g., "001a2b3c-4d5e-6f7a-8b9c-d0e1f2a3b4c1"
@@ -202,20 +203,20 @@ export default function ProductionRunDeclareAndProduceTop({ productId, mainProdu
                                                 <>
                                                     <Typography variant="body2" sx={{ pt: 1 }}>
                                                         {getTranslatedLabel("manufacturing.jobshop.prodruntasks.declareandproduce.totalWip", "Total WIP Capacity: ")}
-                                                        {wipStatus.totalWipCapacity.toFixed(2)} kg
+                                                        {formatNumber(wipStatus.totalWipCapacity)} kg
                                                     </Typography>
                                                     <Typography variant="body2" sx={{ pt: 1 }}>
                                                         {getTranslatedLabel("manufacturing.jobshop.prodruntasks.declareandproduce.wipConsumed", "WIP Consumed: ")}
-                                                        {wipStatus.consumedWip.toFixed(2)} kg
+                                                        {formatNumber(wipStatus.consumedWip)} kg
                                                     </Typography>
                                                     <Typography variant="body2" sx={{ pt: 1 }}>
                                                         {getTranslatedLabel("manufacturing.jobshop.prodruntasks.declareandproduce.wipAvailable", "WIP Available: ")}
-                                                        {availableWip.toFixed(2)} kg
+                                                        {formatNumber(availableWip)} kg
                                                     </Typography>
                                                     <Typography variant="body2" sx={{ pt: 1 }}>
                                                         {getTranslatedLabel("manufacturing.jobshop.prodruntasks.declareandproduce.wipConsumption", "WIP to Consume: ")}
                                                         {selectedProductId
-                                                            ? getWipConsumed(props.valueGetter("finishedProductQuantity"), selectedProductId).toFixed(2)
+                                                            ? formatNumber(getWipConsumed(props.valueGetter("finishedProductQuantity"), selectedProductId))
                                                             : 0} kg
                                                     </Typography>
                                                 </>

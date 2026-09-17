@@ -21,6 +21,7 @@ import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
 import GlAccountTransactionsModal from "./GlAccountTransactionsModal";
 import { TrialBalanceByLevelExcel } from "../report/TrialBalanceByLevelExcel";
+import { formatNumber } from "../../../../app/util/utils";
 
 // COA-hierarchy-level version of the flat Trial Balance (see TrialBalance.tsx). Rows include
 // both leaf accounts (isLeaf = true, drillable) and their ancestor roll-up totals (isLeaf =
@@ -208,14 +209,14 @@ const TrialBalanceByLevel = () => {
                     <Typography variant="body1">
                       {getTranslatedLabel(`${localizationKey}.debits`, "Debits total: ")}
                       <Box component="span" fontWeight="bold" color="success.main">
-                        {data.postedDebitsTotal}
+                        {formatNumber(data.postedDebitsTotal)}
                       </Box>
                     </Typography>
 
                     <Typography variant="body1">
                       {getTranslatedLabel(`${localizationKey}.credits`, "Credits total: ")}
                       <Box component="span" fontWeight="bold" color="error.main">
-                        {data.postedCreditsTotal}
+                        {formatNumber(data.postedCreditsTotal)}
                       </Box>
                     </Typography>
 
@@ -273,18 +274,18 @@ const TrialBalanceByLevel = () => {
                         <td style={{ border: "1px solid #ccc", padding: 4, paddingInlineStart: r.level * 12 }}>{r.accountCode}</td>
                         <td style={{ border: "1px solid #ccc", padding: 4 }}>{r.accountName}</td>
                         <td style={{ border: "1px solid #ccc", padding: 4, textAlign: "center" }}>{r.level}</td>
-                        <td style={{ border: "1px solid #ccc", padding: 4 }}>{r.openingBalance.toFixed(2)}</td>
-                        <td style={{ border: "1px solid #ccc", padding: 4 }}>{r.postedDebits.toFixed(2)}</td>
-                        <td style={{ border: "1px solid #ccc", padding: 4 }}>{r.postedCredits.toFixed(2)}</td>
-                        <td style={{ border: "1px solid #ccc", padding: 4 }}>{r.endingBalance.toFixed(2)}</td>
+                        <td style={{ border: "1px solid #ccc", padding: 4 }}>{formatNumber(r.openingBalance)}</td>
+                        <td style={{ border: "1px solid #ccc", padding: 4 }}>{formatNumber(r.postedDebits)}</td>
+                        <td style={{ border: "1px solid #ccc", padding: 4 }}>{formatNumber(r.postedCredits)}</td>
+                        <td style={{ border: "1px solid #ccc", padding: 4 }}>{formatNumber(r.endingBalance)}</td>
                       </tr>
                     ))}
                     <tr style={{ fontWeight: "bold" }}>
                       <td colSpan={4} style={{ border: "1px solid #ccc", padding: 4 }}>
                         {getTranslatedLabel(`${localizationKey}.totals`, "Totals")}
                       </td>
-                      <td style={{ border: "1px solid #ccc", padding: 4 }}>{(data.postedDebitsTotal ?? 0).toFixed(2)}</td>
-                      <td style={{ border: "1px solid #ccc", padding: 4 }}>{(data.postedCreditsTotal ?? 0).toFixed(2)}</td>
+                      <td style={{ border: "1px solid #ccc", padding: 4 }}>{formatNumber(data.postedDebitsTotal ?? 0)}</td>
+                      <td style={{ border: "1px solid #ccc", padding: 4 }}>{formatNumber(data.postedCreditsTotal ?? 0)}</td>
                       <td style={{ border: "1px solid #ccc", padding: 4 }}></td>
                     </tr>
                   </tbody>

@@ -79,7 +79,7 @@ export default function PaymentApplicationsList({ paymentId, onClose }: Props) {
                   <Column field="paymentId" title="Payment Id" locked />
                   <Column field="invoiceId" title="Invoice Id" />
                   <Column field="invoiceItemSeqId" title="Invoice Item Id" />
-                  <Column field="amountApplied" title="Amount" />
+                  <Column field="amountApplied" format="{0:n2}" title="Amount" />
                 </KendoGrid>
               </div>
             </Grid>

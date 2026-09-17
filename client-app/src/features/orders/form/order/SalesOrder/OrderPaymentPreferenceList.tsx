@@ -37,7 +37,7 @@ const OrderPaymentPreferenceList = ({
             title="Payment Method Type"
           />
           <Column field="statusDescription" title="Payment Status" />
-          <Column field="maxAmount" title="Maximum Amount" />
+          <Column field="maxAmount" format="{0:n2}" title="Maximum Amount" />
           <Column field="uomDescription" title="Currency" />
         </KendoGrid>
       </Grid>

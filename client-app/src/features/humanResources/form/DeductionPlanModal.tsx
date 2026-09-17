@@ -18,6 +18,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Grid as KendoGrid, GridColumn as Column } from "@progress/kendo-react-grid";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
+import { formatNumber } from "../../../app/util/utils";
 
 interface DeductionRow {
     id: string;
@@ -457,7 +458,7 @@ export default function DeductionPlanModal({
                     <Typography fontWeight="bold" color={totalMatches ? "success.main" : "error.main"}>
                         {totalMatches
                             ? getTranslatedLabel("party.employeeAdvance.deductionPlan.matchesTotal", "✓ Matches total")
-                            : `${getTranslatedLabel("party.employeeAdvance.deductionPlan.difference", "Difference")}: ${(totalAdvance - totalScheduled).toFixed(2)} ${getTranslatedLabel("general.currency.egp", "EGP")}`}
+                            : `${getTranslatedLabel("party.employeeAdvance.deductionPlan.difference", "Difference")}: ${formatNumber(totalAdvance - totalScheduled)} ${getTranslatedLabel("general.currency.egp", "EGP")}`}
                     </Typography>
                 </Box>
 

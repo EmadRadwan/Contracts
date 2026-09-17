@@ -138,13 +138,13 @@ export default function PaymentTransactionsList({ onClose, paymentId }: Props) {
                                 cells={{ footerCell: () => null }}
                             />
                             <Column
-                                field="amount"
+                                field="amount" format="{0:n2}"
                                 title={getTranslatedLabel(`${localizationKey}.columns.amount`, "Amount")}
                                 width={0}
                                 cells={{ footerCell: () => null }}
                             />
                             <Column
-                                field="amount"
+                                field="amount" format="{0:n2}"
                                 title={getTranslatedLabel(`${localizationKey}.columns.origAmount`, "Orig Amount")}
                                 width={100}
                                 cells={{ footerCell: () => null }}

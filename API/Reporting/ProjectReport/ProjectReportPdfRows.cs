@@ -59,6 +59,25 @@ public class PdfCommissionRow
     public decimal Amount { get; set; }
     public string PaymentStatusDisplay { get; set; } = "";
     public DateTime? EffectiveDate { get; set; }
+    public string PaymentId { get; set; } = "";
+    // "id — description" / "id — Arabic name": the PDF has no room for the split columns the
+    // Excel sheet carries, so each pair is collapsed into one printed cell.
+    public string CostCenterDisplay { get; set; } = "";
+    public string OverrideGlAccountDisplay { get; set; } = "";
+}
+
+// Ledger entries behind the paid commissions (companion section to PdfCommissionRow).
+public class PdfCommissionEntryRow
+{
+    public string PaymentId { get; set; } = "";
+    public string AcctgTransId { get; set; } = "";
+    public string TypeDescription { get; set; } = "";
+    public DateTime? TransactionDate { get; set; }
+    public string PostedDisplay { get; set; } = "";
+    public string GlAccountDisplay { get; set; } = "";
+    public decimal Debit { get; set; }
+    public decimal Credit { get; set; }
+    public string CostCenterDisplay { get; set; } = "";
 }
 
 public static class ProjectReportPdfRows
@@ -130,5 +149,32 @@ public static class ProjectReportPdfRows
             Amount = c.Amount,
             PaymentStatusDisplay = c.PaymentStatusArabic ?? "",
             EffectiveDate = ToDt(c.EffectiveDate),
+            PaymentId = c.PaymentId,
+            CostCenterDisplay = Pair(c.CostCenterId, c.CostCenterDescription),
+            OverrideGlAccountDisplay = Pair(c.OverrideGlAccountId, c.OverrideGlAccountNameArabic),
         }).ToList();
+
+    public static List<PdfCommissionEntryRow> BuildCommissionEntries(
+        IEnumerable<ProjectCommissionAcctgEntryRecord> entries) =>
+        entries.Select(e => new PdfCommissionEntryRow
+        {
+            PaymentId = e.PaymentId,
+            AcctgTransId = e.AcctgTransId,
+            TypeDescription = Or(e.AcctgTransTypeDescription, e.AcctgTransTypeId),
+            TransactionDate = e.TransactionDate,
+            PostedDisplay = e.IsPosted == "Y" ? "نعم" : "لا",
+            GlAccountDisplay = Pair(e.GlAccountId, Or(e.AccountNameArabic, e.AccountName)),
+            Debit = e.Debit,
+            Credit = e.Credit,
+            CostCenterDisplay = Pair(e.CostCenterId, e.CostCenterDescription),
+        }).ToList();
+
+    // "id — label"; collapses to whichever half is present, "" when both are blank.
+    private static string Pair(string? id, string? label)
+    {
+        var hasId = !string.IsNullOrWhiteSpace(id);
+        var hasLabel = !string.IsNullOrWhiteSpace(label);
+        if (hasId && hasLabel) return $"{id} — {label}";
+        return hasId ? id! : (hasLabel ? label! : "");
+    }
 }

@@ -7,8 +7,11 @@
     <ItemGroup>
         <PackageReference Include="AWSSDK.S3" Version="3.7.201.4" />
         <PackageReference Include="CloudinaryDotNet" Version="1.14.0" />
+        <!-- Linux native assets for the Telerik Reporting/Skia PDF pipeline (API project). Originally
+             added for QuestPDF, which has since been removed; Telerik.Drawing.Skia -> SkiaSharp 3.119.1
+             and Topten.RichTextKit -> HarfBuzzSharp still need these on the Docker box for Arabic
+             shaping, so the pins stay. -->
         <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="8.3.1.2" />
-        <PackageReference Include="QuestPDF" Version="2025.12.1" />
         <PackageReference Include="SendGrid" Version="9.22.0" />
         <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.1" />
     </ItemGroup>

@@ -325,9 +325,9 @@ const ReceiveInventoryList = () => {
                                 <Column field="orderItemSeqId" title="Line" width={100}/>
                                 <Column field="productName" title="Product ID" width={150}/>
                                 <Column field="lotId" title="Lot ID" width={100}/>
-                                <Column field="unitPrice" title="Per Unit Price" width={120}/>
-                                <Column field="quantityRejected" title="Rejected" width={100}/>
-                                <Column field="quantityAccepted" title="Accepted" width={100}/>
+                                <Column field="unitPrice" format="{0:n2}" title="Per Unit Price" width={120}/>
+                                <Column field="quantityRejected" format="{0:n2}" title="Rejected" width={100}/>
+                                <Column field="quantityAccepted" format="{0:n2}" title="Accepted" width={100}/>
                             </KendoGrid>
                         </Grid>)}
 
@@ -360,7 +360,7 @@ const ReceiveInventoryList = () => {
                                 editable={false}
                             />
                             <Column
-                                field="quantity"
+                                field="quantity" format="{0:n2}"
                                 title={getTranslatedLabel(
                                     "facility.receive.list.qtyOrdered",
                                     "Quantity ordered"
@@ -369,7 +369,7 @@ const ReceiveInventoryList = () => {
                                 editable={false}
                             />
                             <Column
-                                field="defaultQuantityToReceive"
+                                field="defaultQuantityToReceive" format="{0:n2}"
                                 title={getTranslatedLabel(
                                     "facility.receive.list.qtyAccept",
                                     "Quantity to accept"
@@ -377,7 +377,7 @@ const ReceiveInventoryList = () => {
                                 width={100}
                             />
                             <Column
-                                field="unitPrice"
+                                field="unitPrice" format="{0:n2}"
                                 title={getTranslatedLabel(
                                     "facility.receive.list.price",
                                     "Unit Price"
@@ -385,7 +385,7 @@ const ReceiveInventoryList = () => {
                                 width={100}
                             />
                             <Column
-                                field="quantityRejected"
+                                field="quantityRejected" format="{0:n2}"
                                 title={getTranslatedLabel(
                                     "facility.receive.list.qtyReject",
                                     "Quantity to reject"

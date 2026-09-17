@@ -220,6 +220,17 @@ const accountingReportsApi = createApi({
               params: { includePrePeriodTransactions },
             }),
           }),
+          // Server-rendered (Telerik Reporting) PDF of the same transaction details — used by the
+          // export button in GlAccountTransactionsModal (both trial balance reports).
+          fetchGlAccountTransactionsPdf: builder.query<ArrayBuffer, { organizationPartyId: string; customTimePeriodId: string; glAccountId: string; includePrePeriodTransactions: boolean }>({
+            query: ({ organizationPartyId, customTimePeriodId, glAccountId, includePrePeriodTransactions }) => ({
+              url: `/trialBalance/${organizationPartyId}/${customTimePeriodId}/${glAccountId}/glAccountTransactionsPdf`,
+              method: 'GET',
+              params: { includePrePeriodTransactions },
+              responseHandler: (response) => response.arrayBuffer(),
+              cache: 'no-cache',
+            }),
+          }),
           fetchBalanceSheetGlAccountTransactionDetails: builder.query<GlAccountTransactionDetails, { organizationPartyId: string; thruDate: string; glFiscalTypeId: string; glAccountId: string; includePrePeriodTransactions: boolean }>({
             query: ({ organizationPartyId, thruDate, glFiscalTypeId, glAccountId, includePrePeriodTransactions }) => ({
               url: `/organizationGlReports/${organizationPartyId}/getBalanceSheetGlAccountTransactionDetails`,
@@ -278,6 +289,7 @@ export const {
     useLazyFetchBalanceSheetReportQuery,
     useFetchComparativeBalanceSheetReportQuery, 
     useFetchGlAccountTransactionDetailsQuery,
+    useLazyFetchGlAccountTransactionsPdfQuery,
     useFetchBalanceSheetGlAccountTransactionDetailsQuery,
     useFetchIncomeStatementGlAccountTransactionDetailsQuery,
     useLazyFetchComparativeIncomeStatementReportQuery

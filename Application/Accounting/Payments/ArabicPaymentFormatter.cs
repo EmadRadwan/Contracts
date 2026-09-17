@@ -4,9 +4,6 @@ namespace Application.Reports;
 /// Arabic formatting helpers for the payment voucher (بيان دفعة): amount-to-words,
 /// Western→Arabic-Indic digits, currency suffix and date formatting.
 ///
-/// REFACTOR: Infrastructure/Pdf/PdfGenerationService.cs still carries a private copy of this
-/// logic for the QuestPDF voucher. The two implementations are intentionally identical —
-/// consolidate onto this class when the QuestPDF path is next touched.
 /// </summary>
 public static class ArabicPaymentFormatter
 {

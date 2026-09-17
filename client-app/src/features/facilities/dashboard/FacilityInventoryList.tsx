@@ -184,50 +184,50 @@ export default function FacilityInventoryList() {
                   width={200}
                 />
                 <Column
-                  field="quantityOnHandTotal"
+                  field="quantityOnHandTotal" format="{0:n2}"
                   title={getTranslatedLabel("facility.list.qoh", "QOH Total")}
                 />
                 <Column
-                  field="availableToPromiseTotal"
+                  field="availableToPromiseTotal" format="{0:n2}"
                   title={getTranslatedLabel("facility.list.atp", "ATP Total")}
                 />
                 <Column
-                  field="minimumStock"
+                  field="minimumStock" format="{0:n2}"
                   title={getTranslatedLabel(
                     "facility.list.minStock",
                     "Minimum Stock"
                   )}
                 />
                 <Column
-                  field="availableToPromiseMinusMinimumStock"
+                  field="availableToPromiseMinusMinimumStock" format="{0:n2}"
                   title={getTranslatedLabel(
                     "facility.list.atpMinusMin",
                     "ATP Minus Minimum Stock"
                   )}
                 />
                 <Column
-                  field="quantityOnHandMinusMinimumStock"
+                  field="quantityOnHandMinusMinimumStock" format="{0:n2}"
                   title={getTranslatedLabel(
                     "facility.list.qohMinusMin",
                     "QOH Minus Minimum Stock"
                   )}
                 />
                 <Column
-                  field="reorderQuantity"
+                  field="reorderQuantity" format="{0:n2}"
                   title={getTranslatedLabel(
                     "facility.list.reorder",
                     "Reorder Quantity"
                   )}
                 />
                 <Column
-                  field="quantityOnOrder"
+                  field="quantityOnOrder" format="{0:n2}"
                   title={getTranslatedLabel(
                     "facility.list.ordered",
                     "Ordered Quantity"
                   )}
                 />
                 <Column
-                  field="defaultPrice"
+                  field="defaultPrice" format="{0:n2}"
                   title={getTranslatedLabel(
                     "facility.list.price",
                     "List Price"

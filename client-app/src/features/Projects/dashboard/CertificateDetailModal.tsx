@@ -14,6 +14,7 @@ import { useAppDispatch } from "../../../app/store/configureStore";
 import { useFetchCertificateItemsReadOnlyQuery } from "../../../app/store/apis/certificateItemsApi";
 import { setProcessedCertificateItems } from "../slice/certificateItemsUiSlice";
 import { CertificateItem } from "../../../app/models/project/certificateItem";
+import { formatNumber } from "../../../app/util/utils";
 
 export interface CertificateDetailSummary {
     workEffortId?: string;
@@ -177,7 +178,7 @@ export default function CertificateDetailModal({
                     <GridToolbar>
                         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", gap: 2 }}>
                             <Typography variant="subtitle1" sx={{ fontWeight: "bold", whiteSpace: "nowrap" }}>
-                                {getTranslatedLabel("projects.certificate.grandTotal", "Grand Total")}: {grandTotal.toFixed(2)}
+                                {getTranslatedLabel("projects.certificate.grandTotal", "Grand Total")}: {formatNumber(grandTotal)}
                             </Typography>
                             <Box sx={{ display: "flex", gap: 1 }}>
                                 <Tooltip

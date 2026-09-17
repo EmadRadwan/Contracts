@@ -40,6 +40,14 @@ export const formatCurrency = (value: any, curencyCode: string = "USD") => {
     }).format(value);
   };
 
+// Plain-text number display with thousands separators (Kendo Column `format="{0:n2}"` already does
+// this for grid cells; use this for toolbar totals, custom cells and labels instead of `.toFixed()`).
+export const formatNumber = (value: number | string | null | undefined, decimals: number = 2): string => {
+    const n = typeof value === "string" ? Number(value) : value;
+    if (n == null || Number.isNaN(n)) return "";
+    return n.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+};
+
 export const formatCurrency2 = (value: number, currencyUomId: string = 'EGP', locale: string = 'en'): string => {
     const currencyMap: Record<string, { en: string; ar: string }> = {
         EGP: { en: 'EGP', ar: 'ج.م' },

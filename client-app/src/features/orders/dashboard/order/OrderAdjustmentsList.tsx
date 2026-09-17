@@ -190,7 +190,7 @@ export default function OrderAdjustmentsList({ onClose }: Props) {
                 cells={{ data: orderAdjustmentCell }}
                 width={140}
               />
-              <Column field="amount" title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")} width={130} />
+              <Column field="amount" format="{0:n2}" title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")} width={130} />
               <Column field="description" title={getTranslatedLabel(`${localizationKey}.description`, "Description")} width={140} />
               <Column field="sourcePercentage" title={getTranslatedLabel(`${localizationKey}.percentage`, "Percentage")} width={150} />
               <Column field="isManual" title={getTranslatedLabel(`${localizationKey}.userEntered`, "User Entered")} width={110} />

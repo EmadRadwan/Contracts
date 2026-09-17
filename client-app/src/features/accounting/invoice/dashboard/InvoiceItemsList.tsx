@@ -265,14 +265,14 @@ export default function InvoiceItemsList({invoiceId, canEdit, refreshTotal}: Pro
                     />
 
                     <Column
-                        field="amount"
+                        field="amount" format="{0:n2}"
                         title={getTranslatedLabel(`${localizationKey}.columns.amount`, "Amount")}
                         width={100}
                         filter={"numeric"}
                     />
 
                     <Column
-                        field="quantity"
+                        field="quantity" format="{0:n2}"
                         title={getTranslatedLabel(`${localizationKey}.columns.quantity`, "Quantity")}
                         width={100}
                         filter={"numeric"}

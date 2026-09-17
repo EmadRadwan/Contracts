@@ -4,6 +4,7 @@ import { Grid as KendoGrid, GridColumn as Column, GridPageChangeEvent, GridSortC
 import { useFetchIssueProductionRunDeclComponentsQuery, useFetchProductionRunMaterialsQuery } from "../../../app/store/apis";
 import { Grid, Typography } from "@mui/material";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
+import { formatNumber } from "../../../app/util/utils";
 
 // REFACTOR: Created a custom cell component for issuedQuantity to handle conditional styling
 // Purpose: Encapsulates logic for highlighting issuedQuantity when it differs from estimatedQuantity
@@ -12,7 +13,7 @@ const IssuedQuantityCell = ({ dataItem }) => {
   const isDifferent = dataItem.issuedQuantity !== dataItem.estimatedQuantity;
   return (
       <td style={{ backgroundColor: isDifferent ? "#fff3cd" : "inherit" }}>
-        {dataItem.issuedQuantity}
+        {formatNumber(dataItem.issuedQuantity)}
       </td>
   );
 };
@@ -114,7 +115,7 @@ export default function ProductionRunMaterialsList({
                     width={150}
                 />
                 <Column
-                    field="estimatedQuantity"
+                    field="estimatedQuantity" format="{0:n2}"
                     title={getTranslatedLabel(
                         "manufacturing.jobshop.materials.estimatedQuantity",
                         "Estimated Quantity"
@@ -176,7 +177,7 @@ export default function ProductionRunMaterialsList({
                   width={100}
               />
               <Column
-                  field="estimatedQuantity"
+                  field="estimatedQuantity" format="{0:n2}"
                   title={getTranslatedLabel(
                       "manufacturing.jobshop.materials.estimatedQuantity",
                       "Estimated Quantity"

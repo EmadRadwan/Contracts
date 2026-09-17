@@ -167,6 +167,11 @@ const PayrollReport2: React.FC<PayrollReport2Props> = ({ open, onClose }) => {
             { width: 14 }, { width: 24 }, { width: 28 }
         ];
 
+        // Thousands separators on every money column (main table E/G/I/J/K/M/N/O + summary B/E).
+        // Must run after `ws.columns = ...` (that setter rebuilds the column objects).
+        // numFmt is ignored on text cells, so applying per column is safe.
+        [2, 5, 7, 9, 10, 11, 13, 14, 15].forEach(c => { ws.getColumn(c).numFmt = '#,##0.00'; });
+
         return await wb.xlsx.writeBuffer();
     }, [startDate]);
 

@@ -14,6 +14,7 @@ import LoadingComponent from '../../../../app/layout/LoadingComponent';
 import {useFetchGlAccountTransactionDetailsQuery} from "../../../../app/store/apis/accounting/accountingReportsApi";
 import {GlAccountTransactionsExcel} from "../report/GlAccountTransactionsExcel";
 import { GlAccountTransactionsDateRangeExcel } from '../report/GlAccountTransactionsDateRangeExcel';
+import { GlAccountTransactionsPdf } from '../report/GlAccountTransactionsPdf';
 import { createReversalAwareRow, ReversalLegend } from "../../../../app/common/grid";
 
 // Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
@@ -196,6 +197,17 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                                         isDebit={data?.isDebit ?? true}
                                         rows={excelRows}
                                         getTranslatedLabel={getTranslatedLabel}
+                                    />
+                                    {/* Server-side Telerik PDF of exactly what the grid shows (same query + pre-period toggle). */}
+                                    <GlAccountTransactionsPdf
+                                        organizationPartyId={organizationPartyId}
+                                        customTimePeriodId={customTimePeriodId}
+                                        glAccountId={glAccountId}
+                                        includePrePeriodTransactions={includePrePeriod}
+                                        accountCode={data?.accountCode ?? ''}
+                                        accountName={data?.accountName ?? ''}
+                                        getTranslatedLabel={getTranslatedLabel}
+                                        isFetching={isFetching}
                                     />
                                 </GridToolbar>
                                 <Column

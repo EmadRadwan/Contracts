@@ -27,6 +27,7 @@ import OrderTermsList from "../../form/order/SalesOrder/OrderTermsList";
 import {OrderAdjustment} from "../../../../app/models/order/orderAdjustment";
 import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
 import {OrderItemAdjustmentsListMemo} from "./OrderItemAdjustmentsList";
+import { formatNumber } from "../../../../app/util/utils";
 
 
 interface Props {
@@ -263,11 +264,11 @@ export default function PurchaseOrderItemsList({orderFormEditMode, orderId}: Pro
                     }}
                     title={
                         showBreakdown
-                            ? `Discount: ${finalDiscount.toFixed(2)}\nTax: ${finalTax.toFixed(2)}`
+                            ? `Discount: ${formatNumber(finalDiscount)}\nTax: ${formatNumber(finalTax)}`
                             : undefined
                     }
                 >
-                    {totalAdjustments.toFixed(2)}
+                    {formatNumber(totalAdjustments)}
                     {showBreakdown && (
                         <span
                             style={{
@@ -280,7 +281,7 @@ export default function PurchaseOrderItemsList({orderFormEditMode, orderId}: Pro
                                 borderRadius: "4px",
                             }}
                         >
-                            (D: {finalDiscount.toFixed(2)}, T: {finalTax.toFixed(2)})
+                            (D: {formatNumber(finalDiscount)}, T: {formatNumber(finalTax)})
                         </span>
                     )}
                 </Button>
@@ -382,8 +383,8 @@ export default function PurchaseOrderItemsList({orderFormEditMode, orderId}: Pro
                             <Column field="productName" title="Product" cells={{ data: orderItemCell }} width={280}/>
                             <Column field="orderId" title="orderId" width={0}/>
                             <Column field="orderItemSeqId" title="orderItemSeqId" width={0}/>
-                            <Column field="unitPrice" title="Unit Price" />
-                            <Column field="quantity" title="Quantity" />
+                            <Column field="unitPrice" format="{0:n2}" title="Unit Price" />
+                            <Column field="quantity" format="{0:n2}" title="Quantity" />
                             <Column cells={{ data: ItemDiscountCommandCell }} title={getTranslatedLabel(`${localizationKey}.discount`,"Discounts/Tax")} width={170}/>
                             <Column field="subTotal" title="Sub Total" format="{0:n2}" />
                             <Column cells={{ data: CommandCell }} />

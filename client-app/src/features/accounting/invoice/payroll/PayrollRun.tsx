@@ -36,6 +36,7 @@ import {
 import { EmployeeAdvance } from "../../../../app/models/humanResources/employeeAdvance";
 import FingerprintUpload from "./FingerprintUpload";
 import { apiErrorMessage } from "../../../../app/util/apiError";
+import { formatNumber } from "../../../../app/util/utils";
 
 interface EmployeePayrollData {
     employeeId: string;
@@ -553,7 +554,7 @@ const PayrollRun: React.FC = () => {
                                         />
                                     </TableCell>
                                     <TableCell>{emp.name}</TableCell>
-                                    <TableCell align="center">{emp.baseSalary}</TableCell>
+                                    <TableCell align="center">{formatNumber(emp.baseSalary)}</TableCell>
                                     <TableCell>{emp.advancedPaymentAccountNameArabic || emp.salaryAccountNameArabic}</TableCell>
                                     <TableCell>
                                         {emp.preferredPayrollPaymentMethodId === "BANK_TRANSFER" 
@@ -628,12 +629,12 @@ const PayrollRun: React.FC = () => {
                                             </Button>
                                         </Box>
                                     </TableCell>
-                                    <TableCell align="center">{emp.overtimeValue}</TableCell>
-                                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>{emp.netSalary}</TableCell>
+                                    <TableCell align="center">{formatNumber(emp.overtimeValue)}</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 'bold' }}>{formatNumber(emp.netSalary)}</TableCell>
                                     <TableCell>
                                         {emp.advances.map(a => (
                                             <div key={a.advanceId} style={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
-                                                {a.advanceId}: {a.amount}
+                                                {a.advanceId}: {formatNumber(a.amount)}
                                             </div>
                                         ))}
                                     </TableCell>
@@ -646,13 +647,13 @@ const PayrollRun: React.FC = () => {
                             <TableCell colSpan={3} align="right" sx={{ fontWeight: 'bold' }}>
                                 {getTranslatedLabel("accounting.payroll.run.total", "Total")}
                             </TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>{totals.baseSalary}</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>{formatNumber(totals.baseSalary)}</TableCell>
                             <TableCell colSpan={3} />
-                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>{totals.absenceValue}</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>{formatNumber(totals.absenceValue)}</TableCell>
                             <TableCell align="center" />
-                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>{totals.overtimeValue}</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>{totals.netSalary}</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold' }}>{totals.advances}</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>{formatNumber(totals.overtimeValue)}</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>{formatNumber(totals.netSalary)}</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>{formatNumber(totals.advances)}</TableCell>
                         </TableRow>
                     </TableFooter>
                 </Table>

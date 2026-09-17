@@ -131,8 +131,8 @@ function FixedAssetsList() {
                                         width={250} format="{0: dd/MM/yyyy}"/>
                                 <Column field="expectedEndOfLife" title="Expected End Of Life" width={150}
                                         format="{0: dd/MM/yyyy}"/>
-                                <Column field="purchaseCost" title="Purchase Cost" width={170} filter={"numeric"}/>
-                                <Column field="salvageValue" title="Salvage Value" width={200} filter={"numeric"}/>
+                                <Column field="purchaseCost" format="{0:n2}" title="Purchase Cost" width={170} filter={"numeric"}/>
+                                <Column field="salvageValue" format="{0:n2}" title="Salvage Value" width={200} filter={"numeric"}/>
                                 <Column field="depreciation" title="Depreciation" width={200} filter={"numeric"}/>
 
 

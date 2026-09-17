@@ -28,7 +28,8 @@ import '../app/common/grid/grid.styles.css';
 
 ### Components
 - **TextFilterCell.tsx** - Text filter with "contains" operator (no dropdown)
-- **DateFilterCell.tsx** - Date filter with operator dropdown (≥, ≤, =)
+- **DateFilterCell.tsx** - Date filter with operator dropdown (≥, ≤, =) — native `<input type="date">`; for a Kendo calendar popup just set `filter="date"` on the column and omit the custom cell
+- **DateRangeFilterCell.tsx** - From/To date-range filter (two Kendo DatePickers with calendar + clear). Writes `gte`/`lte` descriptors straight into the grid's filter state via `useDateRangeFilterCell({ filter, onFilterChange })` because Kendo's filter row only supports one descriptor per field
 - **NumericFilterCell.tsx** - Numeric filter with operator dropdown (=, <, ≤, >, ≥)
 
 ### Styling

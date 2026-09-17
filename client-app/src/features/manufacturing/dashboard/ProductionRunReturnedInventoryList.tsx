@@ -228,17 +228,17 @@ const ProductionRunReturnedInventoryList = ({productionRunId}: Props) => {
                                 ) }}
                             />
                             <Column
-                                field="estimatedQuantity"
+                                field="estimatedQuantity" format="{0:n2}"
                                 title={getTranslatedLabel("manufacturing.return.estimatedQuantity", "Estimated Quantity")}
                                 width={100}
                             />
                             <Column
-                                field="issuedQuantity"
+                                field="issuedQuantity" format="{0:n2}"
                                 title={getTranslatedLabel("manufacturing.return.issuedQuantity", "Issued Quantity")}
                                 width={100}
                             />
                             <Column
-                                field="returnedQuantity"
+                                field="returnedQuantity" format="{0:n2}"
                                 title={getTranslatedLabel("manufacturing.return.returnedQuantity", "Returned")}
                                 width={100}
                             />
@@ -248,7 +248,7 @@ const ProductionRunReturnedInventoryList = ({productionRunId}: Props) => {
                                 width={100}
                             />
                             <Column
-                                field="quantityToReturn"
+                                field="quantityToReturn" format="{0:n2}"
                                 title={getTranslatedLabel("manufacturing.return.quantityToReturn", "Quantity to Return")}
                                 width={120}
                             />

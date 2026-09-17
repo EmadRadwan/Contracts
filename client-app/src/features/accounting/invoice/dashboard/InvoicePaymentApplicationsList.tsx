@@ -120,7 +120,7 @@ const InvoicePaymentApplicationsList = ({invoiceId, onClose, canEdit }: Props) =
                 locked={true}
               />
               <Column
-                field="amountApplied"
+                field="amountApplied" format="{0:n2}"
                 title="Applied Amount"
               />
             </KendoGrid>

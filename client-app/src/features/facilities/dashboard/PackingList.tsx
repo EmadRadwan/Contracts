@@ -349,7 +349,7 @@ const PackingList = () => {
                                 editable={false}
                             />
                             <Column
-                                field="quantity"
+                                field="quantity" format="{0:n2}"
                                 title={getTranslatedLabel(
                                     "facility.receive.list.qtyOrdered",
                                     "Quantity ordered"
@@ -358,7 +358,7 @@ const PackingList = () => {
                                 editable={false}
                             />
                             <Column
-                                field="shippedQuantity"
+                                field="shippedQuantity" format="{0:n2}"
                                 title={getTranslatedLabel(
                                     "facility.receive.list.qtyShipped",
                                     "Shipped Quantity"
@@ -366,7 +366,7 @@ const PackingList = () => {
                                 width={100}
                             />
                             <Column
-                                field="quantityToShip"
+                                field="quantityToShip" format="{0:n2}"
                                 title={getTranslatedLabel(
                                     "facility.receive.list.qtyToShip",
                                     "Quantity to Ship"

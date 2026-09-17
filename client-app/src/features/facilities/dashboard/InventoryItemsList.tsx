@@ -236,12 +236,12 @@ export default function InventoryItemsList() {
                                     width={160}
                                 />
                                 <Column
-                                    field="quantityOnHandTotal"
+                                    field="quantityOnHandTotal" format="{0:n2}"
                                     title={getTranslatedLabel('facility.items.qoh', 'QOH Total')}
                                     width={100}
                                 />
                                 <Column
-                                    field="availableToPromiseTotal"
+                                    field="availableToPromiseTotal" format="{0:n2}"
                                     title={getTranslatedLabel('facility.items.atp', 'ATP Total')}
                                     width={100}
                                 />

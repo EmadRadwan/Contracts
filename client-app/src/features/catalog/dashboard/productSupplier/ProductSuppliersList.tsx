@@ -139,7 +139,7 @@ export default function ProductSuppliersList() {
                                 <Column field="partyName" title="Supplier" cells={{ data: supplierProductCell }} width={300} />
                                 <Column field="currencyUomDescription" title="Currency" width={150} />
                                 <Column field="quantityUomDescription" title="Quantity Uom" width={200} />
-                                <Column field="lastPrice" title="Last Price" width={150} />
+                                <Column field="lastPrice" format="{0:n2}" title="Last Price" width={150} />
                                 <Column field="availableFromDate" title="From" width={100} format="{0: dd/MM/yyyy}" />
                                 <Column field="availableThruDate" title="To" width={100} format="{0: dd/MM/yyyy}" />
                             </KendoGrid>

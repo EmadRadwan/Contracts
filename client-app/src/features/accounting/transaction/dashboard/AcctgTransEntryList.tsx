@@ -230,13 +230,13 @@ export default function AcctgTransEntryList({ acctgTrans }: Props) {
               cells={{ footerCell: () => null }}
           />
           <Column
-              field="amount"
+              field="amount" format="{0:n2}"
               title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")}
               width={100}
               cells={{ footerCell: () => null }}
           />
           <Column
-              field="origAmount"
+              field="origAmount" format="{0:n2}"
               title={getTranslatedLabel(`${localizationKey}.origAmount`, "Orig Amount")}
               width={100}
               cells={{ footerCell: () => null }}

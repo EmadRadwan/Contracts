@@ -182,7 +182,7 @@ export default function QuotesList() {
                                         locked={true}
                                     />
                                     <Column field="fromPartyName" title="Customer" />
-                                    <Column field="grandTotal" title="Amount" />
+                                    <Column field="grandTotal" format="{0:n2}" title="Amount" />
                                     <Column
                                         field="statusDescription"
                                         title="Status"

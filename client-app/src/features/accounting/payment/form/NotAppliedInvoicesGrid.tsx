@@ -4,7 +4,7 @@ import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {Payment} from "../../../../app/models/accounting/payment";
 import React from "react";
-import {handleDatesArray} from "../../../../app/util/utils";
+import {handleDatesArray, formatNumber} from "../../../../app/util/utils";
 import {DataResult} from "@progress/kendo-data-query";
 
 
@@ -73,20 +73,20 @@ const NotAppliedInvoicesGrid: React.FC<NotAppliedInvoicesGridProps> = ({
                     title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")}
                     format="{0:c}"
                     cells={{ data: (props) => (
-                        <td>{props.dataItem.amount.toFixed(2)} {payment?.currencyUomId}</td>
+                        <td>{formatNumber(props.dataItem.amount)} {payment?.currencyUomId}</td>
                     ) }}
                 />
                 <GridColumn
                     title={getTranslatedLabel(`${localizationKey}.alreadyApplied`, "Applied")}
                     cells={{ data: ({dataItem}) => (
-                        <td>{dataItem.amountApplied.toFixed(2)} {payment?.currencyUomId}</td>
+                        <td>{formatNumber(dataItem.amountApplied)} {payment?.currencyUomId}</td>
                     ) }}
                 />
 
                 <GridColumn
                     title={getTranslatedLabel(`${localizationKey}.remaining`, "Remaining")}
                     cells={{ data: ({dataItem}) => (
-                        <td>{dataItem.amountToApply.toFixed(2)} {payment?.currencyUomId}</td>
+                        <td>{formatNumber(dataItem.amountToApply)} {payment?.currencyUomId}</td>
                     ) }}
                 />
             </KendoGrid>

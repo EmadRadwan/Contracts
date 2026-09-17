@@ -6,6 +6,7 @@ import {FormDropDownList} from "../../../../app/common/form/FormDropDownList";
 import {Payment} from "../../../../app/models/accounting/payment";
 import FormNumericTextBox from "../../../../app/common/form/FormNumericTextBox";
 import {useApplyPayment} from "../hook/useApplyPayment";
+import { formatNumber } from "../../../../app/util/utils";
 
 interface NotAppliedInvoice {
     invoiceId: string;
@@ -46,14 +47,14 @@ const AddPaymentApplicationForm: React.FC<AddPaymentApplicationFormProps> = ({
         if (num > notAppliedAmount) {
             return getTranslatedLabel(
                 `${localizationKey}.validation.exceedsPayment`,
-                `Cannot exceed payment remaining (${notAppliedAmount.toFixed(2)} ${payment?.currencyUomId})`
+                `Cannot exceed payment remaining (${formatNumber(notAppliedAmount)} ${payment?.currencyUomId})`
             );
         }
 
         if (selected && num > selected.amountToApply) {
             return getTranslatedLabel(
                 `${localizationKey}.validation.exceedsInvoice`,
-                `Cannot exceed invoice remaining (${selected.amountToApply.toFixed(2)} ${payment?.currencyUomId})`
+                `Cannot exceed invoice remaining (${formatNumber(selected.amountToApply)} ${payment?.currencyUomId})`
             );
         }
 

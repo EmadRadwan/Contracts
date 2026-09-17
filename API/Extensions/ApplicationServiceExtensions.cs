@@ -22,11 +22,11 @@ using Application.Shipments;
 using Application.WorkEfforts;
 using FluentValidation;
 using API.Reporting;
+using API.Reporting.GlAccountTransactions;
 using API.Reporting.ProjectReport;
 using Infrastructure.Auditing;
 using Infrastructure.Contents;
 using Infrastructure.Security;
-using Infrastructure.Pdf;
 using MediatR;
 using Persistence.Auditing;
 using Serilog;
@@ -87,12 +87,14 @@ public static class ApplicationServiceExtensions
             options.JsonSerializerOptions.Converters.Add(new DateOnlyJsonConverter());
         });
 
-        services.AddScoped<IPdfGenerationService, PdfGenerationService>();
-        // Telerik Reporting voucher — parallel to IPdfGenerationService (QuestPDF), same GetPaymentForReport data.
+        // Telerik Reporting payment voucher (the only PDF engine — QuestPDF was removed 2026-09-17).
         services.AddScoped<IPaymentVoucherReportService, TelerikPaymentVoucherReportService>();
         // Telerik Reporting project report PDF — replaces a KendoReact Grid PDFExport attempt that
         // could not shape/reorder Arabic text (see docs/project-report-in-app-view-plan.md).
         services.AddScoped<IProjectReportService, TelerikProjectReportService>();
+        // Telerik Reporting GL account transactions PDF — the drill-down modal shared by both trial
+        // balance reports (classic + by-level).
+        services.AddScoped<IGlAccountTransactionsReportService, TelerikGlAccountTransactionsReportService>();
         services.AddScoped<IUserAccessor, UserAccessor>();
 
         // Auditing. IHttpContextAccessor is registered explicitly rather than relying on the

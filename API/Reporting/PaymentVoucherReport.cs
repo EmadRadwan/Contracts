@@ -1,3 +1,4 @@
+using System.Globalization;
 using Application.Reports;
 using SkiaSharp;
 using Telerik.Reporting;
@@ -10,8 +11,8 @@ namespace API.Reporting;
 ///
 /// Authored in code rather than as a <c>.trdp</c> because the Standalone / VS Report Designer
 /// is Windows-only and this repo's development happens on macOS (see
-/// docs/telerik-reporting-integration-plan.md §7). The layout mirrors the QuestPDF voucher in
-/// Infrastructure/Pdf/PdfGenerationService.cs so the two engines can be compared side by side.
+/// docs/telerik-reporting-integration-plan.md §7). The layout is a port of the original QuestPDF
+/// voucher (removed 2026-09-17 — Telerik is now the only PDF engine).
 ///
 /// The section has no data source, so the DetailSection renders exactly once. All values are
 /// literal — they are pushed in through the constructor from the already-resolved
@@ -122,11 +123,13 @@ public sealed class PaymentVoucherReport : Report
         y += 1.1;
 
         // ===== Amount box: [ pounds ] جنيه [ piastres ] قرش =====
+        // Amount digits are deliberately Western (0-9), not Arabic-Indic — client request; dates,
+        // cheque number and the amount-in-words stay Arabic.
         detail.Items.Add(Text("piastresLabel", "قرش", x: 0.0, y: y, w: 1.4, h: 0.9, size: 11, bold: false, align: HorizontalAlign.Center));
-        detail.Items.Add(Boxed("piastresBox", ArabicPaymentFormatter.ToArabicNumerals(piastres.ToString("00")),
+        detail.Items.Add(Boxed("piastresBox", piastres.ToString("00", CultureInfo.InvariantCulture),
             x: 1.5, y: y, w: 2.2, h: 0.9, size: 12));
         detail.Items.Add(Text("poundsLabel", "جنيه", x: 3.9, y: y, w: 1.6, h: 0.9, size: 11, bold: false, align: HorizontalAlign.Center));
-        detail.Items.Add(Boxed("poundsBox", ArabicPaymentFormatter.ToArabicNumerals(pounds.ToString("N0")),
+        detail.Items.Add(Boxed("poundsBox", pounds.ToString("N0", CultureInfo.InvariantCulture),
             x: 5.7, y: y, w: 6.0, h: 0.9, size: 13));
         y += 1.3;
 

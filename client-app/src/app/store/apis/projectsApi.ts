@@ -374,6 +374,8 @@ export interface ProjectReportDto {
     payroll: Payment[];
     apartmentSales: any[];
     paidCommissions: ProjectCommissionPaymentRecord[];
+    // Ledger entries (AcctgTransEntry) of every AcctgTrans linked to a payment in paidCommissions.
+    paidCommissionAcctgEntries?: ProjectCommissionAcctgEntryRecord[];
     // Server-computed roll-ups (mirror of ProjectReportSummaryDto). Authoritative — the in-app
     // report screen and the Excel/PDF exports read these instead of re-summing in the browser.
     // Optional while the old Excel dialog still computes its own totals (removed in a later step).
@@ -437,6 +439,41 @@ export interface ProjectCommissionPaymentRecord {
     chequeNumber?: string;
     chequeDate?: string;
     comments?: string;
+    costCenterId?: string;
+    costCenterDescription?: string;
+    overrideGlAccountId?: string;
+    overrideGlAccountCode?: string;
+    overrideGlAccountNameArabic?: string;
+}
+
+export interface ProjectCommissionAcctgEntryRecord {
+    paymentId: string;
+    salesCommissionId?: string;
+    salesRequestId?: string;
+    apartmentName?: string;
+    payeeName?: string;
+    acctgTransId: string;
+    acctgTransTypeId?: string;
+    acctgTransTypeDescription?: string;
+    transactionDate?: string;
+    isPosted?: string;
+    postedDate?: string;
+    glFiscalTypeId?: string;
+    transDescription?: string;
+    costCenterId?: string;
+    costCenterDescription?: string;
+    acctgTransEntrySeqId?: string;
+    glAccountId?: string;
+    accountCode?: string;
+    accountName?: string;
+    accountNameArabic?: string;
+    glAccountTypeId?: string;
+    debitCreditFlag?: string;
+    debit: number;
+    credit: number;
+    entryPartyId?: string;
+    entryPartyName?: string;
+    entryDescription?: string;
 }
 
 export interface ProjectExpenseRecord {

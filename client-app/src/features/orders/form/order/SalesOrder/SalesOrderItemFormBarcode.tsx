@@ -14,6 +14,7 @@ import { useTranslationHelper } from "../../../../../app/hooks/useTranslationHel
 import { useGetProductDetailsQuery, useGetProductPriceQuery } from "../../../../../app/store/apis";
 import { toast } from "react-toastify";
 import Quagga from "@ericblade/quagga2";
+import { formatNumber } from "../../../../../app/util/utils";
 
 interface Props {
     orderItem?: any;
@@ -485,7 +486,7 @@ function SalesOrderItemFormBarcode({
                                                         <>
                                                             <Grid item>
                                                                 <Typography variant="body1" component="div">
-                                                                    <strong>{getTranslatedLabel(`${localizationKey}.price`, "Price")}:</strong> {productPrice.price.toFixed(2)}
+                                                                    <strong>{getTranslatedLabel(`${localizationKey}.price`, "Price")}:</strong> {formatNumber(productPrice.price)}
                                                                 </Typography>
                                                             </Grid>
                                                             <Grid item>

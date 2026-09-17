@@ -148,7 +148,7 @@ function BOMProductComponentsList() {
                                     </GridToolbar>
                                     <Column field="productIdTo" title={getTranslatedLabel("manufacturing.bom.components.product", "Product")} cells={{ data: ProductNameCell }} width={300} locked={true}/>
                                     <Column field="productDescriptionTo" title={getTranslatedLabel("manufacturing.bom.components.productDescription", "Product Description")} width={400}/>
-                                    <Column field="quantity" title={getTranslatedLabel("manufacturing.bom.components.quantity", "Quantity")} width={130}/>
+                                    <Column field="quantity" format="{0:n2}" title={getTranslatedLabel("manufacturing.bom.components.quantity", "Quantity")} width={130}/>
                                     <Column field="quantityUOMDescription" title={getTranslatedLabel("manufacturing.bom.components.quantityUOM", "Quantity UOM")} width={150}/>
                                     <Column field="sequenceNum" title={getTranslatedLabel("manufacturing.bom.components.sequenceNum", "Sequence Num")} width={150}/>
                                     <Column field="scrapFactor" title={getTranslatedLabel("manufacturing.bom.components.scrapFactor", "Scrap Factor")} width={150}/>

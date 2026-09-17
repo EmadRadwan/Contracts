@@ -3,6 +3,7 @@ import {Grid as KendoGrid, GridColumn} from "@progress/kendo-react-grid";
 import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import {Payment} from "../../../../app/models/accounting/payment";
+import { formatNumber } from "../../../../app/util/utils";
 
 
 interface NotAppliedPayment {
@@ -53,7 +54,7 @@ const NotAppliedPaymentsGrid: React.FC<NotAppliedPaymentsGridProps> = ({
                     title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")}
                     format="{0:c}"
                     cells={{ data: (props) => (
-                        <td>{props.dataItem.amount.toFixed(2)} {payment?.currencyUomId}</td>
+                        <td>{formatNumber(props.dataItem.amount)} {payment?.currencyUomId}</td>
                     ) }}
                 />
             </KendoGrid>

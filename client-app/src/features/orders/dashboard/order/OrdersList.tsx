@@ -224,7 +224,7 @@ export default function OrdersList({ orderType }: OrdersListProps) {
                                     cells={{ filterCell: TextFilterCell }}
                                 />
                                 <Column
-                                    field="grandTotal"
+                                    field="grandTotal" format="{0:n2}"
                                     title={getTranslatedLabel("order.list.amount", "Amount")}
                                     
                                     filter={"numeric"}

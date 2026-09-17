@@ -49,9 +49,9 @@ export default function JobQuoteMarketingPkgItemsList({onClose}: Props) {
                         >
                             <Column field="productName" title="Product Name" width={220}/>
                             <Column field="facilityName" title="Facility" width={160}/>
-                            <Column field="quantityOnHandTotal" title="QOH" width={80}/>
-                            <Column field="availableToPromiseTotal" title="ATP" width={80}/>
-                            <Column field="price" title="Price" width={80}/>
+                            <Column field="quantityOnHandTotal" format="{0:n2}" title="QOH" width={80}/>
+                            <Column field="availableToPromiseTotal" format="{0:n2}" title="ATP" width={80}/>
+                            <Column field="price" format="{0:n2}" title="Price" width={80}/>
 
                         </KendoGrid>
                     </div>

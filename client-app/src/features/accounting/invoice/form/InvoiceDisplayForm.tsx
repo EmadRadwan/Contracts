@@ -34,6 +34,7 @@ import {Ribbon, RibbonContainer} from "react-ribbons";
 import {useInvoiceTotal} from "../hook/useInvoiceTotal";
 import {InvoiceExcel} from "../report/InvoiceExcel";
 import { apiErrorMessage } from "../../../../app/util/apiError";
+import { formatNumber } from "../../../../app/util/utils";
 
 interface Props {
     invoiceId?: string;
@@ -516,7 +517,7 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                             <Typography variant="h6" sx={{ pl: 2 }}>
                                 {getTranslatedLabel(`${localizationKey}.total`, "Total:")}{" "}
                                 <span style={{ fontWeight: "bold", color: "red", marginLeft: "10px" }}>
-    {isTotalLoading ? "..." : iTotal !== null ? iTotal.toFixed(2) : "—"}
+    {isTotalLoading ? "..." : iTotal !== null ? formatNumber(iTotal) : "—"}
   </span>
                             </Typography>
 
@@ -534,7 +535,7 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                           "orange",
           marginLeft: "10px"
       }}>
-        {iOutstanding?.toFixed(2) ?? "—"}
+        {iOutstanding != null ? formatNumber(iOutstanding) : "—"}
       </span>
 
                                         {iTotal === 0 && (

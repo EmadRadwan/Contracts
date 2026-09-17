@@ -130,6 +130,7 @@ export async function buildProjectReportWorkbook(
     const agreedRevenues = (data.revenues || []).filter(r => !isMaintenance(r));
     const maintenanceRevenues = (data.revenues || []).filter(isMaintenance);
     const commissions = data.paidCommissions || [];
+    const commissionEntries = data.paidCommissionAcctgEntries || [];
 
     // Summary totals come from the server (ProjectReportDto.Summary). This module never re-sums.
     const s = data.summary;
@@ -525,7 +526,9 @@ export async function buildProjectReportWorkbook(
             `${projectName} - الثروة الخضراء - العمولات المدفوعة (${expPeriod})`,
             'FFB45309', 'FFFDE9C8', 'FFFEF6E7',
             ['رقم العمولة', 'رقم طلب البيع', 'الوحدة', 'المبنى', 'المستفيد', 'المبلغ', 'حالة الدفع',
-                'حالة العمولة', 'طريقة الدفع', 'التاريخ', 'رقم الشيك', 'ملاحظات'],
+                'حالة العمولة', 'طريقة الدفع', 'التاريخ', 'رقم الشيك', 'رقم الدفعة',
+                'مركز التكلفة', 'وصف مركز التكلفة',
+                'رقم الحساب البديل', 'كود الحساب البديل', 'اسم الحساب البديل', 'ملاحظات'],
             commissions,
             (c: any) => [
                 utils.safeString(c.salesCommissionId), utils.safeString(c.salesRequestId),
@@ -536,10 +539,94 @@ export async function buildProjectReportWorkbook(
                 utils.safeString(c.commissionStatusArabic),
                 utils.safeString(c.paymentMethodTypeArabic),
                 utils.formatDate(c.effectiveDate), utils.safeString(c.chequeNumber),
+                utils.safeString(c.paymentId),
+                utils.safeString(c.costCenterId), utils.safeString(c.costCenterDescription),
+                utils.safeString(c.overrideGlAccountId), utils.safeString(c.overrideGlAccountCode),
+                utils.safeString(c.overrideGlAccountNameArabic),
                 utils.safeString(c.comments)
             ],
-            6, [16, 16, 26, 12, 30, 16, 18, 18, 18, 14, 16, 55]
+            6, [16, 16, 26, 12, 30, 16, 18, 18, 18, 14, 16, 16, 16, 26, 18, 16, 30, 55]
         );
+    }
+
+    // ====================== PAID COMMISSIONS — LEDGER ENTRIES SHEET ======================
+    // Companion to العمولات المدفوعة: one row per AcctgTransEntry of every accounting transaction
+    // linked to those payments (including unposted / reversal transactions, so the auditor sees
+    // the whole posting history). Debit and credit are separate columns with their own subtotals
+    // so a filtered selection can be checked for balance directly in Excel.
+    if (commissionEntries.length > 0) {
+        const wsEnt = workbook.addWorksheet('قيود العمولات المدفوعة');
+        wsEnt.views = [{ rightToLeft: true }];
+        wsEnt.pageSetup = { orientation: 'landscape', paperSize: 9 };
+        const entHeaders = [
+            'رقم العمولة', 'رقم طلب البيع', 'الوحدة', 'المستفيد', 'رقم الدفعة',
+            'رقم القيد', 'نوع القيد', 'تاريخ القيد', 'مرحّل', 'تاريخ الترحيل', 'النوع المالي',
+            'وصف القيد', 'مركز التكلفة', 'وصف مركز التكلفة',
+            'تسلسل', 'رقم الحساب', 'كود الحساب', 'اسم الحساب', 'مدين', 'دائن',
+            'طرف البند', 'وصف البند'
+        ];
+        addSheetHeader(wsEnt, `${projectName} - الثروة الخضراء - قيود العمولات المدفوعة (${expPeriod})`,
+            entHeaders.length, 'FF92400E');
+
+        const entHeaderRow = wsEnt.addRow(entHeaders.map(h => utils.rtlEmbed(h)));
+        entHeaderRow.font = { name: 'Amiri', size: 11, bold: true };
+        entHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFDE9C8' } };
+        entHeaderRow.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        const DEBIT_COL = 19, CREDIT_COL = 20;
+        const entDataStart = entHeaderRow.number + 1;
+        // Alternate the band per accounting transaction (not per row) so the entries of one
+        // trans read as a group.
+        let band = 0;
+        let lastTrans: string | undefined;
+        commissionEntries.forEach((e: any) => {
+            if (e.acctgTransId !== lastTrans) { band ^= 1; lastTrans = e.acctgTransId; }
+            const row = wsEnt.addRow([
+                utils.safeString(e.salesCommissionId), utils.safeString(e.salesRequestId),
+                utils.safeString(e.apartmentName), utils.safeString(e.payeeName),
+                utils.safeString(e.paymentId),
+                utils.safeString(e.acctgTransId), utils.safeString(e.acctgTransTypeDescription),
+                utils.formatDate(e.transactionDate),
+                e.isPosted === 'Y' ? 'نعم' : 'لا',
+                utils.formatDate(e.postedDate), utils.safeString(e.glFiscalTypeId),
+                utils.safeString(e.transDescription),
+                utils.safeString(e.costCenterId), utils.safeString(e.costCenterDescription),
+                utils.safeString(e.acctgTransEntrySeqId),
+                utils.safeString(e.glAccountId), utils.safeString(e.accountCode),
+                utils.safeString(e.accountNameArabic || e.accountName),
+                e.debit || 0, e.credit || 0,
+                utils.safeString(e.entryPartyName || e.entryPartyId),
+                utils.safeString(e.entryDescription)
+            ]);
+            row.font = { name: 'Amiri', size: 10 };
+            [DEBIT_COL, CREDIT_COL].forEach(col => {
+                row.getCell(col).numFmt = '#,##0.00';
+                row.getCell(col).alignment = { horizontal: 'right' };
+            });
+            if (band === 1) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF6E7' } };
+        });
+        const entDataEnd = wsEnt.rowCount;
+
+        const dL = wsEnt.getColumn(DEBIT_COL).letter;
+        const cL = wsEnt.getColumn(CREDIT_COL).letter;
+        const entTotalArr: any[] = entHeaders.map(() => '');
+        entTotalArr[DEBIT_COL - 2] = utils.rtlEmbed('الإجمالي');
+        entTotalArr[DEBIT_COL - 1] = { formula: `SUBTOTAL(109,${dL}${entDataStart}:${dL}${entDataEnd})` };
+        entTotalArr[CREDIT_COL - 1] = { formula: `SUBTOTAL(109,${cL}${entDataStart}:${cL}${entDataEnd})` };
+        const entTotalRow = wsEnt.addRow(entTotalArr);
+        entTotalRow.font = { name: 'Amiri', size: 12, bold: true };
+        entTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFDE9C8' } };
+        [DEBIT_COL, CREDIT_COL].forEach(col => {
+            entTotalRow.getCell(col).numFmt = '#,##0.00';
+            entTotalRow.getCell(col).alignment = { horizontal: 'right' };
+        });
+
+        wsEnt.autoFilter = {
+            from: { row: entHeaderRow.number, column: 1 },
+            to: { row: entDataEnd, column: entHeaders.length }
+        };
+        const entWidths = [16, 16, 26, 30, 16, 16, 22, 14, 8, 14, 12, 40, 16, 26, 8, 16, 14, 30, 16, 16, 30, 40];
+        wsEnt.columns.forEach((col, i) => (col.width = entWidths[i] || 15));
     }
 
     return await workbook.xlsx.writeBuffer();

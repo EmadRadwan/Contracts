@@ -22,6 +22,7 @@ public static class ProjectReportSections
         var (agreedRows, maintenanceRows) = ProjectReportPdfRows.BuildRevenues(data.Revenues);
         var salesRows = ProjectReportPdfRows.BuildSales(data.ApartmentSales);
         var commissionRows = ProjectReportPdfRows.BuildCommissions(data.PaidCommissions);
+        var commissionEntryRows = ProjectReportPdfRows.BuildCommissionEntries(data.PaidCommissionAcctgEntries);
 
         var sections = new List<Section>
         {
@@ -34,6 +35,7 @@ public static class ProjectReportSections
             new($"وديعة الصيانة ({maintenanceRows.Count})", RevenueColumns("المجدول"), maintenanceRows),
             new($"مبيعات الوحدات ({salesRows.Count})", SalesColumns, salesRows),
             new($"العمولات المدفوعة ({commissionRows.Count})", CommissionColumns, commissionRows),
+            new($"قيود العمولات المدفوعة ({commissionEntryRows.Count})", CommissionEntryColumns, commissionEntryRows),
         };
 
         return sections.Where(s => s.Rows.Count > 0).ToList();
@@ -86,7 +88,23 @@ public static class ProjectReportSections
         new("الوحدة", "ApartmentName", 4),
         new("المستفيد", "PayeeDisplay", 5),
         new("المبلغ", "Amount", 3.5, "{0:N2}"),
-        new("حالة الدفع", "PaymentStatusDisplay", 3.5),
-        new("التاريخ", "EffectiveDate", 3, "{0:dd/MM/yyyy}"),
+        new("حالة الدفع", "PaymentStatusDisplay", 3),
+        new("التاريخ", "EffectiveDate", 2.5, "{0:dd/MM/yyyy}"),
+        new("رقم الدفعة", "PaymentId", 3),
+        new("مركز التكلفة", "CostCenterDisplay", 4),
+        new("الحساب البديل", "OverrideGlAccountDisplay", 5.5),
+    };
+
+    private static readonly ProjectReportColumn[] CommissionEntryColumns =
+    {
+        new("رقم الدفعة", "PaymentId", 3),
+        new("رقم القيد", "AcctgTransId", 3),
+        new("نوع القيد", "TypeDescription", 3.5),
+        new("تاريخ القيد", "TransactionDate", 2.5, "{0:dd/MM/yyyy}"),
+        new("مرحّل", "PostedDisplay", 1.5),
+        new("الحساب", "GlAccountDisplay", 6.5),
+        new("مدين", "Debit", 3, "{0:N2}"),
+        new("دائن", "Credit", 3, "{0:N2}"),
+        new("مركز التكلفة", "CostCenterDisplay", 3.5),
     };
 }

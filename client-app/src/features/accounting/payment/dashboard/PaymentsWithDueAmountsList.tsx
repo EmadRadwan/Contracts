@@ -282,7 +282,7 @@ export default function PaymentsWithDueAmountsList() {
                                     title={getTranslatedLabel(`${localizationKey}.chequeNumber`, "chequeNumber")}
                                     width={140}
                                 />
-                                <Column field="amount" title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")} width={130}  filter={"numeric"}/>
+                                <Column field="amount" format="{0:n2}" title={getTranslatedLabel(`${localizationKey}.amount`, "Amount")} width={130}  filter={"numeric"}/>
                                 <Column field="projectName" title={getTranslatedLabel(`${localizationKey}.projectName`, "Project")} width={180} />
                                 <Column
                                     field="costCenterDescription"

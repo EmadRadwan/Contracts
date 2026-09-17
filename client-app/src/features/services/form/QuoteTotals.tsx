@@ -2,6 +2,7 @@ import Grid from "@mui/material/Grid";
 import {Typography} from "@mui/material";
 import {useSelector} from "react-redux";
 import {quoteLevelAdjustmentsTotal, quoteSubTotal} from "../../orders/slice/quoteSelectors";
+import { formatNumber } from "../../../app/util/utils";
 
 export default function QuoteTotals() {
     const sTotal: any = useSelector(quoteSubTotal);
@@ -12,7 +13,7 @@ export default function QuoteTotals() {
             <Grid container>
                 <Typography sx={{p: 0}} variant="h6">Sub Total </Typography>
                 <Typography sx={{color: "red", pl: 1}}
-                            variant="h6"> {sTotal.toFixed(2)} </Typography>
+                            variant="h6"> {formatNumber(sTotal)} </Typography>
             </Grid>
 
         </Grid>
@@ -20,7 +21,7 @@ export default function QuoteTotals() {
             <Grid container>
                 <Typography sx={{p: 0}} variant="h6">Adjustments </Typography>
                 <Typography sx={{color: "red", pl: 1}}
-                            variant="h6"> {aTotal.toFixed(2)} </Typography>
+                            variant="h6"> {formatNumber(aTotal)} </Typography>
             </Grid>
 
         </Grid>
@@ -28,7 +29,7 @@ export default function QuoteTotals() {
             <Grid container>
                 <Typography sx={{p: 0}} variant="h6">Grand Total </Typography>
                 <Typography sx={{color: "red", pl: 1}}
-                            variant="h6"> {(sTotal + aTotal).toFixed(2)} </Typography>
+                            variant="h6"> {formatNumber(sTotal + aTotal)} </Typography>
             </Grid>
 
         </Grid>

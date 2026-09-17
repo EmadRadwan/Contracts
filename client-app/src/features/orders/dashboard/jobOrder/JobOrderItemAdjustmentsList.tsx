@@ -221,7 +221,7 @@ function JobOrderItemAdjustmentsList({
                                             title="orderItemSeqId"
                                             width={0}
                                         />
-                                        <Column field="amount" title="Amount" width={100}/>
+                                        <Column field="amount" format="{0:n2}" title="Amount" width={100}/>
                                         <Column
                                             field="sourcePercentage"
                                             title="Percentage"

@@ -94,7 +94,7 @@ export function GridStylingExample() {
 
                 {/* Numeric Filter Example */}
                 <Column
-                    field="amount"
+                    field="amount" format="{0:n2}"
                     title="Amount"
                     filterable={true}
                     filter="numeric"
@@ -134,7 +134,7 @@ import '../app/common/grid/grid.styles.css';
 // 3. Add filterCell to columns
 <Column field="name" filterable={true} filter="text" cells={{ filterCell: TextFilterCell }} />
 <Column field="date" filterable={true} filter="date" cells={{ filterCell: DateFilterCell }} />
-<Column field="amount" filterable={true} filter="numeric" cells={{ filterCell: NumericFilterCell }} />
+<Column field="amount" format="{0:n2}" filterable={true} filter="numeric" cells={{ filterCell: NumericFilterCell }} />
 `}</pre>
             </div>
         </div>

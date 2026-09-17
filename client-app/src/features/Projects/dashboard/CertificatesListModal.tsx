@@ -11,6 +11,7 @@ import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 import { useGetCertificatesByPartyQuery } from "../../../app/store/apis/projectsApi";
 import CertificateDetailModal, { CertificateDetailSummary } from "./CertificateDetailModal";
+import { formatNumber } from "../../../app/util/utils";
 
 interface ProjectFilterOption {
     projectId: string;
@@ -245,7 +246,7 @@ export default function CertificatesListModal({
                         if (props.dataItem.__type !== "item") return <td />;
                         return (
                             <td style={{ textAlign: "right", color: "#424242" }}>
-                                {(props.dataItem.totalPrice ?? 0).toFixed(2)}
+                                {formatNumber(props.dataItem.totalPrice ?? 0)}
                             </td>
                         );
                     } },
@@ -260,7 +261,7 @@ export default function CertificatesListModal({
                         if (props.dataItem.__type !== "item") return <td />;
                         return (
                             <td style={{ textAlign: "right", color: "#2e7d32", fontWeight: 600 }}>
-                                {(props.dataItem.deserved ?? 0).toFixed(2)}
+                                {formatNumber(props.dataItem.deserved ?? 0)}
                             </td>
                         );
                     } },
@@ -293,7 +294,7 @@ export default function CertificatesListModal({
             format: "{0:n2}",
             cells: { footerCell: () => (
                 <td style={{ textAlign: "right", fontWeight: "bold", color: "#d32f2f", fontSize: "1.2em", whiteSpace: "nowrap" }}>
-                    {getTranslatedLabel("projects.certificate.grandTotal", "Grand Total")}: {grandTotal.toFixed(2)}
+                    {getTranslatedLabel("projects.certificate.grandTotal", "Grand Total")}: {formatNumber(grandTotal)}
                 </td>
             ), data: (props: any) => {
                 const type = props.dataItem.__type;
@@ -311,7 +312,7 @@ export default function CertificatesListModal({
                         fontWeight: type === "subtotal" ? "bold" : "normal",
                         color: type === "subtotal" ? "#1565c0" : "inherit",
                     }}>
-                        {value.toFixed(2)}
+                        {formatNumber(value)}
                     </td>
                 );
             } },

@@ -96,9 +96,9 @@ const AssignPaymentApplicationForm = ({ paymentId }: Props) => {
               title="Invoice Date"
               format="{0: dd/MM/yyyy}"
             />
-            <Column field="amount" title="Invoice Amount" />
+            <Column field="amount" format="{0:n2}" title="Invoice Amount" />
             <Column field="currencyUomId" title="Currency" />
-            <Column field="amountApplied" title="Amount Applied" />
+            <Column field="amountApplied" format="{0:n2}" title="Amount Applied" />
             <Column cells={{ data: ApplyAllCell }} />
           </KendoGrid>
         </div>

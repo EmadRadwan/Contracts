@@ -72,7 +72,7 @@ Frontend-specific stack notes, naming conventions, and UI patterns (Menu-Exit, A
 - `DataContext` has `LazyLoadingEnabled = false` — always write explicit joins or `.Include()` chains
 - Both RTK Query and Axios (`agent.ts`) coexist — prefer RTK Query for new features
 - Both MobX and Redux coexist — prefer Redux slices + RTK Query for new features
-- `QuestPDF.Settings.UseEnvironmentFonts = false` is set globally — do not rely on system fonts in PDF templates
+- PDFs are rendered server-side with Telerik Reporting (`API/Reporting/`), code-defined reports using the literal-TextBox-per-cell technique — do not use `Telerik.Reporting.List`/`Fields.X` binding (it silently rendered zero rows). QuestPDF was removed 2026-09-17.
 
 - Do not spawn subagents unless explicitly asked. Work sequentially.
 

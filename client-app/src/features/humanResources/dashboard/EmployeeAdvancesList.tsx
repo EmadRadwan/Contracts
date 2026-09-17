@@ -231,7 +231,7 @@ function EmployeeAdvancesList() {
                         <Column field="employeeName" title={getTranslatedLabel("party.employeeAdvance.list.employee", "Employee")} width={220} />
                         <Column field="advanceDate" title={getTranslatedLabel("party.employeeAdvance.list.date", "Date")} format="{0:dd/MM/yyyy}" filter="date" width={140} />
                         <Column field="amount" title={getTranslatedLabel("party.employeeAdvance.list.amount", "Amount")} format="{0:n2}" width={130} />
-                        <Column field="advanceTypeDescription" title={getTranslatedLabel("party.employeeAdvance.list.advanceTypeDescription", "Advance Type")} format="{0:n2}" width={130} />
+                        <Column field="advanceTypeDescription" title={getTranslatedLabel("party.employeeAdvance.list.advanceTypeDescription", "Advance Type")} width={130} />
                         <Column field="statusDescription" title={getTranslatedLabel("party.employeeAdvance.list.status", "Status")} width={160} />
                         <Column field="description" title={getTranslatedLabel("party.employeeAdvance.list.notes", "Notes")} />
                         <Column cells={{ data: DeleteCell }} width={100} filterable={false} sortable={false} />

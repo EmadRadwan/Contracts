@@ -125,7 +125,7 @@ export default function InvoicesList() {
                                     width={150}
                                 /> 
                                 <Column
-                                    field="total"
+                                    field="total" format="{0:n2}"
                                     title={getTranslatedLabel(
                                         `${localizationKey}.total`,
                                         "total"

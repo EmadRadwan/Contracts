@@ -36,6 +36,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DesktopDatePicker } from "@mui/x-date-pickers/DesktopDatePicker";
 import { apiErrorMessage } from "../../../app/util/apiError";
+import { useDateRangeFilterCell } from "../../../app/common/grid";
 
 export default function MultiPaymentCertificatesList() {
     const [certificates, setCertificates] = useState<DataResult>({ data: [], total: 0 });
@@ -139,6 +140,16 @@ export default function MultiPaymentCertificatesList() {
         setDataState(e.dataState);
     };
 
+    // From/To range on the Date column. Kendo's filter row only holds one descriptor
+    // per field, so the cell writes gte/lte straight into dataState.filter (see
+    // DateRangeFilterCell.tsx). Server-side OData applies it as `date ge X and date le Y`.
+    const DateRangeFilterCell = useDateRangeFilterCell({
+        filter: dataState.filter,
+        onFilterChange: (filter) => setDataState((prev) => ({ ...prev, filter, skip: 0 })),
+        fromPlaceholder: getTranslatedLabel("common.fromDate", "From Date"),
+        toPlaceholder: getTranslatedLabel("common.toDate", "To Date"),
+    });
+
     const handleSelectCertificate = useCallback(
         (workEffortId?: string) => {
             if (!workEffortId) return;
@@ -205,7 +216,7 @@ export default function MultiPaymentCertificatesList() {
 
     const columnWidths = {
         workEffortId: 150,
-        date: 150,
+        date: 300,
         amount: 120,
         description: 350,
         accountName: 250,
@@ -313,6 +324,8 @@ export default function MultiPaymentCertificatesList() {
                                     title={getTranslatedLabel(`${localizationKey}.date`, "Date")}
                                     format="{0: dd/MM/yyyy}"
                                     width={columnWidths.date}
+                                    filter="date"
+                                    cells={{ filterCell: DateRangeFilterCell }}
                                 />
                                 <Column
                                     field="amount"
@@ -469,6 +482,7 @@ export default function MultiPaymentCertificatesList() {
                                     title={getTranslatedLabel(`${localizationKey}.date`, "Certificate Date")}
                                     format="{0: dd/MM/yyyy}"
                                     width={150}
+                                    filter="date"
                                 />
                                 <Column
                                     field="parentDescription"
@@ -502,6 +516,7 @@ export default function MultiPaymentCertificatesList() {
                                     title={getTranslatedLabel("projects.multiPaymentCertificate.items.estimatedStartDate", "Date")}
                                     format="{0: dd/MM/yyyy}"
                                     width={150}
+                                    filter="date"
                                 />
                                 <Column
                                     field="serviceName"

@@ -41,12 +41,19 @@ COPY API/appsettings.*.json /app/
  
 # REFACTOR: Ensure OpenSSL is available by installing it explicitly to handle certificate loading.
 # fontconfig + font faces: Telerik Reporting renders text through SkiaSharp and needs real
-# font files present (QuestPDF ships its own, Telerik does not). fonts-noto-core covers Latin;
+# font files present (unlike the old QuestPDF engine, which shipped its own). fonts-noto-core covers Latin;
 # add an Arabic naskh face here (Amiri / Cairo / Noto Naskh Arabic) once the report font is fixed.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      openssl libfontconfig1 libfreetype6 fontconfig fonts-noto-core \
+      openssl libfontconfig1 libfreetype6 fontconfig fonts-noto-core libuuid1 \
  && rm -rf /var/lib/apt/lists/* \
  && fc-cache -f
+
+# SkiaSharp 3.x linux-arm64 libSkiaSharp.so calls uuid_generate_random but does not declare
+# libuuid as a NEEDED dependency, so the first Telerik render kills the whole process with
+# "dotnet: symbol lookup error: .../libSkiaSharp.so: undefined symbol: uuid_generate_random"
+# (no managed exception, nothing in Serilog, container just restarts). Preloading libuuid
+# makes the symbol resolvable.
+ENV LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libuuid.so.1
 
 # Runtime license check (build already embedded one; this keeps parity if that changes).
 ARG TELERIK_LICENSE

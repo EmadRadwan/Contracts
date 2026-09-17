@@ -130,12 +130,12 @@ export default function PromosList() {
                   field="inputParamEnumDescription"
                   title={getTranslatedLabel("product.promos.list.input", "Input Parameter Description")}
                 />
-                <Column field="quantity" title={getTranslatedLabel("product.promos.list.quantity", "Quantity")} />
+                <Column field="quantity" format="{0:n2}" title={getTranslatedLabel("product.promos.list.quantity", "Quantity")} />
                 <Column
                   field="productPromoActionEnumDescription"
                   title={getTranslatedLabel("product.promos.list.description", "Promotion Description")}
                 />
-                <Column field="amount" title={getTranslatedLabel("product.promos.list.amount", "Discount Amount")} />
+                <Column field="amount" format="{0:n2}" title={getTranslatedLabel("product.promos.list.amount", "Discount Amount")} />
               </KendoGrid>
             </div>
             {isLoading && <LoadingComponent message={getTranslatedLabel("product.promos.list.loading", "Loading Promos...")} />}

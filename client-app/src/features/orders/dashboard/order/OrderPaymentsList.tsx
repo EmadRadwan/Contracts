@@ -284,7 +284,7 @@ export default function OrderPaymentsList({onClose, orderId, partyId}: Props) {
                                 </Grid>
                             </GridToolbar>
                             <Column field="paymentId" title="Id" editable={false} width={0}/>
-                            <Column field="amount" title="Amount" editor="numeric" format="{0:n}"/>
+                            <Column field="amount" title="Amount" editor="numeric" format="{0:n2}"/>
                             <Column field="paymentMethodTypeId" title="Payment Method" cells={{ data: DropDownCell }} width={180}/>
                             <Column cells={{ data: CommandCell }} width="240px"/>
                         </KendoGrid>

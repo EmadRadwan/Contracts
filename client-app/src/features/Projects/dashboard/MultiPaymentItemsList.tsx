@@ -5,6 +5,7 @@ import { MultiPaymentItem } from "../../../app/models/project/MultiPaymentItem";
 import ModalContainer from "../../../app/common/modals/ModalContainer";
 import { useTranslationHelper } from "../../../app/hooks/useTranslationHelper";
 import MultiPaymentItemBulkAdd from "../form/MultiPaymentItemBulkAdd";
+import { formatNumber } from "../../../app/util/utils";
 
 interface MultiPaymentItemsListProps {
     workEffortId: string;
@@ -64,9 +65,8 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
             },
             {
                 field: "itemTypeDescription",
-                title: getTranslatedLabel(`${localizationKey}.itemType`, "Total"),
+                title: getTranslatedLabel(`${localizationKey}.itemType`, "Item Type"),
                 width: "100px",
-                format: "{0:n2}",
             },
             {
                 field: "estimatedStartDate",
@@ -141,7 +141,7 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
                             </Button>
                         </div>
                         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                            {getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount")}: {totalAmount.toFixed(2)}
+                            {getTranslatedLabel(`${localizationKey}.totalAmount`, "Total Amount")}: {formatNumber(totalAmount)}
                         </Typography>
                     </div>
                 </GridToolbar>

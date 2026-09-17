@@ -17,7 +17,7 @@ import {
   useLazyFetchLaborCostQuery,
   useLazyFetchMaterialCostQuery,
 } from "../../../app/store/apis";
-import { handleDatesArray } from "../../../app/util/utils";
+import { handleDatesArray, formatNumber } from "../../../app/util/utils";
 import ModalContainer from "../../../app/common/modals/ModalContainer";
 import LaborCostCalculationsList from "../../catalog/dashboard/productCost/LaborCostCalculationsList";
 import ProductMaterialCostList from "../../catalog/dashboard/productCost/ProductMaterialCostList";
@@ -105,9 +105,9 @@ export default function ActualProductCostsList({ productionRunId, productId }: P
   useEffect(() => {
     if (costComponents.data.length > 0) {
       const type = "Sum";
-      const value = costComponents.data
-          .reduce((a: number, b: CostComponent) => a + (b.cost || 0), 0)
-          .toFixed(2);
+      const value = formatNumber(
+          costComponents.data.reduce((a: number, b: CostComponent) => a + (b.cost || 0), 0)
+      );
       const uom = costComponents.data[0].costUomId || "";
       const formattedValue = `${value} ${uom}`;
       setFooterData({ type, value, formattedValue });

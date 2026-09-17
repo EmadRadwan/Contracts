@@ -180,7 +180,7 @@ export default function JobOrderAdjustmentsList({showList, onClose, orderId, wid
                                                 cells={{ data: JobOrderAdjustmentCell }} width={150}/>
                                         <Column field="orderId" title="orderId" width={0}/>
                                         <Column field="orderItemSeqId" title="orderItemSeqId" width={0}/>
-                                        <Column field="amount" title="Amount" width={100}/>
+                                        <Column field="amount" format="{0:n2}" title="Amount" width={100}/>
                                         <Column field="description" title="Description" width={100}/>
                                         <Column field="sourcePercentage" title="Percentage" width={120}/>
                                         <Column field="isManual" title="User Entered" width={100}/>

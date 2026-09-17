@@ -420,38 +420,38 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
             <Column key="productId"   field="productId"   title={isContracting ? getTranslatedLabel(`${itemKey}.product`, "Work Item") : getTranslatedLabel(`${itemKey}.productItem`, "Item")}     cells={{ data: ProductCell }} width={280} />,
             <Column key="description" field="description" title={getTranslatedLabel(`${itemKey}.description`,    "Description")}                    width={250} />,
             <Column key="uomId"       field="uomId"       title={getTranslatedLabel(`${itemKey}.unitOfMeasure`,  "UOM")}         cells={{ data: UomCell }}     width={150} />,
-            <Column key="quantity"    field="quantity"    title={getTranslatedLabel(`${itemKey}.quantity`,       "Qty")}  editor="numeric"           width={100} />,
+            <Column key="quantity"    field="quantity" format="{0:n2}"    title={getTranslatedLabel(`${itemKey}.quantity`,       "Qty")}  editor="numeric"           width={100} />,
         ];
 
         if (isContracting) {
             cols.push(
-                <Column key="materialPrice"        field="materialPrice"        title={getTranslatedLabel(`${itemKey}.materialPrice`,        "Mat. Price")}   editor="numeric"  width={130} />,
-                <Column key="laborPrice"           field="laborPrice"           title={getTranslatedLabel(`${itemKey}.laborPrice`,           "Lab. Price")}   editor="numeric"  width={130} />,
+                <Column key="materialPrice"        field="materialPrice" format="{0:n2}"        title={getTranslatedLabel(`${itemKey}.materialPrice`,        "Mat. Price")}   editor="numeric"  width={130} />,
+                <Column key="laborPrice"           field="laborPrice" format="{0:n2}"           title={getTranslatedLabel(`${itemKey}.laborPrice`,           "Lab. Price")}   editor="numeric"  width={130} />,
                 <Column key="achievementPercentage" field="achievementPercentage" title={getTranslatedLabel(`${itemKey}.achievementPercentage`, "Ach. %")}   cells={{ data: AchievementPercentageCell }}  width={200} />,
                 <Column key="totalAmount"          field="totalAmount"          title={getTranslatedLabel(`${itemKey}.totalAmount`,          "Total")}        editable={false}  width={110} cells={{ data: p => <td>{formatNumber(p.dataItem.totalAmount)}</td> }} />,
                 <Column key="deserved"             field="deserved"             title={getTranslatedLabel(`${itemKey}.deserved`,             "Deserved")}     editable={false}  width={110} cells={{ data: p => <td>{formatNumber(p.dataItem.deserved)}</td> }} />,
-                <Column key="insurance"            field="insurance"            title={getTranslatedLabel(`${itemKey}.insurance`,            "Insurance")}    editor="numeric"  width={130} />,
-                <Column key="additionalInsurance"  field="additionalInsurance"  title={getTranslatedLabel(`${itemKey}.additionalInsurance`,  "Add. Ins.")}    editor="numeric"  width={130} />,
-                <Column key="deductions"           field="deductions"           title={getTranslatedLabel(`${itemKey}.deductions`,           "Deduc.")}       editor="numeric"  width={110} />,
+                <Column key="insurance"            field="insurance" format="{0:n2}"            title={getTranslatedLabel(`${itemKey}.insurance`,            "Insurance")}    editor="numeric"  width={130} />,
+                <Column key="additionalInsurance"  field="additionalInsurance" format="{0:n2}"  title={getTranslatedLabel(`${itemKey}.additionalInsurance`,  "Add. Ins.")}    editor="numeric"  width={130} />,
+                <Column key="deductions"           field="deductions" format="{0:n2}"           title={getTranslatedLabel(`${itemKey}.deductions`,           "Deduc.")}       editor="numeric"  width={110} />,
                 <Column key="deductionDescription" field="deductionDescription" title={getTranslatedLabel(`${itemKey}.deductionDescription`, "Deduc. Desc.")}                  width={220} />,
             );
         } else {
             cols.push(
-                <Column key="unitPrice"       field="unitPrice"       title={getTranslatedLabel(`${itemKey}.unitPrice`,       "Unit Price")} editor="numeric" width={130} />,
+                <Column key="unitPrice"       field="unitPrice" format="{0:n2}"       title={getTranslatedLabel(`${itemKey}.unitPrice`,       "Unit Price")} editor="numeric" width={130} />,
                 <Column key="procurementDate" field="procurementDate" title={getTranslatedLabel(`${itemKey}.procurementDate`, "Date")}       editor="date"   format="{0:yyyy-MM-dd}" width={150} />,
             );
         }
 
         if (isSupplyProcurement) {
             cols.push(
-                <Column key="discount" field="discount" title={getTranslatedLabel(`${itemKey}.discount`, "Discount")} editor="numeric" width={130} />,
+                <Column key="discount" field="discount" format="{0:n2}" title={getTranslatedLabel(`${itemKey}.discount`, "Discount")} editor="numeric" width={130} />,
             );
         }
 
         if (!isContracting) {
             cols.push(
-                <Column key="transportationExpenses" field="transportationExpenses" title={getTranslatedLabel(`${itemKey}.transportationExpenses`, "Transp.")} editor="numeric" width={110} />,
-                <Column key="gratuities"             field="gratuities"             title={getTranslatedLabel(`${itemKey}.gratuities`,             "Grat.")}   editor="numeric" width={110} />,
+                <Column key="transportationExpenses" field="transportationExpenses" format="{0:n2}" title={getTranslatedLabel(`${itemKey}.transportationExpenses`, "Transp.")} editor="numeric" width={110} />,
+                <Column key="gratuities"             field="gratuities" format="{0:n2}"             title={getTranslatedLabel(`${itemKey}.gratuities`,             "Grat.")}   editor="numeric" width={110} />,
             );
         }
 

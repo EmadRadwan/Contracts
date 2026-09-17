@@ -178,7 +178,7 @@ export default function JobOrderPaymentsList({showPaymentList, onClose, orderId,
                                             </button>
                                         </GridToolbar>
                                         <Column field="paymentId" title="Id" editable={false} width={0}/>
-                                        <Column field="amount" title="Amount" editor="numeric" width={150}/>
+                                        <Column field="amount" format="{0:n2}" title="Amount" editor="numeric" width={150}/>
                                         <Column field="paymentMethodTypeId" title="Payment Method"
                                                 cells={{ data: JobDropDownCell }} width={200}/>
                                         <Column cells={{ data: CommandCell }} width="240px"/>

@@ -22,7 +22,6 @@ import {
     useFetchGlAccountOrganizationHierarchyLovQuery,
     useFetchPaymentApplicationsForPaymentQuery,
     useLazyFetchBalancesForVendorAndProjectQuery, useLazyGetPaymentReportPdfQuery,
-    useLazyGetPaymentReportPdfV2Query
 } from "../../../../app/store/apis";
 import {FormDropDownTreeGlAccount2} from "../../../../app/common/form/FormDropDownTreeGlAccount2";
 import {PaymentExcelTechnical} from "../report/PaymentExcelTechnical";
@@ -30,23 +29,9 @@ import {PaymentExcelParty} from "../report/PaymentExcelParty";
 import {MemoizedFormComboBox2} from "../../../../app/common/form/FormComboBox2";
 import {FormComboBoxVirtualProject} from "../../../../app/common/form/FormComboBoxVirtualProject";
 import CreateCostCenterModal from "./CreateCostCenterModal";
-import '@react-pdf-viewer/core/lib/styles/index.css';
-import '@react-pdf-viewer/default-layout/lib/styles/index.css';
-import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    IconButton,
-    CircularProgress,
-    InputAdornment
-} from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
+import { IconButton, InputAdornment } from "@mui/material";
 import ClearIcon from "@mui/icons-material/Clear";
-
-import {Worker, Viewer, SpecialZoomLevel} from '@react-pdf-viewer/core';
-import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
-import { version as pdfjsVersion } from 'pdfjs-dist/package.json';
+import PdfPreviewDialog from "../../../../app/common/modals/PdfPreviewDialog";
 import {parseDate} from "../../../../app/util/utils";
 import {MemoizedFormCheckBox} from "../../../../app/common/form/FormCheckBox";
 import {needsBalanceCheck, validatePaymentAmount} from "../util/paymentUtils";
@@ -77,8 +62,6 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                          }) => {
     const localizationKey = "accounting.payments.form";
     const CASH_PAYMENT_METHOD_ID = "CASH";
-    const defaultLayoutPluginInstance = defaultLayoutPlugin();
-
     const [triggerBalanceFetch, {data: balanceData, isFetching: balanceLoading}] =
         useLazyFetchBalancesForVendorAndProjectQuery();
 
@@ -89,7 +72,7 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
     const [currentAmount, setCurrentAmount] = useState<number>(payment?.amount ?? 0);
     const balanceToastShownRef = useRef(false);
     const [showCreateCostCenter, setShowCreateCostCenter] = useState(false);
-    const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+    const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
     const [showPdfViewer, setShowPdfViewer] = useState(false);
     const [previewLoading, setPreviewLoading] = useState(false);
 
@@ -97,40 +80,19 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
     const chequeValidator = createChequeFieldsValidator(paymentMethods);
 
     
+    // Telerik-rendered voucher in the app-wide PdfPreviewDialog: open it first (spinner), fetch
+    // the bytes, hand over the Blob. The dialog owns the object URL and the print / download buttons.
     const handlePreviewPdf = async () => {
         if (!payment?.paymentId) return;
 
         setPreviewLoading(true);
+        setPdfBlob(null);
+        setShowPdfViewer(true);
         try {
             const arrayBuffer = await triggerPdf(payment.paymentId).unwrap();
-            const blob = new Blob([arrayBuffer], { type: "application/pdf" });
-            const url = URL.createObjectURL(blob);
-
-            setPdfBlobUrl(url);
-            setShowPdfViewer(true);
+            setPdfBlob(new Blob([arrayBuffer], { type: "application/pdf" }));
         } catch (error) {
-            console.error("Failed to load PDF:", error);
-            alert("فشل تحميل بيان الدفعة.");
-        } finally {
-            setPreviewLoading(false);
-        }
-    };
-
-    // Telerik-rendered voucher — same data, different engine. Reuses the preview dialog.
-    const handlePreviewPdfV2 = async () => {
-        if (!payment?.paymentId) return;
-
-        setPreviewLoading(true);
-        try {
-            const arrayBuffer = await triggerPdfV2(payment.paymentId).unwrap();
-            const blob = new Blob([arrayBuffer], { type: "application/pdf" });
-            const url = URL.createObjectURL(blob);
-
-            setPdfBlobUrl(url);
-            setShowPdfViewer(true);
-        } catch (error) {
-            console.error("Failed to load Telerik PDF:", error);
-            alert("فشل تحميل بيان الدفعة (Telerik).");
+            console.error("Failed to load payment voucher PDF:", error);
         } finally {
             setPreviewLoading(false);
         }
@@ -138,14 +100,10 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
 
     const handleClosePdfViewer = () => {
         setShowPdfViewer(false);
-        if (pdfBlobUrl) {
-            URL.revokeObjectURL(pdfBlobUrl);
-            setPdfBlobUrl(null);
-        }
+        setPdfBlob(null);
     };
 
     const [triggerPdf, { isFetching: isPdfFetching }] = useLazyGetPaymentReportPdfQuery();
-    const [triggerPdfV2, { isFetching: isPdfV2Fetching }] = useLazyGetPaymentReportPdfV2Query();
 
     useEffect(() => {
         if (payment?.projectId) {
@@ -189,7 +147,6 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
         }
     }, [hasBillingAccountIssueForToast]);
 
-
     const nonEditableStatuses = ['PMNT_RECEIVED', 'PMNT_SENT', 'PMNT_CONFIRMED', 'PMNT_VOID', 'PMNT_CANCELLED'];
     const isFormDisabled = payment && nonEditableStatuses.includes(payment.statusId);
     const {user} = useAppSelector((state) => state.account);
@@ -211,7 +168,6 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
         skip: !payment,
         refetchOnMountOrArgChange: true,
     });
-
 
     const {
         data: paymentApplications = [],
@@ -258,7 +214,6 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
 
     const isExcelFetching = isAppsFetching || isTransFetching;
 
-
     const statusDesc = useMemo(() => ({
         'PMNT_NOT_PAID': 'Not Paid',
         'PMNT_RECEIVED': 'Received',
@@ -267,7 +222,6 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
         'PMNT_CANCELLED': 'Cancelled',
         'PMNT_VOID': 'Voided',
     }[payment?.statusId] || payment?.statusId), [payment?.statusId]);
-
 
     const paymentTypeDesc = useMemo(() => {
         if (!payment?.paymentTypeId) return "";
@@ -347,31 +301,6 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
         return validatePaymentAmount(value, paymentTypeId, balanceData);
     };
 
-    const handleDownloadPdf = async () => {
-        if (!payment?.paymentId) return;
-
-        try {
-            const arrayBuffer = await triggerPdf(payment.paymentId).unwrap();
-
-            const blob = new Blob([arrayBuffer], { type: "application/pdf" });
-
-            // Fixed: Use global URL instead of window.URL
-            const url = URL.createObjectURL(blob);
-
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `${payment.paymentId}_بيان_دفعة.pdf`;
-            document.body.appendChild(link); // Needed for Firefox
-            link.click();
-            document.body.removeChild(link);
-
-            // Cleanup
-            URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error("Failed to download PDF:", error);
-            alert("فشل تحميل بيان الدفعة. تأكد من الاتصال بالإنترنت وحاول مرة أخرى.");
-        }
-    };
 
 
 
@@ -882,18 +811,6 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                         </Button>
                                     </Grid>
 
-                                    <Grid item xs={2}>
-                                        <Button
-                                            variant="outlined"
-                                            color="secondary"
-                                            onClick={handlePreviewPdfV2}
-                                            disabled={isPdfV2Fetching || !payment?.paymentId}
-                                            sx={{ mt: 2, mr: 1 }}
-                                        >
-                                            {isPdfV2Fetching ? "جاري التحضير..." : "معاينة بيان الدفعة (Telerik)"}
-                                        </Button>
-                                    </Grid>
-
                                     <Grid item xs={1}>
                                         <Button
                                             sx={{mt: 2}}
@@ -914,57 +831,16 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                 isOutPayment={!!payment?.isDisbursement}
                             />
 
-                            <Dialog
+                            <PdfPreviewDialog
                                 open={showPdfViewer}
                                 onClose={handleClosePdfViewer}
-                                maxWidth="lg"
-                                fullWidth
-                                fullScreen={window.innerWidth <= 900}
-                                PaperProps={{ sx: { height: "90vh", width: "90vw", m: 2 } }}
-                            >
-                                <DialogTitle sx={{ m: 0, p: 2, pr: 6 }}>
-                                    معاينة بيان الدفعة - {payment?.paymentId}
-                                    <IconButton
-                                        aria-label="close"
-                                        onClick={handleClosePdfViewer}
-                                        sx={{ position: "absolute", right: 8, top: 8 }}
-                                    >
-                                        <CloseIcon />
-                                    </IconButton>
-                                </DialogTitle>
-
-                                <DialogContent dividers sx={{ p: 0, position: "relative" }}>
-                                    {previewLoading ? (
-                                        <Box sx={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                            <CircularProgress />
-                                            <Typography sx={{ ml: 2 }}>جاري تحميل البيان...</Typography>
-                                        </Box>
-                                    ) : pdfBlobUrl ? (
-                                        <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.mjs`}>
-                                            <Viewer
-                                                fileUrl={pdfBlobUrl}
-                                                plugins={[defaultLayoutPluginInstance]}
-                                                defaultScale={SpecialZoomLevel.PageFit}
-                                            />
-                                        </Worker>
-                                    ) : (
-                                        <Box sx={{ p: 4, textAlign: "center" }}>
-                                            <Typography color="error">
-                                                فشل تحميل ملف PDF. حاول مرة أخرى.
-                                            </Typography>
-                                        </Box>
-                                    )}
-                                </DialogContent>
-
-                                <DialogActions sx={{ p: 2 }}>
-                                    <Button onClick={() => window.print()} variant="contained" color="primary">
-                                        طباعة
-                                    </Button>
-                                    <Button onClick={handleClosePdfViewer} variant="outlined">
-                                        إغلاق
-                                    </Button>
-                                </DialogActions>
-                            </Dialog>
+                                title={`معاينة بيان الدفعة - ${payment?.paymentId ?? ""}`}
+                                blob={pdfBlob}
+                                loading={previewLoading}
+                                fileName={`Payment_Voucher_${payment?.paymentId ?? ""}.pdf`}
+                                loadingMessage="جاري تحميل البيان..."
+                                errorMessage="فشل تحميل ملف PDF. حاول مرة أخرى."
+                            />
                             
                         </FormElement>
                     )

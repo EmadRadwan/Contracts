@@ -39,7 +39,7 @@
         <!-- Cross-platform drawing engine. Telerik.Reporting references only the drawing
              abstraction (Telerik.Drawing.Contract); without a concrete implementation the
              Unit static ctor throws DrawingFactoryUnavailableException on first use. This
-             pulls SkiaSharp (3.119.1 — same as QuestPDF's, no conflict). -->
+             pulls SkiaSharp 3.119.1. -->
         <PackageReference Include="Telerik.Drawing.Skia" Version="20.2.26.812" />
         <PackageReference Include="Telerik.Licensing" Version="1.9.2" />
     </ItemGroup>

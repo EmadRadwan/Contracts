@@ -63,27 +63,40 @@ docker compose -f docker-compose.vm.yml up -d   # same shell: compose reads $TEL
 docker compose -f docker-compose.vm.yml ps
 ```
 
-> **Telerik secrets (since the Sep 2026 Telerik Reporting upgrade).** `nuget.config` pulls
-> `Telerik.*` from the private Telerik feed with `%TELERIK_NUGET_KEY%` as the password, and the
-> app needs `TELERIK_LICENSE` (file *contents*) at build and run time or reports get a trial
-> watermark. Without the two `--build-arg`s, `dotnet restore` fails with
-> `Value cannot be null or empty string. (Parameter 'password')`.
-> Keep them **outside the repo** — `git clean -fd` would delete a `.env` in `~/erp-contracts`.
-> One-time setup on the server:
-> ```bash
-> mkdir -p ~/.telerik && chmod 700 ~/.telerik
-> nano ~/.telerik/telerik-license.txt     # paste your Mac's ~/.telerik/telerik-license.txt (one line)
-> cat > ~/.telerik/telerik.env <<'EOF'
-> export TELERIK_NUGET_KEY='<key from https://www.telerik.com/account/downloads/nuget-keys>'
-> export TELERIK_LICENSE="$(cat ~/.telerik/telerik-license.txt)"
-> EOF
-> chmod 600 ~/.telerik/telerik.env ~/.telerik/telerik-license.txt
-> ```
-> `sudo` drops the environment, but `"$TELERIK_NUGET_KEY"` is expanded by your shell before
-> sudo runs, so the values still reach the build. A `401` from restore means the key is
-> wrong/expired — regenerate it on the nuget-keys page.
-
 tmux: detach with **Ctrl-b** then **d**, come back with `tmux attach -t build`.
+
+### Telerik secrets (since the Sep 2026 Telerik Reporting upgrade)
+
+`nuget.config` pulls `Telerik.*` from the private Telerik feed with `%TELERIK_NUGET_KEY%` as the password, and the
+app needs `TELERIK_LICENSE` (file *contents*) at build and run time or reports get a trial
+watermark. Keep both **outside the repo** — `git clean -fd` would delete a `.env` in
+`~/erp-contracts`. One-time setup on the server (the key is the `TELERIK_NUGET_KEY` value
+from your Mac shell / nuget-keys page — 113 chars, ends in `==`, nothing after it):
+```bash
+mkdir -p ~/.telerik && chmod 700 ~/.telerik
+nano ~/.telerik/telerik-license.txt     # paste your Mac's ~/.telerik/telerik-license.txt (one line)
+printf '%s\n' \
+  "export TELERIK_NUGET_KEY='PASTE_KEY_HERE'" \
+  'export TELERIK_LICENSE="$(cat ~/.telerik/telerik-license.txt)"' \
+  > ~/.telerik/telerik.env
+chmod 600 ~/.telerik/telerik.env ~/.telerik/telerik-license.txt
+
+source ~/.telerik/telerik.env
+echo "key=${#TELERIK_NUGET_KEY} license=${#TELERIK_LICENSE}"   # expect key=113 license=14248
+```
+`sudo` drops the environment, but `"$TELERIK_NUGET_KEY"` is expanded by your shell before
+sudo runs, so the values still reach the build. Re-`source` after every tmux reattach.
+
+Restore errors and what they mean:
+
+| `dotnet restore` says | Cause | Fix |
+|---|---|---|
+| `Value cannot be null or empty string. (Parameter 'password')` | build args not passed / env empty | `source` the env file, check the lengths, rebuild |
+| `NU1301: Unable to load the service index for source https://nuget.telerik.com` (API.csproj only) | key rejected (401) — typo, trailing char, or expired | `curl -s -o /dev/null -w '%{http_code}\n' -u "api-key:$TELERIK_NUGET_KEY" https://nuget.telerik.com/v3/index.json` → 200 good, 401 regenerate |
+| `NU1101: Unable to find package Telerik.Licensing … source(s): telerik` | `Telerik.Licensing` lives on nuget.org, not the private feed | `nuget.config` maps it to nuget.org explicitly (fixed 2026-09-16); pull latest |
+
+Only `API.csproj` references Telerik packages, so the other four projects restoring fine
+while API fails is the signature of a feed/key problem, not a network one.
 
 ## 3 — Verify from outside
 

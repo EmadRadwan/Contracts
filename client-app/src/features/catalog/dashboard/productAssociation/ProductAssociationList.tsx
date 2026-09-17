@@ -148,7 +148,7 @@ export default function ProductAssociationsList() {
                                 {/* REFACTOR: Standardize date format to match OFBiz date-time display */}
                                 <Column field="fromDate" title="From Date" width={150} format="{0: yyyy/MM/dd}" />
                                 <Column field="thruDate" title="To Date" width={150} format="{0: yyyy/MM/dd}" />
-                                <Column field="quantity" title="Quantity" width={100} />
+                                <Column field="quantity" format="{0:n2}" title="Quantity" width={100} />
                                 <Column field="reason" title="Reason" width={100} />
                                 <Column field="sequenceNum" title="Sequence" width={100} />
                             </KendoGrid>

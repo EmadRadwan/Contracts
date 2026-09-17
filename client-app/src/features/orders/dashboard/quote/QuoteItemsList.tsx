@@ -40,6 +40,7 @@ import { QuoteAdjustment } from "../../../../app/models/order/quoteAdjustment";
 import QuoteItemForm from "../../form/quote/QuoteItemForm";
 import { setSelectProductOrService } from "../../../orders/slice/sharedOrderUiSlice";
 import QuoteAdjustmentsList from "./QuoteAdjustmentsList";
+import { formatNumber } from "../../../../app/util/utils";
 
 interface Props {
   quoteFormEditMode: number;
@@ -150,7 +151,7 @@ export default function QuoteItemsList({ quoteFormEditMode, quoteId }: Props) {
           }}
         >
           {props.dataItem.discountAndPromotionAdjustments
-            ? props.dataItem.discountAndPromotionAdjustments.toFixed(2)
+            ? formatNumber(props.dataItem.discountAndPromotionAdjustments)
             : 0}
         </Button>
       </td>
@@ -403,7 +404,7 @@ export default function QuoteItemsList({ quoteFormEditMode, quoteId }: Props) {
               width={300}
             />
             <Column field="quoteItemSeqId" title="quoteItemSeqId" width={0} />
-            <Column field="unitPrice" title="Price" width={110} />
+            <Column field="unitPrice" format="{0:n2}" title="Price" width={110} />
             <Column
               cells={{ data: ItemQuantityCommandCell }}
               title="Quantity"

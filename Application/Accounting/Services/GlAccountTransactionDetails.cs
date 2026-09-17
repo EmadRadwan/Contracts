@@ -56,6 +56,12 @@ public class GetGlAccountTransactionDetails
                     return Result<GlAccountTransactionDetails>.Failure("GlAccount not found.");
                 }
 
+                // Display name for the PDF export's running header (nullable — falls back to the id).
+                var organizationName = await _context.PartyGroups
+                    .Where(pg => pg.PartyId == request.OrganizationPartyId)
+                    .Select(pg => pg.GroupName)
+                    .FirstOrDefaultAsync(cancellationToken);
+
                 var periodStart = customTimePeriod.FromDate.Value.Date; // e.g. 2026-01-01 00:00:00
                 var periodEnd = customTimePeriod.ThruDate.Value.Date; // inclusive end
 
@@ -366,6 +372,10 @@ public class GetGlAccountTransactionDetails
                     GlAccountId = request.GlAccountId,
                     AccountCode = glAccount.AccountCode,
                     AccountName = glAccount.AccountNameArabic,
+                    OrganizationName = organizationName ?? request.OrganizationPartyId,
+                    PeriodName = customTimePeriod.PeriodName,
+                    PeriodFromDate = customTimePeriod.FromDate,
+                    PeriodThruDate = customTimePeriod.ThruDate,
                     Transactions = transactions
                 });
             }

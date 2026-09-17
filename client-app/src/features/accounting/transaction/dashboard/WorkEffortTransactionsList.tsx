@@ -114,8 +114,8 @@ export default function WorkEffortTransactionsList({ onClose, workEffortId }: Pr
                         >
                             <Column field="acctgTransId"           title={getTranslatedLabel(`${localizationKey}.columns.acctgTransId`, "Acctg Trans")}           width={100}   cells={{ footerCell: TotalsFooterCell }} />
                             <Column field="acctgTransEntrySeqId"   title={getTranslatedLabel(`${localizationKey}.columns.acctgTransEntrySeqId`, "Seq Id")}           width={0}     cells={{ footerCell: () => null }} />
-                            <Column field="amount"                 title={getTranslatedLabel(`${localizationKey}.columns.amount`, "Amount")}                 width={0}     cells={{ footerCell: () => null }} />
-                            <Column field="origAmount"             title={getTranslatedLabel(`${localizationKey}.columns.origAmount`, "Orig Amount")}           width={100}   cells={{ footerCell: () => null }} />
+                            <Column field="amount" format="{0:n2}"                 title={getTranslatedLabel(`${localizationKey}.columns.amount`, "Amount")}                 width={0}     cells={{ footerCell: () => null }} />
+                            <Column field="origAmount" format="{0:n2}"             title={getTranslatedLabel(`${localizationKey}.columns.origAmount`, "Orig Amount")}           width={100}   cells={{ footerCell: () => null }} />
                             <Column field="debitCreditFlag"        title={getTranslatedLabel(`${localizationKey}.columns.debitCreditFlag`, "D/C")}               width={70}    cells={{ footerCell: () => null }} />
                             <Column field="glAccountId"            title={getTranslatedLabel(`${localizationKey}.columns.glAccountId`, "Gl Account")}           width={100}   cells={{ footerCell: () => null }} />
                             <Column field="glAccountTypeDescription" title={getTranslatedLabel(`${localizationKey}.columns.glAccountTypeDescription`, "Account Name")} width={300} cells={{ footerCell: () => null }} />

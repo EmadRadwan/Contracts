@@ -232,7 +232,7 @@ export default function JobOrdersList() {
                                                     title="Customer"
                                                     // width={350}
                                                 />
-                                                <Column field="grandTotal" title="Amount" width={130}/>
+                                                <Column field="grandTotal" format="{0:n2}" title="Amount" width={130}/>
                                                 <Column
                                                     field="orderDate"
                                                     title="Order Date"

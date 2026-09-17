@@ -2,6 +2,7 @@ import {Link} from "react-router-dom";
 import {Button, Grid as MuiGrid, Typography} from "@mui/material";
 import {Grid as KendoGrid, GridColumn} from "@progress/kendo-react-grid";
 import {useTranslationHelper} from "../../../../app/hooks/useTranslationHelper";
+import { formatNumber } from "../../../../app/util/utils";
 
 
 const PaymentApplicationsInvGrid: React.FC<PaymentApplicationGridProps> = ({
@@ -47,7 +48,7 @@ const PaymentApplicationsInvGrid: React.FC<PaymentApplicationGridProps> = ({
                         title={getTranslatedLabel(`${localizationKey}.amountApplied`, "Amount Applied")}
                         format="{0:c}"
                         cells={{ data: (props) => (
-                            <td>{props.dataItem.amountApplied.toFixed(2)} {payment?.currencyUomId}</td>
+                            <td>{formatNumber(props.dataItem.amountApplied)} {payment?.currencyUomId}</td>
                         ) }}
                     />
                     <GridColumn

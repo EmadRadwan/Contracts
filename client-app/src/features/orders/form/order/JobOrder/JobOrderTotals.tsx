@@ -3,6 +3,7 @@ import {Typography} from "@mui/material";
 import React from "react";
 import {useSelector} from "react-redux";
 import {jobOrderLevelAdjustmentsTotal, jobOrderPaymentsTotal, jobOrderSubTotal,} from "../../../slice/jobOrderUiSlice";
+import { formatNumber } from "../../../../../app/util/utils";
 
 export default function JobOrderTotals() {
     const sTotal: any = useSelector(jobOrderSubTotal);
@@ -18,7 +19,7 @@ export default function JobOrderTotals() {
                     </Typography>
                     <Typography sx={{color: "red", pl: 1}} variant="h6">
                         {" "}
-                        {sTotal.toFixed(2)}{" "}
+                        {formatNumber(sTotal)}{" "}
                     </Typography>
                 </Grid>
             </Grid>
@@ -29,7 +30,7 @@ export default function JobOrderTotals() {
                     </Typography>
                     <Typography sx={{color: "red", pl: 1}} variant="h6">
                         {" "}
-                        {aTotal.toFixed(2)}{" "}
+                        {formatNumber(aTotal)}{" "}
                     </Typography>
                 </Grid>
             </Grid>
@@ -40,7 +41,7 @@ export default function JobOrderTotals() {
                     </Typography>
                     <Typography sx={{color: "red", pl: 1}} variant="h6">
                         {" "}
-                        {(sTotal + aTotal).toFixed(2)}{" "}
+                        {formatNumber(sTotal + aTotal)}{" "}
                     </Typography>
                 </Grid>
             </Grid>
@@ -51,7 +52,7 @@ export default function JobOrderTotals() {
                     </Typography>
                     <Typography sx={{color: "red", pl: 1}} variant="h6">
                         {" "}
-                        {paidAmount.toFixed(2)}{" "}
+                        {formatNumber(paidAmount)}{" "}
                     </Typography>
                 </Grid>
             </Grid>

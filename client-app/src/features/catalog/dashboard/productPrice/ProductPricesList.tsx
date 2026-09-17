@@ -141,7 +141,7 @@ export default function ProductPricesList() {
                                     width={300}
                                 />
                                 <Column
-                                    field="price"
+                                    field="price" format="{0:n2}"
                                     title={getTranslatedLabel(`${localizationKey}.price`, 'Price')}
                                     width={150}
                                     filter={"numeric"}

@@ -10,6 +10,7 @@ import {
 } from "../../slice/orderSelectors";
 import { OrderAdjustment } from "../../../../app/models/order/orderAdjustment";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
+import { formatNumber } from "../../../../app/util/utils";
 
 // REFACTOR: Define explicit types for clarity and type safety
 interface OrderTotalsValues {
@@ -69,7 +70,7 @@ export default function OrderTotals() {
               {getTranslatedLabel(`${localizationKey}.sub`, "Sub Total: ")}
             </Typography>
             <Typography sx={{ color: "red", px: 1 }} variant="h6">
-              {sTotal.toFixed(2)}
+              {formatNumber(sTotal)}
             </Typography>
           </Grid>
         </Grid>
@@ -79,7 +80,7 @@ export default function OrderTotals() {
               {getTranslatedLabel(`${localizationKey}.tax`, "Tax Total: ")}
             </Typography>
             <Typography sx={{ color: "red", px: 1 }} variant="h6">
-              {taxTotal.toFixed(2)}
+              {formatNumber(taxTotal)}
             </Typography>
           </Grid>
         </Grid>
@@ -90,7 +91,7 @@ export default function OrderTotals() {
                   {getTranslatedLabel(`${localizationKey}.discount`, "Discounts Total: ")}
                 </Typography>
                 <Typography sx={{ color: "red", px: 1 }} variant="h6">
-                  {discountTotal.toFixed(2)}
+                  {formatNumber(discountTotal)}
                 </Typography>
               </Grid>
             </Grid>
@@ -103,7 +104,7 @@ export default function OrderTotals() {
                   {getTranslatedLabel(`${localizationKey}.otherAdj`, "Other Adjustments: ")}
                 </Typography>
                 <Typography sx={{ color: "red", px: 1 }} variant="h6">
-                  {nonDiscountAdjustmentsTotal.toFixed(2)}
+                  {formatNumber(nonDiscountAdjustmentsTotal)}
                 </Typography>
               </Grid>
             </Grid>
@@ -114,7 +115,7 @@ export default function OrderTotals() {
               {getTranslatedLabel(`${localizationKey}.grand`, "Grand Total: ")}
             </Typography>
             <Typography sx={{ color: "red", px: 1 }} variant="h6">
-              {grandTotal.toFixed(2)}
+              {formatNumber(grandTotal)}
             </Typography>
           </Grid>
         </Grid>

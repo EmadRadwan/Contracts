@@ -185,7 +185,7 @@ export default function ListRoutingProductLink() {
                                             width={180}
                                         />
                                         <Column
-                                            field="estimatedQuantity"
+                                            field="estimatedQuantity" format="{0:n2}"
                                             title={getTranslatedLabel('manufacturing.quantity', 'Quantity')}
                                             width={120}
                                         />

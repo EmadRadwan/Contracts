@@ -403,7 +403,7 @@ export default function AccountingTransactionsList() {
                       "Total Debit"
                   )}
                   width={150}
-                  format="{0:n}"
+                  format="{0:n2}"
                   filter={"numeric"}
                 />
                 <Column field="description" title={getTranslatedLabel(

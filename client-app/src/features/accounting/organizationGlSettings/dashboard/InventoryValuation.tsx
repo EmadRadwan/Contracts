@@ -22,6 +22,7 @@ import { FormComboBoxVirtualGetPhysicalInventoryProductsLovProduct } from "../..
 import { orderBy, SortDescriptor, State } from "@progress/kendo-data-query";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import AccountingReportBreadcrumbs from "../menu/AccountingReportBreadcrumbs";
+import { formatNumber } from "../../../../app/util/utils";
 
 const InventoryValuation = () => {
   const initialSort: Array<SortDescriptor> = [
@@ -168,7 +169,7 @@ const InventoryValuation = () => {
               <GridToolbar>
                 <Grid justifyContent={"center"}>
                   <Typography variant="body1" fontWeight={"bold"}>
-                    Total Value: {inventoryValuationData.totalValue.toFixed(2)}
+                    Total Value: {formatNumber(inventoryValuationData.totalValue)}
                   </Typography>
                 </Grid>
               </GridToolbar>

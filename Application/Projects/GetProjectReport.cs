@@ -48,6 +48,8 @@ namespace Application.Projects
                 var payroll = await GetProjectPayroll(request, cancellationToken);
                 var apartmentSales = await GetApartmentSales(request, cancellationToken);
                 var paidCommissions = await GetPaidCommissions(request, cancellationToken);
+                var paidCommissionAcctgEntries =
+                    await GetPaidCommissionAcctgEntries(paidCommissions, cancellationToken);
 
                 // Filter out duplicates across expense sections
                 var expensePaymentIds = expenses
@@ -79,6 +81,7 @@ namespace Application.Projects
                     Payroll = payroll,
                     ApartmentSales = apartmentSales,
                     PaidCommissions = paidCommissions,
+                    PaidCommissionAcctgEntries = paidCommissionAcctgEntries,
                     Summary = ProjectReportSummaryDto.Build(
                         expenses, revenues, filteredDirectPayments, filteredOperatingExpenses,
                         accountingTransactions, payroll, apartmentSales, paidCommissions,
@@ -467,7 +470,11 @@ namespace Application.Projects
                     from createdBy in createdByJoin.DefaultIfEmpty()
                     where (
                               (glAccountId != null && pyt.OverrideGlAccountId == glAccountId))
-                          //&& pyt.StatusId == "PMNT_SENT"
+                          // Unpaid payments stay in the report as commitments (status column + due
+                          // status), by design since the April 2026 build. A voided or cancelled
+                          // payment is not a commitment: it was retired under the auditor's
+                          // soft-delete rule and its ledger entries are reversed.
+                          && pyt.StatusId != "PMNT_VOID" && pyt.StatusId != "PMNT_CANCELLED"
                           && ptt.ParentTypeId == "DISBURSEMENT"
                           // Payroll has its own section (GetProjectPayroll, from PAYROL_INVOICE
                           // accruals); exclude payroll payments here so salary isn't double-counted.
@@ -701,7 +708,8 @@ namespace Application.Projects
                     from cc in ccJoin.DefaultIfEmpty()
                     where pyt.OverrideGlAccountId != null
                           && allGlAccountIds.Contains(pyt.OverrideGlAccountId)
-                          //&& pyt.StatusId == "PMNT_SENT"
+                          // Voided/cancelled payments are retired, not commitments (see direct payments).
+                          && pyt.StatusId != "PMNT_VOID" && pyt.StatusId != "PMNT_CANCELLED"
                           && (ptt.ParentTypeId == "DISBURSEMENT" || ptt.PaymentTypeId == "DISBURSEMENT")
                           // Payroll has its own section (GetProjectPayroll, from PAYROL_INVOICE
                           // accruals); exclude payroll payments here so salary isn't double-counted.
@@ -1041,6 +1049,11 @@ namespace Application.Projects
                     from sc in scJoin.DefaultIfEmpty()
                     join scst in _context.StatusItems.AsNoTracking() on sc.StatusId equals scst.StatusId into scstJoin
                     from scst in scstJoin.DefaultIfEmpty()
+                    join cc in _context.CostCenters.AsNoTracking() on pyt.CostCenterId equals cc.CostCenterId into ccJoin
+                    from cc in ccJoin.DefaultIfEmpty()
+                    join ogl in _context.GlAccounts.AsNoTracking() on pyt.OverrideGlAccountId equals ogl.GlAccountId
+                        into oglJoin
+                    from ogl in oglJoin.DefaultIfEmpty()
                     select new ProjectCommissionPaymentRecord
                     {
                         PaymentId = pyt.PaymentId,
@@ -1065,7 +1078,12 @@ namespace Application.Projects
                         CreatedStamp = pyt.CreatedStamp,
                         ChequeNumber = pyt.ChequeNumber,
                         ChequeDate = pyt.ChequeDate,
-                        Comments = pyt.Comments
+                        Comments = pyt.Comments,
+                        CostCenterId = pyt.CostCenterId,
+                        CostCenterDescription = cc != null ? cc.Description : null,
+                        OverrideGlAccountId = pyt.OverrideGlAccountId,
+                        OverrideGlAccountCode = ogl != null ? ogl.AccountCode : null,
+                        OverrideGlAccountNameArabic = ogl != null ? ogl.AccountNameArabic : null
                     };
 
                 if (!request.ExpensesAllData)
@@ -1087,6 +1105,82 @@ namespace Application.Projects
                 return results
                     .OrderByDescending(x => x.EffectiveDate)
                     .ThenByDescending(x => x.CreatedStamp)
+                    .ToList();
+            }
+
+            // Ledger side of the paid-commissions sheet: every AcctgTransEntry of every AcctgTrans
+            // that points at one of the commission payments (AcctgTrans.PaymentId). Includes
+            // unposted and reversal (void) transactions on purpose — the auditor wants to see the
+            // full posting history of each payment, not just its net effect. Keyed off the already
+            // date-filtered commission list so the two sheets always cover the same payments.
+            private async Task<List<ProjectCommissionAcctgEntryRecord>> GetPaidCommissionAcctgEntries(
+                List<ProjectCommissionPaymentRecord> commissions, CancellationToken ct)
+            {
+                if (commissions.Count == 0) return new List<ProjectCommissionAcctgEntryRecord>();
+
+                var paymentIds = commissions.Select(c => c.PaymentId).Distinct().ToList();
+
+                var rows = await (from at in _context.AcctgTrans.AsNoTracking()
+                    where at.PaymentId != null && paymentIds.Contains(at.PaymentId)
+                    join ate in _context.AcctgTransEntries.AsNoTracking() on at.AcctgTransId equals ate.AcctgTransId
+                    join att in _context.AcctgTransTypes.AsNoTracking() on at.AcctgTransTypeId equals att.AcctgTransTypeId
+                        into attJoin
+                    from att in attJoin.DefaultIfEmpty()
+                    join cc in _context.CostCenters.AsNoTracking() on at.CostCenterId equals cc.CostCenterId into ccJoin
+                    from cc in ccJoin.DefaultIfEmpty()
+                    join gl in _context.GlAccounts.AsNoTracking() on ate.GlAccountId equals gl.GlAccountId into glJoin
+                    from gl in glJoin.DefaultIfEmpty()
+                    join ep in _context.Parties.AsNoTracking() on ate.PartyId equals ep.PartyId into epJoin
+                    from ep in epJoin.DefaultIfEmpty()
+                    select new ProjectCommissionAcctgEntryRecord
+                    {
+                        PaymentId = at.PaymentId!,
+                        AcctgTransId = at.AcctgTransId,
+                        AcctgTransTypeId = at.AcctgTransTypeId,
+                        AcctgTransTypeDescription = att != null ? att.Description : at.AcctgTransTypeId,
+                        TransactionDate = at.TransactionDate,
+                        IsPosted = at.IsPosted,
+                        PostedDate = at.PostedDate,
+                        GlFiscalTypeId = at.GlFiscalTypeId,
+                        TransDescription = at.Description,
+                        CostCenterId = at.CostCenterId,
+                        CostCenterDescription = cc != null ? cc.Description : null,
+                        AcctgTransEntrySeqId = ate.AcctgTransEntrySeqId,
+                        GlAccountId = ate.GlAccountId,
+                        AccountCode = gl != null ? gl.AccountCode : null,
+                        AccountName = gl != null ? gl.AccountName : null,
+                        AccountNameArabic = gl != null ? gl.AccountNameArabic : null,
+                        GlAccountTypeId = ate.GlAccountTypeId,
+                        DebitCreditFlag = ate.DebitCreditFlag,
+                        Debit = ate.DebitCreditFlag == "D" ? (ate.Amount ?? 0m) : 0m,
+                        Credit = ate.DebitCreditFlag == "C" ? (ate.Amount ?? 0m) : 0m,
+                        EntryPartyId = ate.PartyId,
+                        EntryPartyName = ep != null ? ep.Description : ate.PartyId,
+                        EntryDescription = ate.Description
+                    }).ToListAsync(ct);
+
+                // Carry the commission context (number, sale, unit, payee) onto each ledger row so
+                // the sheet is self-describing without a VLOOKUP back to the commissions sheet.
+                var byPayment = commissions
+                    .GroupBy(c => c.PaymentId)
+                    .ToDictionary(g => g.Key, g => g.First());
+
+                foreach (var r in rows)
+                {
+                    if (!byPayment.TryGetValue(r.PaymentId, out var c)) continue;
+                    r.SalesCommissionId = c.SalesCommissionId;
+                    r.SalesRequestId = c.SalesRequestId;
+                    r.ApartmentName = c.ApartmentName;
+                    r.PayeeName = c.PayeeName;
+                }
+
+                // Same payment order as the commissions sheet, then trans date, then entry seq.
+                var paymentOrder = paymentIds.Select((id, i) => (id, i)).ToDictionary(x => x.id, x => x.i);
+                return rows
+                    .OrderBy(r => paymentOrder[r.PaymentId])
+                    .ThenBy(r => r.TransactionDate)
+                    .ThenBy(r => r.AcctgTransId)
+                    .ThenBy(r => r.AcctgTransEntrySeqId)
                     .ToList();
             }
         }
