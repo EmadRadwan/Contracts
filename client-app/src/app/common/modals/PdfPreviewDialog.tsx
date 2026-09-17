@@ -14,7 +14,10 @@ import CloseIcon from '@mui/icons-material/Close';
 import { saveAs } from 'file-saver';
 import { Worker, Viewer, SpecialZoomLevel } from '@react-pdf-viewer/core';
 import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
-import { version as pdfjsVersion } from 'pdfjs-dist/package.json';
+// Worker served from our own bundle (Vite emits it as a hashed asset) so the viewer never
+// depends on unpkg.com being reachable from the user's browser, and main thread + worker
+// can never drift apart in version.
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.js?url';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import { useTranslationHelper } from '../../hooks/useTranslationHelper';
@@ -113,7 +116,10 @@ export const PdfPreviewDialog: React.FC<PdfPreviewDialogProps> = ({
                     </Box>
                 ) : blobUrl ? (
                     <>
-                        <Worker workerUrl={`https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.mjs`}>
+                        {/* pdfjs-dist is pinned to 3.11.x: @react-pdf-viewer/core 3.12 supports pdfjs ^2.16 || ^3 only —
+                            pdfjs 5 removed renderTextLayer, which broke every page after the first
+                            ("PdfJsApi.renderTextLayer is not a function"). */}
+                        <Worker workerUrl={pdfWorkerUrl}>
                             <Viewer
                                 fileUrl={blobUrl}
                                 plugins={[defaultLayoutPluginInstance]}

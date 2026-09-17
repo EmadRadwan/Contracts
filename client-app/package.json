@@ -97,7 +97,7 @@
     "mobx": "^6.0.4",
     "mobx-react-lite": "^3.1.6",
     "pako": "^2.1.0",
-    "pdfjs-dist": "^5.3.31",
+    "pdfjs-dist": "3.11.174",
     "react": "18.3.1",
     "react-corner-ribbon": "^0.0.5",
     "react-cropper": "^2.1.4",
@@ -181,5 +181,10 @@
     "sonarqube-scanner": "^3.3.0",
     "typescript": "^5.7.3"
   },
-  "packageManager": "yarn@4.6.0"
+  "packageManager": "yarn@4.6.0",
+  "dependenciesMeta": {
+    "canvas": {
+      "built": false
+    }
+  }
 }

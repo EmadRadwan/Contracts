@@ -40,9 +40,10 @@ COPY API/appsettings.*.json /app/
  RUN mkdir -p /app/logs
  
 # REFACTOR: Ensure OpenSSL is available by installing it explicitly to handle certificate loading.
-# fontconfig + font faces: Telerik Reporting renders text through SkiaSharp and needs real
-# font files present (unlike the old QuestPDF engine, which shipped its own). fonts-noto-core covers Latin;
-# add an Arabic naskh face here (Amiri / Cairo / Noto Naskh Arabic) once the report font is fixed.
+# fontconfig + font faces: Telerik Reporting renders text through SkiaSharp and needs fontconfig
+# present. The reports' own font (Amiri, Arabic + Latin) is NOT taken from the OS: it ships in
+# API/Fonts as a Telerik private font (appsettings.json "telerikReporting:privateFonts"), so
+# fonts-noto-core is only a fallback for anything not styled explicitly.
 RUN apt-get update && apt-get install -y --no-install-recommends \
       openssl libfontconfig1 libfreetype6 fontconfig fonts-noto-core libuuid1 \
  && rm -rf /var/lib/apt/lists/* \

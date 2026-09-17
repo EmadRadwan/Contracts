@@ -25,7 +25,7 @@ public sealed class PaymentVoucherReport : Report
 
     // Dev/mac-safe family. The Docker image gets Arabic faces added in a later pass
     // (plan §9.2); swap this for "Noto Naskh Arabic" / "Amiri" once those are installed.
-    private const string FontFamily = "Arial";
+    private const string FontFamily = API.Reporting.ProjectReport.ProjectReportLayout.FontFamily; // shared private font (Amiri); bold via ApplyFont
 
     public PaymentVoucherReport(PaymentReportDto data, string companyName)
     {
@@ -221,9 +221,8 @@ public sealed class PaymentVoucherReport : Report
             Size = new SizeU(Unit.Cm(w), Unit.Cm(h)),
             CanGrow = true,
         };
-        tb.Style.Font.Name = FontFamily;
+        API.Reporting.ProjectReport.ProjectReportLayout.ApplyFont(tb.Style, bold);
         tb.Style.Font.Size = Unit.Point(size);
-        tb.Style.Font.Bold = bold;
         tb.Style.TextAlign = align;
         tb.Style.VerticalAlign = VerticalAlign.Middle;
         return tb;

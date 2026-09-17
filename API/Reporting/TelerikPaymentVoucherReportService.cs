@@ -2,6 +2,7 @@ using System.Collections;
 using Application.Interfaces;
 using Application.Reports;
 using Telerik.Reporting;
+using Microsoft.Extensions.Configuration;
 using Telerik.Reporting.Processing;
 
 namespace API.Reporting;
@@ -14,6 +15,12 @@ namespace API.Reporting;
 /// </summary>
 public sealed class TelerikPaymentVoucherReportService : IPaymentVoucherReportService
 {
+    // Passing IConfiguration is what makes the engine read "telerikReporting:privateFonts"
+    // from appsettings.json; the parameterless ReportProcessor ignores app configuration.
+    private readonly IConfiguration _configuration;
+
+    public TelerikPaymentVoucherReportService(IConfiguration configuration) => _configuration = configuration;
+
     private static readonly HashSet<string> SupportedFormats =
         new(StringComparer.OrdinalIgnoreCase) { "PDF", "XLSX", "DOCX", "CSV", "IMAGE", "PPTX" };
 
@@ -28,7 +35,7 @@ public sealed class TelerikPaymentVoucherReportService : IPaymentVoucherReportSe
         using var report = new PaymentVoucherReport(data, companyName);
         var reportSource = new InstanceReportSource { ReportDocument = report };
 
-        var processor = new ReportProcessor();
+        var processor = new ReportProcessor(_configuration);
         var result = processor.RenderReport(normalizedFormat, reportSource, new Hashtable());
 
         if (result.HasErrors)

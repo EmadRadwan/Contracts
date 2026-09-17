@@ -12,7 +12,25 @@ namespace API.Reporting.ProjectReport;
 internal static class ProjectReportLayout
 {
     public const double PageWidthCm = 26.0; // A4 landscape (29.7cm) minus ~1.85cm margins each side
-    public const string FontFamily = "Arial"; // dev/mac-safe; swap for Noto Naskh/Amiri once Docker fonts land
+    // Amiri ships with the app as a Telerik private font (API/Fonts + appsettings.json
+    // "telerikReporting:privateFonts"), so this renders the same on macOS dev and in the Docker
+    // image. It was "Arial" before: absent in the container, so fontconfig substituted a face
+    // with no Arabic glyphs and every Arabic run printed as boxes.
+    public const string FontFamily = "Amiri";
+    // Bold is a SEPARATE private-font family on purpose. Registering Amiri-Bold.ttf under the
+    // same "Amiri" family with fontStyle "Bold" made Telerik shape every regular-weight run with
+    // the Bold file's OpenType tables while embedding the Regular file's outlines — glyph IDs
+    // differ between the two files, so all joined Arabic came out as garbage (digits and Latin,
+    // whose IDs coincide, looked fine). Verified with HarfBuzz against the PDF's glyph stream.
+    // One file per family name sidesteps it: pick the face by name, never via Font.Bold.
+    public const string BoldFontFamily = "Amiri Bold";
+
+    /// <summary>Applies the report font to a style: family chosen by weight, Bold flag left off.</summary>
+    public static void ApplyFont(Telerik.Reporting.Drawing.Style style, bool bold)
+    {
+        style.Font.Name = bold ? BoldFontFamily : FontFamily;
+        style.Font.Bold = false;
+    }
     public const double RowHeightCm = 0.55;
     public const int RowCap = 500; // safety valve; Excel remains the full, uncapped export
 
@@ -44,9 +62,8 @@ internal static class ProjectReportLayout
             Size = new SizeU(Unit.Cm(w), Unit.Cm(h)),
             CanGrow = true,
         };
-        tb.Style.Font.Name = FontFamily;
+        ApplyFont(tb.Style, bold);
         tb.Style.Font.Size = Unit.Point(size);
-        tb.Style.Font.Bold = bold;
         tb.Style.TextAlign = align;
         tb.Style.VerticalAlign = VerticalAlign.Middle;
         if (color.HasValue) tb.Style.Color = color.Value;

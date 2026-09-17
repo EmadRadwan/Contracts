@@ -2,6 +2,7 @@ using System.Collections;
 using Application.Interfaces;
 using Application.Projects;
 using Telerik.Reporting;
+using Microsoft.Extensions.Configuration;
 using Telerik.Reporting.Processing;
 using TelerikReport = Telerik.Reporting.Report;
 
@@ -20,6 +21,12 @@ namespace API.Reporting.ProjectReport;
 /// </summary>
 public sealed class TelerikProjectReportService : IProjectReportService
 {
+    // Passing IConfiguration is what makes the engine read "telerikReporting:privateFonts"
+    // from appsettings.json; the parameterless ReportProcessor ignores app configuration.
+    private readonly IConfiguration _configuration;
+
+    public TelerikProjectReportService(IConfiguration configuration) => _configuration = configuration;
+
     private static readonly HashSet<string> SupportedFormats =
         new(StringComparer.OrdinalIgnoreCase) { "PDF", "XLSX", "DOCX", "IMAGE" };
 
@@ -45,7 +52,7 @@ public sealed class TelerikProjectReportService : IProjectReportService
             foreach (var r in reports)
                 book.ReportSources.Add(new InstanceReportSource { ReportDocument = r });
 
-            var processor = new ReportProcessor();
+            var processor = new ReportProcessor(_configuration);
             var result = processor.RenderReport(normalizedFormat, book, new Hashtable());
 
             if (result.HasErrors)

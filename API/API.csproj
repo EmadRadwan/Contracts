@@ -62,6 +62,15 @@
         </Content>
     </ItemGroup>
 
+    <!-- Telerik private fonts (see "telerikReporting:privateFonts" in appsettings.json). Shipped
+         with the app so PDF text renders identically on dev (macOS) and prod (Docker, no Arial). -->
+    <ItemGroup>
+        <Content Include="Fonts\**\*.*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        </Content>
+    </ItemGroup>
+
     <!-- Optional: also force-copy the logo -->
     <ItemGroup>
         <Content Update="wwwroot\goldenlandlogo.jpg">

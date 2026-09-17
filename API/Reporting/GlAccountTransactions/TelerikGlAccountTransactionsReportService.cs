@@ -2,6 +2,7 @@ using System.Collections;
 using Application.Accounting.Services.Models;
 using Application.Interfaces;
 using Telerik.Reporting;
+using Microsoft.Extensions.Configuration;
 using Telerik.Reporting.Processing;
 
 namespace API.Reporting.GlAccountTransactions;
@@ -12,6 +13,12 @@ namespace API.Reporting.GlAccountTransactions;
 /// </summary>
 public sealed class TelerikGlAccountTransactionsReportService : IGlAccountTransactionsReportService
 {
+    // Passing IConfiguration is what makes the engine read "telerikReporting:privateFonts"
+    // from appsettings.json; the parameterless ReportProcessor ignores app configuration.
+    private readonly IConfiguration _configuration;
+
+    public TelerikGlAccountTransactionsReportService(IConfiguration configuration) => _configuration = configuration;
+
     private static readonly HashSet<string> SupportedFormats =
         new(StringComparer.OrdinalIgnoreCase) { "PDF", "XLSX", "DOCX", "IMAGE" };
 
@@ -26,7 +33,7 @@ public sealed class TelerikGlAccountTransactionsReportService : IGlAccountTransa
         using var report = new GlAccountTransactionsReport(data);
         var reportSource = new InstanceReportSource { ReportDocument = report };
 
-        var processor = new ReportProcessor();
+        var processor = new ReportProcessor(_configuration);
         var result = processor.RenderReport(normalizedFormat, reportSource, new Hashtable());
 
         if (result.HasErrors)
