@@ -48,12 +48,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/* \
  && fc-cache -f
 
-# SkiaSharp 3.x linux-arm64 libSkiaSharp.so calls uuid_generate_random but does not declare
-# libuuid as a NEEDED dependency, so the first Telerik render kills the whole process with
-# "dotnet: symbol lookup error: .../libSkiaSharp.so: undefined symbol: uuid_generate_random"
-# (no managed exception, nothing in Serilog, container just restarts). Preloading libuuid
-# makes the symbol resolvable.
-ENV LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libuuid.so.1
+# SkiaSharp 3.119 linux-arm64 libSkiaSharp.so is a broken native build: unlike the x64 one it
+# statically embeds fontconfig, yet leaves exactly five externals unresolved and declares NO
+# NEEDED library for them — uuid_generate_random/uuid_copy/uuid_parse/uuid_unparse (libuuid)
+# and FT_Get_BDF_Property (libfreetype). The first Telerik render then kills the whole process:
+#   dotnet: symbol lookup error: .../libSkiaSharp.so: undefined symbol: uuid_generate_random
+# (no managed exception, nothing in Serilog, container just restarts). Preloading both libs
+# puts those symbols in the global scope so the lazy binding succeeds. Verified against the
+# package's .dynsym — these five are the only non-glibc undefined symbols.
+ENV LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libuuid.so.1:/usr/lib/aarch64-linux-gnu/libfreetype.so.6
 
 # Runtime license check (build already embedded one; this keeps parity if that changes).
 ARG TELERIK_LICENSE
