@@ -919,12 +919,21 @@ namespace Application.Projects
                           && prod.ProjectId == request.ProjectId
                     select new { sr, prod, pt, cust, emp };
 
+                // Window on SaleDate (the business date typed on the sales request), NOT
+                // CreatedStamp: back-loaded sales carry a real SaleDate months before the row was
+                // entered, and the sheet prints SaleDate, so the filter must use the same column.
                 if (!request.SalesAllData)
                 {
                     if (request.SalesStartDate.HasValue)
-                        soldQuery = soldQuery.Where(x => x.sr.CreatedStamp >= request.SalesStartDate.Value);
+                    {
+                        var start = DateOnly.FromDateTime(request.SalesStartDate.Value);
+                        soldQuery = soldQuery.Where(x => x.sr.SaleDate >= start);
+                    }
                     if (request.SalesEndDate.HasValue)
-                        soldQuery = soldQuery.Where(x => x.sr.CreatedStamp <= request.SalesEndDate.Value);
+                    {
+                        var end = DateOnly.FromDateTime(request.SalesEndDate.Value);
+                        soldQuery = soldQuery.Where(x => x.sr.SaleDate <= end);
+                    }
                 }
 
                 var soldRaw = await soldQuery.ToListAsync(ct);
