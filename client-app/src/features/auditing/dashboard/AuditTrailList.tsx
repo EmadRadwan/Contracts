@@ -136,7 +136,7 @@ export default function AuditTrailList() {
                     </Typography>
 
                     <div className="div-container">
-                        <KendoGrid
+                        <KendoGrid scrollable="scrollable"
                             style={{height: "70vh"}}
                             data={activities}
                             resizable={true}

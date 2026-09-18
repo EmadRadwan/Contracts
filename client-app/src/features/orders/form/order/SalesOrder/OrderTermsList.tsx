@@ -87,7 +87,7 @@ const OrderTermsList = ({onClose, orderId}: OrderTermsListProps) => {
         <Grid container padding={2} columnSpacing={1}>
             <Grid container>
                 <div className="div-container">
-                <KendoGrid className="main-grid kendo-grid-styled"
+                <KendoGrid scrollable="scrollable" className="main-grid kendo-grid-styled"
                 style={{height: "60vh", width: 770}}
                     data={orderBy(selectedOrderTerms ?? [], sort).slice(page.skip, page.take + page.skip)}
                     sortable={true}

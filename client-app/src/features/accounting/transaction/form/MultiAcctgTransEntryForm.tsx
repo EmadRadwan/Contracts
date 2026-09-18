@@ -682,7 +682,7 @@ export default function MultiAcctgTransEntryForm() {
                                             </Grid>
                                             
                                             <Grid item xs={12}>
-                                                <KendoGrid
+                                                <KendoGrid scrollable="scrollable"
                                                     style={{height: "40vh"}}
                                                     data={orderBy(transEntries, sort).slice(page.skip, page.take + page.skip)}
                                                     sortable

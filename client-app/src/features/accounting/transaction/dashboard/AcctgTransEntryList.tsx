@@ -188,7 +188,7 @@ export default function AcctgTransEntryList({ acctgTrans }: Props) {
       <Grid container columnSpacing={1} direction="column" alignItems={"center"} sx={{ mt: 1 }}>
         {/* REFACTORED: Updated grid to use pagination and styling from SalesOrderItemsList */}
         <ReversalLegend />
-        <KendoGrid
+        <KendoGrid scrollable="scrollable"
             className="main-grid"
             style={{ height: "40vh", width: "60vw" }}
             data={orderBy(acctTransEntries || [], sort).slice(page.skip, page.take + page.skip)}

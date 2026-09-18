@@ -117,7 +117,7 @@ export default function MultiPaymentItemsList({ workEffortId, items, addItem, up
 
     return (
         <>
-            <Grid
+            <Grid scrollable="scrollable"
                 data={gridData.slice(page.skip, page.skip + page.take)}
                 total={gridData.length}
                 skip={page.skip}

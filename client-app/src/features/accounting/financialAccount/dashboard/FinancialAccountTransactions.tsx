@@ -223,7 +223,7 @@ const FinancialAccountTransactions = () => {
                 </Grid>
               </Grid>
               <Grid item xs={12} mt={2}>
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                   style={{ height: "35vh", width: "95%" }}
                   data={txnsList}
                 >

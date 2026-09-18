@@ -274,7 +274,7 @@ export default function PaymentGroupForm({
                 
 
                 {data && data.length > 0 && (
-                    <KendoGrid
+                    <KendoGrid scrollable="scrollable"
                         style={{ height: "35vh", flex: 1 }}
                         data={data ?? []}
                         resizable={true}

@@ -236,7 +236,7 @@ const ChartOfAccountsList = () => {
           </Grid>
 
           <Grid item xs={12}>
-            <KendoGrid
+            <KendoGrid scrollable="scrollable"
                   style={{ height: "70vh" }}
                   data={flatGlAccounts?.data ?? []}
                   total={flatGlAccounts?.total ?? 0}

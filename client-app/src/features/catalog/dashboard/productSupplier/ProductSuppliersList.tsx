@@ -109,7 +109,7 @@ export default function ProductSuppliersList() {
 
                     <Grid container p={2}>
                         <div className="div-container">
-                            <KendoGrid
+                            <KendoGrid scrollable="scrollable"
                                 className="main-grid"
                                 style={{ height: "400px", width: "1000px" }}
                                 data={orderBy(suppliers, sort).slice(page.skip, page.take + page.skip)}

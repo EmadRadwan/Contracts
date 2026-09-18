@@ -147,7 +147,7 @@ export default function AccountingTransactionEntriesList() {
                 <Grid item xs={12}>
                     <div className="div-container">
                         <ReversalLegend />
-                        <KendoGrid
+                        <KendoGrid scrollable="scrollable"
                             resizable={true}
                             filterable={true}
                             sortable={true}

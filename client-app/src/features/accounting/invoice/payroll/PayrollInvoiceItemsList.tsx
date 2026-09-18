@@ -160,7 +160,7 @@ export default function PayrollInvoiceItemsList({ invoiceId, canEdit, refreshTot
                 </ModalContainer>
             )}
             <Grid container direction="column" alignItems="flex-start">
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                     style={{ minHeight: "300px" }}
                     data={sortedItems.slice(page.skip, page.take + page.skip)}
                     sortable={true}

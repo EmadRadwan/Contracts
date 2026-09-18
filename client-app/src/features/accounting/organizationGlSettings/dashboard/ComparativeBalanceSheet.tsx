@@ -125,7 +125,7 @@ const ComparativeBalanceSheet = () => {
           </Grid>
           {isSuccess && (
             <>
-              <KendoGrid
+              <KendoGrid scrollable="scrollable"
                 style={{ height: "250px", flex: 1 }}
                 resizable={true}
                 pageable={true}
@@ -169,7 +169,7 @@ const ComparativeBalanceSheet = () => {
                   format="{0:c2}"
                 />
               </KendoGrid>
-              <KendoGrid
+              <KendoGrid scrollable="scrollable"
                 style={{ height: "250px", flex: 1 }}
                 resizable={true}
                 pageable={true}
@@ -213,7 +213,7 @@ const ComparativeBalanceSheet = () => {
                   format="{0:c2}"
                 />
               </KendoGrid>
-              <KendoGrid
+              <KendoGrid scrollable="scrollable"
                 style={{ height: "250px", flex: 1 }}
                 resizable={true}
                 pageable={true}
@@ -257,7 +257,7 @@ const ComparativeBalanceSheet = () => {
                   format="{0:c2}"
                 />
               </KendoGrid>
-              <KendoGrid
+              <KendoGrid scrollable="scrollable"
                 style={{ height: "250px", flex: 1 }}
                 resizable={true}
                 pageable={true}

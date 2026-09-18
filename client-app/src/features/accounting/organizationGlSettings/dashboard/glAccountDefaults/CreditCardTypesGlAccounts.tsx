@@ -54,7 +54,7 @@ const CreditCardTypesGlAccounts = () => {
             <CreditCardTypesGlAccountsForm selectedAccountingCompanyId={selectedAccountingCompanyId} onSubmit={onSubmit} />
 
             <div className="div-container">
-              <KendoGrid
+              <KendoGrid scrollable="scrollable"
                 data={orderBy(
                   creditCardTypesAccounts ? creditCardTypesAccounts : [],
                     sort

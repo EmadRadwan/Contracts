@@ -68,7 +68,7 @@ const SalesOpportunityList: React.FC<SalesOpportunityListProps> = ({ onCreateNew
 
     return (
         <div className="div-container">
-            <KendoGrid
+            <KendoGrid scrollable="scrollable"
                 style={{ height: '75vh', width: '100%' }}
                 data={processedData}
                 resizable

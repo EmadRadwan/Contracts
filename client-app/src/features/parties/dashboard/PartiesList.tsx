@@ -236,7 +236,7 @@ export default function PartiesList() {
 
                         <Grid container>
                             <div className="div-container">
-                                <KendoGrid
+                                <KendoGrid scrollable="scrollable"
                                     style={{height: "75vh", width: "94vw", flex: 1}}
                                     resizable={true}
                                     filterable={true}

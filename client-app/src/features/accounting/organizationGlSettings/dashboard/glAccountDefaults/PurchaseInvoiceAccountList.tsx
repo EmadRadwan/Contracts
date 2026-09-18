@@ -72,7 +72,7 @@ const PurchaseInvoiceAccountList = () => {
           <Paper elevation={5} className={`div-container-withBorderCurved`}>
             <PurchaseInvoiceAccountForm selectedAccountingCompanyId={selectedAccountingCompanyId} />
             <div className="div-container">
-              <KendoGrid
+              <KendoGrid scrollable="scrollable"
                 style={{ height: "65vh", flex: 1 }}
                 data={
                   purchaseInvoiceTypes ? purchaseInvoiceTypes : { data: [], total: 0 }

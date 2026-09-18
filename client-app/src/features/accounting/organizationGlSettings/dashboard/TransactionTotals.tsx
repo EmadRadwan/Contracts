@@ -213,7 +213,7 @@ return (
               <TabPanel value={"1"}>
                 <Grid item xs={12}>
                   <div className="div-container">
-                    <KendoGrid
+                    <KendoGrid scrollable="scrollable"
                       style={{ height: "65vh", flex: 1 }}
                       resizable={true}
                       filterable={true}
@@ -265,7 +265,7 @@ return (
               <TabPanel value={"2"}>
                 <Grid item xs={12}>
                   <div className="div-container">
-                    <KendoGrid
+                    <KendoGrid scrollable="scrollable"
                       style={{ height: "65vh", flex: 1 }}
                       resizable={true}
                       filterable={true}
@@ -317,7 +317,7 @@ return (
               <TabPanel value={"3"}>
                 <Grid item xs={12}>
                   <div className="div-container">
-                    <KendoGrid
+                    <KendoGrid scrollable="scrollable"
                       style={{ height: "65vh", flex: 1 }}
                       resizable={true}
                       filterable={true}

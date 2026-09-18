@@ -352,7 +352,7 @@ export default function JobQuoteItemsList({
                 </Grid>
                 <Grid item sx={quoteFormEditMode > 2 ? containerStyles : {}}
                 >
-                    <KendoGrid
+                    <KendoGrid scrollable="scrollable"
                         className="main-grid"
                         style={{height: "30vh"}}
                         data={orderBy(

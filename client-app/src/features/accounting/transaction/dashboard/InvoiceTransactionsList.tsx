@@ -128,7 +128,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                         <Grid container>
                             <Grid item xs={12}>
                                 <ReversalLegend />
-                                <KendoGrid
+                                <KendoGrid scrollable="scrollable"
                                     style={{  height: "450px", width: 850 }}
                                     data={orderBy(acctTransEntries, sort)}
                                     sortable
@@ -174,7 +174,7 @@ export default function InvoiceTransactionsList({ onClose, invoiceId, invoiceTyp
                         <Grid container>
                             <Grid item xs={12}>
                                 <ReversalLegend />
-                                <KendoGrid
+                                <KendoGrid scrollable="scrollable"
                                     style={{ height: "450px", width: 850 }}
                                     data={orderBy(paymentTransEntries, sort)}
                                     sortable

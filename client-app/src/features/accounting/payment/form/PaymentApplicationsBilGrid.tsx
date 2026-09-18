@@ -22,7 +22,7 @@ const PaymentApplicationsBilGrid: React.FC<PaymentApplicationGridProps> = ({
                 {getTranslatedLabel(`${localizationKey}.appliedBillingAccounts`, "Applied Billing Accounts")}
             </Typography>
             <div className={disabled ? "grid-disabled" : "grid-normal"}>
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                     data={paymentApplications}
                     rowHeight={40}
                     className="kendo-grid-alternate"

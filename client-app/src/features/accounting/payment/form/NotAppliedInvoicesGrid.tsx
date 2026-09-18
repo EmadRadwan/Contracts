@@ -54,7 +54,7 @@ const NotAppliedInvoicesGrid: React.FC<NotAppliedInvoicesGridProps> = ({
             <Typography variant="h5">
                 {getTranslatedLabel(`${localizationKey}.notAppliedInvoices`, "Invoices Not Yet Applied")}
             </Typography>
-            <KendoGrid
+            <KendoGrid scrollable="scrollable"
                 data={invoices}
                 rowHeight={40}
                 className="kendo-grid-alternate"

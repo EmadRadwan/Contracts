@@ -575,7 +575,7 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
 
             <Grid item xs={12}>
               <div className="div-container">
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                     style={{ flex: 1 }}
                     data={payments ? payments : { data: [], total: 0 }}
                     resizable={true}

@@ -60,7 +60,7 @@ const FacilityLocationsList = () => {
     <>
     <FacilityMenu/>
     <Paper elevation={5} className={`div-container-withBorderCurved`}>
-        <KendoGrid
+        <KendoGrid scrollable="scrollable"
             data={facilityLocations?.data ?? []}
             sortable={true}
             total={facilityLocations?.total ?? 0}

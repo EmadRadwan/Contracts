@@ -43,7 +43,7 @@ const TaxAuthCategoriesList = ({taxCategories, onClose}: Props) => {
         </Grid>
         <Grid container>
                 <div className="div-container">
-                    <KendoGrid 
+                    <KendoGrid scrollable="scrollable" 
                         style={{ height: "65vh" }}
                         data={orderBy(data ? data : [], sort).slice(page.skip, page.take + page.skip)}
                         sortable={true}

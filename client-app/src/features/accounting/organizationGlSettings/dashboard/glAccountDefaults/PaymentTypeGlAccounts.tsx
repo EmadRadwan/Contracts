@@ -78,7 +78,7 @@ const PaymentTypeGlAccounts = () => {
             <PaymentTypeGlAccountsForm selectedAccountingCompanyId={selectedAccountingCompanyId} onSubmit={onSubmit} />
 
             <div className="div-container">
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                     data={orderBy(paymentTypeAccounts ?? [], sort).slice(page.skip, page.skip + page.take)}
                     sortable={true}
                     sort={sort}

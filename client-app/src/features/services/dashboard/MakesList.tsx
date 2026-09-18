@@ -113,7 +113,7 @@ export default function MakesList() {
                             <div className="div-container">
                                 <ExcelExport data={dataToExport}
                                              ref={_export}>
-                                    <KendoGrid className="small-line-height" style={{height: "65vh", width: "94vw", flex: 1}}
+                                    <KendoGrid scrollable="scrollable" className="small-line-height" style={{height: "65vh", width: "94vw", flex: 1}}
                                                data={makesData ? orderBy(filterBy(handleDatesArray(makesData), filter), sort).slice(page.skip, page.take + page.skip) : []}
                                                sortable={true}
                                                sort={sort}

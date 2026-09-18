@@ -172,7 +172,7 @@ export default function IncomeStatementGlAccountTransactionsModal({
                         {/* Transactions Grid */}
                         <Grid item xs={12}>
                             <ReversalLegend />
-                            <KendoGrid
+                            <KendoGrid scrollable="scrollable"
                                 style={{ height: '460px' }}
                                 data={orderBy(transactions, sort).slice(page.skip, page.skip + page.take)}
                                 sortable={true}

@@ -101,7 +101,7 @@ export default function ProductPricesList() {
 
                     <Grid container p={2}>
                         <div className="div-container">
-                            <KendoGrid
+                            <KendoGrid scrollable="scrollable"
                                 className="main-grid"
                                 style={{ height: '300px' }}
                                 data={orderBy(productPrices ? productPrices : [], sort).slice(page.skip, page.take + page.skip)}

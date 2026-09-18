@@ -212,7 +212,7 @@ export const RecordChequesDialog: React.FC<RecordChequesDialogProps> = ({
                 ) : (
                     <>
                         {installmentRows.length > 0 && (
-                            <KendoGrid data={installmentRows} style={{ maxHeight: 400 }}>
+                            <KendoGrid scrollable="scrollable" data={installmentRows} style={{ maxHeight: 400 }}>
                                 <Column field="dueDate" title={t("dueDate", "Due Date")} width="120px" />
                                 <Column field="comments" title={t("description", "Description")} />
                                 <Column field="amount" title={t("amount", "Amount")} format="{0:n2}" width="120px" />
@@ -230,7 +230,7 @@ export const RecordChequesDialog: React.FC<RecordChequesDialogProps> = ({
                                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
                                     {t("maintenanceDeposit", "Maintenance Deposit")}
                                 </Typography>
-                                <KendoGrid data={maintenanceRows} style={{ maxHeight: 200 }}>
+                                <KendoGrid scrollable="scrollable" data={maintenanceRows} style={{ maxHeight: 200 }}>
                                     <Column field="dueDate" title={t("dueDate", "Due Date")} width="120px" />
                                     <Column field="comments" title={t("description", "Description")} />
                                     <Column field="amount" title={t("amount", "Amount")} format="{0:n2}" width="120px" />

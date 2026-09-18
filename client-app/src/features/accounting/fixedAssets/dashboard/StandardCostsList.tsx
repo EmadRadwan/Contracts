@@ -118,7 +118,7 @@ const StandardCostsList = () => {
         </Grid>
         {/* <StandardCostsForm selectedFixedAsset={selectedFixedAsset!} /> */}
         <div className="div-container">
-          <KendoGrid
+          <KendoGrid scrollable="scrollable"
             data={standardCosts ? handleDatesArray(standardCosts) : []}
             sortable={true}
             skip={page.skip}

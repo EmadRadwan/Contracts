@@ -65,7 +65,7 @@ const ComparativeIncomeStatement = () => {
     const processedData = orderBy(data || [], sort);
     return (
         <Grid item xs={12} sx={{ mt: 2 }}>
-          <KendoGrid
+          <KendoGrid scrollable="scrollable"
               style={{ height: "400px" }}
               data={processedData}
               sortable={true}

@@ -205,7 +205,7 @@ const ProductionRunReturnedInventoryList = ({productionRunId}: Props) => {
                         </Menu>
                     </Grid>
                     <Grid item xs={12}>
-                        <KendoGrid
+                        <KendoGrid scrollable="scrollable"
                             data={orderBy(returnItemsData, sort).slice(page.skip, page.take + page.skip)}
                             sortable={true}
                             sort={sort}

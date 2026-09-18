@@ -87,7 +87,7 @@ export default function RecordHistory({entityName, pkText, height = "45vh"}: Pro
     }
 
     return (
-        <KendoGrid style={{height}} data={rows} resizable={true} sortable={true}>
+        <KendoGrid scrollable="scrollable" style={{height}} data={rows} resizable={true} sortable={true}>
             <Column
                 field="changedDate"
                 title={getTranslatedLabel("audit.history.date", "التاريخ")}

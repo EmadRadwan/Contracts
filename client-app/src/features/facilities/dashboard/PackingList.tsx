@@ -315,7 +315,7 @@ const PackingList = () => {
                             !isPackingDataLoading && (
                                 <p>No items available for packing.</p>
                             )}
-                        <KendoGrid
+                        <KendoGrid scrollable="scrollable"
                             data={orderItems?.items || []}
                             resizable={true}
                             reorderable={true}

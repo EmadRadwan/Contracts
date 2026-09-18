@@ -210,7 +210,7 @@ export default function ProjectsList() {
         <>
             <ProjectMenu selectedMenuItem={"projects"} />
             <Paper elevation={5} className={`div-container-withBorderCurved`}>
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                     style={{ height: "75vh", width: "94vw", flex: 1 }}
                     resizable={true}
                     filterable={true}

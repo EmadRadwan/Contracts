@@ -147,7 +147,7 @@ export default function ReturnsList() {
                         <Grid container>
                             <div className="div-container">
                                 <ExcelExport data={dataToExport}>
-                                    <KendoGrid
+                                    <KendoGrid scrollable="scrollable"
                                         style={{ height: "518px", width: "93vw" }}
                                         resizable={true}
                                         filterable={true}

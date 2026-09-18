@@ -46,7 +46,7 @@ export function GridStylingExample() {
             <h2>Grid Styling Example</h2>
             <p>This example demonstrates the common grid styling and filter components.</p>
 
-            <KendoGrid
+            <KendoGrid scrollable="scrollable"
                 className="kendo-grid-styled"  /* ← Apply the styling class */
                 style={{ height: '400px' }}
                 resizable={true}

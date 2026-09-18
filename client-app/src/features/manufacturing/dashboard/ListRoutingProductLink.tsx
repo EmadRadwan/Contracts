@@ -140,7 +140,7 @@ export default function ListRoutingProductLink() {
                             <RoutingMenu workEffortId={workEffortId!} selectedMenuItem="routingProductLink" />
                             <Grid container p={2}>
                                 <div className="div-container">
-                                    <KendoGrid
+                                    <KendoGrid scrollable="scrollable"
                                         className="main-grid"
                                         data={routingProductLinks}
                                         resizable

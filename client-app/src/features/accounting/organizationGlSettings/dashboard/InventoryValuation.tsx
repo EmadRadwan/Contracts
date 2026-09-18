@@ -148,7 +148,7 @@ const InventoryValuation = () => {
           </Grid>
           {isLoading && <LoadingComponent message={getTranslatedLabel("general.loading-report", "Loading Report Data...")} />}
           {isSuccess && (
-            <KendoGrid
+            <KendoGrid scrollable="scrollable"
               data={orderBy(
                 inventoryValuationData ? inventoryValuationData.items : [],
                 sort

@@ -71,7 +71,7 @@ const AccountingCosts = () => {
             <Grid container columnSpacing={1} alignItems="center">
                     <Grid item xs={12}>
                         <div className="div-container">
-                            <KendoGrid style={{height: '65vh', flex: 1}}
+                            <KendoGrid scrollable="scrollable" style={{height: '65vh', flex: 1}}
                                        data={data ? {data: data.data, total: data.total} : {data: [], total: 0}}
                                        resizable={true}
                                        filterable={true}

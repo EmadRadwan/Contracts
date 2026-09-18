@@ -560,7 +560,7 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
                 {/* Tab Panels */}
                 <TabPanel value={tabValue} index={0}>
                     <div className="party-financial-grid">
-                        <KendoGrid data={processedData.invoices}
+                        <KendoGrid scrollable="scrollable" data={processedData.invoices}
                                    total={data.invoicesApplPayments?.length || 0} {...gridProps} resizable>
                             <Column
                                 field="invoiceId"
@@ -621,7 +621,7 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
 
                 <TabPanel value={tabValue} index={1}>
                     <div className="party-financial-grid">
-                        <KendoGrid data={processedData.unappliedInv}
+                        <KendoGrid scrollable="scrollable" data={processedData.unappliedInv}
                                    total={data.unappliedInvoices?.length || 0} {...gridProps} resizable>
                             <Column
                                 field="invoiceId"
@@ -658,7 +658,7 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
 
                 <TabPanel value={tabValue} index={2}>
                     <div className="party-financial-grid">
-                        <KendoGrid data={processedData.unappliedPay}
+                        <KendoGrid scrollable="scrollable" data={processedData.unappliedPay}
                                    total={data.unappliedPayments?.length || 0} {...gridProps} resizable>
                             <Column
                                 field="paymentId"
@@ -695,7 +695,7 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
 
                 <TabPanel value={tabValue} index={3}>
                     <div className="party-financial-grid">
-                        <KendoGrid data={processedData.billing}
+                        <KendoGrid scrollable="scrollable" data={processedData.billing}
                                    total={data.billingAccounts?.length || 0} {...gridProps}>
                             <Column
                                 field="billingAccountId"
@@ -725,7 +725,7 @@ const PartyFinancialHistory: React.FC<Props> = ({partyId, partyName}) => {
 
                 <TabPanel value={tabValue} index={4}>
                     <div className="party-financial-grid">
-                        <KendoGrid data={processedData.returns} total={data.returns?.length || 0} {...gridProps}>
+                        <KendoGrid scrollable="scrollable" data={processedData.returns} total={data.returns?.length || 0} {...gridProps}>
                             <Column
                                 field="returnId"
                                 title={getTranslatedLabel('party.financial.history.grid.returnId', 'Return ID')}

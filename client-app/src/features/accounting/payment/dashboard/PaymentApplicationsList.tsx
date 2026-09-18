@@ -61,7 +61,7 @@ export default function PaymentApplicationsList({ paymentId, onClose }: Props) {
           {paymentApplications && paymentApplications!.length > 0 ? (
             <Grid item>
               <div className="div-container">
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                   // className="main-grid"
                   style={{ height: "45vh", width: "850px" }}
                   data={paymentApplications ?? []}

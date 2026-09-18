@@ -218,7 +218,7 @@ const IncomeStatement = () => {
                   {/* 1. Revenue Grid */}
                   <Grid item xs={12}>
                     <div className="div-container">
-                      <KendoGrid
+                      <KendoGrid scrollable="scrollable"
                           style={{ height: "450px" }}
                           resizable={true}
                           pageable={true}
@@ -250,7 +250,7 @@ const IncomeStatement = () => {
                   {report.cogsExpenseAccountBalances?.length > 0 && (
                       <Grid item xs={12}>
                         <div className="div-container">
-                          <KendoGrid
+                          <KendoGrid scrollable="scrollable"
                               style={{ height: "450px" }}
                               resizable={true}
                               pageable={true}
@@ -282,7 +282,7 @@ const IncomeStatement = () => {
                   {/* 3. Expenses Grid (SGA + Depreciation) */}
                   <Grid item xs={12}>
                     <div className="div-container">
-                      <KendoGrid
+                      <KendoGrid scrollable="scrollable"
                           style={{ height: "450px" }}
                           resizable={true}
                           pageable={true}
@@ -314,7 +314,7 @@ const IncomeStatement = () => {
                   {report.incomeAccountBalances?.length > 0 && (
                       <Grid item xs={12}>
                         <div className="div-container">
-                          <KendoGrid
+                          <KendoGrid scrollable="scrollable"
                               style={{ height: "450px" }}
                               resizable={true}
                               pageable={true}

@@ -246,7 +246,7 @@ const AdjustPowerBIPropsBulkEdit: React.FC<Props> = ({ companyId, onClose }) => 
                 </Typography>
             </Box>
 
-            <KendoGrid
+            <KendoGrid scrollable="scrollable"
                 data={data}
                 total={total}
                 {...dataState}

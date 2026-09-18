@@ -89,7 +89,7 @@ const InvoiceItemTypeList = () => {
                     <Grid container p={1}>
                         <div className="div-container">
                             <ExcelExport data={dataToExport} ref={_export}>
-                                <KendoGrid className="main-grid" style={{height: "65vh", width: "93vw", flex: 1}}
+                                <KendoGrid scrollable="scrollable" className="main-grid" style={{height: "65vh", width: "93vw", flex: 1}}
                                            data={invoiceItemTypes ? invoiceItemTypes : {data: [], total: 0}}
                                            sortable={true}
                                            pageable={true}

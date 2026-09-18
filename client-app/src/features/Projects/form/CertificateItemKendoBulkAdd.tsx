@@ -463,7 +463,7 @@ const CertificateItemKendoBulkAdd: React.FC<Props> = ({
                 {getTranslatedLabel(`${localizationKey}.title`, "إضافة بنود المستخلص")}
             </Typography>
 
-            <KendoGrid
+            <KendoGrid scrollable="scrollable"
                 data={data}
                 onItemChange={handleRowChange}
                 editable={{ enabled: true, mode: "inline" }}

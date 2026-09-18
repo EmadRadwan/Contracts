@@ -81,7 +81,7 @@ const ProductMaterialCostList = ({materialCosts, onClose}: Props) => {
         </Grid>
         <Grid container>
           <div className="div-container" style={{ overflow: "auto" }}>
-            <KendoGrid
+            <KendoGrid scrollable="scrollable"
               style={{ height: "35vh", width: "100%" }}
               resizable={true}
               sort={sort}

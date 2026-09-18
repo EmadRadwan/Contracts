@@ -321,7 +321,7 @@ const LeadsList: React.FC<LeadsListProps> = ({ onCreateNew, onEditLead }) => {
 
     return (
         <div className="div-container">
-            <KendoGrid
+            <KendoGrid scrollable="scrollable"
                 style={{ height: '75vh', width: '100%' }}
                 data={processedData}
                 resizable={true}

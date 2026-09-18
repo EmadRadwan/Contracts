@@ -234,7 +234,7 @@ export default function ProductCostsList() {
               </Grid>
               <Grid item xs={12}>
                 <div className="div-container">
-                  <KendoGrid
+                  <KendoGrid scrollable="scrollable"
                       style={{ height: "55vh" }}
                       resizable={true}
                       sort={sort}

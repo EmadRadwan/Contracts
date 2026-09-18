@@ -348,7 +348,7 @@ export default function QuoteItemsList({ quoteFormEditMode, quoteId }: Props) {
         alignItems="flex-start" sx={{mt: 1}}
       >
         <Grid item sx={quoteFormEditMode > 2 ? containerStyles : {}}>
-          <KendoGrid
+          <KendoGrid scrollable="scrollable"
             className="main-grid"
             style={{ height: "40vh" }}
             data={orderBy(

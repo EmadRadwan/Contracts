@@ -102,7 +102,7 @@ export default function TransactionsList({ acctgTrans }: Props) {
   return (
       <Fragment>
         <ReversalLegend />
-        <KendoGrid
+        <KendoGrid scrollable="scrollable"
             style={{ height: "50vh", width: "60vw" }}
             data={orderBy(acctTransEntries || [], sort).slice(
                 page.skip,

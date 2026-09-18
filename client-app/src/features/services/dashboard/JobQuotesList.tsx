@@ -141,7 +141,7 @@ export default function JobQuotesList() {
 
                         <Grid container>
                             <ExcelExport data={dataToExport} ref={_export}>
-                                <KendoGrid
+                                <KendoGrid scrollable="scrollable"
                                     style={{height: '65vh', width: "94vw", flex: 1}}
                                     resizable={true}
                                     filterable={true}

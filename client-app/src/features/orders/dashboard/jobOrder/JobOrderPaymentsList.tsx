@@ -160,7 +160,7 @@ export default function JobOrderPaymentsList({showPaymentList, onClose, orderId,
                         <Grid container columnSpacing={1}>
                             <Grid container>
                                 <div className="div-container">
-                                    <KendoGrid className="main-grid" style={{height: "300px"}}
+                                    <KendoGrid scrollable="scrollable" className="main-grid" style={{height: "300px"}}
                                                data={data}
                                                onItemChange={itemChange}
                                                editable={{ enabled: true, mode: "inline" }}

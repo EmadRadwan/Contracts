@@ -100,7 +100,7 @@ const OrganizationGlSettingsList = () => {
                     </Grid>
                     <Grid item xs={12}>
                         <div className="div-container">
-                            <KendoGrid style={{flex: 1}}
+                            <KendoGrid scrollable="scrollable" style={{flex: 1}}
                                        {...dataState}
                                        data={data ? data : {data: [], total: 77}}
                                        onDataStateChange={dataStateChange}

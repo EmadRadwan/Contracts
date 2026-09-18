@@ -47,6 +47,7 @@ public sealed class PaymentVoucherReport : Report
 
         Name = "PaymentVoucherReport";
         Width = Unit.Cm(PageWidthCm);
+        Culture = API.Reporting.ProjectReport.ProjectReportLayout.ReportCulture; // RTL paragraph direction, see ReportCulture
         PageSettings.PaperKind = System.Drawing.Printing.PaperKind.A4;
         PageSettings.Margins = new MarginsU(Unit.Cm(1.5), Unit.Cm(1.5), Unit.Cm(1.5), Unit.Cm(1.5));
 
@@ -223,7 +224,7 @@ public sealed class PaymentVoucherReport : Report
         };
         API.Reporting.ProjectReport.ProjectReportLayout.ApplyFont(tb.Style, bold);
         tb.Style.Font.Size = Unit.Point(size);
-        tb.Style.TextAlign = align;
+        tb.Style.TextAlign = API.Reporting.ProjectReport.ProjectReportLayout.Physical(align);
         tb.Style.VerticalAlign = VerticalAlign.Middle;
         return tb;
     }
@@ -281,7 +282,7 @@ public sealed class PaymentVoucherReport : Report
         };
         label.Style.Font.Name = FontFamily;
         label.Style.Font.Size = Unit.Point(11);
-        label.Style.TextAlign = HorizontalAlign.Left;
+        label.Style.TextAlign = API.Reporting.ProjectReport.ProjectReportLayout.Physical(HorizontalAlign.Left);
         label.Style.VerticalAlign = VerticalAlign.Middle;
 
         panel.Items.Add(box);

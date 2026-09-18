@@ -162,7 +162,7 @@ function QuoteItemAdjustmentsList({
                 </Grid>
                 <Grid item xs={12}>
                     <div className="div-container">
-                        <KendoGrid
+                        <KendoGrid scrollable="scrollable"
                             className="main-grid"
                             style={{height: "400px"}}
                             data={orderBy(

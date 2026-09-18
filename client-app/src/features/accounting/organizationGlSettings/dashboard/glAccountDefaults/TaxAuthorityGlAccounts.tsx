@@ -53,7 +53,7 @@ const TaxAuthorityGlAccounts = () => {
             <TaxAuthorityGlAccountsForm selectedAccountingCompanyId={selectedAccountingCompanyId} onSubmit={onSubmit} />
 
             <div className="div-container">
-              <KendoGrid
+              <KendoGrid scrollable="scrollable"
                 data={orderBy(
                   taxAuthGlAccounts ? taxAuthGlAccounts : [],
                     sort

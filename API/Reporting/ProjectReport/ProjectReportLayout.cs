@@ -34,8 +34,34 @@ internal static class ProjectReportLayout
     public const double RowHeightCm = 0.55;
     public const int RowCap = 500; // safety valve; Excel remains the full, uncapped export
 
+    /// <summary>
+    /// Telerik resolves BiDi with the item's Culture as the paragraph direction (items inherit it
+    /// from the Report; with none set it falls back to the thread culture, i.e. LTR on the
+    /// server). Under LTR a neutral trailing an Arabic run — the colon in "رقم :", a closing
+    /// bracket — takes the paragraph direction and ends up at the far RIGHT of the box, visually
+    /// before the label. An RTL culture fixes the paragraph direction; nothing else depends on it
+    /// because every number/date is formatted to a string in C# before it reaches a TextBox.
+    /// Unicode direction marks (U+200F) are NOT an alternative: Telerik ignores them and Amiri
+    /// draws a visible glyph for them.
+    /// </summary>
+    public static readonly System.Globalization.CultureInfo ReportCulture = new("ar-EG");
+
+    /// <summary>
+    /// Under an RTL <see cref="ReportCulture"/> Telerik reads <see cref="HorizontalAlign"/>
+    /// logically — Left is the line START (visual right) and Right the line END (visual left) —
+    /// while item Locations stay physical. Every report was laid out in physical terms, so all
+    /// TextAlign assignments go through this to keep "Right" meaning the right-hand edge.
+    /// </summary>
+    public static HorizontalAlign Physical(HorizontalAlign align) => align switch
+    {
+        HorizontalAlign.Left => HorizontalAlign.Right,
+        HorizontalAlign.Right => HorizontalAlign.Left,
+        _ => align,
+    };
+
     public static void ApplyPageSettings(Report report)
     {
+        report.Culture = ReportCulture;
         report.Width = Unit.Cm(PageWidthCm);
         report.PageSettings.PaperKind = System.Drawing.Printing.PaperKind.A4;
         report.PageSettings.Landscape = true;
@@ -64,7 +90,7 @@ internal static class ProjectReportLayout
         };
         ApplyFont(tb.Style, bold);
         tb.Style.Font.Size = Unit.Point(size);
-        tb.Style.TextAlign = align;
+        tb.Style.TextAlign = Physical(align);
         tb.Style.VerticalAlign = VerticalAlign.Middle;
         if (color.HasValue) tb.Style.Color = color.Value;
         return tb;

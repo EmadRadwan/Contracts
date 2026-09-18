@@ -513,7 +513,7 @@ export default function ProductionRunTasksList({
       {isLoading ? (
         <LoadingComponent message={getTranslatedLabel("manufacturing.jobshop.prodruntasks.list.loading", "Loading Tasks...")} />
       ) : (
-        <Grid
+        <Grid scrollable="scrollable"
           data={orderBy(productionRunTasks ?? [], sort).slice(
             page.skip,
             page.take + page.skip

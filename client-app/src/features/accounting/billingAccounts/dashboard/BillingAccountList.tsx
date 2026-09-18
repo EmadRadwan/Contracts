@@ -79,7 +79,7 @@ function BillingAccountsList() {
             <AccountingMenu selectedMenuItem="/billingAccounts"
                             onMenuSelect={handleMenuSelect}/>
             <Paper elevation={5} className="div-container-withBorderCurved">
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                     style={{ height: "65vh" }}
                     data={gridData}
                     total={gridData.total}

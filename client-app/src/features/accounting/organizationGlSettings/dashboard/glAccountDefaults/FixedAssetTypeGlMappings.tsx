@@ -48,7 +48,7 @@ const FixedAssetTypeGlMappings = () => {
             />
 
             <div className="div-container">
-              <KendoGrid
+              <KendoGrid scrollable="scrollable"
                 data={orderBy([], sort).slice(page.skip, page.take + page.skip)}
                 sortable={true}
                 sort={sort}

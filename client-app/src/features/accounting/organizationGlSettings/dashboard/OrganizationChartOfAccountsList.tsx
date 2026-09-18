@@ -83,7 +83,7 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
     //console.log(props.dataItem);
     if (items) {
       return (
-        <KendoGrid
+        <KendoGrid scrollable="scrollable"
           data={items}
           detail={DetailComponent}
           dataItemKey="glAccountId"
@@ -314,7 +314,7 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
               </Button>
             </Box>
             <TabPanel value="1">
-            <KendoGrid
+            <KendoGrid scrollable="scrollable"
               style={{ height: "65vh", flex: 1 }}
               resizable={true}
               sortable={true}
@@ -353,7 +353,7 @@ const OrganizationChartOfAccountsList = ({ companyId }: Props) => {
           </TabPanel>
           <TabPanel value="2">
             <Grid item xs={12}>
-              <KendoGrid
+              <KendoGrid scrollable="scrollable"
                 style={{ height: "55vh", width: "60%" }}
                 resizable={true}
                 filterable={true}

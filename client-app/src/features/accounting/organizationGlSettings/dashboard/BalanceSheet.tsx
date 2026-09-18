@@ -220,7 +220,7 @@ const BalanceSheet = () => {
                         <>
                             <Grid item xs={12}>
                                 <div className="div-container">
-                                    <KendoGrid
+                                    <KendoGrid scrollable="scrollable"
                                         style={{height: "500px", flex: 1}}
                                         data={processedDataAssets}           // ← now use processedData
                                         sortable={true}
@@ -272,7 +272,7 @@ const BalanceSheet = () => {
                             </Grid>
                             <Grid item xs={12}>
                                 <div className="div-container">
-                                    <KendoGrid
+                                    <KendoGrid scrollable="scrollable"
                                         style={{height: "500px", flex: 1}}
                                         sortable={true}
                                         resizable={true}
@@ -324,7 +324,7 @@ const BalanceSheet = () => {
                             </Grid>
                             <Grid item xs={12}>
                                 <div className="div-container">
-                                    <KendoGrid
+                                    <KendoGrid scrollable="scrollable"
                                         style={{height: "500px", flex: 1}}
                                         sortable={true}
                                         resizable={true}

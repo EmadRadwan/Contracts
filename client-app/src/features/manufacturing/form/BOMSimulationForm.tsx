@@ -221,7 +221,7 @@ const BOMSimulationForm = ({
             <Grid container mt={2}>
               <Grid item xs={12}>
                 <div className="div-container">
-                  <KendoGrid style={{ height: "35vh" }}
+                  <KendoGrid scrollable="scrollable" style={{ height: "35vh" }}
                              data={gridData}
                              rows={{ data: MainProductRow }}
                              resizable={true}

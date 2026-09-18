@@ -317,7 +317,7 @@ const ReceiveInventoryList = () => {
                     {hasReceivedItems && (
                         <Grid item xs={10} style={{marginBottom: "20px"}}>
                             <h3>Previously Received Items</h3>
-                            <KendoGrid data={receivedItemsData ?? []} resizable={true} reorderable={true}>
+                            <KendoGrid scrollable="scrollable" data={receivedItemsData ?? []} resizable={true} reorderable={true}>
                                 <Column field="shipmentId" title="Shipment ID" width={100}/>
                                 <Column field="receiptId" title="Receipt" width={100}/>
                                 <Column field="datetimeReceived" title="Date" width={150} format="{0: dd/MM/yyyy}"/>
@@ -335,7 +335,7 @@ const ReceiveInventoryList = () => {
                         
 
                     <Grid item xs={12}>
-                        <KendoGrid
+                        <KendoGrid scrollable="scrollable"
                             data={orderItemsData ?? []}
                             resizable={true}
                             reorderable={true}

@@ -142,7 +142,7 @@ export default function InventoryItemDetailsList() {
                     </Grid>}
                     <Grid item xs={12}>
                         <div className="div-container">
-                            <KendoGrid
+                            <KendoGrid scrollable="scrollable"
                                 style={{height: '65vh'}}
                                 resizable={true}
                                 filterable={true}

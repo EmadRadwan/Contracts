@@ -26,7 +26,7 @@ const OrderPaymentPreferenceList = ({
         </Typography>
       </Grid>
       <Grid container>
-        <KendoGrid
+        <KendoGrid scrollable="scrollable"
           style={{ height: "30vh" }}
           resizable={true}
           pageable={true}

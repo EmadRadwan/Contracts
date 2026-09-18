@@ -172,7 +172,7 @@ const TrialBalance = () => {
           {isSuccess && (
             <Grid container>
               <div className="div-container">
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                     className="main-grid"
                     data={processedData}           // ← now use processedData
                     sortable={true}

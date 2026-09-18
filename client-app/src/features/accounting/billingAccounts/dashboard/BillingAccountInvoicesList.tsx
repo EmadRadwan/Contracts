@@ -158,7 +158,7 @@ const BillingAccountInvoicesList = () => {
         </Grid>
         <Grid item xs={12}>
           <div className="div-container">
-            <KendoGrid style={{ height: "35vh" }} data={billingAccountInvoices}>
+            <KendoGrid scrollable="scrollable" style={{ height: "35vh" }} data={billingAccountInvoices}>
               <Column field="invoiceId" title="Invoice" cells={{ data: InvoiceCell }} />
               <Column field="invoiceTypeDescription" title="Invoice Type" />
               <Column field="statusDescription" title="Status" />

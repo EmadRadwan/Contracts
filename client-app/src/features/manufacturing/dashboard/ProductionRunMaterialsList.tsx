@@ -65,7 +65,7 @@ export default function ProductionRunMaterialsList({
         {/* Render the first grid when the status is 'Created', 'Scheduled', or 'Confirmed' */}
         {shouldUseMaterialsQuery && (
             <div className="div-container">
-              <KendoGrid
+              <KendoGrid scrollable="scrollable"
                   data={orderBy(
                       productionRunMaterialsData ? productionRunMaterialsData : [],
                       sort
@@ -127,7 +127,7 @@ export default function ProductionRunMaterialsList({
         )}
         {/* Render the second grid when the status is 'Running' or 'Completed' */}
         {shouldUseIssueComponentsQuery && (
-            <KendoGrid
+            <KendoGrid scrollable="scrollable"
                 data={orderBy(
                     productionRunIssueMaterialsData ? productionRunIssueMaterialsData : [],
                     sort

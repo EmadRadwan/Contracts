@@ -199,7 +199,7 @@ const TrialBalanceByLevel = () => {
                 </FormControl>
               </Grid>
               <div className="div-container">
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                     className="main-grid"
                     data={filteredNodes}
                     resizable={true}

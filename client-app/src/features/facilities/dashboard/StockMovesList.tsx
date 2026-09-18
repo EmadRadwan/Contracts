@@ -55,7 +55,7 @@ const StockMovesList = () => {
           </Grid>
           <Grid item xs={12}>
             <div className="div-container">
-              <KendoGrid style={{ height: "35vh" }} data={stockMoves?.moveByOisgirInfoList ?? []}>
+              <KendoGrid scrollable="scrollable" style={{ height: "35vh" }} data={stockMoves?.moveByOisgirInfoList ?? []}>
                 
               </KendoGrid>
             </div>

@@ -153,7 +153,7 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
                         </Grid>
                         <Grid item xs={12}>
                             <ReversalLegend />
-                            <KendoGrid
+                            <KendoGrid scrollable="scrollable"
                                 style={{ height: '300px' }}
                                 data={orderBy(accountingTransEntries ?? [], sort).slice(page.skip, page.take + page.skip)}
                                 sortable

@@ -23,7 +23,7 @@ const PaymentApplicationsInvGrid: React.FC<PaymentApplicationGridProps> = ({
                 {getTranslatedLabel(`${localizationKey}.appliedInvoices`, "Applied Invoices")}
             </Typography>
             <div className={disabled ? "grid-disabled" : "grid-normal"}>
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                     data={paymentApplications}
                     rowHeight={40}
                     className="kendo-grid-alternate"

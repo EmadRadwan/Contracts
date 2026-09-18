@@ -204,7 +204,7 @@ function EmployeeAdvancesList() {
             />
             <Paper elevation={5} className="div-container-withBorderCurved">
                 <div className="div-container">
-                    <KendoGrid
+                    <KendoGrid scrollable="scrollable"
                         style={{ height: "70vh" }}
                         data={eAdvances ? eAdvances : { data: [], total: 0 }}
                         resizable

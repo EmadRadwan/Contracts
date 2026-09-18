@@ -115,7 +115,7 @@ export default function StoresList() {
                             <div className="div-container">
                                 <ExcelExport data={dataToExport}
                                              ref={_export}>
-                                    <KendoGrid style={{height: "70vh", width: "94vw", flex: 1}}
+                                    <KendoGrid scrollable="scrollable" style={{height: "70vh", width: "94vw", flex: 1}}
                                                data={stores ? stores : {data: [], total: data!.total || 0}}
                                                resizable={true}
                                                filterable={true}

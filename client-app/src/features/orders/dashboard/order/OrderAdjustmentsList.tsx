@@ -164,7 +164,7 @@ export default function OrderAdjustmentsList({ onClose }: Props) {
         </Grid>
         <Grid container>
           <div className="div-container">
-            <KendoGrid
+            <KendoGrid scrollable="scrollable"
               className="main-grid kendo-grid-styled"
               style={{ height: "300px" }}
               data={orderBy(

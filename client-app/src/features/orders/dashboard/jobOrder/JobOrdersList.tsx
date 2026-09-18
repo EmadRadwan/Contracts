@@ -184,7 +184,7 @@ export default function JobOrdersList() {
                                 <Grid container>
                                     <div className="div-container">
                                         <ExcelExport data={dataToExport} ref={_export}>
-                                            <KendoGrid
+                                            <KendoGrid scrollable="scrollable"
                                                 className="small-line-height"
                                                 style={{height: "65vh", width: "94vw", flex: 1}}
                                                 data={data ? handleDatesArray(data.data) : []}

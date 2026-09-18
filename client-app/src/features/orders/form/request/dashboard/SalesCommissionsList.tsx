@@ -163,7 +163,7 @@ export default function SalesCommissionsList() {
         <>
             <SalesRequestMenu selectedMenuItem="sales-commissions" />
             <Paper elevation={5} className="div-container-withBorderCurved">
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                     style={{ height: "75vh", width: "94vw", flex: 1 }}
                     resizable
                     filterable

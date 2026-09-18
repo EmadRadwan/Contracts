@@ -106,7 +106,7 @@ export default function ProjectCommissionRatesList() {
         <>
             <SalesRequestMenu selectedMenuItem="project-commission-rates" />
             <Paper elevation={5} className="div-container-withBorderCurved">
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                     style={{ height: "75vh", width: "94vw", flex: 1 }}
                     resizable
                     filterable

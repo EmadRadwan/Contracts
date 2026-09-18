@@ -59,7 +59,7 @@ const ProductCategoryGlAccounts = () => {
             />
 
             <div className="div-container">
-              <KendoGrid
+              <KendoGrid scrollable="scrollable"
                 data={orderBy(
                   productCategoryGlAccounts ? productCategoryGlAccounts : [],
                   sort

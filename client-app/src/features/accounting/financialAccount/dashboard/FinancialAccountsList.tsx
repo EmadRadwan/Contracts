@@ -101,7 +101,7 @@ const FinancialAccountsList = () => {
                             <div className="div-container">
                                 <ExcelExport data={dataToExport}
                                              ref={_export}>
-                                    <KendoGrid style={{height: "65vh", width: "94vw", flex: 1}}
+                                    <KendoGrid scrollable="scrollable" style={{height: "65vh", width: "94vw", flex: 1}}
                                                data={financialAccounts ? financialAccounts : {
                                                    data: [],
                                                    total: data!.total || 0

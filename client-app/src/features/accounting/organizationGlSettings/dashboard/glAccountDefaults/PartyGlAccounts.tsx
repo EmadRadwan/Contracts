@@ -72,7 +72,7 @@ const PartyGlAccounts = () => {
                         />
 
                         <div className="div-container">
-                            <KendoGrid
+                            <KendoGrid scrollable="scrollable"
                                 data={processedData}
                                 sortable={true}
                                 resizable={true}

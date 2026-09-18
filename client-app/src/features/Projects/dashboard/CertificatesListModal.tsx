@@ -351,7 +351,7 @@ export default function CertificatesListModal({
                     : getTranslatedLabel("projects.certificate.modal.titleSupply", "Certificates List - Supply")}
             </Typography>
 
-            <KendoGrid
+            <KendoGrid scrollable="scrollable"
                 data={displayData}
                 sortable={false} // Disabled to preserve perfect order
                 style={{ height: "70vh" }}

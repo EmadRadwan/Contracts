@@ -53,7 +53,7 @@ const FinAccountGlAccounts = () => {
             <FinAccountGlAccountsForm selectedAccountingCompanyId={selectedAccountingCompanyId} onSubmit={onSubmit} />
 
             <div className="div-container">
-              <KendoGrid
+              <KendoGrid scrollable="scrollable"
                 data={orderBy(
                     finAccountGlAccounts ? finAccountGlAccounts : [],
                     sort

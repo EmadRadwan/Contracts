@@ -33,7 +33,7 @@ export default function JobQuoteMarketingPkgItemsList({onClose}: Props) {
             <Grid container columnSpacing={1}>
                 <Grid container>
                     <div className="div-container">
-                        <KendoGrid style={{height: "300px"}}
+                        <KendoGrid scrollable="scrollable" style={{height: "300px"}}
                                    data={orderBy(relatedRecords ? relatedRecords : [], sort).slice(page.skip, page.take + page.skip)}
                                    sortable={true}
                                    sort={sort}

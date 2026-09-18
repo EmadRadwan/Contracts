@@ -217,7 +217,7 @@ export default function InvoiceItemsList({invoiceId, canEdit, refreshTotal}: Pro
             </ModalContainer>)}
             <Grid container columnSpacing={1} direction={"column"} alignItems="flex-start">
 
-                <KendoGrid className="main-grid" style={{height: "40vh"}}
+                <KendoGrid scrollable="scrollable" className="main-grid" style={{height: "40vh"}}
                            data={orderBy(uiInvoiceItems ? uiInvoiceItems : [], sort).slice(page.skip, page.take + page.skip)}
                            sortable={true}
                            sort={sort}

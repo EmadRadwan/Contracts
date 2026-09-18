@@ -104,7 +104,7 @@ export default function PartyContactsList() {
 
             <Grid container>
                 <div className="div-container">
-                    <KendoGrid className="main-grid" style={{height: "300px"}}
+                    <KendoGrid scrollable="scrollable" className="main-grid" style={{height: "300px"}}
                                data={orderBy(partyContacts2, sort).slice(page.skip, page.take + page.skip)}
                                sortable={true}
                                sort={sort}

@@ -101,7 +101,7 @@ function FixedAssetsList() {
                 <Grid container columnSpacing={1} alignItems="center">
                     <Grid item xs={12}>
                         <div className="div-container">
-                            <KendoGrid style={{height: '65vh'}}
+                            <KendoGrid scrollable="scrollable" style={{height: '65vh'}}
                                        data={fixedAssets ? fixedAssets : {data: [], total: data!.total}}
                                        resizable={true}
                                        filterable={true}

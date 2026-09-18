@@ -63,7 +63,7 @@ const AgreementTermsList = () => {
         <Grid container columnSpacing={1} alignItems="center">
           <Grid item xs={12}>
             <div className="div-container">
-              <KendoGrid style={{ height: "45vh" }} data={agreementTerms ?? []} resizable>
+              <KendoGrid scrollable="scrollable" style={{ height: "45vh" }} data={agreementTerms ?? []} resizable>
                 {/* <GridToolbar>
                   <Grid container>
                     <Grid item xs={4}>

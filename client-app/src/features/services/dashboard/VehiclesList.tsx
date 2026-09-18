@@ -131,7 +131,7 @@ export default function VehiclesList() {
                         <div className="div-container">
                             <ExcelExport data={dataToExport}
                                          ref={_export}>
-                                <KendoGrid className="small-line-height" style={{height: "65vh", width: "94vw", flex: 1}}
+                                <KendoGrid scrollable="scrollable" className="small-line-height" style={{height: "65vh", width: "94vw", flex: 1}}
                                            data={vehicles ? vehicles : {data: [], total: data!.total}}
                                            resizable={true}
                                            filterable={true}

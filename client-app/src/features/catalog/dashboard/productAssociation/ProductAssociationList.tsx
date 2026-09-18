@@ -112,7 +112,7 @@ export default function ProductAssociationsList() {
 
                     <Grid container p={2}>
                         <div className="div-container">
-                            <KendoGrid
+                            <KendoGrid scrollable="scrollable"
                                 className="main-grid"
                                 style={{ height: '300px' }}
                                 data={processedData}

@@ -167,7 +167,7 @@ const RolesList = () => {
                                 {usersLoading ? (
                                     <LoadingComponent message={getTranslatedLabel("roles.users.loading", "Loading users...")} />
                                 ) : (
-                                    <KendoGrid
+                                    <KendoGrid scrollable="scrollable"
                                         style={{ height: 'calc(75vh - 80px)' }}
                                         data={usersInRole || []}
                                         resizable={true}

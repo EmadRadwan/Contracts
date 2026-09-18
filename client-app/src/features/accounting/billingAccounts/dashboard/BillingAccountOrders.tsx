@@ -87,7 +87,7 @@ const BillingAccountOrders = () => {
         </Grid>
         <Grid item xs={12}>
           <div className="div-container">
-            <KendoGrid style={{ height: "35vh" }} data={billingAccountOrders}>
+            <KendoGrid scrollable="scrollable" style={{ height: "35vh" }} data={billingAccountOrders}>
               <Column title="Order" cells={{ data: OrderCell }} />
               <Column
                 field="paymentMethodTypeDescription"

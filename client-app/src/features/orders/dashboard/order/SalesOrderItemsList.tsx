@@ -440,7 +440,7 @@ export default function SalesOrderItemsList({orderFormEditMode, orderId}: Props)
                 </Grid>
             ) : (
             <div style={{ width: '100%', overflowX: 'auto' }}>
-                    <KendoGrid className="main-grid kendo-grid-styled" style={{height: "40vh", minWidth: '100%'}}
+                    <KendoGrid scrollable="scrollable" className="main-grid kendo-grid-styled" style={{height: "40vh", minWidth: '100%'}}
                                data={orderBy(adjustedOrderItems ? adjustedOrderItems : [], sort).slice(page.skip, page.take + page.skip)}
                                sortable={true}
                                sort={sort}

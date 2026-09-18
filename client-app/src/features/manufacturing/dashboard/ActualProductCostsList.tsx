@@ -42,7 +42,7 @@ export default function ActualProductCostsList({ productionRunId, productId }: P
 
     if (children) {
       return (
-          <KendoGrid data={children}>
+          <KendoGrid scrollable="scrollable" data={children}>
             <GridToolbar>
               <Typography variant="body1">
                 {`Child Cost Components for ${costComponentTypeDescription} (${
@@ -183,7 +183,7 @@ export default function ActualProductCostsList({ productionRunId, productId }: P
             </Grid>
             <Grid item xs={12}>
               <div className="div-container">
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                     style={{ height: "400px" }}
                     resizable={true}
                     skip={page.skip}

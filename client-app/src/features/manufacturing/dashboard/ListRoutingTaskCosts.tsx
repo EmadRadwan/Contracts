@@ -220,7 +220,7 @@ export default function ListRoutingTaskCosts() {
                     </Grid>
                     <Grid container p={2}>
                         <div className="div-container">
-                            <KendoGrid
+                            <KendoGrid scrollable="scrollable"
                                 className="main-grid basic-table hover-bar"
                                 data={costCalcs}
                                 resizable

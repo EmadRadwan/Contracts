@@ -43,7 +43,7 @@ export default function ProductionRunProducedInventoryList({
       }, [data])
 
       return (
-        <KendoGrid
+        <KendoGrid scrollable="scrollable"
             style={{ height: "400px" }}
             data={orderBy(
               inventoryItems ?? [],

@@ -154,7 +154,7 @@ export default function JobQuoteAdjustmentsList({showList, onClose, quoteId, wid
                             </Grid>
                             <Grid container>
                                 <div className="div-container">
-                                    <KendoGrid className="main-grid" style={{height: "300px"}}
+                                    <KendoGrid scrollable="scrollable" className="main-grid" style={{height: "300px"}}
                                                data={orderBy(uiJobQuoteLevelAdjustments ? uiJobQuoteLevelAdjustments : [], sort).slice(page.skip, page.take + page.skip)}
                                                sortable={true}
                                                sort={sort}

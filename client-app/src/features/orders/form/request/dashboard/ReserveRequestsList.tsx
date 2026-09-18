@@ -129,7 +129,7 @@ function ReserveRequestsList() {
                 <Grid container columnSpacing={1} alignItems="center">
                     <Grid item xs={12}>
                         <div className="div-container">
-                            <KendoGrid
+                            <KendoGrid scrollable="scrollable"
                                 style={{ height: "65vh", flex: 1 }}
                                 data={rRequests || { data: [], total: 0 }}
                                 resizable

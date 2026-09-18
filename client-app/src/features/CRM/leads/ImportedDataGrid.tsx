@@ -285,7 +285,7 @@ const ImportedDataGrid: React.FC<ImportedDataGridProps> = ({ data, fileName, onC
           </Alert>
         )}
 
-        <KendoGrid
+        <KendoGrid scrollable="scrollable"
           data={processed}
           {...dataState}
           onDataStateChange={(e) => setDataState(e.dataState)}

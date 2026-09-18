@@ -88,7 +88,7 @@ export default function GLAccountTypeDefaults() {
             <GlAccountTypeDefaultsForm selectedAccountingCompanyId={selectedAccountingCompanyId} onSubmit={onSubmit} />
 
             <div className="div-container">
-              <KendoGrid
+              <KendoGrid scrollable="scrollable"
                 data={orderBy(
                   glAccountTypeDefaultsData ? glAccountTypeDefaultsData : [],
                   sort

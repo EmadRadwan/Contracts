@@ -83,7 +83,7 @@ export default function InvoicesList() {
                 <Grid container columnSpacing={1} alignItems="center">
                     <Grid item xs={12}>
                         <div className="div-container">
-                            <KendoGrid
+                            <KendoGrid scrollable="scrollable"
                                 style={{flex: 1}}
                                 data={invoices ? invoices : {data: [], total: 0}}
                                 resizable={true}

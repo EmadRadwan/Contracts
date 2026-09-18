@@ -78,7 +78,7 @@ const AssignPaymentApplicationForm = ({ paymentId }: Props) => {
           <Typography variant="h6" m={1}>
             Possible invoices to apply
           </Typography>
-          <KendoGrid
+          <KendoGrid scrollable="scrollable"
             className="main-grid"
             style={{ height: "auto", width: "65vw" }}
             data={possibleInvoices ?? []}

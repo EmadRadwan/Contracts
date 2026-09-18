@@ -84,7 +84,7 @@ const GlVarianceReason = () => {
             />
 
             <div className="div-container">
-              <KendoGrid
+              <KendoGrid scrollable="scrollable"
                 data={orderBy(
                   glAccountsVarianceReasons ? glAccountsVarianceReasons : [],
                   sort

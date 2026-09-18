@@ -126,7 +126,7 @@ function BOMProductComponentsList() {
 
                         <Grid item xs={12}>
                             <div className="div-container">
-                                <KendoGrid
+                                <KendoGrid scrollable="scrollable"
                                     style={{height: '65vh', flex: 1}}
                                     data={data ? {data: data.data, total: data.total} : {data: [], total: 0}}
                                     resizable={true}

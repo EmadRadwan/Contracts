@@ -258,7 +258,7 @@ export default function OrderPaymentsList({onClose, orderId, partyId}: Props) {
             <Grid container paddingLeft={1}>
                 <Grid container>
                     <div className="div-container">
-                        <KendoGrid className="main-grid" style={{height: "350px"}}
+                        <KendoGrid scrollable="scrollable" className="main-grid" style={{height: "350px"}}
                                    data={data}
                                    onItemChange={itemChange}
                                    editable={{ enabled: true, mode: "inline" }}

@@ -235,7 +235,7 @@ export const ReturnGrid: React.FC<ReturnGridProps> = ({
     };
 
     return (
-        <KendoGrid data={gridData} style={{ maxHeight: '400px', overflowY: 'auto' }} resizable={true} reorderable={true}>
+        <KendoGrid scrollable="scrollable" data={gridData} style={{ maxHeight: '400px', overflowY: 'auto' }} resizable={true} reorderable={true}>
             <GridColumn field="orderId" title={getTranslatedLabel('Order', 'OrderItems')} cells={{ data: OrderIdCell }} />
             <GridColumn field="productId" title={getTranslatedLabel('Product', 'Product')} cells={{ data: ProductIdCell }} />
             <GridColumn field="description" title={getTranslatedLabel('Common', 'Description')} cells={{ data: DescriptionCell }} />

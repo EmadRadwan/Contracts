@@ -22,7 +22,7 @@ const PaymentApplicationsTaxGrid: React.FC<PaymentApplicationGridProps> = ({
                 {getTranslatedLabel(`${localizationKey}.appliedTaxAuthorities`, "Applied Tax Authorities")}
             </Typography>
             <div className={disabled ? "grid-disabled" : "grid-normal"}>
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                     data={paymentApplications}
                     rowHeight={40}
                     className="kendo-grid-alternate"

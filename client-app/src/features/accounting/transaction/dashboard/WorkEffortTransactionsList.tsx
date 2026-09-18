@@ -98,7 +98,7 @@ export default function WorkEffortTransactionsList({ onClose, workEffortId }: Pr
                 <Grid container>
                     <div className="div-container">
                         <ReversalLegend />
-                        <KendoGrid
+                        <KendoGrid scrollable="scrollable"
                             style={{ height: "450px", width: "850px" }}
                             data={orderBy(acctTransEntries || [], sort).slice(page.skip, page.take + page.skip)}
                             sortable={true}

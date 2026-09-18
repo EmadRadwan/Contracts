@@ -109,7 +109,7 @@ const FacilityPickingList = () => {
           </Grid>
           <Grid item xs={12}>
             <div className="div-container">
-              <KendoGrid style={{ height: "35vh" }} data={ordersForPickOrMoveStock ?? []}>
+              <KendoGrid scrollable="scrollable" style={{ height: "35vh" }} data={ordersForPickOrMoveStock ?? []}>
                 <GridToolbar>
                   <Typography variant="body1">
                     Orders to pick move

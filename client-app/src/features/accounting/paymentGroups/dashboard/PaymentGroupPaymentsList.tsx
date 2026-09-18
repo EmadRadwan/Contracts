@@ -132,7 +132,7 @@ const PaymentGroupPaymentsList = () => {
           {`Payments for Payment Group: ${selectedPaymentGroup.paymentGroupId}`}
         </Typography>
 
-        <KendoGrid
+        <KendoGrid scrollable="scrollable"
           style={{ height: "65vh", flex: 1 }}
           data={data ?? []}
           resizable={true}

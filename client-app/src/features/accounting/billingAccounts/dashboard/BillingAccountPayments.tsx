@@ -93,7 +93,7 @@ const BillingAccountPayments = () => {
         </Grid>
         <Grid item xs={12}>
           <div className="div-container">
-            <KendoGrid style={{ height: "35vh" }} data={billingAccountPayments}>
+            <KendoGrid scrollable="scrollable" style={{ height: "35vh" }} data={billingAccountPayments}>
               <GridToolbar>
                 <Grid container>
                   <Grid item xs={3}>

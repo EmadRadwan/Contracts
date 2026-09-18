@@ -87,7 +87,7 @@ const InvoicePaymentApplicationsList = ({invoiceId, onClose, canEdit }: Props) =
       <Grid container columnSpacing={1} alignItems="center">
         <Grid item xs={12}>
           <div className="div-container">
-            <KendoGrid
+            <KendoGrid scrollable="scrollable"
               style={{  flex: 1 }}
               data={paymentApplications ? paymentApplications : []}
               resizable={true}

@@ -40,7 +40,7 @@ export default function ProductionRunTasksListSimple({ productionRunTasksData }:
 
     return (
         <Fragment>
-            <KendoGrid
+            <KendoGrid scrollable="scrollable"
                 data={orderBy(productionRunTasksData ?? [], sort).slice(page.skip, page.take + page.skip)}
                 onSortChange={(e: GridSortChangeEvent) => setSort(e.sort)}
                 skip={page.skip}

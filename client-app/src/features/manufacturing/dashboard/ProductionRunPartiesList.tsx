@@ -43,7 +43,7 @@ export default function ProductionRunPartiesList({productionRunId}: Props) {
     
     return <Fragment>
 
-        <KendoGrid 
+        <KendoGrid scrollable="scrollable" 
                    data={orderBy(productionRunParties ? productionRunParties : [], sort).slice(page.skip, page.take + page.skip)}
                    sortable={true}
                    sort={sort}

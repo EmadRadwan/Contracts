@@ -137,7 +137,7 @@ const PhysicalInventoryList = () => {
           {showGrid && (
             <Grid item xs={12}>
               <div className="div-container">
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                   style={{ height: "40vh" }}
                   data={data ?? []}
                   resizable={true}

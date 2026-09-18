@@ -162,7 +162,7 @@ export default function ManageRolesModal({ partyId, partyName, open, onClose }: 
                         {isLoadingPartyRoles ? (
                             <LoadingComponent message="Loading roles..." />
                         ) : (
-                            <KendoGrid
+                            <KendoGrid scrollable="scrollable"
                                 data={partyRoles || []}
                                 style={{ height: "300px" }}
                             >

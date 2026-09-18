@@ -137,7 +137,7 @@ function AgreementsList() {
         <Grid container columnSpacing={1} alignItems="center">
           <Grid item xs={12}>
             <div className="div-container">
-              <KendoGrid
+              <KendoGrid scrollable="scrollable"
                 style={{ height: "70vh" }}
                 data={
                   agreements ? agreements : { data: [], total: data!.total }

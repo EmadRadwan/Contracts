@@ -43,7 +43,7 @@ const ForeignExchangeRatesList = () => {
           <Grid container p={1}>
             <div className="div-container">
               <ExcelExport data={dataToExport} ref={_export}>
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                   data={orderBy(fxRates ? fxRates : [], sort).slice(
                     page.skip,
                     page.take + page.skip

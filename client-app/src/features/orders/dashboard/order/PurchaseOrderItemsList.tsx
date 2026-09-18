@@ -344,7 +344,7 @@ export default function PurchaseOrderItemsList({orderFormEditMode, orderId}: Pro
                     :
                      <Grid item xs={12}
                     >
-                        <KendoGrid className="main-grid" style={{height: "30vh"}}
+                        <KendoGrid scrollable="scrollable" className="main-grid" style={{height: "30vh"}}
                                    data={orderBy(uiOrderItems ? uiOrderItems : [], sort).slice(page.skip, page.take + page.skip)}
                                    sortable={true}
                                    sort={sort}

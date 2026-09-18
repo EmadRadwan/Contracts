@@ -172,7 +172,7 @@ function OrderItemAdjustmentsList({
                 
             </Grid>
             <Grid item xs={12}>
-                <KendoGrid className="main-grid kendo-grid-styled" style={{height: "400px"}}
+                <KendoGrid scrollable="scrollable" className="main-grid kendo-grid-styled" style={{height: "400px"}}
                            data={orderBy(uiOrderItemAdjustments ? uiOrderItemAdjustments : [], sort).slice(page.skip, page.take + page.skip)}
                            sortable={true}
                            sort={sort}

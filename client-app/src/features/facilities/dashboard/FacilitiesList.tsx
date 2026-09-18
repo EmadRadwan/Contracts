@@ -95,7 +95,7 @@ export default function FacilitiesList() {
         <>
             <FacilityMenu/>
             <Paper elevation={5} className={`div-container-withBorderCurved`}>
-                <KendoGrid
+                <KendoGrid scrollable="scrollable"
                     data={facilities ? facilities : []}
                     sortable={true}
                     sort={sort}
