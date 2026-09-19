@@ -1,3 +1,4 @@
+using Application.Accounting.Payments;
 using Application.Accounting.Services;
 using Application.Core;
 using Domain;
@@ -147,16 +148,16 @@ public class ResetProjectCertificate
                     // Cleanup Payment related artifacts (Accounting Transactions, etc. from ResetPayment.cs)
                     if (paymentIds.Any())
                     {
-                        var paymentTransEntries = await _context.AcctgTransEntries
-                            .Where(ate => _context.AcctgTrans.Any(at =>
-                                at.AcctgTransId == ate.AcctgTransId && paymentIds.Contains(at.PaymentId)))
+                        // Through PurgeAcctgTransAsync so the attributes and GL reconciliation rows go
+                        // with the transactions: a payment that was reset or voided earlier carries
+                        // REVERSED_BY / REVERSAL_OF rows, and ACCTTX_ATTR (NO ACTION) rejects the
+                        // whole SaveChanges if they are left behind. The reversal is anchored to the
+                        // same payment, so the cancelled pair is removed together and nets out.
+                        var paymentTransIds = await _context.AcctgTrans
+                            .Where(at => paymentIds.Contains(at.PaymentId))
+                            .Select(at => at.AcctgTransId)
                             .ToListAsync(cancellationToken);
-                        _context.AcctgTransEntries.RemoveRange(paymentTransEntries);
-
-                        var paymentTrans = await _context.AcctgTrans.Where(at => paymentIds.Contains(at.PaymentId))
-                            .ToListAsync(cancellationToken);
-                        await _periodGuard.EnsureOpenForAcctgTransAsync(paymentTrans.Select(t => t.AcctgTransId), cancellationToken);
-                        _context.AcctgTrans.RemoveRange(paymentTrans);
+                        await PaymentArtifactCleanup.PurgeAcctgTransAsync(_context, paymentTransIds, cancellationToken);
                     }
 
                     var paymentApplications = await _context.PaymentApplications
@@ -202,16 +203,10 @@ public class ResetProjectCertificate
 
                             // 4. Remove Accounting Transactions for the linked certificate
                             var trans = await _context.AcctgTrans
-                                .Where(at => at.WorkEffortId == linkedCert.WorkEffortId).ToListAsync(cancellationToken);
-                            foreach (var tran in trans)
-                            {
-                                var entries = await _context.AcctgTransEntries
-                                    .Where(e => e.AcctgTransId == tran.AcctgTransId).ToListAsync(cancellationToken);
-                                _context.AcctgTransEntries.RemoveRange(entries);
-                            }
-
-                            await _periodGuard.EnsureOpenForAcctgTransAsync(trans.Select(t => t.AcctgTransId), cancellationToken);
-                            _context.AcctgTrans.RemoveRange(trans);
+                                .Where(at => at.WorkEffortId == linkedCert.WorkEffortId)
+                                .Select(at => at.AcctgTransId)
+                                .ToListAsync(cancellationToken);
+                            await PaymentArtifactCleanup.PurgeAcctgTransAsync(_context, trans, cancellationToken);
 
                             _context.InventoryItemDetails.RemoveRange(details);
 
@@ -262,18 +257,11 @@ public class ResetProjectCertificate
                                         allCleanedInvoiceIds.AddRange(invoiceIds);
                                     }
 
-                                    var trans = await _context.AcctgTrans.Where(at => at.ReceiptId == receipt.ReceiptId)
+                                    var trans = await _context.AcctgTrans
+                                        .Where(at => at.ReceiptId == receipt.ReceiptId)
+                                        .Select(at => at.AcctgTransId)
                                         .ToListAsync(cancellationToken);
-                                    foreach (var tran in trans)
-                                    {
-                                        var entries = await _context.AcctgTransEntries
-                                            .Where(e => e.AcctgTransId == tran.AcctgTransId)
-                                            .ToListAsync(cancellationToken);
-                                        _context.AcctgTransEntries.RemoveRange(entries);
-                                    }
-
-                                    await _periodGuard.EnsureOpenForAcctgTransAsync(trans.Select(t => t.AcctgTransId), cancellationToken);
-                                    _context.AcctgTrans.RemoveRange(trans);
+                                    await PaymentArtifactCleanup.PurgeAcctgTransAsync(_context, trans, cancellationToken);
 
                                     _context.InventoryItemDetails.RemoveRange(details);
 
@@ -362,17 +350,11 @@ public class ResetProjectCertificate
                             .ToListAsync(cancellationToken);
                         _context.ShipmentItemBillings.RemoveRange(sibs);
 
-                        var shipTrans = await _context.AcctgTrans.Where(at => shipmentIds.Contains(at.ShipmentId))
+                        var shipTrans = await _context.AcctgTrans
+                            .Where(at => shipmentIds.Contains(at.ShipmentId))
+                            .Select(at => at.AcctgTransId)
                             .ToListAsync(cancellationToken);
-                        foreach (var tran in shipTrans)
-                        {
-                            var entries = await _context.AcctgTransEntries
-                                .Where(e => e.AcctgTransId == tran.AcctgTransId).ToListAsync(cancellationToken);
-                            _context.AcctgTransEntries.RemoveRange(entries);
-                        }
-
-                        await _periodGuard.EnsureOpenForAcctgTransAsync(shipTrans.Select(t => t.AcctgTransId), cancellationToken);
-                        _context.AcctgTrans.RemoveRange(shipTrans);
+                        await PaymentArtifactCleanup.PurgeAcctgTransAsync(_context, shipTrans, cancellationToken);
 
                         var shipmentStatuses = await _context.ShipmentStatuses
                             .Where(ss => shipmentIds.Contains(ss.ShipmentId)).ToListAsync(cancellationToken);
@@ -474,18 +456,10 @@ public class ResetProjectCertificate
 
                     // 4. Remove Accounting Transactions for the certificate
                     var trans = await _context.AcctgTrans
-                        .Where(at =>
-                            at.WorkEffortId == request.WorkEffortId )
+                        .Where(at => at.WorkEffortId == request.WorkEffortId)
+                        .Select(at => at.AcctgTransId)
                         .ToListAsync(cancellationToken);
-                    foreach (var tran in trans)
-                    {
-                        var entries = await _context.AcctgTransEntries.Where(e => e.AcctgTransId == tran.AcctgTransId)
-                            .ToListAsync(cancellationToken);
-                        _context.AcctgTransEntries.RemoveRange(entries);
-                    }
-
-                    await _periodGuard.EnsureOpenForAcctgTransAsync(trans.Select(t => t.AcctgTransId), cancellationToken);
-                    _context.AcctgTrans.RemoveRange(trans);
+                    await PaymentArtifactCleanup.PurgeAcctgTransAsync(_context, trans, cancellationToken);
 
                     _context.InventoryItemDetails.RemoveRange(details);
                 }
@@ -574,17 +548,11 @@ public class ResetProjectCertificate
             _context.InvoiceItemAttributes.RemoveRange(invItemAttrs);
 
             // From ResetInvoice.cs: Accounting Transactions for Invoice
-            var invoiceTransEntries = await _context.AcctgTransEntries
-                .Where(ate =>
-                    _context.AcctgTrans.Any(at =>
-                        at.AcctgTransId == ate.AcctgTransId && invoiceIds.Contains(at.InvoiceId)))
+            var invoiceTrans = await _context.AcctgTrans
+                .Where(at => invoiceIds.Contains(at.InvoiceId))
+                .Select(at => at.AcctgTransId)
                 .ToListAsync(cancellationToken);
-            _context.AcctgTransEntries.RemoveRange(invoiceTransEntries);
-
-            var invoiceTrans = await _context.AcctgTrans.Where(at => invoiceIds.Contains(at.InvoiceId))
-                .ToListAsync(cancellationToken);
-            await _periodGuard.EnsureOpenForAcctgTransAsync(invoiceTrans.Select(t => t.AcctgTransId), cancellationToken);
-            _context.AcctgTrans.RemoveRange(invoiceTrans);
+            await PaymentArtifactCleanup.PurgeAcctgTransAsync(_context, invoiceTrans, cancellationToken);
 
             _context.InvoiceItems.RemoveRange(invoiceItems);
             var invoices = await _context.Invoices.Where(i => invoiceIds.Contains(i.InvoiceId))

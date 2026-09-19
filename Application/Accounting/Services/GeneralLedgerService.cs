@@ -6532,10 +6532,23 @@ public class GeneralLedgerService : IGeneralLedgerService
 
     public async Task<bool> DeletePostdatedChequeAccountingTransaction(string paymentId)
     {
+        // A CHECK_ISSUED already cancelled by a reversal — and the contra transaction itself — are
+        // closed history under the Sep 2026 soft-delete policy: they stay in the ledger (they net to
+        // zero) and a re-post adds a fresh transaction instead. Deleting one also fails outright:
+        // its REVERSED_BY / REVERSAL_OF rows on ACCTG_TRANS_ATTRIBUTE are not loaded here, so MySQL
+        // refuses the parent row (FK ACCTTX_ATTR). That was the "Error updating Payment: an error
+        // occurred while saving the entity changes" seen when editing a payment after ResetPayment.
+        var reversalMarkers = _context.AcctgTransAttributes
+            .Where(a => a.AttrName == AcctgTransReversal.ReversedBy ||
+                        a.AttrName == AcctgTransReversal.ReversalOf)
+            .Select(a => a.AcctgTransId);
+
         var existingTrans = await _context.AcctgTrans
             .Include(t => t.AcctgTransEntries)
+            .Include(t => t.AcctgTransAttributes)
             .FirstOrDefaultAsync(t => t.PaymentId == paymentId &&
-                                      t.AcctgTransTypeId == "CHECK_ISSUED");
+                                      t.AcctgTransTypeId == "CHECK_ISSUED" &&
+                                      !reversalMarkers.Contains(t.AcctgTransId));
 
         if (existingTrans == null)
             return false;
@@ -6544,7 +6557,10 @@ public class GeneralLedgerService : IGeneralLedgerService
         // memo re-posted in place while the period is open. A closed period refuses it.
         await _periodGuard.EnsureOpenForAcctgTransAsync(new[] { existingTrans.AcctgTransId });
 
-        // Option A: Hard delete (common if transaction is not yet posted/final)
+        // Option A: Hard delete (common if transaction is not yet posted/final).
+        // The attributes go with it — ACCTTX_ATTR is NO ACTION in the database and ClientSetNull in
+        // the model, so EF will not clear them for us and the DELETE would be rejected.
+        _context.AcctgTransAttributes.RemoveRange(existingTrans.AcctgTransAttributes);
         _context.AcctgTransEntries.RemoveRange(existingTrans.AcctgTransEntries);
         _context.AcctgTrans.Remove(existingTrans);
 

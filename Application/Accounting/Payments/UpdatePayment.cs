@@ -285,9 +285,18 @@ public class UpdatePayment
                     paymentType?.ParentTypeId == "DISBURSEMENT" &&
                     (!string.IsNullOrEmpty(dto.ChequeNumber) || dto.ChequeDate.HasValue);
 
+                // Only a *live* CHECK_ISSUED counts. After ResetPayment the original and its contra
+                // both sit against the payment, already net to zero, and must stay (Sep 2026
+                // soft-delete policy) — mirrors the filter in DeletePostdatedChequeAccountingTransaction.
+                var reversalMarkers = _context.AcctgTransAttributes
+                    .Where(a => a.AttrName == AcctgTransReversal.ReversedBy ||
+                                a.AttrName == AcctgTransReversal.ReversalOf)
+                    .Select(a => a.AcctgTransId);
+
                 var hasExistingPostdatedTrans = await _context.AcctgTrans
                     .AnyAsync(x => x.PaymentId == dto.PaymentId &&
-                                   x.AcctgTransTypeId == "CHECK_ISSUED",
+                                   x.AcctgTransTypeId == "CHECK_ISSUED" &&
+                                   !reversalMarkers.Contains(x.AcctgTransId),
                         cancellationToken);
 
                 if (shouldHavePostdatedTrans)

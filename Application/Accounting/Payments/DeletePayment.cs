@@ -139,27 +139,17 @@ public class DeletePayment
 
                 if (relatedTransIds.Any())
                 {
-                    // Delete AcctgTransEntries first
-                    var entriesToDelete = await _context.AcctgTransEntries
-                        .Where(e => relatedTransIds.Contains(e.AcctgTransId))
-                        .ToListAsync(cancellationToken);
+                    cleanedAcctgEntries = await _context.AcctgTransEntries
+                        .CountAsync(e => relatedTransIds.Contains(e.AcctgTransId), cancellationToken);
+                    cleanedAcctgTrans = relatedTransIds.Count;
 
-                    if (entriesToDelete.Any())
-                    {
-                        _context.AcctgTransEntries.RemoveRange(entriesToDelete);
-                        cleanedAcctgEntries = entriesToDelete.Count;
-                    }
-
-                    // Then delete AcctgTrans
-                    var transToDelete = await _context.AcctgTrans
-                        .Where(t => relatedTransIds.Contains(t.AcctgTransId))
-                        .ToListAsync(cancellationToken);
-
-                    if (transToDelete.Any())
-                    {
-                        _context.AcctgTrans.RemoveRange(transToDelete);
-                        cleanedAcctgTrans = transToDelete.Count;
-                    }
+                    // Entries, attributes and reconciliation rows go with the headers. Doing it by
+                    // hand here used to leave ACCTG_TRANS_ATTRIBUTE behind, and FK ACCTTX_ATTR (NO
+                    // ACTION) then rejects the whole SaveChanges for any transaction that carries a
+                    // REVERSED_BY / REVERSAL_OF link. Unreachable today — the ledger-history guard
+                    // above refuses a payment with any transaction — but it must not be a trap if
+                    // that guard is ever relaxed.
+                    await PaymentArtifactCleanup.PurgeAcctgTransAsync(_context, relatedTransIds, cancellationToken);
 
                     // Save cleanup of accounting transactions
                     await _context.SaveChangesAsync(cancellationToken);
