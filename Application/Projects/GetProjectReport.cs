@@ -1124,13 +1124,73 @@ namespace Application.Projects
                     MonthsBetweenInstallments = x.sr.MonthsBetweenInstallments
                 }).ToList();
 
-                // Available/reserved rows — this project's APARTMENT products with no sales request
-                // and not already SOLD. Current inventory, not date-filtered.
+                // Pending rows — units whose only live sales request is still SALES_REQUEST_CREATED
+                // (reserved, awaiting approval). Not sold, so they carry no price/date on the sheet
+                // and stay out of the sold counts, but they are listed with the request number,
+                // customer and status. Before 2026-09-20 such a unit appeared NOWHERE: not sold
+                // (not approved) and not available (it had a request) — A6-15 on نسيم was the case.
+                var pendingRaw = await (from sr in _context.SalesRequests.AsNoTracking()
+                    join prod in _context.Products.AsNoTracking() on sr.ProductId equals prod.ProductId
+                    join pt in _context.ProductTypes.AsNoTracking() on prod.ProductTypeId equals pt.ProductTypeId
+                    join customer in _context.Parties.AsNoTracking() on sr.FromPartyId equals customer.PartyId into custGroup
+                    from cust in custGroup.DefaultIfEmpty()
+                    join employee in _context.Parties.AsNoTracking() on sr.EmployeePartyId equals employee.PartyId into empGroup
+                    from emp in empGroup.DefaultIfEmpty()
+                    where sr.StatusId == "SALES_REQUEST_CREATED"
+                          && prod.ProjectId == request.ProjectId
+                          && prod.ApartmentStatusId != "APARTMENT_SOLD"
+                          && !prod.SalesRequests.Any(o => o.StatusId == "SALES_REQUEST_APPROVED")
+                    select new { sr, prod, pt, cust, emp }).ToListAsync(ct);
+
+                // One row per unit — the most recent pending request if there are several.
+                var pendingRecords = pendingRaw
+                    .GroupBy(x => x.prod.ProductId)
+                    .Select(g => g.OrderByDescending(x => x.sr.CreatedStamp).First())
+                    .Select(x => new SalesRequestOrApartmentRecord
+                    {
+                        IsSold = false,
+                        SalesRequestId = x.sr.SalesRequestId,
+                        ApartmentId = x.sr.ProductId,
+                        ApartmentName = x.prod.ProductName ?? "",
+                        ProductTypeDescription = language == "ar" ? (x.pt.DescriptionArabic ?? x.pt.Description) : x.pt.Description,
+                        FromPartyId = x.sr.FromPartyId,
+                        FromPartyName = x.cust != null ? x.cust.Description ?? "" : "",
+                        EmployeePartyId = x.sr.EmployeePartyId,
+                        EmployeeName = x.emp != null ? x.emp.Description ?? "" : "",
+                        BuildingNumber = x.prod.BuildingNumber ?? "",
+                        ProjectName = SalesRequestProjectionHelpers.GetProjectName(x.prod.ProjectId, projectNameLookup),
+                        FloorNumber = SalesRequestProjectionHelpers.GetFloorName(x.prod.FloorNumber, floorMap),
+                        ApartmentSpaceM2 = x.prod.ApartmentSpaceM2 ?? 0m,
+                        GardenSpaceM2 = x.prod.GardenSpaceM2,
+                        ApartmentStatusDescription = SalesRequestProjectionHelpers.GetApartmentStatusDescription(x.prod.ApartmentStatusId, apartmentStatusLookup),
+                        MaintenanceDeposit = x.sr.MaintenanceDeposit,
+                        IsChequesDelivered = x.sr.IsChequesDelivered,
+                        StatusId = x.sr.StatusId ?? "",
+                        StatusDescription = SalesRequestProjectionHelpers.GetSalesRequestStatusDescription(x.sr.StatusId, salesRequestStatusLookup),
+                        TotalPrice = x.sr.TotalPrice,
+                        AdvancePayment = x.sr.AdvancePayment,
+                        AdvancePercent = x.sr.AdvancePercent,
+                        MaintenancePercent = x.sr.MaintenancePercent,
+                        SaleDate = x.sr.SaleDate,
+                        Comments = x.sr.Comments,
+                        CreatedStamp = x.sr.CreatedStamp,
+                        LastUpdatedStamp = x.sr.LastUpdatedStamp,
+                        ApartmentPricePerM2 = x.sr.ApartmentPricePerM2,
+                        GardenPricePerM2 = x.sr.GardenPricePerM2,
+                        Discount = x.sr.Discount,
+                        NumberOfInstallments = x.sr.NumberOfInstallments,
+                        DateOfFirstInstallment = x.sr.DateOfFirstInstallment,
+                        MonthsBetweenInstallments = x.sr.MonthsBetweenInstallments
+                    }).ToList();
+
+                // Available/reserved rows — this project's APARTMENT products with no live sales
+                // request (a cancelled one doesn't count) and not already SOLD. Current inventory,
+                // not date-filtered.
                 var availableRaw = await (from prod in _context.Products.AsNoTracking()
                     join pt in _context.ProductTypes.AsNoTracking() on prod.ProductTypeId equals pt.ProductTypeId
                     where prod.ProductTypeId == "APARTMENT"
                           && prod.ProjectId == request.ProjectId
-                          && !prod.SalesRequests.Any()
+                          && !prod.SalesRequests.Any(o => o.StatusId != "SALES_REQUEST_CANCELLED")
                           && prod.ApartmentStatusId != "APARTMENT_SOLD"
                     select new { prod, pt }).ToListAsync(ct);
 
@@ -1172,6 +1232,7 @@ namespace Application.Projects
                 }).ToList();
 
                 return soldRecords
+                    .Concat(pendingRecords)
                     .Concat(availableRecords)
                     .OrderBy(x => x.BuildingNumber)
                     .ThenBy(x => x.FloorNumber)

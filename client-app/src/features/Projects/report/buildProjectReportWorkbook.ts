@@ -562,7 +562,7 @@ export async function buildProjectReportWorkbook(
         wsSales.getRow(1).height = 30;
 
         // Legend explaining the amber (not-sold) rows.
-        wsSales.getCell('A2').value = utils.rtlEmbed('الصفوف الكهرمانية = وحدات بدون طلب بيع (متاحة/محجوزة)، غير مباعة.');
+        wsSales.getCell('A2').value = utils.rtlEmbed('الصفوف الكهرمانية = وحدات غير مباعة: متاحة، أو محجوزة بطلب بيع قيد الاعتماد (يظهر رقم الطلب والعميل بدون سعر).');
         wsSales.mergeCells('A2:Q2');
         wsSales.getRow(2).font = { name: 'Amiri', size: 10, italic: true, color: { argb: NOT_SOLD_TEXT } };
         wsSales.getRow(2).alignment = { horizontal: 'center', vertical: 'middle' };
