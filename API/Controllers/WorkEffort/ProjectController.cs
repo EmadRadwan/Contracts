@@ -278,7 +278,13 @@ public class ProjectController : BaseApiController
         // Management-fee inputs for ProjectReportDto.Summary. excludedBuildings is a comma-separated
         // list (e.g. "A1,A2") — a single param avoids array query-string serialization quirks.
         [FromQuery] decimal? mgmtFeePercent = null,
-        [FromQuery] string? excludedBuildings = null)
+        [FromQuery] string? excludedBuildings = null,
+        [FromQuery] DateTime? commissionsStartDate = null,
+        [FromQuery] DateTime? commissionsEndDate = null,
+        [FromQuery] bool commissionsAllData = false,
+        [FromQuery] DateTime? mgmtFeeStartDate = null,
+        [FromQuery] DateTime? mgmtFeeEndDate = null,
+        [FromQuery] bool mgmtFeeAllData = false)
     {
         return HandleResult(Result<ProjectReportDto>.Success(await Mediator.Send(new GetProjectReport.Query
         {
@@ -292,6 +298,12 @@ public class ProjectController : BaseApiController
             SalesStartDate = salesStartDate,
             SalesEndDate = salesEndDate,
             SalesAllData = salesAllData,
+            CommissionsStartDate = commissionsStartDate,
+            CommissionsEndDate = commissionsEndDate,
+            CommissionsAllData = commissionsAllData,
+            MgmtFeeStartDate = mgmtFeeStartDate,
+            MgmtFeeEndDate = mgmtFeeEndDate,
+            MgmtFeeAllData = mgmtFeeAllData,
             MgmtFeePercent = mgmtFeePercent ?? 12m,
             ExcludedBuildings = SplitCsv(excludedBuildings)
         })));
@@ -323,7 +335,13 @@ public class ProjectController : BaseApiController
         [FromQuery] DateTime? salesEndDate,
         [FromQuery] bool salesAllData,
         [FromQuery] decimal? mgmtFeePercent = null,
-        [FromQuery] string? excludedBuildings = null)
+        [FromQuery] string? excludedBuildings = null,
+        [FromQuery] DateTime? commissionsStartDate = null,
+        [FromQuery] DateTime? commissionsEndDate = null,
+        [FromQuery] bool commissionsAllData = false,
+        [FromQuery] DateTime? mgmtFeeStartDate = null,
+        [FromQuery] DateTime? mgmtFeeEndDate = null,
+        [FromQuery] bool mgmtFeeAllData = false)
     {
         var dto = await Mediator.Send(new GetProjectReport.Query
         {
@@ -337,6 +355,12 @@ public class ProjectController : BaseApiController
             SalesStartDate = salesStartDate,
             SalesEndDate = salesEndDate,
             SalesAllData = salesAllData,
+            CommissionsStartDate = commissionsStartDate,
+            CommissionsEndDate = commissionsEndDate,
+            CommissionsAllData = commissionsAllData,
+            MgmtFeeStartDate = mgmtFeeStartDate,
+            MgmtFeeEndDate = mgmtFeeEndDate,
+            MgmtFeeAllData = mgmtFeeAllData,
             MgmtFeePercent = mgmtFeePercent ?? 12m,
             ExcludedBuildings = SplitCsv(excludedBuildings)
         });
@@ -344,7 +368,9 @@ public class ProjectController : BaseApiController
         var period =
             $"المصاريف: {FormatPeriod(expensesAllData, expensesStartDate, expensesEndDate)} · " +
             $"الإيرادات: {FormatPeriod(revenuesAllData, revenuesStartDate, revenuesEndDate)} · " +
-            $"المبيعات: {FormatPeriod(salesAllData, salesStartDate, salesEndDate)}";
+            $"المبيعات: {FormatPeriod(salesAllData, salesStartDate, salesEndDate)} · " +
+            $"العمولات: {FormatPeriod(commissionsAllData, commissionsStartDate, commissionsEndDate)} · " +
+            $"مبلغ الإدارة: {FormatPeriod(mgmtFeeAllData, mgmtFeeStartDate, mgmtFeeEndDate)}";
 
         var bytes = _projectReportService.Render(dto, projectName, projectId, period);
 

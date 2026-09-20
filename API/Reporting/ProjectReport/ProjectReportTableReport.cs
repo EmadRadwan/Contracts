@@ -20,15 +20,17 @@ namespace API.Reporting.ProjectReport;
 public sealed class ProjectReportTableReport : Report
 {
     public ProjectReportTableReport(
-        string title, IReadOnlyList<ProjectReportColumn> columns, IList rows, string projectName, string projectId)
+        string title, IReadOnlyList<ProjectReportColumn> columns, IList rows, string projectName, string projectId,
+        ProjectReportSections.SectionTotal? total = null)
     {
         Name = "ProjectReportTableReport";
         ApplyPageSettings(this);
         Items.Add(BuildRunningHeader(projectName, projectId));
-        Items.Add(BuildSection(title, columns, rows));
+        Items.Add(BuildSection(title, columns, rows, total));
     }
 
-    private static DetailSection BuildSection(string title, IReadOnlyList<ProjectReportColumn> columns, IList rows)
+    private static DetailSection BuildSection(string title, IReadOnlyList<ProjectReportColumn> columns, IList rows,
+        ProjectReportSections.SectionTotal? total)
     {
         var section = new DetailSection { Name = "secTable" };
         section.Items.Add(Text("secTitle", title, 0, 0, PageWidthCm, 0.55, 12, true, HorizontalAlign.Right));
@@ -86,6 +88,30 @@ public sealed class ProjectReportTableReport : Report
                 section.Items.Add(tb);
                 cursor += w;
             }
+            y += RowHeightCm;
+        }
+
+        // Optional bold total row: the amount sits under its column, the label fills the rest of
+        // the width to its right (same literal-TextBox technique as every other cell).
+        if (total != null)
+        {
+            var amountIdx = columns.ToList().FindIndex(c => c.Field == total.Field);
+            if (amountIdx < 0) amountIdx = columns.Count - 1;
+            double amountX = PageWidthCm - colWidths.Take(amountIdx + 1).Sum();
+            var amountW = colWidths[amountIdx];
+            var fill = System.Drawing.Color.FromArgb(0xD1, 0xFA, 0xE5);
+
+            var lbl = Text("totLbl", total.Label, amountX + amountW, y, PageWidthCm - amountX - amountW, RowHeightCm,
+                9, true, HorizontalAlign.Right);
+            lbl.CanGrow = false;
+            lbl.Style.BackgroundColor = fill;
+            section.Items.Add(lbl);
+
+            var val = Text("totVal", total.Amount.ToString("N2"), amountX, y, amountW, RowHeightCm,
+                9, true, HorizontalAlign.Right);
+            val.CanGrow = false;
+            val.Style.BackgroundColor = fill;
+            section.Items.Add(val);
             y += RowHeightCm;
         }
 

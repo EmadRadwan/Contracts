@@ -17,6 +17,8 @@ export interface ProjectReportWorkbookOptions {
     expensesPeriod: string;
     revenuesPeriod: string;
     salesPeriod: string;
+    commissionsPeriod: string;
+    mgmtFeePeriod: string;
 }
 
 const utils = {
@@ -42,6 +44,8 @@ export async function buildProjectReportWorkbook(
     const expPeriod = opts.expensesPeriod;
     const revPeriod = opts.revenuesPeriod;
     const salPeriod = opts.salesPeriod;
+    const comPeriod = opts.commissionsPeriod;
+    const feePeriod = opts.mgmtFeePeriod;
 
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'Golden Land System';
@@ -84,9 +88,15 @@ export async function buildProjectReportWorkbook(
 
     // Generic "payment-style" block on its OWN sheet (own header/autofilter/total so the
     // user can sort & filter each block independently). amountCol is 1-based.
+    //
+    // `groups` (optional) partitions the rows into contiguous blocks, in the order given, and
+    // adds one subtotal row per block ahead of the grand total. Each subtotal is a SUBTOTAL(109)
+    // over that block's own row range, so it stays filter-aware like the grand total; the rows
+    // are written block-by-block precisely so those ranges are contiguous.
     const addPaymentSheet = (
         sheetName: string, title: string, titleFill: string, headerFill: string, altFill: string,
-        headers: string[], items: any[], rowMapper: (x: any) => any[], amountCol: number, widths: number[]
+        headers: string[], items: any[], rowMapper: (x: any) => any[], amountCol: number, widths: number[],
+        groups?: { label: string; match: (x: any) => boolean }[]
     ) => {
         const ws = workbook.addWorksheet(sheetName);
         ws.views = [{ rightToLeft: true }];
@@ -99,36 +109,63 @@ export async function buildProjectReportWorkbook(
         headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
 
         const dataStart = headerRow.number + 1;
-        items.forEach((it, idx) => {
-            const row = ws.addRow(rowMapper(it));
-            const c = row.getCell(amountCol);
-            c.numFmt = '#,##0.00';
-            c.alignment = { horizontal: 'right' };
-            if (idx % 2 === 1) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: altFill } };
+        const blocks: { label: string; items: any[]; start: number; end: number }[] = groups
+            ? groups.map(g => ({ label: g.label, items: items.filter(g.match), start: 0, end: 0 }))
+            : [{ label: '', items, start: 0, end: 0 }];
+        let idx = 0;
+        blocks.forEach(b => {
+            b.start = ws.rowCount + 1;
+            b.items.forEach(it => {
+                const row = ws.addRow(rowMapper(it));
+                const c = row.getCell(amountCol);
+                c.numFmt = '#,##0.00';
+                c.alignment = { horizontal: 'right' };
+                if (idx % 2 === 1) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: altFill } };
+                idx++;
+            });
+            b.end = ws.rowCount;
         });
         const dataEnd = ws.rowCount;
 
         const amountLetter = ws.getColumn(amountCol).letter;
-        const totalArr: any[] = headers.map(() => '');
-        totalArr[amountCol - 2] = utils.rtlEmbed('الإجمالي');
-        totalArr[amountCol - 1] = { formula: `SUBTOTAL(109,${amountLetter}${dataStart}:${amountLetter}${dataEnd})` };
-        const totalRow = ws.addRow(totalArr);
-        totalRow.font = { name: 'Amiri', size: 12, bold: true };
-        totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: headerFill } };
-        totalRow.getCell(amountCol).numFmt = '#,##0.00';
-        totalRow.getCell(amountCol).alignment = { horizontal: 'right' };
+        const addTotalRow = (label: string, from: number, to: number, bold: boolean, fill: string) => {
+            const arr: any[] = headers.map(() => '');
+            arr[amountCol - 2] = utils.rtlEmbed(label);
+            arr[amountCol - 1] = to >= from
+                ? { formula: `SUBTOTAL(109,${amountLetter}${from}:${amountLetter}${to})` }
+                : 0;
+            const row = ws.addRow(arr);
+            row.font = { name: 'Amiri', size: bold ? 12 : 11, bold: true };
+            row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill } };
+            row.getCell(amountCol).numFmt = '#,##0.00';
+            row.getCell(amountCol).alignment = { horizontal: 'right' };
+        };
+        if (groups) {
+            blocks.forEach(b => addTotalRow(`${b.label} (${b.items.length})`, b.start, b.end, false, altFill));
+        }
+        addTotalRow('الإجمالي', dataStart, dataEnd, true, headerFill);
 
         ws.autoFilter = { from: { row: headerRow.number, column: 1 }, to: { row: dataEnd, column: headers.length } };
         ws.columns.forEach((col, i) => (col.width = widths[i] || 15));
         return ws;
     };
 
+    // Direct payments: paid vs. still-open (PMNT_NOT_PAID). Mirrors ProjectReportSummaryDto.IsUnpaid.
+    const isUnpaid = (p: any) => p.statusId === 'PMNT_NOT_PAID';
+    const settlementLabel = (p: any) => (isUnpaid(p) ? 'غير مدفوعة' : 'مدفوعة');
+
     // ---------- data partitions still needed for the detail sheets ----------
     // Maintenance deposit is custodial, not project revenue — it gets its own sheet.
     const isMaintenance = (r: any) =>
         r.paymentTypeId === 'RECEIPT_MAINTENANCE_AMOUNT' || r.revenueCategory === 'Maintenance Deposit';
+    // The revenues sheet lists every receipt in the revenue window — advance, installments AND
+    // the maintenance receipts — as two contiguous blocks with their own subtotals, so the first
+    // block still reconciles to the summary's الإيراد المتفق عليه (maintenance is custodial and
+    // stays out of that figure and of the management-fee base).
     const agreedRevenues = (data.revenues || []).filter(r => !isMaintenance(r));
-    const maintenanceRevenues = (data.revenues || []).filter(isMaintenance);
+    const maintenanceReceipts = (data.revenues || []).filter(isMaintenance);
+    // The وديعة الصيانة sheet itself is built from the sales requests (data.maintenanceDeposits).
+    const maintenanceDeposits = data.maintenanceDeposits || [];
     const commissions = data.paidCommissions || [];
     const commissionEntries = data.paidCommissionAcctgEntries || [];
 
@@ -163,7 +200,9 @@ export async function buildProjectReportWorkbook(
 
     sumSection('المصاريف', 'FF1E40AF');
     sumLine('المستخلصات', s.certificateExpenses);
-    sumLine('الدفعات المباشرة', s.directPayments);
+    sumLine(`الدفعات المباشرة — مدفوعة (${s.directPaymentsPaidCount ?? 0})`, s.directPaymentsPaid ?? s.directPayments);
+    sumLine(`الدفعات المباشرة — غير مدفوعة (${s.directPaymentsUnpaidCount ?? 0})`, s.directPaymentsUnpaid ?? 0);
+    sumLine('إجمالي الدفعات المباشرة', s.directPayments);
     sumLine('قيود محاسبية', s.accountingTransactions);
     sumLine('رواتب المشروع', s.projectPayroll);
     sumLine('المصاريف التشغيلية', s.operatingExpenses);
@@ -177,7 +216,8 @@ export async function buildProjectReportWorkbook(
     wsSum.addRow([]);
 
     sumSection('وديعة الصيانة', 'FF0F766E');
-    sumLine('إجمالي مبلغ الصيانة', s.maintenanceScheduled);
+    sumLine(`عدد الوحدات (${s.maintenanceUnitsCollected ?? 0} محصلة بالكامل)`, s.maintenanceUnits ?? 0, { int: true });
+    sumLine('إجمالي مبلغ الصيانة (حسب طلبات البيع)', s.maintenanceScheduled);
     sumLine('مبالغ الصيانة المحصلة', s.maintenanceCollected);
     sumLine('مبالغ الصيانة المتبقية', s.maintenanceOutstanding);
     wsSum.addRow([]);
@@ -196,13 +236,13 @@ export async function buildProjectReportWorkbook(
     sumLine('إجمالي العمولات', s.commissionsPaid + s.commissionsPending, { bold: true, fill: 'FFFDE9C8' });
     wsSum.addRow([]);
 
-    sumSection('مبلغ الإدارة', 'FF1E40AF');
+    sumSection(`مبلغ الإدارة (${feePeriod})`, 'FF1E40AF');
     const excludedLabel = s.mgmtExcludedBuildings.length
         ? ` (عدا ${s.mgmtExcludedBuildings.join('، ')})`
         : '';
     sumLine(`الإيراد المتفق عليه${excludedLabel}`, s.mgmtFeeBase);
     sumLine(`نسبة الإدارة (${s.mgmtFeePercent}%)`, s.mgmtFee);
-    sumLine('يُخصم: المصاريف التشغيلية', -s.operatingExpenses);
+    sumLine('يُخصم: المصاريف التشغيلية (فترة مبلغ الإدارة)', -(s.mgmtFeeOperatingExpenses ?? s.operatingExpenses));
     sumLine('صافي مبلغ الإدارة المتبقي', s.mgmtFeeNet, { bold: true, fill: 'FFBFDBFE' });
     wsSum.addRow([]);
 
@@ -282,18 +322,23 @@ export async function buildProjectReportWorkbook(
             'الدفعات المباشرة',
             `${projectName} - الدفعات المباشرة (${expPeriod})`,
             'FF10B981', 'FFD1FAE5', 'FFF0FDF4',
-            ['رقم الدفعة', 'النوع', 'من طرف', 'إلى طرف', 'الحالة', 'التاريخ', 'المبلغ', 'رقم المرجع',
+            ['رقم الدفعة', 'النوع', 'من طرف', 'إلى طرف', 'حالة السداد', 'الحالة', 'التاريخ', 'المبلغ', 'رقم المرجع',
                 'طريقة الدفع', 'الشيك', 'تاريخ الشيك', 'مركز التكلفة', 'ملاحظات'],
             data.directPayments,
             (p: any) => [
                 utils.safeString(p.paymentId), utils.safeString(p.paymentTypeDescription),
                 utils.safeString(p.partyIdFromName), utils.safeString(p.partyIdToName),
+                settlementLabel(p),
                 utils.safeString(p.dueStatusArabic || p.statusDescription), utils.formatDate(p.effectiveDate),
                 p.amount || 0, utils.safeString(p.paymentRefNum || ''),
                 utils.safeString(p.paymentMethodTypeDescription), utils.safeString(p.chequeNumber),
                 utils.formatDate(p.chequeDate), utils.safeString(p.costCenterDescription), utils.safeString(p.comments)
             ],
-            7, [18, 20, 32, 32, 18, 14, 18, 18, 20, 16, 16, 25, 45]
+            8, [18, 20, 32, 32, 14, 18, 14, 18, 18, 20, 16, 16, 25, 45],
+            [
+                { label: 'إجمالي المدفوعة', match: (p) => !isUnpaid(p) },
+                { label: 'إجمالي غير المدفوعة', match: isUnpaid },
+            ]
         );
     }
 
@@ -364,7 +409,11 @@ export async function buildProjectReportWorkbook(
     ];
     const revWidths = [16, 10, 10, 14, 14, 32, 20, 20, 18, 18, 16, 24, 25, 16, 16, 18, 18, 12];
 
-    const addRevenueSheet = (sheetName: string, title: string, rows: any[], amountHeader: string) => {
+    // `blocks` are written contiguously in order, each followed (after the data) by its own
+    // SUBTOTAL(109) row over its range, then the grand total — same pattern as the direct payments.
+    const addRevenueSheet = (
+        sheetName: string, title: string, blocks: { label: string; rows: any[] }[], amountHeader: string
+    ) => {
         const ws = workbook.addWorksheet(sheetName);
         ws.views = [{ rightToLeft: true }];
         const headers = revHeaders.slice();
@@ -377,34 +426,43 @@ export async function buildProjectReportWorkbook(
         hRow.alignment = { horizontal: 'center', vertical: 'middle' };
 
         const dataStart = hRow.number + 1;
-        rows.forEach((rev: any) => {
-            const row = ws.addRow([
-                rev.paymentId, rev.year, rev.quarter, rev.buildingNumber, rev.apartmentId,
-                utils.safeString(rev.customerName), utils.safeString(rev.revenueCategory),
-                rev.scheduledAmount || 0, rev.collectedAmount || 0, rev.outstandingAmount || 0,
-                utils.safeString(rev.paymentStatus), utils.safeString(rev.overdueBucket),
-                utils.safeString(rev.dueStatusArabic), utils.formatDate(rev.dueDate),
-                utils.safeString(rev.deservedToday), utils.safeString(rev.deservedWithinWeek),
-                utils.safeString(rev.deservedWithinMonth), utils.safeString(rev.lateDue)
-            ]);
-            [8, 9, 10].forEach(col => {
-                const cell = row.getCell(col);
-                cell.numFmt = '#,##0.00';
-                cell.alignment = { horizontal: 'right' };
+        const ranges: { label: string; n: number; start: number; end: number }[] = [];
+        blocks.forEach(b => {
+            const start = ws.rowCount + 1;
+            b.rows.forEach((rev: any) => {
+                const row = ws.addRow([
+                    rev.paymentId, rev.year, rev.quarter, rev.buildingNumber, rev.apartmentId,
+                    utils.safeString(rev.customerName), utils.safeString(rev.revenueCategory),
+                    rev.scheduledAmount || 0, rev.collectedAmount || 0, rev.outstandingAmount || 0,
+                    utils.safeString(rev.paymentStatus), utils.safeString(rev.overdueBucket),
+                    utils.safeString(rev.dueStatusArabic), utils.formatDate(rev.dueDate),
+                    utils.safeString(rev.deservedToday), utils.safeString(rev.deservedWithinWeek),
+                    utils.safeString(rev.deservedWithinMonth), utils.safeString(rev.lateDue)
+                ]);
+                [8, 9, 10].forEach(col => {
+                    const cell = row.getCell(col);
+                    cell.numFmt = '#,##0.00';
+                    cell.alignment = { horizontal: 'right' };
+                });
             });
+            ranges.push({ label: b.label, n: b.rows.length, start, end: ws.rowCount });
         });
         const dataEnd = ws.rowCount;
 
-        const tRow = ws.addRow([
-            '', '', '', '', '', '', 'الإجمالي',
-            { formula: `SUBTOTAL(109,H${dataStart}:H${dataEnd})` },
-            { formula: `SUBTOTAL(109,I${dataStart}:I${dataEnd})` },
-            { formula: `SUBTOTAL(109,J${dataStart}:J${dataEnd})` },
-            '', '', '', '', '', '', '', ''
-        ]);
-        tRow.font = { name: 'Amiri', size: 12, bold: true };
-        tRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBFDBFE' } };
-        for (let i = 8; i <= 10; i++) tRow.getCell(i).numFmt = '#,##0.00';
+        const addTotal = (label: string, from: number, to: number, bold: boolean, fill: string) => {
+            const sub = (col: string) => (to >= from ? { formula: `SUBTOTAL(109,${col}${from}:${col}${to})` } : 0);
+            const tRow = ws.addRow([
+                '', '', '', '', '', '', utils.rtlEmbed(label), sub('H'), sub('I'), sub('J'),
+                '', '', '', '', '', '', '', ''
+            ]);
+            tRow.font = { name: 'Amiri', size: bold ? 12 : 11, bold: true };
+            tRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fill } };
+            for (let i = 8; i <= 10; i++) tRow.getCell(i).numFmt = '#,##0.00';
+        };
+        if (blocks.length > 1) {
+            ranges.forEach(r => addTotal(`${r.label} (${r.n})`, r.start, r.end, false, 'FFEFF6FF'));
+        }
+        addTotal('الإجمالي', dataStart, dataEnd, true, 'FFBFDBFE');
 
         ws.autoFilter = { from: { row: hRow.number, column: 1 }, to: { row: dataEnd, column: headers.length } };
         // @ts-ignore  disable filter buttons on numeric columns
@@ -417,10 +475,68 @@ export async function buildProjectReportWorkbook(
     };
 
     addRevenueSheet('الإيرادات', `${projectName} - الثروة الخضراء - الإيرادات (${revPeriod})`,
-        agreedRevenues, 'الإيراد المتفق عليه');
-    if (maintenanceRevenues.length > 0) {
-        addRevenueSheet('وديعة الصيانة', `${projectName} - الثروة الخضراء - وديعة الصيانة (${revPeriod})`,
-            maintenanceRevenues, 'المجدول');
+        [
+            { label: 'إجمالي الإيراد المتفق عليه', rows: agreedRevenues },
+            { label: 'إجمالي وديعة الصيانة', rows: maintenanceReceipts },
+        ],
+        'الإيراد المتفق عليه');
+
+    // ====================== MAINTENANCE DEPOSIT SHEET ======================
+    // One row per SOLD unit (same population and sales window as مبيعات الوحدات): the deposit
+    // agreed on the sales request vs. what the maintenance receipts have collected so far.
+    if (maintenanceDeposits.length > 0) {
+        const ws = workbook.addWorksheet('وديعة الصيانة');
+        ws.views = [{ rightToLeft: true }];
+        ws.pageSetup = { orientation: 'landscape', paperSize: 9 };
+        const headers = [
+            'رقم الطلب', 'المبنى', 'الوحدة', 'الطابق', 'العميل', 'تاريخ البيع', 'إجمالي البيع', 'نسبة الصيانة %',
+            'وديعة الصيانة', 'المحصل', 'المتبقي', 'حالة التحصيل', 'حالة الاستحقاق', 'تاريخ الاستحقاق',
+            'عدد الإيصالات', 'الإيصالات المحصلة'
+        ];
+        const widths = [14, 10, 22, 16, 32, 14, 18, 14, 18, 18, 18, 16, 26, 16, 14, 16];
+        addSheetHeader(ws, `${projectName} - الثروة الخضراء - وديعة الصيانة (${salPeriod})`, headers.length, 'FF0F766E');
+
+        const hRow = ws.addRow(headers.map(h => utils.rtlEmbed(h)));
+        hRow.font = { name: 'Amiri', size: 11, bold: true };
+        hRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCCFBF1' } };
+        hRow.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        const dataStart = hRow.number + 1;
+        maintenanceDeposits.forEach((m, idx) => {
+            const row = ws.addRow([
+                utils.safeString(m.salesRequestId), utils.safeString(m.buildingNumber), utils.safeString(m.apartmentName),
+                utils.safeString(m.floorNumber), utils.safeString(m.customerName), utils.formatDate(m.saleDate),
+                m.totalPrice ?? 0, m.maintenancePercent != null ? Number(m.maintenancePercent) * 100 : '',
+                m.maintenanceDeposit || 0, m.collectedAmount || 0, m.outstandingAmount || 0,
+                utils.safeString(m.collectionStatusArabic), utils.safeString(m.dueStatusArabic),
+                utils.formatDate(m.nextDueDate), m.receiptCount ?? 0, m.receivedCount ?? 0
+            ]);
+            [7, 9, 10, 11].forEach(col => {
+                const cell = row.getCell(col);
+                cell.numFmt = '#,##0.00';
+                cell.alignment = { horizontal: 'right' };
+            });
+            row.getCell(8).numFmt = '0.00';
+            if (idx % 2 === 1) row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0FDFA' } };
+        });
+        const dataEnd = ws.rowCount;
+
+        const tRow = ws.addRow([
+            '', '', '', '', '', '', '', 'الإجمالي',
+            { formula: `SUBTOTAL(109,I${dataStart}:I${dataEnd})` },
+            { formula: `SUBTOTAL(109,J${dataStart}:J${dataEnd})` },
+            { formula: `SUBTOTAL(109,K${dataStart}:K${dataEnd})` },
+            '', '', '', '', ''
+        ]);
+        tRow.font = { name: 'Amiri', size: 12, bold: true };
+        tRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCCFBF1' } };
+        [9, 10, 11].forEach(col => {
+            tRow.getCell(col).numFmt = '#,##0.00';
+            tRow.getCell(col).alignment = { horizontal: 'right' };
+        });
+
+        ws.autoFilter = { from: { row: hRow.number, column: 1 }, to: { row: dataEnd, column: headers.length } };
+        ws.columns.forEach((col, i) => (col.width = widths[i] || 15));
     }
 
     // ====================== APARTMENT SALES SHEET ======================
@@ -523,7 +639,7 @@ export async function buildProjectReportWorkbook(
     if (commissions.length > 0) {
         addPaymentSheet(
             'العمولات المدفوعة',
-            `${projectName} - الثروة الخضراء - العمولات المدفوعة (${expPeriod})`,
+            `${projectName} - الثروة الخضراء - العمولات المدفوعة (${comPeriod})`,
             'FFB45309', 'FFFDE9C8', 'FFFEF6E7',
             ['رقم العمولة', 'رقم طلب البيع', 'الوحدة', 'المبنى', 'المستفيد', 'المبلغ', 'حالة الدفع',
                 'حالة العمولة', 'طريقة الدفع', 'التاريخ', 'رقم الشيك', 'رقم الدفعة',
@@ -565,7 +681,7 @@ export async function buildProjectReportWorkbook(
             'تسلسل', 'رقم الحساب', 'كود الحساب', 'اسم الحساب', 'مدين', 'دائن',
             'طرف البند', 'وصف البند'
         ];
-        addSheetHeader(wsEnt, `${projectName} - الثروة الخضراء - قيود العمولات المدفوعة (${expPeriod})`,
+        addSheetHeader(wsEnt, `${projectName} - الثروة الخضراء - قيود العمولات المدفوعة (${comPeriod})`,
             entHeaders.length, 'FF92400E');
 
         const entHeaderRow = wsEnt.addRow(entHeaders.map(h => utils.rtlEmbed(h)));

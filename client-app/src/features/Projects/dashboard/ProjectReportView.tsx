@@ -50,6 +50,11 @@ const isMaintenance = (r: any) =>
     r.paymentTypeId === "RECEIPT_MAINTENANCE_AMOUNT" ||
     r.revenueCategory === "Maintenance Deposit";
 
+// Direct payments: paid vs. still-open commitment. Mirrors ProjectReportSummaryDto.IsUnpaid.
+const isUnpaid = (p: any) => p.statusId === "PMNT_NOT_PAID";
+const PAID_LABEL = "مدفوعة";
+const UNPAID_LABEL = "غير مدفوعة";
+
 const money = (v: number | null | undefined) =>
     (v ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const count = (v: number | null | undefined) => (v ?? 0).toLocaleString("en-US");
@@ -124,6 +129,14 @@ const paymentColumns: ColDef[] = [
     { field: "comments", title: "ملاحظات", width: 300 },
 ];
 
+// Direct payments add a filterable paid / unpaid column (rows get `settlementStatus` stamped on
+// them below) right after "إلى طرف" — same position as the Excel sheet's حالة السداد column.
+const directPaymentColumns: ColDef[] = [
+    ...paymentColumns.slice(0, 4),
+    { field: "settlementStatus", title: "حالة السداد", width: 130 },
+    ...paymentColumns.slice(4),
+];
+
 const transactionColumns: ColDef[] = [
     { field: "paymentId", title: "رقم القيد", width: 180 },
     { field: "paymentTypeDescription", title: "النوع", width: 180 },
@@ -167,6 +180,26 @@ const revenueColumns = (scheduledTitle: string): ColDef[] => [
     { field: "deservedWithinWeek", title: "مستحق خلال أسبوع", width: 150 },
     { field: "deservedWithinMonth", title: "مستحق خلال شهر", width: 150 },
     { field: "lateDue", title: "متأخر", width: 110 },
+];
+
+// وديعة الصيانة — one row per sold unit, from the sales request (mirrors the Excel sheet).
+const maintenanceColumns: ColDef[] = [
+    { field: "salesRequestId", title: "رقم الطلب", width: 120 },
+    { field: "buildingNumber", title: "المبنى", width: 100 },
+    { field: "apartmentName", title: "الوحدة", width: 170 },
+    { field: "floorNumber", title: "الطابق", width: 120 },
+    { field: "customerName", title: "العميل", width: 220 },
+    { field: "saleDate", title: "تاريخ البيع", width: 120, format: DATE },
+    { field: "totalPrice", title: "إجمالي البيع", width: 140, format: MONEY },
+    { field: "maintenancePercent", title: "نسبة الصيانة %", width: 120, cell: (d) => (d.maintenancePercent != null ? (Number(d.maintenancePercent) * 100).toFixed(2) : "") },
+    { field: "maintenanceDeposit", title: "وديعة الصيانة", width: 140, format: MONEY },
+    { field: "collectedAmount", title: "المحصل", width: 140, format: MONEY },
+    { field: "outstandingAmount", title: "المتبقي", width: 140, format: MONEY },
+    { field: "collectionStatusArabic", title: "حالة التحصيل", width: 130 },
+    { field: "dueStatusArabic", title: "حالة الاستحقاق", width: 200 },
+    { field: "nextDueDate", title: "تاريخ الاستحقاق", width: 130, format: DATE },
+    { field: "receiptCount", title: "عدد الإيصالات", width: 110 },
+    { field: "receivedCount", title: "الإيصالات المحصلة", width: 130 },
 ];
 
 const salesColumns: ColDef[] = [
@@ -241,10 +274,13 @@ function SectionGrid({
     rows,
     columns,
     emptyText,
+    totals,
 }: {
     rows: any[] | undefined;
     columns: ColDef[];
     emptyText: string;
+    /** Optional subtotal strip rendered above the grid (server-computed, never re-summed here). */
+    totals?: React.ReactNode;
 }) {
     const [state, setState] = useState<State>({ skip: 0, take: 20 });
     const adjusted = useMemo(() => handleDatesArray(rows || []), [rows]);
@@ -257,28 +293,82 @@ function SectionGrid({
     }
 
     return (
-        <KendoGrid
-            style={{ height: "58vh" }}
-            scrollable="scrollable"
-            resizable
-            sortable
-            filterable
-            pageable={{ pageSizes: [20, 50, 100] }}
-            {...state}
-            data={data}
-            onDataStateChange={(e: GridDataStateChangeEvent) => setState(e.dataState)}
-        >
-            {columns.map((c) => (
-                <Column
-                    key={c.field}
-                    field={c.field}
-                    title={c.title}
-                    width={c.width}
-                    format={c.format}
-                    cells={c.cell ? { data: textCell(c.cell) } : undefined}
-                />
+        <>
+            {totals}
+            <KendoGrid
+                style={{ height: totals ? "52vh" : "58vh" }}
+                scrollable="scrollable"
+                resizable
+                sortable
+                filterable
+                pageable={{ pageSizes: [20, 50, 100] }}
+                {...state}
+                data={data}
+                onDataStateChange={(e: GridDataStateChangeEvent) => setState(e.dataState)}
+            >
+                {columns.map((c) => (
+                    <Column
+                        key={c.field}
+                        field={c.field}
+                        title={c.title}
+                        width={c.width}
+                        format={c.format}
+                        cells={c.cell ? { data: textCell(c.cell) } : undefined}
+                    />
+                ))}
+            </KendoGrid>
+        </>
+    );
+}
+
+// Subtotal strip above a grid — the on-screen counterpart of the Excel sheet's per-block
+// subtotal rows. Values come straight from the server summary, never re-summed here.
+type TotalCell = [label: string, caption: string, amount: number, bold?: boolean];
+function TotalsStrip({ cells }: { cells: TotalCell[] }) {
+    return (
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 1 }} dir="rtl">
+            {cells.map(([label, caption, amount, bold]) => (
+                <Paper key={label} variant="outlined" sx={{ px: 1.5, py: 0.75, minWidth: 220 }}>
+                    <Typography variant="caption" color="text.secondary">
+                        {label}{caption ? ` (${caption})` : ""}
+                    </Typography>
+                    <Typography
+                        variant="body1"
+                        sx={{ fontWeight: bold ? 700 : 500, fontVariantNumeric: "tabular-nums" }}
+                    >
+                        {money(amount)}
+                    </Typography>
+                </Paper>
             ))}
-        </KendoGrid>
+        </Box>
+    );
+}
+
+function DirectPaymentTotals({ s }: { s: ProjectReportSummary }) {
+    return (
+        <TotalsStrip
+            cells={[
+                [PAID_LABEL, `${count(s.directPaymentsPaidCount)} دفعة`, s.directPaymentsPaid],
+                [UNPAID_LABEL, `${count(s.directPaymentsUnpaidCount)} دفعة`, s.directPaymentsUnpaid],
+                ["الإجمالي", `${count(s.directPaymentsPaidCount + s.directPaymentsUnpaidCount)} دفعة`, s.directPayments, true],
+            ]}
+        />
+    );
+}
+
+// Agreed revenue vs. the maintenance receipts in the same window; the maintenance figures here
+// are the receipt schedule (what the tab lists), not the sales-request deposits of the
+// وديعة الصيانة tab.
+function RevenueTotals({ s }: { s: ProjectReportSummary }) {
+    return (
+        <TotalsStrip
+            cells={[
+                ["الإيراد المتفق عليه", "بدون وديعة الصيانة", s.revenueScheduled],
+                ["المحصل من الإيراد المتفق عليه", "", s.revenueCollected],
+                ["وديعة الصيانة — مجدول", `${count(s.maintenanceReceiptsCount)} إيصال`, s.maintenanceReceiptsScheduled],
+                ["وديعة الصيانة — محصل", "", s.maintenanceReceiptsCollected],
+            ]}
+        />
     );
 }
 
@@ -338,7 +428,9 @@ function summaryGroups(s: ProjectReportSummary): { title: string; lines: Summary
             title: "المصاريف",
             lines: [
                 ["المستخلصات", money(s.certificateExpenses)],
-                ["الدفعات المباشرة", money(s.directPayments)],
+                [`الدفعات المباشرة — ${PAID_LABEL} (${count(s.directPaymentsPaidCount)})`, money(s.directPaymentsPaid)],
+                [`الدفعات المباشرة — ${UNPAID_LABEL} (${count(s.directPaymentsUnpaidCount)})`, money(s.directPaymentsUnpaid)],
+                ["إجمالي الدفعات المباشرة", money(s.directPayments)],
                 ["قيود محاسبية", money(s.accountingTransactions)],
                 ["رواتب المشروع", money(s.projectPayroll)],
                 ["المصاريف التشغيلية", money(s.operatingExpenses)],
@@ -356,7 +448,8 @@ function summaryGroups(s: ProjectReportSummary): { title: string; lines: Summary
         {
             title: "وديعة الصيانة",
             lines: [
-                ["الإجمالي", money(s.maintenanceScheduled)],
+                [`عدد الوحدات (${count(s.maintenanceUnitsCollected)} محصلة بالكامل)`, count(s.maintenanceUnits)],
+                ["الإجمالي (حسب طلبات البيع)", money(s.maintenanceScheduled)],
                 ["المحصل", money(s.maintenanceCollected)],
                 ["المتبقي", money(s.maintenanceOutstanding)],
             ],
@@ -384,7 +477,7 @@ function summaryGroups(s: ProjectReportSummary): { title: string; lines: Summary
             lines: [
                 [`الأساس${excluded}`, money(s.mgmtFeeBase)],
                 [`النسبة (${s.mgmtFeePercent}%)`, money(s.mgmtFee)],
-                ["يُخصم: المصاريف التشغيلية", money(-s.operatingExpenses)],
+                ["يُخصم: المصاريف التشغيلية (فترة مبلغ الإدارة)", money(-s.mgmtFeeOperatingExpenses)],
                 ["الصافي المتبقي", money(s.mgmtFeeNet), true],
             ],
         },
@@ -456,6 +549,12 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
     const [salesStartDate, setSalesStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
     const [salesEndDate, setSalesEndDate] = useState<Dayjs | null>(dayjs());
     const [salesAllData, setSalesAllData] = useState(false);
+    const [commissionsStartDate, setCommissionsStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
+    const [commissionsEndDate, setCommissionsEndDate] = useState<Dayjs | null>(dayjs());
+    const [commissionsAllData, setCommissionsAllData] = useState(false);
+    const [mgmtFeeStartDate, setMgmtFeeStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
+    const [mgmtFeeEndDate, setMgmtFeeEndDate] = useState<Dayjs | null>(dayjs());
+    const [mgmtFeeAllData, setMgmtFeeAllData] = useState(false);
     const [mgmtFeePercent, setMgmtFeePercent] = useState<number>(12);
     const [excludedBuildings, setExcludedBuildings] = useState<string[]>([]);
 
@@ -487,6 +586,12 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
         salesStartDate: salesAllData ? undefined : salesStartDate?.format("YYYY-MM-DD"),
         salesEndDate: salesAllData ? undefined : salesEndDate?.format("YYYY-MM-DD"),
         salesAllData,
+        commissionsStartDate: commissionsAllData ? undefined : commissionsStartDate?.format("YYYY-MM-DD"),
+        commissionsEndDate: commissionsAllData ? undefined : commissionsEndDate?.format("YYYY-MM-DD"),
+        commissionsAllData,
+        mgmtFeeStartDate: mgmtFeeAllData ? undefined : mgmtFeeStartDate?.format("YYYY-MM-DD"),
+        mgmtFeeEndDate: mgmtFeeAllData ? undefined : mgmtFeeEndDate?.format("YYYY-MM-DD"),
+        mgmtFeeAllData,
         mgmtFeePercent,
         excludedBuildings: excludedBuildings.length ? excludedBuildings.join(",") : undefined,
     });
@@ -509,6 +614,8 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
                 expensesPeriod: period(expensesAllData, expensesStartDate, expensesEndDate),
                 revenuesPeriod: period(revenuesAllData, revenuesStartDate, revenuesEndDate),
                 salesPeriod: period(salesAllData, salesStartDate, salesEndDate),
+                commissionsPeriod: period(commissionsAllData, commissionsStartDate, commissionsEndDate),
+                mgmtFeePeriod: period(mgmtFeeAllData, mgmtFeeStartDate, mgmtFeeEndDate),
             });
             const safe = projectName.replace(/[^a-zA-Z0-9\u0600-\u06FF\s-]/g, "_").trim();
             saveAs(
@@ -550,29 +657,48 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
         setPdfBlob(null);
     };
 
-    const agreedRevenues = useMemo(
-        () => (report?.revenues || []).filter((r: any) => !isMaintenance(r)),
+    // Server returns paid rows first, then unpaid; stamp the label so the column can be sorted/filtered.
+    const directPaymentRows = useMemo(
+        () =>
+            (report?.directPayments || []).map((p: any) => ({
+                ...p,
+                settlementStatus: isUnpaid(p) ? UNPAID_LABEL : PAID_LABEL,
+            })),
         [report]
     );
-    const maintenanceRevenues = useMemo(
-        () => (report?.revenues || []).filter((r: any) => isMaintenance(r)),
-        [report]
-    );
+    // Revenues tab = every receipt in the window (advance, installments, maintenance), agreed
+    // revenue first then the maintenance receipts — same two blocks as the Excel sheet. The
+    // summary's الإيراد المتفق عليه still excludes maintenance (custodial); the strip above the
+    // grid shows both parts so the tab reconciles to it.
+    const revenueRows = useMemo(() => {
+        const all = report?.revenues || [];
+        return [...all.filter((r: any) => !isMaintenance(r)), ...all.filter((r: any) => isMaintenance(r))];
+    }, [report]);
 
-    const sections = useMemo(
+    const sections: { label: string; rows: any[] | undefined; columns: ColDef[]; totals?: React.ReactNode }[] = useMemo(
         () => [
             { label: "المستخلصات", rows: report?.expenses, columns: expenseColumns },
-            { label: "الدفعات المباشرة", rows: report?.directPayments, columns: paymentColumns },
+            {
+                label: "الدفعات المباشرة",
+                rows: directPaymentRows,
+                columns: directPaymentColumns,
+                totals: report?.summary ? <DirectPaymentTotals s={report.summary} /> : undefined,
+            },
             { label: "قيود محاسبية", rows: report?.accountingTransactions, columns: transactionColumns },
             { label: "رواتب المشروع", rows: report?.payroll, columns: payrollColumns },
             { label: "المصاريف التشغيلية", rows: report?.operatingExpenses, columns: paymentColumns },
-            { label: "الإيرادات", rows: agreedRevenues, columns: revenueColumns("الإيراد المتفق عليه") },
-            { label: "وديعة الصيانة", rows: maintenanceRevenues, columns: revenueColumns("المجدول") },
+            {
+                label: "الإيرادات",
+                rows: revenueRows,
+                columns: revenueColumns("الإيراد المتفق عليه"),
+                totals: report?.summary ? <RevenueTotals s={report.summary} /> : undefined,
+            },
+            { label: "وديعة الصيانة", rows: report?.maintenanceDeposits, columns: maintenanceColumns },
             { label: "مبيعات الوحدات", rows: report?.apartmentSales, columns: salesColumns },
             { label: "العمولات المدفوعة", rows: report?.paidCommissions, columns: commissionColumns },
             { label: "قيود العمولات المدفوعة", rows: report?.paidCommissionAcctgEntries, columns: commissionEntryColumns },
         ],
-        [report, agreedRevenues, maintenanceRevenues]
+        [report, directPaymentRows, revenueRows]
     );
 
     return (
@@ -611,16 +737,29 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
                             start={salesStartDate} setStart={setSalesStartDate}
                             end={salesEndDate} setEnd={setSalesEndDate}
                         />
+                        <PeriodFilter
+                            label="العمولات"
+                            all={commissionsAllData} setAll={setCommissionsAllData}
+                            start={commissionsStartDate} setStart={setCommissionsStartDate}
+                            end={commissionsEndDate} setEnd={setCommissionsEndDate}
+                        />
 
                         <Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>مبلغ الإدارة</Typography>
+                            {/* The fee window drives BOTH the fee base and the operating expenses
+                                deducted from it (see GetProjectReport.Query.MgmtFee*). */}
+                            <PeriodFilter
+                                label="مبلغ الإدارة"
+                                all={mgmtFeeAllData} setAll={setMgmtFeeAllData}
+                                start={mgmtFeeStartDate} setStart={setMgmtFeeStartDate}
+                                end={mgmtFeeEndDate} setEnd={setMgmtFeeEndDate}
+                            />
                             <TextField
                                 select
                                 size="small"
                                 label="النسبة %"
                                 value={mgmtFeePercent}
                                 onChange={(e) => setMgmtFeePercent(Number(e.target.value))}
-                                sx={{ width: 120, mt: 0.5 }}
+                                sx={{ width: 120, mt: 1 }}
                             >
                                 {MGMT_FEE_PERCENT_OPTIONS.map((p) => (
                                     <MenuItem key={p} value={p}>{p}%</MenuItem>
@@ -721,6 +860,7 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
                                 key={sec.label}
                                 rows={sec.rows}
                                 columns={sec.columns}
+                                totals={sec.totals}
                                 emptyText="لا توجد بيانات للفترة المحددة."
                             />
                         ) : null

@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Claude Code — 10-Day Upgrade Plan</title>
+<style>
+  @page { size: A4; margin: 13mm 13mm 14mm 13mm; }
+  :root {
+    --ink: #1c2230; --muted: #5b6474; --line: #d9dee7; --soft: #f3f5f9;
+    --navy: #1f3a5f; --amber: #b5651d; --green: #2e7d4f; --red: #a33a3a; --code: #eef1f6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif; color: var(--ink); font-size: 9.7pt; line-height: 1.34; }
+  h1 { font-size: 26pt; margin: 0 0 4mm; color: var(--navy); letter-spacing: -0.2px; }
+  h2 { font-size: 16pt; margin: 0 0 4mm; color: var(--navy); border-bottom: 2px solid var(--navy); padding-bottom: 1.5mm; }
+  h3 { font-size: 11.4pt; margin: 3.6mm 0 1.6mm; color: var(--navy); }
+  h4 { font-size: 9.9pt; margin: 3mm 0 1.2mm; color: var(--amber); text-transform: uppercase; letter-spacing: .4px; }
+  p { margin: 0 0 2.4mm; }
+  ul, ol { margin: 0 0 2.6mm 5mm; padding: 0; }
+  li { margin-bottom: 1.2mm; }
+  code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.2pt; }
+  code { background: var(--code); padding: 0 3px; border-radius: 3px; }
+  pre { background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 2mm 2.6mm; margin: 1.2mm 0 2.4mm; white-space: pre-wrap; word-break: break-word; line-height: 1.35; }
+  table { border-collapse: collapse; width: 100%; margin: 1.2mm 0 3mm; font-size: 8.8pt; page-break-inside: auto; }
+  th, td { border: 1px solid var(--line); padding: 1.2mm 2mm; vertical-align: top; text-align: left; }
+  th { background: var(--soft); color: var(--navy); font-weight: 600; }
+  tr { page-break-inside: avoid; }
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  .cover { display: flex; flex-direction: column; justify-content: center; height: 255mm; }
+  .cover .kicker { color: var(--amber); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; font-size: 10pt; margin-bottom: 4mm; }
+  .cover .sub { font-size: 13pt; color: var(--muted); margin-bottom: 10mm; }
+  .cover .meta { border-top: 1px solid var(--line); padding-top: 4mm; color: var(--muted); font-size: 9.6pt; }
+  .cover .meta div { margin-bottom: 1mm; }
+  .box { border: 1px solid var(--line); border-left: 4px solid var(--navy); background: var(--soft); padding: 2.4mm 3.2mm; margin: 2.5mm 0 3.5mm; page-break-inside: avoid; }
+  .box.warn { border-left-color: var(--red); }
+  .box.tip { border-left-color: var(--green); }
+  .box.amber { border-left-color: var(--amber); }
+  .box strong:first-child { color: var(--navy); }
+  .day-head { display: flex; align-items: baseline; gap: 4mm; border-bottom: 2px solid var(--navy); padding-bottom: 1.5mm; margin-bottom: 3.5mm; }
+  .day-head .n { font-size: 30pt; font-weight: 700; color: var(--amber); line-height: 1; }
+  .day-head .t { font-size: 16pt; font-weight: 700; color: var(--navy); }
+  .day-head .time { margin-left: auto; color: var(--muted); font-size: 9.4pt; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .pill { display: inline-block; font-size: 8.4pt; padding: 0 6px; border-radius: 9px; background: var(--soft); border: 1px solid var(--line); color: var(--muted); margin-right: 3px; }
+  .pill.yes { color: var(--green); border-color: #bfe0cc; background: #eef8f1; }
+  .pill.no { color: var(--red); border-color: #ecc; background: #fbeeee; }
+  .small { font-size: 9pt; color: var(--muted); }
+  .toc li { margin-bottom: 1.6mm; }
+  .toc .d { color: var(--muted); }
+  .kv td:first-child { width: 34%; font-weight: 600; color: var(--navy); }
+  .nowrap { white-space: nowrap; }
+  h3, h4 { page-break-after: avoid; }
+  pre { page-break-inside: avoid; }
+  .retro td, .retro th { padding: 0.8mm 2mm; }
+  footer.note { margin-top: 6mm; font-size: 8.6pt; color: var(--muted); border-top: 1px solid var(--line); padding-top: 2mm; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<section class="page">
+  <div class="cover">
+    <div class="kicker">Personal upgrade plan</div>
+    <h1>Claude Code — 10 Days,<br>10 New Habits</h1>
+    <div class="sub">Tailored to the Contracts ERP workflow (ASP.NET Core + React, Clean Architecture, OFBiz-style domain), built from the 4-hour course transcript and from how you actually use the CLI today.</div>
+    <div class="meta">
+      <div><strong>Prepared:</strong> 19 September 2026 &nbsp;·&nbsp; <strong>Claude Code version on this Mac:</strong> 2.1.278</div>
+      <div><strong>Sources:</strong> <code>Claude-Course.md</code> (35 chapters), official docs at <code>code.claude.com/docs</code> (memory, hooks, skills, commands — checked today), your <code>~/.claude</code> + project configuration, and 2,131 prompts of command history.</div>
+      <div><strong>Time budget:</strong> 30–45 minutes per day, always on real backlog work — never on toy examples.</div>
+      <div><strong>Structure:</strong> Part I must-know concepts · Part II file locations · Part III where you stand today · Part IV speed and session length · Part V the ten days · Appendices (cheat sheet, housekeeping flags, course claims to treat with care).</div>
+    </div>
+  </div>
+</section>
+
+<!-- TOC -->
+<section class="page">
+  <h2>Contents</h2>
+  <ol class="toc">
+    <li><strong>Part I — Must-know concepts</strong> <span class="d">— the 10 ideas everything else depends on</span></li>
+    <li><strong>Part II — File locations</strong> <span class="d">— every path that matters, with its status in your setup</span></li>
+    <li><strong>Part III — Where you stand today</strong> <span class="d">— usage snapshot, constraints, and five quick wins</span></li>
+    <li><strong>Part IV — Two questions you asked</strong> <span class="d">— A. making responses faster · B. long sessions vs. fresh sessions</span></li>
+    <li><strong>Part V — The ten days</strong>
+      <ol>
+        <li>Day 1 — See what you are paying for <span class="d">(/context, /usage, status line, permission cleanup)</span></li>
+        <li>Day 2 — Restructure the instruction layers <span class="d">(guardrails first, .claude/rules, personal + local CLAUDE.md)</span></li>
+        <li>Day 3 — Plan mode and checkpoints <span class="d">(/plan on a Phase-Two item, /rewind, /diff, /btw)</span></li>
+        <li>Day 4 — Context discipline <span class="d">(/compact with instructions, /branch, /fork, handoff notes)</span></li>
+        <li>Day 5 — Your first skill <span class="d">(turn a repeated workflow into .claude/skills)</span></li>
+        <li>Day 6 — Hooks as hard guardrails <span class="d">(a chime on Stop, a PreToolUse guard for builds and migrations)</span></li>
+        <li>Day 7 — Fresh-eyes review <span class="d">(/code-review, /security-review, /simplify on the unbuilt working tree)</span></li>
+        <li>Day 8 — Subagents on purpose <span class="d">(.claude/agents: db-analyst, code-reviewer; explicit invocation)</span></li>
+        <li>Day 9 — Close the verification loop in the browser <span class="d">(MCP reconnect, live checks, PDF visual QA)</span></li>
+        <li>Day 10 — Automate and retrospect <span class="d">(claude -p, /loop, routines, worktrees, /insights, keep/drop)</span></li>
+      </ol>
+    </li>
+    <li><strong>Appendix A — Command and key cheat sheet</strong></li>
+    <li><strong>Appendix B — Housekeeping flags found while preparing this plan</strong></li>
+    <li><strong>Appendix C — Course claims to treat with care</strong></li>
+  </ol>
+  <div class="box tip"><strong>How to use this document.</strong> Each day has a <em>Goal</em>, a <em>Why it matters for you</em>, numbered <em>Try today</em> steps with exact commands, a <em>Done when</em> check, and a <em>Keep or drop</em> prompt. Do the days in order — Day 2 depends on Day 1's measurements, Day 6 protects what Day 5 automates, and Day 10 decides what survives. If a day runs long, stop at the "Done when" line and continue tomorrow; do not skip the check.</div>
+</section>
+
+<!-- PART I -->
+<section class="page">
+  <h2>Part I — Must-know concepts</h2>
+  <p class="small">Ten ideas, each in a few lines. Everything in the ten days is an application of one of these.</p>
+
+  <h3>1. The context window is the whole game</h3>
+  <p>Every turn Claude sees one prompt assembled from: system prompt → built-in tool definitions (~17K tokens) → MCP tool definitions → your CLAUDE.md layers and rules → auto-memory → skill descriptions → the conversation. Quality falls and cost rises as this grows; the model remembers the start and the end of a prompt best (primacy / recency), so guardrails belong at the top of CLAUDE.md. <code>/context</code> shows the exact breakdown; you have never run it.</p>
+
+  <h3>2. Instruction layers and load order</h3>
+  <p>Loaded at launch and <em>concatenated</em> (not overridden), in this order: managed/enterprise → <code>~/.claude/CLAUDE.md</code> (you, all projects) → every <code>CLAUDE.md</code> from the filesystem root down to the working directory → <code>CLAUDE.local.md</code> after its sibling. Files in <em>sub</em>directories (your <code>client-app/CLAUDE.md</code>) load on demand when Claude reads a file there. <code>.claude/rules/*.md</code> splits a long file into topics; a rule with a <code>paths:</code> glob loads only when matching files are touched. <code>@path</code> imports pull other files in at launch.</p>
+
+  <h3>3. CLAUDE.md versus auto-memory — and why neither is enforcement</h3>
+  <p>CLAUDE.md is what <em>you</em> write to steer Claude. Auto-memory (<code>~/.claude/projects/&lt;project&gt;/memory/</code>, indexed by <code>MEMORY.md</code>) is what <em>Claude</em> writes for itself: user, feedback, project and reference notes. Both are read as context and can be forgotten under pressure. Anything that must never happen — <code>dotnet ef database update</code>, <code>dotnet build</code> — needs a <strong>PreToolUse hook</strong>, which is code, not persuasion (Day 6).</p>
+
+  <h3>4. The extension mechanisms and what each costs</h3>
+  <table>
+    <tr><th style="width:14%">Mechanism</th><th>Use it when</th><th style="width:26%">Context cost</th></tr>
+    <tr><td>Rules</td><td>Standing conventions; split by topic; scope with <code>paths:</code></td><td>Loaded at launch (or on path match)</td></tr>
+    <tr><td>Skills</td><td>A repeatable <em>procedure</em> with steps and scripts; invoked by <code>/name</code> or auto</td><td>Description only (~60 tokens) until invoked</td></tr>
+    <tr><td>Subagents</td><td>Work that should run in its own context: research, zero-bias review, parallel chunks</td><td>Own window; only the summary returns</td></tr>
+    <tr><td>Hooks</td><td>Something must happen or be blocked on every event, deterministically</td><td>Zero until fired</td></tr>
+    <tr><td>MCP servers</td><td>Quick access to an external system (browser, SaaS)</td><td>All tool definitions up front — often 5–20K tokens</td></tr>
+  </table>
+  <p>The course's most practical rule: prove a workflow with an MCP in five minutes, then convert it into a skill that calls the API or a script directly.</p>
+
+  <h3>5. Permission modes, and the one you are in</h3>
+  <p>Modes cycle with <kbd>Shift+Tab</kbd>: default (ask before edits) → accept-edits → plan (read-only exploration) → bypass. Your user settings set <code>defaultMode: auto</code>, where the harness allows/denies calls automatically and asks only for risky ones; <code>/permissions</code> shows the allow/ask/deny rules. Your project <code>settings.local.json</code> has grown to ~15 KB of one-off allow rules — Day 1 cleans it.</p>
+
+  <h3>6. Plan → build → verify, with checkpoints</h3>
+  <p>Plan mode researches and writes a spec before touching files; "a minute of planning saves ten of building" and cuts tokens because Claude stops exploring alternatives mid-build. Every file edit is checkpointed: <kbd>Esc Esc</kbd> or <code>/rewind</code> restores code and/or conversation. The verify step is what most people skip — tests, a browser screenshot, a rendered PDF, a diff review — and it is where Claude's speed pays off: 80% → 95% → 99% in minutes.</p>
+
+  <h3>7. Compaction and session lifecycle</h3>
+  <p>Auto-compact fires near the limit; <code>/compact &lt;what to keep&gt;</code> lets you steer the summary. <code>/clear</code> for unrelated work (you do this 139 times — good). <code>/resume</code> and <code>/rename</code> for named threads (122 resumes — good). New for you: <code>/branch</code> (fork the conversation in place), <code>/fork</code> (copy to a background session), <code>/btw</code> (side question that does not enter history), <code>/export</code>.</p>
+
+  <h3>8. Models, effort, thinking</h3>
+  <p><code>/model</code> switches model; <code>/effort</code> sets reasoning depth. Extended thinking is billed but <em>not kept</em> in the conversation, so "reason as much as you like, answer tersely" is cheap. Sonnet for high-volume, low-judgement work (log reading, data pulls); Opus for design and synthesis. Fast mode (<code>/fast</code>) trades price for latency.</p>
+
+  <h3>9. The parallelism ladder</h3>
+  <p>Single session → subagents (own context, summary back to parent) → agent teams (full independent instances that message each other; roughly 7× tokens) → git worktrees (separate folders, no file collisions, merge at the end). Probabilities multiply: ten subagents at 95% each succeed together only 59% of the time — keep task definitions tiny and return summaries, not raw data. Your CLAUDE.md forbids <em>unrequested</em> subagents; the ladder is something <em>you</em> climb deliberately (Day 8).</p>
+
+  <h3>10. Security realities</h3>
+  <p>Secrets do not belong in committed instruction files (your dev login is in <code>CLAUDE.md</code>; a GitHub token sits in <code>important-commands.txt</code> — Appendix B). Bypass mode plus <code>rm -rf</code> is a real failure mode; a deny rule or hook removes it. Anything vibe-coded that handles credentials or money needs a human review before it is exposed.</p>
+
+  <h2 style="margin-top:7mm">Part II — File locations</h2>
+  <p class="small">Verified against the docs on 19 Sep 2026 and against this machine. "Status" is what exists in your setup right now.</p>
+  <table>
+    <tr><th style="width:36%">Path</th><th>What it is</th><th style="width:18%">Scope</th><th style="width:16%">Status</th></tr>
+    <tr><td><code>~/.claude/settings.json</code></td><td>Your user settings: <code>defaultMode: auto</code>, model opus, voice, theme. Also hooks and permissions at user level.</td><td>All projects</td><td><span class="pill yes">exists</span></td></tr>
+    <tr><td><code>~/.claude/CLAUDE.md</code></td><td>Personal instructions for every project (tone, language, reporting habits).</td><td>All projects</td><td><span class="pill no">missing</span> Day 2</td></tr>
+    <tr><td><code>~/.claude/rules/*.md</code></td><td>Personal rules applied everywhere.</td><td>All projects</td><td><span class="pill no">missing</span></td></tr>
+    <tr><td><code>~/.claude/skills/&lt;name&gt;/SKILL.md</code></td><td>Personal skills (only a <code>synced/</code> folder from claude.ai exists).</td><td>All projects</td><td><span class="pill no">none of yours</span> Day 5</td></tr>
+    <tr><td><code>~/.claude/agents/*.md</code></td><td>Personal subagent definitions.</td><td>All projects</td><td><span class="pill no">missing</span></td></tr>
+    <tr><td><code>~/.claude/projects/-Users-…-Contracts/memory/</code></td><td>Auto-memory for this project; <code>MEMORY.md</code> is the index loaded each session. 24 notes today.</td><td>This project</td><td><span class="pill yes">active</span></td></tr>
+    <tr><td><code>~/.claude/plans/</code></td><td>Plan-mode documents (one exists — plan mode used about once).</td><td>All projects</td><td><span class="pill yes">1 file</span></td></tr>
+    <tr><td><code>~/.claude/history.jsonl</code></td><td>Your prompt history (2,131 entries) — the source of Part III.</td><td>All projects</td><td><span class="pill yes">exists</span></td></tr>
+    <tr><td><code>~/.claude.json</code></td><td>Global MCP servers and per-project state; holds the <code>chrome-devtools</code> MCP entry.</td><td>All projects</td><td><span class="pill yes">exists</span></td></tr>
+    <tr><td><code>./CLAUDE.md</code></td><td>Project instructions (87 lines): architecture, build/migration rules, dev login.</td><td>Repo, committed</td><td><span class="pill yes">exists</span></td></tr>
+    <tr><td><code>./client-app/CLAUDE.md</code></td><td>Frontend conventions (238 lines); loads on demand when files under <code>client-app/</code> are read.</td><td>Repo, committed</td><td><span class="pill yes">exists</span></td></tr>
+    <tr><td><code>./CLAUDE.local.md</code></td><td>Private, per-project notes (credentials, local URLs). Must be gitignored — it currently is <strong>not</strong>.</td><td>You, this repo</td><td><span class="pill no">missing</span> Day 2</td></tr>
+    <tr><td><code>./.claude/settings.json</code></td><td>Shared project settings: permissions and hooks the whole team gets.</td><td>Repo, committed</td><td><span class="pill no">missing</span> Day 6</td></tr>
+    <tr><td><code>./.claude/settings.local.json</code></td><td>Your private project settings — 14.7 KB of accumulated allow rules.</td><td>You, gitignored</td><td><span class="pill yes">bloated</span> Day 1</td></tr>
+    <tr><td><code>./.claude/rules/*.md</code></td><td>Topic rules; optional <code>paths:</code> frontmatter for path-scoped loading.</td><td>Repo</td><td><span class="pill no">missing</span> Day 2</td></tr>
+    <tr><td><code>./.claude/skills/&lt;name&gt;/SKILL.md</code> (+ <code>scripts/</code>)</td><td>Project skills; invoked as <code>/name</code>.</td><td>Repo</td><td><span class="pill no">missing</span> Day 5</td></tr>
+    <tr><td><code>./.claude/agents/*.md</code></td><td>Project subagents; manage with <code>/agents</code>.</td><td>Repo</td><td><span class="pill no">missing</span> Day 8</td></tr>
+    <tr><td><code>./.claude/hooks/*.sh</code></td><td>Convention for hook scripts referenced from settings via <code>$CLAUDE_PROJECT_DIR</code>.</td><td>Repo</td><td><span class="pill no">missing</span> Day 6</td></tr>
+    <tr><td><code>./.mcp.json</code></td><td>Project-scoped MCP servers (shareable). Not used; your MCP lives in <code>~/.claude.json</code>.</td><td>Repo</td><td><span class="pill no">missing</span></td></tr>
+    <tr><td><code>~/.claude/keybindings.json</code></td><td>Custom shortcuts (<code>/keybindings</code>).</td><td>All projects</td><td><span class="pill no">default</span></td></tr>
+  </table>
+  <div class="box"><strong>Precedence in one sentence.</strong> Nothing overrides anything: all discovered instruction files are concatenated, root-most first, so the file closest to where you launched Claude is read <em>last</em>; <code>CLAUDE.local.md</code> follows its sibling. If two rules contradict, Claude may pick either — prune conflicts rather than relying on order.</div>
+</section>
+
+<!-- PART III -->
+<section class="page">
+  <h2>Part III — Where you stand today</h2>
+  <div class="two">
+    <div>
+      <h3>What you use</h3>
+      <ul>
+        <li><code>/clear</code> ×139 and <code>/resume</code> ×122 — disciplined thread management already.</li>
+        <li><code>/model</code> ×20, <code>/compact</code> ×8, <code>/rename</code> ×8, <code>/effort</code> ×1.</li>
+        <li>Auto mode as default; Opus; voice input in hold mode (the course's "voice dump" habit, already yours).</li>
+        <li>Auto-memory working hard: 24 project notes (payroll rounding, GL diagnostics, deploy recipes…).</li>
+        <li>Two-level CLAUDE.md (root + <code>client-app/</code>) with clear NEVER rules for builds and migrations.</li>
+        <li>Chrome DevTools MCP configured (failed to connect this session) and the Claude-in-Chrome extension available.</li>
+        <li>Built-in skills present but unused: <code>/code-review</code>, <code>/simplify</code>, <code>/security-review</code>, <code>/fewer-permission-prompts</code>.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What you have never touched</h3>
+      <ul>
+        <li><code>/context</code>, <code>/usage</code>, <code>/statusline</code>, <code>/insights</code> — you have no measurement of what a session costs before you type.</li>
+        <li><code>/plan</code> (one plan file ever), <code>/rewind</code>, <code>/diff</code>, <code>/btw</code>, <code>/branch</code>, <code>/fork</code>.</li>
+        <li>Rules, skills of your own, agents, hooks — the whole <code>.claude/</code> toolbox is empty.</li>
+        <li><code>/permissions</code> / <code>/hooks</code> / <code>/agents</code> / <code>/mcp</code> / <code>/memory</code> management screens.</li>
+        <li>Headless <code>claude -p</code>, <code>/loop</code>, scheduled routines, worktrees.</li>
+      </ul>
+      <h3>Constraints the plan respects</h3>
+      <ul>
+        <li>Claude never builds, runs, or applies migrations — you do. (Day 6 makes this mechanical.)</li>
+        <li>No unrequested subagents; sequential work. (Day 8 is explicit invocation only.)</li>
+        <li>Auditor rules: financial artifacts are voided and reversed, never hard-deleted.</li>
+      </ul>
+    </div>
+  </div>
+  <h3>Five quick wins you can bank on Day 1</h3>
+  <ol>
+    <li>Run <code>/context</code> once in a fresh session and write the baseline number on this page: ______ tokens before the first message.</li>
+    <li>Move the "NEVER" build/migration block to the top of <code>CLAUDE.md</code> (primacy effect).</li>
+    <li>Add <code>CLAUDE.local.md</code> to <code>.gitignore</code> and move the dev login out of the committed <code>CLAUDE.md</code> into it.</li>
+    <li>Rotate the GitHub token in <code>important-commands.txt</code> and delete the line (Appendix B).</li>
+    <li>Type <code>/btw</code> the next time you want a side answer without polluting the thread.</li>
+  </ol>
+  <div class="box amber"><strong>About the presenter's advanced course.</strong> The transcript only says it covers "agentic workflows" — his name for skills-plus-scripts, parallelised with subagents and exposed as URLs. This plan covers that territory on Days 5, 8 and 10, adapted to an ERP codebase rather than lead scraping. Nothing here claims to reproduce a syllabus that was not in the text.</div>
+</section>
+
+
+<!-- PART IV: TWO QUESTIONS -->
+<section class="page">
+  <h2>Part IV — Two questions you asked after Day 1</h2>
+  <p class="small">Both answers come from the official cost, fast-mode and prompt-caching pages (checked 19 Sep 2026) plus what your history shows. They feed directly into Days 1 and 4.</p>
+
+  <h3>A. How to make Claude respond faster</h3>
+  <p>Latency has four components: how much Claude must <em>read</em> before answering, how much it must <em>explore</em> to find the right files, how long it <em>thinks</em>, and how long <em>you</em> wait between turns. Fast mode only touches the third; the other three are usually the bigger win and free.</p>
+  <table>
+    <tr><th style="width:23%">Lever</th><th>What to do</th><th style="width:26%">Effect</th></tr>
+    <tr><td><strong>1. Shrink what it reads</strong></td><td>Every request re-sends the whole conversation, and a tool-heavy turn is several requests. Keep sessions scoped (section B), keep <code>CLAUDE.md</code> under ~200 lines, move procedures into skills, disable MCP servers you are not using today (<code>/mcp</code>), prefer CLI tools (<code>gh</code>, <code>mysql</code>, <code>dotnet ef … script</code>) over MCP wrappers.</td><td>Largest and free. Time-to-first-token grows with uncached context; a 30K-token prompt answers noticeably faster than a 200K one.</td></tr>
+    <tr><td><strong>2. Shrink the exploration</strong></td><td>Name files: <code>@Application/Accounting/Services/GeneralLedgerService.cs</code> instead of "the GL service". Give the error text, the line, the expected value. Use plan mode for multi-layer work so the search happens once. Install a code-intelligence (LSP) plugin for C# and TypeScript from <code>/plugin</code> — one "go to definition" replaces a grep plus three speculative file reads, and type errors are reported after each edit without a build.</td><td>Second largest. Most slow turns in your history are Claude searching, not Claude typing.</td></tr>
+    <tr><td><strong>3. Shrink the thinking</strong></td><td><code>/effort low</code> or <code>medium</code> for mechanical work (renames, DTO fields, label changes, applying a plan you already approved); <code>high</code>/<code>xhigh</code> for design and ledger logic. Thinking tokens are billed as output and are the default's biggest hidden latency.</td><td>Immediate. Pair with lever 4 for the fastest configuration on simple tasks.</td></tr>
+    <tr><td><strong>4. Fast mode</strong> <code>/fast</code></td><td>Same Opus model, up to 2.5× faster output, priced at $10 / $50 per MTok (flat across the 1M window). Opus 5 and 4.8 only; toggling it on switches you to Opus if needed. On Pro/Max it bills to <strong>usage credits</strong> even while plan usage remains, so credits must be enabled first (<code>/usage-credits</code>). Turn it on at the <em>start</em> of a session: the first fast request re-caches the entire conversation at the fast uncached price, so enabling it three hours in is the expensive way. It falls back to normal speed automatically when its own rate limit is hit (<code>↯</code> turns grey).</td><td>Use for live debugging and rapid UI iteration with the dev server running. Leave it off for long autonomous runs, reviews and reports.</td></tr>
+    <tr><td><strong>5. Match the model</strong></td><td>Sonnet for high-volume, low-judgement turns (log digests, data pulls, bulk edits from a spec); <code>model: haiku</code> or <code>sonnet</code> in subagents. Opus where the judgement is the product.</td><td>Faster and cheaper per token; keeps Opus turns short.</td></tr>
+    <tr><td><strong>6. Shrink your own waiting</strong></td><td>Press <kbd>Esc</kbd> the moment it heads the wrong way, then <code>/rewind</code>. Queue the next message with <kbd>Enter</kbd> while it works. Let auto mode and pattern allow-rules handle permissions (each prompt is latency <em>you</em> add). Put the Stop chime in (Day 6) and stop watching. Send long research to the background with <code>/fork</code>.</td><td>Often the biggest wall-clock win in interactive work.</td></tr>
+    <tr><td><strong>7. Shrink the output</strong></td><td>In <code>~/.claude/CLAUDE.md</code>: "Answer tersely; show the diff, not a narrative; explain only when asked." Output tokens are the slowest tokens.</td><td>Small but constant.</td></tr>
+    <tr><td><strong>8. Keep the cache warm</strong></td><td>The prompt cache lives 1 hour on a subscription (5 minutes once you are drawing on usage credits). A first message after a longer break re-processes the whole context — slow and full price. Changing <code>CLAUDE.md</code>, rules, MCP servers or the model mid-session also invalidates it. <code>/usage</code> shows a <em>Prompt cache</em> line with the hit rate and a likely cause for the last miss.</td><td>Explains the "why is the first answer after lunch so slow" effect.</td></tr>
+  </table>
+  <div class="box"><strong>Symptom → fix.</strong> <em>Slow before the first token</em>: context too big or cache cold → lever 1 / 8, or start a new session. <em>Many tool calls before any edit</em>: vague prompt or no LSP → lever 2. <em>Long "thinking" on a trivial change</em>: lever 3. <em>Typing is slow once it starts</em>: lever 4 or 7. <em>You are waiting on permission prompts</em>: lever 6.</div>
+
+  <h3 style="margin-top:6mm">B. Long sessions: what you get, what it costs, and the practice that replaces it</h3>
+  <h4>What your belief gets right</h4>
+  <p>The conversation is the only place the last three hours of reasoning live. Nothing else knows that the void-payment path was rewritten twice or why you rejected the first Telerik approach. Continuity is real.</p>
+  <h4>What it gets wrong — from the docs and from your history</h4>
+  <ol>
+    <li><strong>Every turn re-sends everything.</strong> A one-line question in a session that has been open all day carries the whole conversation, and each tool batch inside a turn is another request carrying it again. Cached tokens are cheaper, not free, and they still take time to read.</li>
+    <li><strong>The continuity is already lossy.</strong> When the window fills, auto-compaction replaces the history with a summary. After the first compaction you no longer have "the context" — you have Claude's précis of it, chosen without your priorities. And compacting a large session is itself a large request.</li>
+    <li><strong>Quality degrades before cost does.</strong> Rules from <code>CLAUDE.md</code> sit at the far end of a 300K prompt; three abandoned approaches remain in view and pull later answers toward them; a fix from hour one is re-broken in hour four because the instruction that motivated it is buried. This is what the course calls context rot, and the docs' advice is blunt: "unexpectedly high spend usually traces back to long sessions that were never cleared."</li>
+    <li><strong>Breaks punish long sessions most.</strong> The cache expires after an hour (five minutes on usage credits). Coming back to a huge session after lunch means re-processing all of it at full price and full latency. Pro/Max users are offered <em>resume from a summary</em> for exactly this reason.</li>
+    <li><strong>The durable context survives <code>/clear</code>.</strong> <code>CLAUDE.md</code>, rules, auto-memory, plan files, the git diff and a handoff note are all still there. A fresh session that reads a 15-line handoff plus <code>git diff</code> usually outperforms the 300K-token session it replaces — and answers faster (section A, lever 1).</li>
+  </ol>
+  <h4>The practice: one session = one task with a definition of done</h4>
+  <table>
+    <tr><th style="width:36%">Situation</th><th>Do</th></tr>
+    <tr><td>Starting a feature, bug or report</td><td>New session. Brief it (or <code>/plan</code>), state the definition of done, name the files.</td></tr>
+    <tr><td>Follow-up on work just finished, same files, same goal</td><td>Stay. This is what continuity is for.</td></tr>
+    <tr><td>Reached a milestone ("it works, now polishing")</td><td><code>/compact Keep: files changed and why, open bugs with exact errors, decisions taken. Drop: tool output.</code></td></tr>
+    <tr><td>A tangent or a "while I'm here" question</td><td><code>/btw</code> for a side answer; <code>/branch</code> if the tangent becomes real work.</td></tr>
+    <tr><td>An approach failed and you are abandoning it</td><td><code>/rewind</code> and restore <em>conversation and code</em> to before it — the failed attempt leaves the context instead of anchoring the next one.</td></tr>
+    <tr><td>Switching subject (payroll → Telerik → test environment)</td><td>Handoff → <code>/rename</code> → <code>/clear</code>. Always.</td></tr>
+    <tr><td>Build/debug cycle done, feature committed</td><td>Handoff → <code>/rename</code> → <code>/clear</code>. Do not reuse the thread for the next item.</td></tr>
+    <tr><td>Context above ~60%, or any compaction has happened</td><td>Finish the current step, then handoff and clear. The status line from Day 1 makes this visible.</td></tr>
+    <tr><td>Claude repeats a mistake it already fixed, or forgets a rule</td><td>That is context rot, not a model problem. Clear now; add the rule to <code>.claude/rules/</code> first.</td></tr>
+    <tr><td>Coming back after more than an hour</td><td>Accept the resume-from-summary offer, or <code>/resume</code> the named thread and start with "read your handoff".</td></tr>
+    <tr><td>A verbose sub-task (read 5,000 log lines, compare 3 SQL outputs)</td><td>Ask explicitly for a subagent or the <code>db-analyst</code> agent (Day 8) so the noise stays out of your window.</td></tr>
+  </table>
+  <h4>The handoff, so clearing costs nothing</h4>
+  <pre>Before /clear:  "Write a handoff for a fresh session: goal · what is done · what is next · open errors (verbatim) ·
+                decisions and why · files touched. Save anything non-obvious and durable to memory."
+Then:           /rename &lt;task-name&gt;   →   /clear
+Fresh session:  "Read the handoff in memory for &lt;task-name&gt;, run git diff --stat, then continue with step N."</pre>
+  <p>Add a <code># Compact instructions</code> section to <code>CLAUDE.md</code> ("preserve exact error text, file list, and decisions; drop tool output") so even automatic compaction keeps what you care about.</p>
+  <div class="box amber"><strong>Applied to your recent work.</strong> The KendoReact v16 migration (152 files) and the project-report rebuild each lived in long threads. The cheaper shape: one session per batch of files or per plan step, a <code>MIGRATION-STATUS.md</code> or plan file as the shared state, a handoff at each batch boundary. Same continuity, a fraction of the tokens, and each session starts at the fast end of the latency curve.</div>
+  <div class="box tip"><strong>Rule of thumb.</strong> If you would need more than two sentences to tell a colleague what this session is about, it is two sessions. If a fresh session with the handoff could not continue the work, the handoff — not the session — is what needs fixing.</div>
+</section>
+
+<!-- PART V -->
+<section class="page">
+  <div class="day-head"><span class="n">1</span><span class="t">See what you are paying for</span><span class="time">~35 min</span></div>
+  <h4>Goal</h4>
+  <p>Measure your context and cost baseline, put a live token readout on screen, and shrink the permission allow-list from one-off commands to patterns. (Part IV-A explains why this is also the first speed fix.)</p>
+  <h4>Why it matters for you</h4>
+  <p>You run long, heavy sessions (Telerik report pipeline, GL reconciliation, KendoReact migration across 152 files) on Opus. Without <code>/context</code> you cannot tell whether a slow, drifting session is the task or the 40K tokens of overhead you carry into it. The bloated <code>settings.local.json</code> is also a signal: every one-off <code>awk</code> command you approved forever is a rule Claude now reads and that prompts you again the next time the command differs by one character.</p>
+  <h4>Try today</h4>
+  <ol>
+    <li>Open a fresh session in the repo and type <code>/context</code> before anything else. Note the split: system prompt · system tools · MCP tools · memory files · skills · messages · free space. Write the total on Part III.</li>
+    <li>Type <code>/usage</code> (alias <code>/cost</code>) and <code>/status</code>. Then <code>/insights</code> once — it generates an HTML report of how you actually work; skim it for the tasks you repeat.</li>
+    <li>Type <code>/statusline</code> and ask for: model · context-used bar with percentage · git branch · cost. This is terminal-only and permanent.</li>
+    <li>Run <code>/fewer-permission-prompts</code>. It scans your transcripts and proposes a prioritised allow-list. Accept the pattern rules (<code>Bash(mysql *)</code>, <code>Bash(git diff *)</code>, <code>Bash(python3 *)</code>…) and then open <code>.claude/settings.local.json</code> and delete the literal one-off entries (the pdfplumber one-liners, the specific <code>awk</code> line-number commands, the CRUX curl).</li>
+    <li>Add explicit <strong>deny</strong> rules while you are there — these are enforced even in bypass mode:
+<pre>{
+  "permissions": {
+    "deny": [
+      "Bash(dotnet ef database update*)",
+      "Bash(dotnet ef migrations remove*)",
+      "Bash(rm -rf *)",
+      "Read(./**/appsettings.Production.json)"
+    ]
+  }
+}</pre></li>
+    <li>Type <code>/mcp</code>. If <code>chrome-devtools</code> shows disconnected (it did today), reconnect it now so Day 9 is not blocked; if it will not connect, note it and plan to use the Chrome extension instead (<code>/chrome</code>).</li>
+  </ol>
+  <h4>Done when</h4>
+  <p>You know your pre-message token overhead to the nearest thousand, a status line shows context percentage, and <code>settings.local.json</code> is under 3 KB with four deny rules.</p>
+  <h4>Keep or drop</h4>
+  <p>The status line and deny rules stay forever. <code>/insights</code> is a monthly habit, not a daily one.</p>
+</section>
+
+<section class="page">
+  <div class="day-head"><span class="n">2</span><span class="t">Restructure the instruction layers</span><span class="time">~45 min</span></div>
+  <h4>Goal</h4>
+  <p>Guardrails at the top, secrets out, one file per topic, a personal layer for things that are about <em>you</em> rather than this repo.</p>
+  <h4>Why it matters for you</h4>
+  <p>Your root <code>CLAUDE.md</code> is good but flat: the NEVER rules sit two-thirds of the way down, the dev password is committed, and the frontend file is a 238-line monolith that loads whole whenever a <code>.tsx</code> file is read. Path-scoped rules give you the same steering at lower cost, and a <code>~/.claude/CLAUDE.md</code> means your preferences (Arabic-capable reports, no builds by Claude, concise answers) follow you into the Power BI folder, the OFBiz reference folder, and the test-environment work.</p>
+  <h4>Try today</h4>
+  <ol>
+    <li>In <code>CLAUDE.md</code>, move "Database Migrations" and "Build Rules" into a single <strong>Hard rules</strong> block directly under the title. Keep each rule to one line.</li>
+    <li>Create <code>CLAUDE.local.md</code> with the dev login and any local URLs; delete them from <code>CLAUDE.md</code>; add <code>CLAUDE.local.md</code> to <code>.gitignore</code> (it is <em>not</em> ignored today — <code>git check-ignore -v CLAUDE.local.md</code> returns nothing).</li>
+    <li>Create <code>.claude/rules/</code> and split, with path scoping:
+<pre>.claude/rules/
+  backend-cqrs.md        # paths: ["Application/**/*.cs", "API/**/*.cs"]
+  persistence.md         # paths: ["Persistence/**/*.cs", "Domain/**/*.cs"]
+  reporting-telerik.md   # paths: ["API/Reporting/**"]
+  frontend-react.md      # paths: ["client-app/src/**/*.{ts,tsx}"]
+  accounting-rules.md    # no paths: soft-delete/void, payroll rounding, GL invariants</pre>
+    Frontmatter example:
+<pre>---
+paths:
+  - "API/Reporting/**"
+---
+# Telerik Reporting
+- Code-defined reports, literal TextBox per cell. Never Telerik.Reporting.List / Fields.X binding (renders zero rows).
+- Arabic text: reuse the payment-voucher pipeline; verify output visually (Day 9).</pre>
+    Ask Claude to do the split: <em>"Split CLAUDE.md and client-app/CLAUDE.md into .claude/rules files using the rules spec with paths frontmatter; keep every rule, remove duplicates, do not invent new ones."</em> Then read the result yourself.</li>
+    <li>Create <code>~/.claude/CLAUDE.md</code> (≤ 25 lines): who you are, language expectations, "report outcomes plainly", "prefer skills over MCP", "when a mistake repeats twice, propose a CLAUDE.md or rule line".</li>
+    <li>Verify: <code>/memory</code> lists the files; <code>/context</code> shows the rules under memory files; open a <code>.tsx</code> file in conversation and confirm the frontend rule appears only then.</li>
+  </ol>
+  <h4>Done when</h4>
+  <p>Root <code>CLAUDE.md</code> is under 60 lines with hard rules on top, no credentials are tracked by git, and <code>/context</code> at launch is lower than yesterday's baseline.</p>
+  <h4>Keep or drop</h4>
+  <p>Treat the rules like code: when Claude keeps making the same mistake, say <em>"add this to the relevant rule so a fresh session gets it right"</em> — the course's favourite instruction, and it maps onto your auto-memory habit.</p>
+</section>
+
+<section class="page">
+  <div class="day-head"><span class="n">3</span><span class="t">Plan mode and checkpoints</span><span class="time">~45 min</span></div>
+  <h4>Goal</h4>
+  <p>Do one real Phase-Two item the plan-first way, and learn to undo with <code>/rewind</code> instead of asking Claude to revert.</p>
+  <h4>Why it matters for you</h4>
+  <p>Your biggest changes lately (project-report in-app view, Telerik integration, soft-delete plan) were written straight into the working tree and are still unbuilt, with a "build-fix round" expected. Plan mode front-loads the research — which handlers, which OData sets to register, which auditor rule applies — into a document you approve before any file changes, and it is read-only, so it cannot violate your build rules by accident. Checkpoints let you try an approach and roll it back in seconds without a git stash.</p>
+  <h4>Try today</h4>
+  <ol>
+    <li>Pick one item from <code>second phase/2nd-phase-ERP-SYS-transcription.md</code> that is small but real (a new field, a new list view, a status rule).</li>
+    <li>Type <code>/plan</code> followed by the item in your own words (voice-dump is fine — plan mode is where verbosity is cheapest). Let it explore; answer its <em>AskUserQuestion</em> prompts.</li>
+    <li>Read the plan critically: does it name the CQRS file (<code>VerbEntity.cs</code>), the DTO, the OData registration in <code>GetEdmModel()</code>, the RTK Query slice, the RBAC/status-ribbon pattern from your frontend conventions? If not, say so — edits are cheap here and expensive later.</li>
+    <li>Approve and let it build. Then, deliberately: ask for a small extra change you do not want, press <kbd>Esc Esc</kbd> (or <code>/rewind</code>), choose <em>restore code</em>, and confirm the file is back.</li>
+    <li>Type <code>/diff</code> to review the working-tree changes in the terminal before you build. Use <code>/btw</code> for the side question you would normally have asked inline ("does OFBiz do this with a status item?") — it is answered without entering history.</li>
+    <li>Build and debug yourself as usual. When something fails, paste the error and let the same session fix it — the plan is still in context.</li>
+  </ol>
+  <h4>Done when</h4>
+  <p>One backlog item shipped with a plan file in <code>~/.claude/plans/</code>, one rewind performed, and you used <code>/diff</code> and <code>/btw</code> at least once each.</p>
+  <h4>Keep or drop</h4>
+  <p>Rule of thumb from the course, adjusted for you: plan mode for anything touching more than two layers (domain + handler + controller + UI) or anything with ledger side-effects. Skip it for one-file fixes.</p>
+</section>
+
+<section class="page">
+  <div class="day-head"><span class="n">4</span><span class="t">Context discipline</span><span class="time">~30 min</span></div>
+  <h4>Goal</h4>
+  <p>Replace "clear and re-explain" with steered compaction, conversation branching, and written handoffs — the session practice from Part IV-B, made into a routine.</p>
+  <h4>Why it matters for you</h4>
+  <p>139 clears and 122 resumes say you juggle many threads; 8 compacts say you usually let auto-compact decide what survives. Auto-compact does not know that the PAYROL_PAYMENT rounding rule or the 78,990 date-typo finding is the one fact that must not be lost. Steered compaction and handoff notes keep the expensive part of a session — the understanding — while dropping the tool noise.</p>
+  <h4>Try today</h4>
+  <ol>
+    <li>In a long-running session, before it hits the buffer, type:
+<pre>/compact Keep: the list of files changed and why, open bugs with their exact error text, and the decisions we made about void-vs-delete. Drop: tool output, file contents we already edited.</pre></li>
+    <li>Check <code>/autocompact</code> and leave it on auto unless you see compaction firing mid-task; then raise the threshold.</li>
+    <li>When a session forks into two directions (e.g. "fix the report" and "why does the trial balance differ"), type <code>/branch trial-balance</code> to continue the second in a copy while the first stays intact. Use <code>/fork</code> when the second thread should run in the background instead.</li>
+    <li>Before any <code>/clear</code> at the end of a work block, say: <em>"Write a handoff: current state, next step, gotchas — save anything non-obvious to memory."</em> Your auto-memory already stores project notes; this makes the save deliberate. Then <code>/rename</code> the session so <code>/resume</code> finds it.</li>
+    <li>Try the cheap-transcript trick once: dictate a long request, paste it to a Sonnet session (<code>/model sonnet</code>) with <em>"compress this into a precise task statement"</em>, then give the compressed version to your Opus session.</li>
+    <li>Use <code>/export handoff-2026-09-22.md</code> at the end and skim it: that is what compaction has to summarise.</li>
+  </ol>
+  <h4>Done when</h4>
+  <p>You have one steered compaction, one branch, and one handoff note in memory that a fresh session can pick up without re-reading the code.</p>
+  <h4>Keep or drop</h4>
+  <p>Keep the handoff habit unconditionally. Branch/fork only when you actually feel the two threads fighting.</p>
+</section>
+
+<section class="page">
+  <div class="day-head"><span class="n">5</span><span class="t">Your first skill</span><span class="time">~45 min</span></div>
+  <h4>Goal</h4>
+  <p>Turn a workflow you have repeated in chat at least three times into a <code>.claude/skills/</code> folder with a checklist and, where it helps, a script.</p>
+  <h4>Why it matters for you</h4>
+  <p>Your memory index is a list of skill candidates: verifying a GL balance three different ways, rendering a real-data report to PDF with headless Chrome, generating a migration and its SQL script for review, looking up a Phase-Two item by number. Each time you re-explain these you spend tokens and risk drift. A skill costs ~60 tokens until invoked, is version-controlled, and — per the course — gets <em>better</em> because Claude updates it when a step fails.</p>
+  <h4>Try today</h4>
+  <ol>
+    <li>Pick the first: <strong>GL account check</strong>. Create <code>.claude/skills/gl-check/SKILL.md</code>:
+<pre>---
+name: gl-check
+description: Verify a GL account's balance in the local erp_contracts MySQL DB the three ways this
+  codebase computes it (ACCTG_TRANS_ENTRY sum, trial-balance query, project GL view) and report differences.
+  Use when asked to check, reconcile, or explain a GL/bank/trial-balance figure.
+arguments: [account, period]
+allowed-tools: Bash(mysql *) Read Grep
+---
+Account: $account  Period: $period (YYYY-MM; default = current month)
+
+1. Read the SQL in `scripts/gl_check.sql`; substitute the account and period.
+2. Run it read-only against the dev DB (credentials come from CLAUDE.local.md, never from this file).
+3. Report a 3-row table: method · balance · entry count, then the differences and the most likely cause
+   (see memory notes on PAYROL_PAYMENT filtering and per-invoice rounding).
+4. If a step fails, fix the script here so the next run does not repeat the failure.</pre></li>
+    <li>Have Claude write <code>scripts/gl_check.sql</code> from the three implementations it already knows (GeneralLedgerService, the trial-balance query, the project report). Review the SQL yourself.</li>
+    <li>Start a <strong>new</strong> session (skills register at launch) and type <code>/gl-check 110100 2026-08</code>. Compare with the figures from the August bank-balance investigation you already resolved.</li>
+    <li>Second skill, 10 minutes: <code>migration</code> with <code>disable-model-invocation: true</code> and <code>allowed-tools: Bash(dotnet ef migrations add *) Bash(dotnet ef migrations script *)</code>, whose steps are: add the migration, generate the SQL script to <code>/tmp</code>, print the diff of the migration file, <strong>stop</strong> and remind that applying is manual.</li>
+    <li>Third, if time: <code>report-pdf</code> wrapping the HTML → headless Chrome → pypdfium2 QA recipe from your memory notes, with <code>!`ls "$CLAUDE_PROJECT_DIR"/*.html`</code> injected so it sees candidate sources.</li>
+  </ol>
+  <h4>Done when</h4>
+  <p><code>/gl-check</code> works from a fresh session and its output matches a number you already trust; <code>/migration</code> refuses to apply anything.</p>
+  <h4>Keep or drop</h4>
+  <p>Add a skill only after the third manual repetition. Skills that describe a <em>convention</em> rather than a <em>procedure</em> belong in rules instead.</p>
+</section>
+
+<section class="page">
+  <div class="day-head"><span class="n">6</span><span class="t">Hooks as hard guardrails</span><span class="time">~40 min</span></div>
+  <h4>Goal</h4>
+  <p>A chime when Claude stops or needs you; a PreToolUse guard that makes your build and migration rules impossible to break; a log of what got blocked.</p>
+  <h4>Why it matters for you</h4>
+  <p>Today "NEVER run dotnet build" is a sentence in a markdown file. It has held, but it is context, not policy, and it competes with everything else in the window after a compaction. A hook is a shell script that runs before every Bash call and exits 2 to block — no model judgement involved. The chime is the course presenter's single most-used trick for running several sessions without idling any of them.</p>
+  <h4>Try today</h4>
+  <ol>
+    <li>Create <code>.claude/hooks/guard-bash.sh</code> (no <code>jq</code> on this Mac, so Python parses stdin):
+<pre>#!/bin/bash
+cmd=$(python3 -c 'import sys,json; print(json.load(sys.stdin).get("tool_input",{}).get("command",""))')
+if echo "$cmd" | grep -Eq 'dotnet +(build|run|watch)|dotnet ef database update|dotnet ef migrations remove|npm run (build|start)|yarn (build|start)|rm -rf'; then
+  echo "BLOCKED by .claude/hooks/guard-bash.sh: '$cmd' — CLAUDE.md hard rule (builds/migrations are manual)." >&2
+  echo "$(date '+%F %T') $cmd" >> "$CLAUDE_PROJECT_DIR/.claude/hooks/blocked.log"
+  exit 2
+fi
+exit 0</pre>
+    <code>chmod +x .claude/hooks/guard-bash.sh</code> and add <code>.claude/hooks/blocked.log</code> to <code>.gitignore</code>.</li>
+    <li>Create <code>.claude/settings.json</code> (shared, committed) with the guard, and put the sounds in your user settings so they follow you to every project:
+<pre>// .claude/settings.json
+{ "hooks": { "PreToolUse": [ { "matcher": "Bash",
+    "hooks": [ { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-bash.sh" } ] } ] } }
+
+// ~/.claude/settings.json  (merge into the existing object)
+{ "hooks": {
+    "Stop":         [ { "hooks": [ { "type": "command", "command": "afplay /System/Library/Sounds/Glass.aiff" } ] } ],
+    "Notification": [ { "hooks": [ { "type": "command",
+        "command": "osascript -e 'display notification \"Claude needs input\" with title \"Claude Code\"'" } ] } ]
+} }</pre></li>
+    <li>Restart the session, type <code>/hooks</code> and confirm all three appear with their source file.</li>
+    <li>Test the guard on purpose: <em>"run dotnet build to check"</em>. Expect the block message in the conversation and a line in <code>blocked.log</code>. Test the chime by asking any question.</li>
+    <li>Optional: a <code>PreCompact</code> hook that appends <code>git status --short</code> to a scratch file, so a post-compaction session can recover which files were in flight.</li>
+  </ol>
+  <h4>Done when</h4>
+  <p>A build attempt is blocked mechanically, the chime plays on Stop, and <code>.claude/settings.json</code> is committed so every clone of the repo gets the guard.</p>
+  <h4>Keep or drop</h4>
+  <p>Keep both. If the chime annoys you in single-session work, keep <code>Notification</code> and drop <code>Stop</code>.</p>
+</section>
+
+<section class="page">
+  <div class="day-head"><span class="n">7</span><span class="t">Fresh-eyes review</span><span class="time">~40 min</span></div>
+  <h4>Goal</h4>
+  <p>Run the built-in review skills on the large, unbuilt working tree before you build it, and learn what a zero-context reviewer catches that the author session does not.</p>
+  <h4>Why it matters for you</h4>
+  <p>The course's reviewer-subagent argument is about bias: a session that just wrote 2,000 lines of Telerik and soft-delete code defends its choices. Your working tree holds exactly that kind of change — project-report PDF export rebuilt on server-side Telerik, void-payment primitives, required-PartyId guards — plus auditor constraints where a mistake is a ledger error, not a UI glitch. <code>/code-review</code>, <code>/security-review</code> and <code>/simplify</code> give you the reviewer without you spawning agents yourself.</p>
+  <h4>Try today</h4>
+  <ol>
+    <li>In a <strong>fresh</strong> session (fresh is the point), type <code>/code-review high</code>. It reviews the current diff for correctness bugs. Read every finding against your rules: lazy loading disabled → missing <code>.Include()</code>; <code>Result&lt;T&gt;</code> never throws; OData sets registered; snake_case only on Domain.</li>
+    <li>Type <code>/security-review</code>. Pay attention to anything touching AccountController, PaymentHelperService and the void/reverse paths.</li>
+    <li>Pick one small handler and type <code>/simplify</code> — quality only, it applies the cleanups; check the diff with <code>/diff</code>.</li>
+    <li>Ask the reviewer's question explicitly once, the way the course frames it: <em>"You have no context on why this was written this way. Read <code>Application/…/VoidPayment.cs</code> and tell me what looks wrong or odd."</em> Compare with what the author session told you.</li>
+    <li>For findings you disagree with, say why and ask for the rule that would prevent the false positive — add it to <code>.claude/rules/accounting-rules.md</code>.</li>
+    <li>Then build, as you always do, and note how many of the build-fix items the review had already flagged.</li>
+  </ol>
+  <h4>Done when</h4>
+  <p>Three review passes run, at least one real finding fixed before the build, and one rule added from a disagreement.</p>
+  <h4>Keep or drop</h4>
+  <p>Make <code>/code-review</code> the last step before every build you run manually. <code>/security-review</code> whenever payments, auth or user↔party linkage change.</p>
+</section>
+
+<section class="page">
+  <div class="day-head"><span class="n">8</span><span class="t">Subagents on purpose</span><span class="time">~45 min</span></div>
+  <h4>Goal</h4>
+  <p>Define two agents in <code>.claude/agents/</code>, invoke them explicitly, and see the context-isolation benefit without changing your "no unrequested subagents" rule.</p>
+  <h4>Why it matters for you</h4>
+  <p>Two of the course's three recommended agents fit you exactly. A <strong>db-analyst</strong> on Sonnet can churn through hundreds of rows of ACCTG_TRANS_ENTRY, payroll snapshots or audit logs in its own window and return a 20-line answer — the thing that today floods your Opus session. A <strong>code-reviewer</strong> gives the Day 7 effect on demand. The third (QA/test runner) is deferred because Claude does not build in this repo. Your CLAUDE.md rule stays: the parent only uses them when <em>you</em> ask.</p>
+  <h4>Try today</h4>
+  <ol>
+    <li>Create <code>.claude/agents/db-analyst.md</code>:
+<pre>---
+name: db-analyst
+description: Read-only analyst for the local erp_contracts MySQL dev DB. Use only when the user explicitly asks
+  for a data reconciliation or a count/sum across many rows. Returns a short summary and the SQL used.
+tools: Bash, Read, Grep
+model: sonnet
+---
+You answer data questions against the local dev database with SELECT statements only (never INSERT/UPDATE/DELETE/DDL).
+Credentials: read CLAUDE.local.md. Return at most 25 lines: finding · the SQL · caveats.
+Known traps: PAYROL_PAYMENT nets are rounded per invoice then summed; aggregate payroll payments carry no invoice link;
+MainRole and PARTY_ROLE can diverge. Never paste raw row dumps back to the caller.</pre></li>
+    <li>Create <code>.claude/agents/code-reviewer.md</code> (Opus, tools Read/Grep/Glob only, prompt: <em>"You have no context on intent. Review for correctness against the project rules; report findings ranked by severity with file:line; propose no rewrites."</em>).</li>
+    <li>New session. <code>/agents</code> should list both. Ask: <em>"Use the db-analyst agent to compare payroll totals for August between PAYMENT rows and the snapshot table."</em> Watch the Task block; note that only the summary lands in your context.</li>
+    <li>Parallel on purpose, once: <em>"Use two db-analyst agents in parallel: one for July, one for August; then compare."</em> Observe that each returns a summary and that the parent does the comparison — the course's "parent synthesises, children fetch" rule.</li>
+    <li>Ask the code-reviewer for one file you changed today, and compare with <code>/code-review</code> from Day 7.</li>
+  </ol>
+  <h4>Done when</h4>
+  <p>Both agents appear in <code>/agents</code>, one data question was answered by db-analyst with less than 30 lines returned, and you can say in one sentence when you would reach for an agent versus a skill.</p>
+  <h4>Keep or drop</h4>
+  <p>Keep db-analyst. Keep code-reviewer only if it caught something <code>/code-review</code> did not. Agent teams (7× tokens) remain off; consider them only for one-off repo-wide audits with a hard budget.</p>
+</section>
+
+<section class="page">
+  <div class="day-head"><span class="n">9</span><span class="t">Close the verification loop in the browser</span><span class="time">~45 min</span></div>
+  <h4>Goal</h4>
+  <p>Have Claude verify a UI or report change against the running dev server and against a rendered PDF, instead of you being the only tester.</p>
+  <h4>Why it matters for you</h4>
+  <p>The KendoReact PDF export "worked" until someone looked at the Arabic. The theme visual pass after the v16 upgrade is still open. Your auditor wants the in-app project report as the primary view. All of these are "task → do → <strong>verify</strong>" gaps that a screenshot loop closes cheaply — and you already have both the Chrome DevTools MCP and the Claude-in-Chrome extension; one of them just needs to be working.</p>
+  <h4>Try today</h4>
+  <ol>
+    <li>Start the dev server yourself (frontend on :3000, API on :5001 — Claude never starts it). Type <code>/mcp</code>; if <code>chrome-devtools</code> still fails to connect, use the extension: <code>/chrome</code>, and tell Claude to use the Claude-in-Chrome tools.</li>
+    <li>Ask: <em>"Log in to localhost:3000 with the credentials in CLAUDE.local.md, open the project report view for project X, take a screenshot, and check: Arabic labels render right-to-left, totals match the Excel export for the same project, no console errors."</em> Have it read <code>read_console_messages</code> and network requests, not just the picture.</li>
+    <li>Fix one finding in the same session, then ask it to re-verify — the loop, not the one-shot.</li>
+    <li>PDF: ask it to trigger the server-side Telerik export, save the file, render page 1 to PNG with the pypdfium2 venv recipe from memory, and compare the Arabic shaping against the payment voucher (your known-good pipeline). Read the PNG yourself too.</li>
+    <li>Record the walkthrough as a GIF with the extension's recorder if you want to send it to the auditor.</li>
+    <li>Write the working recipe into <code>.claude/skills/ui-verify/SKILL.md</code>: login → navigate → screenshot → console/network → report — so Day 5's habit compounds.</li>
+  </ol>
+  <h4>Done when</h4>
+  <p>One screen and one PDF verified by Claude with evidence (screenshot + console log + rendered page), and a <code>ui-verify</code> skill exists.</p>
+  <h4>Keep or drop</h4>
+  <p>Keep for every frontend or report change. If the MCP keeps disconnecting, drop it and standardise on the extension — one browser tool is enough; two sets of tool definitions is context you pay for.</p>
+</section>
+
+<section class="page">
+  <div class="day-head"><span class="n">10</span><span class="t">Automate, parallelise, retrospect</span><span class="time">~45 min</span></div>
+  <h4>Goal</h4>
+  <p>Run Claude without a chat window for one recurring chore, try worktree isolation for one feature, and decide — with data — which of the last nine days' habits survive.</p>
+  <h4>Why it matters for you</h4>
+  <p>The course ends with "put your skills on a URL". For an ERP developer the equivalent is quieter: a headless run that summarises yesterday's Serilog warnings, a routine that checks the prod box, a worktree so the soft-delete rework does not sit half-done next to a hot fix. The last thirty minutes are the most valuable of the ten days: habits you do not need cost context every session.</p>
+  <h4>Try today</h4>
+  <ol>
+    <li>Headless, read-only, no build risk:
+<pre>claude -p "Read API/logs/logfile$(date +%Y%m%d).log and the previous day's file. Group WARN/ERROR by source and message
+template, count them, flag anything new versus the previous day. Output markdown." \
+  --allowedTools "Read,Grep,Glob" --output-format text > /tmp/log-digest.md</pre>
+    Read the digest. If useful, wrap it as a skill and schedule it: <code>/loop 1d /log-digest</code> during a working session, or <code>/schedule</code> for a cloud routine that does not need your Mac awake.</li>
+    <li><code>/goal</code> once, on something bounded: <em>"work until /code-review high returns no correctness findings on the current diff"</em>. Watch it stop on the condition, not on your interruption.</li>
+    <li>Worktree for the soft-delete rework (shared MySQL and ports mean: one dev server at a time):
+<pre>git worktree add ../Contracts-soft-delete -b feature/soft-delete
+cd ../Contracts-soft-delete && claude</pre>
+    <code>CLAUDE.local.md</code> is per-worktree (gitignored); import a home-directory file if both need the same private notes.</li>
+    <li>Send one long research question (e.g. NPHIES/ZATCA patterns in the EIDD PDF) to the background with <code>/fork</code>; <code>/tasks</code> shows it.</li>
+    <li><strong>Retrospective (30 min).</strong> Run <code>/insights</code> again and <code>/context</code> in a fresh session. Fill the table below. Delete what you dropped — rules, hooks, agents, MCP servers all cost something.</li>
+  </ol>
+  <table class="retro" style="font-size:8.4pt">
+    <tr><th style="width:26%">Habit</th><th style="width:14%">Keep?</th><th>Evidence (what it saved or caught)</th></tr>
+    <tr><td>Status line + /context baseline</td><td></td><td></td></tr>
+    <tr><td>Rules split + local/personal CLAUDE.md</td><td></td><td></td></tr>
+    <tr><td>Plan mode for multi-layer changes</td><td></td><td></td></tr>
+    <tr><td>Steered /compact + handoff notes</td><td></td><td></td></tr>
+    <tr><td>/gl-check, /migration, /ui-verify skills</td><td></td><td></td></tr>
+    <tr><td>Guard hook + chime</td><td></td><td></td></tr>
+    <tr><td>/code-review before every build</td><td></td><td></td></tr>
+    <tr><td>db-analyst agent</td><td></td><td></td></tr>
+    <tr><td>Browser verification loop</td><td></td><td></td></tr>
+    <tr><td>Headless digest / routine / worktree</td><td></td><td></td></tr>
+  </table>
+  <h4>Done when</h4>
+  <p>The table is filled, at least two things are deleted, and your launch <code>/context</code> is lower than on Day 1 despite everything you added.</p>
+</section>
+
+<!-- APPENDIX A -->
+<section class="page">
+  <h2>Appendix A — Command and key cheat sheet</h2>
+  <div class="two">
+    <div>
+      <h3>Measure</h3>
+      <table class="kv">
+        <tr><td>/context</td><td>What is in the window, by category</td></tr>
+        <tr><td>/usage · /cost</td><td>Tokens and cost this session</td></tr>
+        <tr><td>/status</td><td>Model, mode, account, version</td></tr>
+        <tr><td>/statusline</td><td>Configure the permanent readout</td></tr>
+        <tr><td>/insights</td><td>HTML report of how you work</td></tr>
+        <tr><td>/doctor</td><td>Setup diagnostics</td></tr>
+      </table>
+      <h3>Steer the session</h3>
+      <table class="kv">
+        <tr><td>/plan [text]</td><td>Enter plan mode (also Shift+Tab)</td></tr>
+        <tr><td>/compact [instructions]</td><td>Summarise with priorities</td></tr>
+        <tr><td>/autocompact</td><td>Set the auto threshold</td></tr>
+        <tr><td>/clear · /resume · /rename</td><td>Thread management</td></tr>
+        <tr><td>/branch [name]</td><td>Fork conversation in place</td></tr>
+        <tr><td>/fork · /background</td><td>Copy / detach to background</td></tr>
+        <tr><td>/btw</td><td>Side question, no history</td></tr>
+        <tr><td>/rewind · Esc Esc</td><td>Restore code and/or conversation</td></tr>
+        <tr><td>/diff</td><td>Review working-tree changes</td></tr>
+        <tr><td>/export [file]</td><td>Dump conversation as text</td></tr>
+        <tr><td>/goal [condition]</td><td>Work until a condition holds</td></tr>
+        <tr><td>/model · /effort · /fast</td><td>Model, reasoning depth, speed</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>Configure</h3>
+      <table class="kv">
+        <tr><td>/memory</td><td>Edit CLAUDE.md layers, toggle auto-memory</td></tr>
+        <tr><td>/permissions</td><td>Allow / ask / deny rules</td></tr>
+        <tr><td>/hooks</td><td>View configured hooks and sources</td></tr>
+        <tr><td>/agents</td><td>Manage subagents</td></tr>
+        <tr><td>/mcp</td><td>Reconnect / enable / disable servers</td></tr>
+        <tr><td>/chrome</td><td>Claude-in-Chrome settings</td></tr>
+        <tr><td>/config · /keybindings</td><td>Settings, shortcuts file</td></tr>
+        <tr><td>/init</td><td>Generate or improve CLAUDE.md</td></tr>
+        <tr><td>/fewer-permission-prompts</td><td>Build an allow-list from history</td></tr>
+      </table>
+      <h3>Quality &amp; automation</h3>
+      <table class="kv">
+        <tr><td>/code-review [level]</td><td>Bug review of the diff or a PR</td></tr>
+        <tr><td>/security-review</td><td>Security pass on the diff</td></tr>
+        <tr><td>/simplify</td><td>Apply quality cleanups</td></tr>
+        <tr><td>/loop [interval] cmd</td><td>Repeat a prompt or skill</td></tr>
+        <tr><td>/schedule</td><td>Cloud routines on a cron</td></tr>
+        <tr><td>/tasks</td><td>Background work and agents</td></tr>
+        <tr><td>claude -p "…"</td><td>Headless one-shot from a shell</td></tr>
+      </table>
+      <h3>Keys and prefixes</h3>
+      <table class="kv">
+        <tr><td>Shift+Tab</td><td>Cycle permission modes</td></tr>
+        <tr><td>Esc Esc</td><td>Rewind menu</td></tr>
+        <tr><td>! command</td><td>Run a shell command, output lands in the thread</td></tr>
+        <tr><td>@path</td><td>Attach a file or folder to the prompt</td></tr>
+        <tr><td>Enter while running</td><td>Queue the next message</td></tr>
+      </table>
+    </div>
+  </div>
+  <p class="small">Commands verified against the docs' command list on 19 Sep 2026 for Claude Code 2.1.x. Names change; <code>/help</code> is authoritative.</p>
+</section>
+
+<!-- APPENDIX B -->
+<section class="page">
+  <h2>Appendix B — Housekeeping flags found while preparing this plan</h2>
+  <table>
+    <tr><th style="width:5%">#</th><th style="width:38%">Finding</th><th>Why it matters</th><th style="width:22%">Do</th></tr>
+    <tr><td>1</td><td><code>important-commands.txt</code> (tracked, modified) contains a GitHub personal access token in plain text.</td><td>Anyone with the repo history has it; Claude reads the file whenever it greps the root.</td><td>Revoke on GitHub, delete the line, consider <code>git filter-repo</code> if the repo is shared.</td></tr>
+    <tr><td>2</td><td>Dev login (email + password) is in the committed <code>CLAUDE.md</code>.</td><td>Belongs in <code>CLAUDE.local.md</code>; the browser-check instruction can stay and point there.</td><td>Day 2, step 2.</td></tr>
+    <tr><td>3</td><td><code>CLAUDE.local.md</code> is not in <code>.gitignore</code>.</td><td>The first time you create it, it will be staged.</td><td>Add the line now.</td></tr>
+    <tr><td>4</td><td><code>.claude/settings.local.json</code> is 14.7 KB with dozens of literal one-off commands, including an <code>export MYSQL_PWD=…</code> rule that embeds the password.</td><td>Context and prompt noise; secret in a config file.</td><td>Day 1, steps 4–5.</td></tr>
+    <tr><td>5</td><td>Repo root holds 18 stray files in git status (screenshots, xlsx, PDFs, an <code>AD</code> added-then-deleted set).</td><td>Every <code>ls</code> / glob Claude runs pays for them; the course calls this "workspace bloat".</td><td>Move deliverables to a <code>docs/</code> or <code>deliverables/</code> folder; untrack the rest.</td></tr>
+    <tr><td>6</td><td><code>chrome-devtools</code> MCP failed to connect this session ("Connection closed").</td><td>Day 9 depends on a browser tool; two half-working ones cost double context.</td><td><code>/mcp</code> reconnect; else standardise on the extension.</td></tr>
+    <tr><td>7</td><td>No <code>.claude/settings.json</code> (shared) — every safeguard is personal or in prose.</td><td>Another clone or the test-environment box gets none of it.</td><td>Day 6 creates it.</td></tr>
+    <tr><td>8</td><td>The 380 KB <code>Claude-Course.md</code> transcript is staged at the repo root.</td><td>It is source material, not project code, and it inflates every full-text search.</td><td>Keep the notes, remove the transcript from the repo (or move under <code>docs/reference/</code>).</td></tr>
+  </table>
+  <div class="box warn"><strong>Order of operations.</strong> Do #1 before anything else today; it takes two minutes and does not depend on the plan.</div>
+</section>
+
+<!-- APPENDIX C -->
+<section class="page">
+  <h2>Appendix C — Course claims to treat with care</h2>
+  <table>
+    <tr><th style="width:38%">Claim in the transcript</th><th>What the docs / your setup say</th></tr>
+    <tr><td>"The global <code>~/.claude</code> supersedes the local <code>.claude</code>."</td><td>Nothing supersedes; files are concatenated root-first, and the closest file is read last. Resolve conflicts by pruning, not by placement.</td></tr>
+    <tr><td>"Move your CLAUDE.md into <code>.claude/</code> to unlock advanced features."</td><td><code>.claude/CLAUDE.md</code> is a valid location but unlocks nothing; the toolbox is <code>rules/</code>, <code>skills/</code>, <code>agents/</code>, <code>settings.json</code>. Keep yours at the root.</td></tr>
+    <tr><td>"Memory is a single global <code>memory.md</code>."</td><td>Auto-memory is per project under <code>~/.claude/projects/&lt;project&gt;/memory/</code> with typed notes and a <code>MEMORY.md</code> index — which you already use heavily.</td></tr>
+    <tr><td>"Bypass permissions is what most people use now."</td><td>You are on auto mode, which is the safer middle. Deny rules and hooks apply in every mode; use them rather than trusting prose.</td></tr>
+    <tr><td>"Plugins will be deprecated into skills."</td><td>Speculation. Plugins bundle skills, agents, hooks and MCP servers together; the built-in <code>/code-review</code> and <code>/simplify</code> you will use on Day 7 are plugin-delivered.</td></tr>
+    <tr><td>"Agent teams cost ~7×; Opus 4.6 has a 200K window."</td><td>Order-of-magnitude guidance from early 2026. Check <code>/usage</code> and <code>/model</code> for today's numbers before budgeting anything.</td></tr>
+    <tr><td>"Subagents' new definitions need a new session."</td><td>Consistent with the docs and with skills: register at launch. Plan Days 5 and 8 around a restart.</td></tr>
+    <tr><td>"MCP servers will auto tool-search when definitions exceed 10% of context."</td><td>Deferred tool loading exists (you saw it in this very session), but it does not make a badly designed server free — the skill-instead-of-MCP rule still stands.</td></tr>
+  </table>
+  <footer class="note">Prepared with Claude Code from <code>Claude-Course.md</code>, the Claude Code documentation (memory, hooks, skills, commands pages, fetched 2026-09-19), <code>~/.claude/history.jsonl</code>, <code>~/.claude/settings.json</code>, <code>.claude/settings.local.json</code>, the project memory index, and the repository's CLAUDE.md files. Source HTML: <code>Claude-Code-10-Day-Plan.source.html</code>.</footer>
+</section>
+
+</body>
+</html>

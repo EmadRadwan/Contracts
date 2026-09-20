@@ -58,7 +58,9 @@ public sealed class ProjectReportSummaryReport : Report
 
         SectionHeader("المصاريف");
         Line("المستخلصات", s.CertificateExpenses);
-        Line("الدفعات المباشرة", s.DirectPayments);
+        Line($"الدفعات المباشرة — مدفوعة ({s.DirectPaymentsPaidCount})", s.DirectPaymentsPaid);
+        Line($"الدفعات المباشرة — غير مدفوعة ({s.DirectPaymentsUnpaidCount})", s.DirectPaymentsUnpaid);
+        Line("إجمالي الدفعات المباشرة", s.DirectPayments);
         Line("قيود محاسبية", s.AccountingTransactions);
         Line("رواتب المشروع", s.ProjectPayroll);
         Line("المصاريف التشغيلية", s.OperatingExpenses);
@@ -72,7 +74,8 @@ public sealed class ProjectReportSummaryReport : Report
         y += 0.2;
 
         SectionHeader("وديعة الصيانة");
-        Line("الإجمالي", s.MaintenanceScheduled);
+        Line($"عدد الوحدات ({s.MaintenanceUnitsCollected} محصلة بالكامل)", s.MaintenanceUnits, isInt: true);
+        Line("الإجمالي (حسب طلبات البيع)", s.MaintenanceScheduled);
         Line("المحصل", s.MaintenanceCollected);
         Line("المتبقي", s.MaintenanceOutstanding);
         y += 0.2;
@@ -97,7 +100,7 @@ public sealed class ProjectReportSummaryReport : Report
         SectionHeader("مبلغ الإدارة");
         Line("الأساس" + excludedLabel, s.MgmtFeeBase);
         Line($"النسبة ({s.MgmtFeePercent}%)", s.MgmtFee);
-        Line("يُخصم: المصاريف التشغيلية", -s.OperatingExpenses);
+        Line("يُخصم: المصاريف التشغيلية (فترة مبلغ الإدارة)", -s.MgmtFeeOperatingExpenses);
         Line("الصافي المتبقي", s.MgmtFeeNet, true);
         y += 0.2;
 

@@ -28,10 +28,13 @@ public class PdfPaymentRow
     public string ToDisplay { get; set; } = "";
     public DateTime? EffectiveDate { get; set; }
     public decimal Amount { get; set; }
+    /// <summary>Due status (متأخر / مستحق خلال أسبوع …) for unpaid rows, plain status otherwise.</summary>
+    public string StatusDisplay { get; set; } = "";
 }
 
 public class PdfRevenueRow
 {
+    public string CategoryDisplay { get; set; } = "";
     public string BuildingNumber { get; set; } = "";
     public string ApartmentId { get; set; } = "";
     public string CustomerName { get; set; } = "";
@@ -39,6 +42,19 @@ public class PdfRevenueRow
     public decimal CollectedAmount { get; set; }
     public decimal OutstandingAmount { get; set; }
     public string DueStatusDisplay { get; set; } = "";
+}
+
+public class PdfMaintenanceRow
+{
+    public string SalesRequestId { get; set; } = "";
+    public string BuildingNumber { get; set; } = "";
+    public string ApartmentName { get; set; } = "";
+    public string CustomerName { get; set; } = "";
+    public DateTime? SaleDate { get; set; }
+    public decimal MaintenanceDeposit { get; set; }
+    public decimal CollectedAmount { get; set; }
+    public decimal OutstandingAmount { get; set; }
+    public string StatusDisplay { get; set; } = "";
 }
 
 public class PdfSalesRow
@@ -108,14 +124,18 @@ public static class ProjectReportPdfRows
             ToDisplay = p.PartyIdToName ?? "",
             EffectiveDate = ToDt(p.EffectiveDate),
             Amount = p.Amount,
+            StatusDisplay = p.DueStatusArabic ?? p.StatusDescription ?? "",
         }).ToList();
 
-    public static (List<PdfRevenueRow> Agreed, List<PdfRevenueRow> Maintenance) BuildRevenues(
-        IEnumerable<ProjectRevenueRecord> revenues)
+    // Every receipt in the revenue window, agreed revenue first then the maintenance receipts —
+    // the same two blocks as the Excel revenues sheet. (The وديعة الصيانة section itself is built
+    // from the sales requests, see BuildMaintenance.)
+    public static List<PdfRevenueRow> BuildRevenues(IEnumerable<ProjectRevenueRecord> revenues)
     {
         var list = revenues.ToList();
-        PdfRevenueRow Map(ProjectRevenueRecord r) => new()
+        return list.Where(r => !IsMaintenance(r)).Concat(list.Where(IsMaintenance)).Select(r => new PdfRevenueRow
         {
+            CategoryDisplay = r.PaymentTypeArabic ?? r.RevenueCategory ?? "",
             BuildingNumber = r.BuildingNumber ?? "",
             ApartmentId = r.ApartmentId ?? "",
             CustomerName = r.CustomerName ?? "",
@@ -123,11 +143,22 @@ public static class ProjectReportPdfRows
             CollectedAmount = r.CollectedAmount,
             OutstandingAmount = r.OutstandingAmount,
             DueStatusDisplay = r.DueStatusArabic ?? "",
-        };
-        var agreed = list.Where(r => !IsMaintenance(r)).Select(Map).ToList();
-        var maintenance = list.Where(IsMaintenance).Select(Map).ToList();
-        return (agreed, maintenance);
+        }).ToList();
     }
+
+    public static List<PdfMaintenanceRow> BuildMaintenance(IEnumerable<ProjectMaintenanceDepositRecord> deposits) =>
+        deposits.Select(m => new PdfMaintenanceRow
+        {
+            SalesRequestId = m.SalesRequestId,
+            BuildingNumber = m.BuildingNumber ?? "",
+            ApartmentName = m.ApartmentName ?? "",
+            CustomerName = m.CustomerName ?? "",
+            SaleDate = ToDt(m.SaleDate),
+            MaintenanceDeposit = m.MaintenanceDeposit,
+            CollectedAmount = m.CollectedAmount,
+            OutstandingAmount = m.OutstandingAmount,
+            StatusDisplay = m.DueStatusArabic ?? m.CollectionStatusArabic,
+        }).ToList();
 
     public static List<PdfSalesRow> BuildSales(IEnumerable<SalesRequestOrApartmentRecord> sales) =>
         sales.Select(s => new PdfSalesRow

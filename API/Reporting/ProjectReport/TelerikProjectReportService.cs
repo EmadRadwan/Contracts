@@ -46,7 +46,7 @@ public sealed class TelerikProjectReportService : IProjectReportService
         try
         {
             foreach (var section in ProjectReportSections.BuildAll(data))
-                reports.Add(new ProjectReportTableReport(section.Title, section.Columns, section.Rows, projectName, projectId));
+                reports.Add(new ProjectReportTableReport(section.Title, section.Columns, section.Rows, projectName, projectId, section.Total));
 
             using var book = new ReportBook();
             foreach (var r in reports)

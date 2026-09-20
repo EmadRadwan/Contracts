@@ -10,16 +10,30 @@ namespace API.Reporting.ProjectReport;
 /// </summary>
 public static class ProjectReportSections
 {
-    public sealed record Section(string Title, IReadOnlyList<ProjectReportColumn> Columns, IList Rows);
+    /// <param name="Total">
+    /// Optional bold total row under the table: (label, amount, field of the column the amount
+    /// sits under). Only sections the client reads as a ledger block carry one — everything else
+    /// is totalled on the summary page.
+    /// </param>
+    public sealed record Section(
+        string Title, IReadOnlyList<ProjectReportColumn> Columns, IList Rows, SectionTotal? Total = null);
+
+    public sealed record SectionTotal(string Label, decimal Amount, string Field);
 
     public static List<Section> BuildAll(ProjectReportDto data)
     {
         var expenseRows = ProjectReportPdfRows.BuildExpenses(data.Expenses);
-        var directPaymentRows = ProjectReportPdfRows.BuildPayments(data.DirectPayments);
+        // Direct payments split into a paid block and an unpaid (open commitments) block, each
+        // with its own total — same partition as the Excel sheet and the on-screen tab.
+        var directPaidRows = ProjectReportPdfRows.BuildPayments(
+            data.DirectPayments.Where(p => !ProjectReportSummaryDto.IsUnpaid(p)));
+        var directUnpaidRows = ProjectReportPdfRows.BuildPayments(
+            data.DirectPayments.Where(ProjectReportSummaryDto.IsUnpaid));
         var transactionRows = ProjectReportPdfRows.BuildPayments(data.AccountingTransactions);
         var payrollRows = ProjectReportPdfRows.BuildPayments(data.Payroll);
         var operatingRows = ProjectReportPdfRows.BuildPayments(data.OperatingExpenses);
-        var (agreedRows, maintenanceRows) = ProjectReportPdfRows.BuildRevenues(data.Revenues);
+        var revenueRows = ProjectReportPdfRows.BuildRevenues(data.Revenues);
+        var maintenanceRows = ProjectReportPdfRows.BuildMaintenance(data.MaintenanceDeposits);
         var salesRows = ProjectReportPdfRows.BuildSales(data.ApartmentSales);
         var commissionRows = ProjectReportPdfRows.BuildCommissions(data.PaidCommissions);
         var commissionEntryRows = ProjectReportPdfRows.BuildCommissionEntries(data.PaidCommissionAcctgEntries);
@@ -27,12 +41,15 @@ public static class ProjectReportSections
         var sections = new List<Section>
         {
             new($"المستخلصات ({expenseRows.Count})", ExpenseColumns, expenseRows),
-            new($"الدفعات المباشرة ({directPaymentRows.Count})", PaymentColumns("رقم الدفعة", "من طرف", "إلى طرف"), directPaymentRows),
+            new($"الدفعات المباشرة — مدفوعة ({directPaidRows.Count})", DirectPaymentColumns, directPaidRows,
+                new SectionTotal("إجمالي الدفعات المباشرة المدفوعة", data.Summary.DirectPaymentsPaid, "Amount")),
+            new($"الدفعات المباشرة — غير مدفوعة ({directUnpaidRows.Count})", DirectPaymentColumns, directUnpaidRows,
+                new SectionTotal("إجمالي الدفعات المباشرة غير المدفوعة", data.Summary.DirectPaymentsUnpaid, "Amount")),
             new($"قيود محاسبية ({transactionRows.Count})", PaymentColumns("رقم القيد", "من طرف", "إلى طرف"), transactionRows),
             new($"رواتب المشروع ({payrollRows.Count})", PaymentColumns("رقم القيد", "الموظف", "المشروع"), payrollRows),
             new($"المصاريف التشغيلية ({operatingRows.Count})", PaymentColumns("رقم الدفعة", "من طرف", "إلى طرف"), operatingRows),
-            new($"الإيرادات ({agreedRows.Count})", RevenueColumns("الإيراد المتفق عليه"), agreedRows),
-            new($"وديعة الصيانة ({maintenanceRows.Count})", RevenueColumns("المجدول"), maintenanceRows),
+            new($"الإيرادات ({revenueRows.Count})", RevenueColumns, revenueRows),
+            new($"وديعة الصيانة ({maintenanceRows.Count})", MaintenanceColumns, maintenanceRows),
             new($"مبيعات الوحدات ({salesRows.Count})", SalesColumns, salesRows),
             new($"العمولات المدفوعة ({commissionRows.Count})", CommissionColumns, commissionRows),
             new($"قيود العمولات المدفوعة ({commissionEntryRows.Count})", CommissionEntryColumns, commissionEntryRows),
@@ -61,15 +78,43 @@ public static class ProjectReportSections
         new ProjectReportColumn("المبلغ", "Amount", 4, "{0:N2}"),
     };
 
-    private static ProjectReportColumn[] RevenueColumns(string scheduledHeader) => new[]
+    // Direct payments carry a status column (due status for the unpaid block) — the other
+    // payment-style sections keep the shared 6-column layout.
+    private static readonly ProjectReportColumn[] DirectPaymentColumns =
     {
-        new ProjectReportColumn("المبنى", "BuildingNumber", 2.5),
-        new ProjectReportColumn("الوحدة", "ApartmentId", 3),
-        new ProjectReportColumn("العميل", "CustomerName", 5),
-        new ProjectReportColumn(scheduledHeader, "ScheduledAmount", 4, "{0:N2}"),
-        new ProjectReportColumn("المحصل", "CollectedAmount", 3.5, "{0:N2}"),
-        new ProjectReportColumn("المتبقي", "OutstandingAmount", 3.5, "{0:N2}"),
-        new ProjectReportColumn("حالة الاستحقاق", "DueStatusDisplay", 4),
+        new("رقم الدفعة", "PaymentId", 3.5),
+        new("النوع", "TypeDescription", 4),
+        new("من طرف", "FromDisplay", 4.5),
+        new("إلى طرف", "ToDisplay", 4.5),
+        new("الحالة", "StatusDisplay", 3.5),
+        new("التاريخ", "EffectiveDate", 2.5, "{0:dd/MM/yyyy}"),
+        new("المبلغ", "Amount", 3.5, "{0:N2}"),
+    };
+
+    private static readonly ProjectReportColumn[] RevenueColumns =
+    {
+        new("الفئة", "CategoryDisplay", 3.5),
+        new("المبنى", "BuildingNumber", 2),
+        new("الوحدة", "ApartmentId", 2.5),
+        new("العميل", "CustomerName", 5),
+        new("المجدول", "ScheduledAmount", 3.5, "{0:N2}"),
+        new("المحصل", "CollectedAmount", 3.5, "{0:N2}"),
+        new("المتبقي", "OutstandingAmount", 3.5, "{0:N2}"),
+        new("حالة الاستحقاق", "DueStatusDisplay", 4),
+    };
+
+    // One row per sold unit: agreed deposit (sales request) vs. collected receipts.
+    private static readonly ProjectReportColumn[] MaintenanceColumns =
+    {
+        new("رقم الطلب", "SalesRequestId", 2.5),
+        new("المبنى", "BuildingNumber", 2),
+        new("الوحدة", "ApartmentName", 4),
+        new("العميل", "CustomerName", 5),
+        new("تاريخ البيع", "SaleDate", 2.5, "{0:dd/MM/yyyy}"),
+        new("وديعة الصيانة", "MaintenanceDeposit", 3.5, "{0:N2}"),
+        new("المحصل", "CollectedAmount", 3, "{0:N2}"),
+        new("المتبقي", "OutstandingAmount", 3, "{0:N2}"),
+        new("الحالة", "StatusDisplay", 4),
     };
 
     private static readonly ProjectReportColumn[] SalesColumns =

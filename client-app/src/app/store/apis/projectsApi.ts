@@ -196,6 +196,12 @@ const projectsApi = createApi({
                 salesStartDate?: string;
                 salesEndDate?: string;
                 salesAllData: boolean;
+                commissionsStartDate?: string;
+                commissionsEndDate?: string;
+                commissionsAllData: boolean;
+                mgmtFeeStartDate?: string;
+                mgmtFeeEndDate?: string;
+                mgmtFeeAllData: boolean;
                 // Management-fee inputs — drive ProjectReportDto.summary server-side.
                 // excludedBuildings is comma-separated (e.g. "A1,A2").
                 mgmtFeePercent?: number;
@@ -221,6 +227,12 @@ const projectsApi = createApi({
                 salesStartDate?: string;
                 salesEndDate?: string;
                 salesAllData: boolean;
+                commissionsStartDate?: string;
+                commissionsEndDate?: string;
+                commissionsAllData: boolean;
+                mgmtFeeStartDate?: string;
+                mgmtFeeEndDate?: string;
+                mgmtFeeAllData: boolean;
                 mgmtFeePercent?: number;
                 excludedBuildings?: string;
             }>({
@@ -373,6 +385,8 @@ export interface ProjectReportDto {
     accountingTransactions: Payment[];
     payroll: Payment[];
     apartmentSales: any[];
+    // One row per sold unit — agreed deposit from the sales request vs. collected receipts.
+    maintenanceDeposits: ProjectMaintenanceDepositRecord[];
     paidCommissions: ProjectCommissionPaymentRecord[];
     // Ledger entries (AcctgTransEntry) of every AcctgTrans linked to a payment in paidCommissions.
     paidCommissionAcctgEntries?: ProjectCommissionAcctgEntryRecord[];
@@ -382,10 +396,36 @@ export interface ProjectReportDto {
     summary?: ProjectReportSummary;
 }
 
+export interface ProjectMaintenanceDepositRecord {
+    salesRequestId: string;
+    apartmentId?: string;
+    apartmentName?: string;
+    buildingNumber?: string;
+    floorNumber?: string;
+    customerPartyId?: string;
+    customerName?: string;
+    saleDate?: string;
+    totalPrice?: number;
+    maintenancePercent?: number;   // fraction (0.08 = 8%)
+    maintenanceDeposit: number;
+    collectedAmount: number;
+    outstandingAmount: number;
+    receiptCount: number;
+    receivedCount: number;
+    nextDueDate?: string;
+    isFullyCollected: boolean;
+    collectionStatusArabic: string;
+    dueStatusArabic?: string;
+}
+
 export interface ProjectReportSummary {
     // المصاريف
     certificateExpenses: number;
-    directPayments: number;
+    directPayments: number;          // = directPaymentsPaid + directPaymentsUnpaid
+    directPaymentsPaid: number;      // PMNT_SENT / PMNT_CONFIRMED
+    directPaymentsUnpaid: number;    // PMNT_NOT_PAID — open commitments, shown regardless of period
+    directPaymentsPaidCount: number;
+    directPaymentsUnpaidCount: number;
     accountingTransactions: number;
     projectPayroll: number;
     operatingExpenses: number;
@@ -397,6 +437,11 @@ export interface ProjectReportSummary {
     maintenanceScheduled: number;
     maintenanceCollected: number;
     maintenanceOutstanding: number;
+    maintenanceUnits: number;            // sold units carrying a deposit
+    maintenanceUnitsCollected: number;   // of which fully collected
+    maintenanceReceiptsCount: number;     // maintenance receipts inside the revenue window
+    maintenanceReceiptsScheduled: number;
+    maintenanceReceiptsCollected: number;
     // مبيعات الوحدات
     unitsSold: number;
     unitsSoldValue: number;
@@ -410,6 +455,7 @@ export interface ProjectReportSummary {
     mgmtFeeBase: number;
     mgmtFeePercent: number;
     mgmtFee: number;
+    mgmtFeeOperatingExpenses: number;   // operating expenses deducted, over the fee's own window
     mgmtFeeNet: number;
     mgmtExcludedBuildings: string[];
     // الصافي

@@ -21,6 +21,19 @@ namespace Application.Projects
             public DateTime? SalesStartDate { get; set; }
             public DateTime? SalesEndDate { get; set; }
             public bool SalesAllData { get; set; }
+            // Commissions get their own window (client ask, 2026-09-19) — they used to ride on
+            // the expenses window. Null start/end + AllData=false means "no bound on that side".
+            public DateTime? CommissionsStartDate { get; set; }
+            public DateTime? CommissionsEndDate { get; set; }
+            public bool CommissionsAllData { get; set; }
+            // Management-fee window (client ask, 2026-09-19): the fee base (agreed revenue) and the
+            // operating expenses deducted from it are BOTH taken over this one window, instead of
+            // the base following the revenue window and the deduction the expenses window — that
+            // mismatch is what pushed الصافي المتبقي negative. Null start/end + AllData=false
+            // means "no bound on that side".
+            public DateTime? MgmtFeeStartDate { get; set; }
+            public DateTime? MgmtFeeEndDate { get; set; }
+            public bool MgmtFeeAllData { get; set; }
 
             // Management-fee inputs for ProjectReportDto.Summary. Previously lived only in the
             // Excel dialog's local state; the client now passes them so the fee is computed
@@ -47,29 +60,35 @@ namespace Application.Projects
                 var accountingTransactions = await GetAccountingTransactions(request, cancellationToken);
                 var payroll = await GetProjectPayroll(request, cancellationToken);
                 var apartmentSales = await GetApartmentSales(request, cancellationToken);
+                var maintenanceDeposits = await GetMaintenanceDeposits(apartmentSales, cancellationToken);
                 var paidCommissions = await GetPaidCommissions(request, cancellationToken);
                 var paidCommissionAcctgEntries =
                     await GetPaidCommissionAcctgEntries(paidCommissions, cancellationToken);
 
                 // Filter out duplicates across expense sections
-                var expensePaymentIds = expenses
-                    .Where(e => !string.IsNullOrEmpty(e.PaymentId))
-                    .Select(e => e.PaymentId!)
-                    .ToHashSet();
+                var (filteredDirectPayments, filteredOperatingExpenses) =
+                    DedupPayments(expenses, directPayments, operatingExpenses);
 
-                var filteredDirectPayments = directPayments
-                    .Where(dp => !expensePaymentIds.Contains(dp.PaymentId))
-                    .ToList();
-
-                var reportedPaymentIds = expensePaymentIds;
-                foreach (var dp in filteredDirectPayments)
+                // Management-fee inputs over the fee's own window. Reuse the display lists when the
+                // windows coincide; otherwise re-query just those two sides for the fee window.
+                var feeRevenues = revenues;
+                var feeOperatingExpenses = filteredOperatingExpenses;
+                if (!SameWindow(request.MgmtFeeAllData, request.MgmtFeeStartDate, request.MgmtFeeEndDate,
+                        request.RevenuesAllData, request.RevenuesStartDate, request.RevenuesEndDate))
                 {
-                    reportedPaymentIds.Add(dp.PaymentId);
+                    feeRevenues = await GetRevenues(ForMgmtFeeWindow(request), cancellationToken);
                 }
-
-                var filteredOperatingExpenses = operatingExpenses
-                    .Where(oe => !reportedPaymentIds.Contains(oe.PaymentId))
-                    .ToList();
+                if (!SameWindow(request.MgmtFeeAllData, request.MgmtFeeStartDate, request.MgmtFeeEndDate,
+                        request.ExpensesAllData, request.ExpensesStartDate, request.ExpensesEndDate))
+                {
+                    // Same de-duplication as the display list, so a payment never counts twice
+                    // whichever window it is read under.
+                    var feeQuery = ForMgmtFeeWindow(request);
+                    var feeExpenses = await GetExpenses(feeQuery, cancellationToken);
+                    var feeDirect = await GetDirectPayments(feeQuery, cancellationToken);
+                    var feeOpex = await GetOperatingExpenses(feeQuery, cancellationToken);
+                    (_, feeOperatingExpenses) = DedupPayments(feeExpenses, feeDirect, feeOpex);
+                }
 
                 return new ProjectReportDto
                 {
@@ -80,13 +99,146 @@ namespace Application.Projects
                     AccountingTransactions = accountingTransactions,
                     Payroll = payroll,
                     ApartmentSales = apartmentSales,
+                    MaintenanceDeposits = maintenanceDeposits,
                     PaidCommissions = paidCommissions,
                     PaidCommissionAcctgEntries = paidCommissionAcctgEntries,
                     Summary = ProjectReportSummaryDto.Build(
                         expenses, revenues, filteredDirectPayments, filteredOperatingExpenses,
                         accountingTransactions, payroll, apartmentSales, paidCommissions,
-                        request.MgmtFeePercent, request.ExcludedBuildings)
+                        request.MgmtFeePercent, request.ExcludedBuildings, maintenanceDeposits,
+                        feeRevenues, feeOperatingExpenses)
                 };
+            }
+
+            // A certificate payment also matching the project GL is reported once (as a
+            // certificate); a direct payment also inside the operating sub-tree is reported once
+            // (as a direct payment).
+            private static (List<PaymentRecord> DirectPayments, List<PaymentRecord> OperatingExpenses) DedupPayments(
+                List<ProjectExpenseRecord> expenses, List<PaymentRecord> directPayments, List<PaymentRecord> operatingExpenses)
+            {
+                var reportedPaymentIds = expenses
+                    .Where(e => !string.IsNullOrEmpty(e.PaymentId))
+                    .Select(e => e.PaymentId!)
+                    .ToHashSet();
+
+                var filteredDirect = directPayments
+                    .Where(dp => !reportedPaymentIds.Contains(dp.PaymentId))
+                    .ToList();
+                foreach (var dp in filteredDirect) reportedPaymentIds.Add(dp.PaymentId);
+
+                var filteredOpex = operatingExpenses
+                    .Where(oe => !reportedPaymentIds.Contains(oe.PaymentId))
+                    .ToList();
+
+                return (filteredDirect, filteredOpex);
+            }
+
+            private static bool SameWindow(bool allA, DateTime? startA, DateTime? endA,
+                bool allB, DateTime? startB, DateTime? endB) =>
+                allA == allB && (allA || (startA == startB && endA == endB));
+
+            // Copy of the request with the revenue AND expense windows replaced by the fee window,
+            // so the existing section queries can be reused unchanged for the fee's inputs.
+            private static Query ForMgmtFeeWindow(Query q) => new()
+            {
+                ProjectId = q.ProjectId,
+                ExpensesStartDate = q.MgmtFeeStartDate,
+                ExpensesEndDate = q.MgmtFeeEndDate,
+                ExpensesAllData = q.MgmtFeeAllData,
+                RevenuesStartDate = q.MgmtFeeStartDate,
+                RevenuesEndDate = q.MgmtFeeEndDate,
+                RevenuesAllData = q.MgmtFeeAllData,
+                SalesStartDate = q.SalesStartDate,
+                SalesEndDate = q.SalesEndDate,
+                SalesAllData = q.SalesAllData,
+                CommissionsStartDate = q.CommissionsStartDate,
+                CommissionsEndDate = q.CommissionsEndDate,
+                CommissionsAllData = q.CommissionsAllData,
+                MgmtFeeStartDate = q.MgmtFeeStartDate,
+                MgmtFeeEndDate = q.MgmtFeeEndDate,
+                MgmtFeeAllData = q.MgmtFeeAllData,
+                MgmtFeePercent = q.MgmtFeePercent,
+                ExcludedBuildings = q.ExcludedBuildings,
+            };
+
+            // Maintenance deposit per SOLD unit. Keyed off the sold rows GetApartmentSales already
+            // returned so the وديعة الصيانة sheet and the مبيعات الوحدات sheet always cover the same
+            // units (same sales window). The agreed amount is SalesRequest.MaintenanceDeposit; the
+            // collected side is whatever RECEIPT_MAINTENANCE_AMOUNT receipts on that request have
+            // actually been received — not windowed by any period, collection is a fact of the sale.
+            private async Task<List<ProjectMaintenanceDepositRecord>> GetMaintenanceDeposits(
+                List<SalesRequestOrApartmentRecord> apartmentSales, CancellationToken ct)
+            {
+                var sold = apartmentSales
+                    .Where(s => s.IsSold && !string.IsNullOrEmpty(s.SalesRequestId))
+                    .ToList();
+                if (sold.Count == 0) return new List<ProjectMaintenanceDepositRecord>();
+
+                var salesRequestIds = sold.Select(s => s.SalesRequestId!).Distinct().ToList();
+
+                var receipts = await _context.Payments.AsNoTracking()
+                    .Where(p => p.SalesRequestId != null
+                                && salesRequestIds.Contains(p.SalesRequestId)
+                                && p.PaymentTypeId == "RECEIPT_MAINTENANCE_AMOUNT"
+                                && p.StatusId != "PMNT_VOID" && p.StatusId != "PMNT_CANCELLED")
+                    .Select(p => new { p.SalesRequestId, p.StatusId, p.Amount, p.EffectiveDate })
+                    .ToListAsync(ct);
+
+                var receiptsBySr = receipts
+                    .GroupBy(r => r.SalesRequestId!)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                var rows = sold.Select(s =>
+                {
+                    receiptsBySr.TryGetValue(s.SalesRequestId!, out var srReceipts);
+                    srReceipts ??= new();
+                    var received = srReceipts.Where(r => r.StatusId == "PMNT_RECEIVED").ToList();
+                    var pending = srReceipts.Where(r => r.StatusId != "PMNT_RECEIVED").ToList();
+
+                    var deposit = s.MaintenanceDeposit ?? 0m;
+                    var collected = received.Sum(r => r.Amount);
+                    var outstanding = Math.Max(deposit - collected, 0m);
+                    var nextDue = pending
+                        .Where(r => r.EffectiveDate.HasValue)
+                        .OrderBy(r => r.EffectiveDate)
+                        .Select(r => r.EffectiveDate)
+                        .FirstOrDefault();
+
+                    var collectionStatus = outstanding <= 0m
+                        ? "تم التحصيل"
+                        : collected > 0m ? "محصل جزئياً" : "غير محصل";
+
+                    return new ProjectMaintenanceDepositRecord
+                    {
+                        SalesRequestId = s.SalesRequestId!,
+                        ApartmentId = s.ApartmentId,
+                        ApartmentName = s.ApartmentName,
+                        BuildingNumber = s.BuildingNumber,
+                        FloorNumber = s.FloorNumber,
+                        CustomerPartyId = s.FromPartyId,
+                        CustomerName = s.FromPartyName,
+                        SaleDate = s.SaleDate,
+                        TotalPrice = s.TotalPrice,
+                        MaintenancePercent = s.MaintenancePercent,
+                        MaintenanceDeposit = deposit,
+                        CollectedAmount = collected,
+                        OutstandingAmount = outstanding,
+                        ReceiptCount = srReceipts.Count,
+                        ReceivedCount = received.Count,
+                        NextDueDate = nextDue,
+                        CollectionStatusArabic = collectionStatus,
+                        DueStatusArabic = outstanding <= 0m
+                            ? "تم التحصيل"
+                            : CalculateDueStatusArabic(
+                                nextDue.HasValue ? nextDue.Value.ToDateTime(TimeOnly.MinValue) : null,
+                                false, "PMNT_NOT_PAID", null)
+                    };
+                })
+                .OrderBy(x => x.BuildingNumber)
+                .ThenBy(x => x.ApartmentName)
+                .ToList();
+
+                return rows;
             }
 
             private async Task<List<ProjectExpenseRecord>> GetExpenses(Query request, CancellationToken ct)
@@ -479,6 +631,12 @@ namespace Application.Projects
                           // Payroll has its own section (GetProjectPayroll, from PAYROL_INVOICE
                           // accruals); exclude payroll payments here so salary isn't double-counted.
                           && pyt.PaymentTypeId != "PAYROL_PAYMENT"
+                          // Commissions likewise have their own block (GetPaidCommissions) and their
+                          // own deduction line in the summary. The operating-expense sub-tree holds
+                          // the commission GL accounts (نسيم: 600025-27 under 600024), so they were
+                          // counted in المصاريف التشغيلية AND again in "الصافي بعد خصم العمولات
+                          // المدفوعة" (2026-09-19 review). Same guard on the main-account query.
+                          && pyt.PaymentTypeId != "COMMISSION_PAYMENT"
                     select new PaymentRecord
                     {
                         PaymentId = pyt.PaymentId,
@@ -528,23 +686,35 @@ namespace Application.Projects
                             sts.DescriptionArabic)
                     };
 
+                // The expense period only windows PAID rows. An unpaid direct payment is an open
+                // commitment whose EffectiveDate is its due date — typically in the future (the
+                // Sep 2026 نسيم/سوا commitments run out to 2031) — so windowing it by the report
+                // period silently dropped every one of them from the default (year-to-date) run
+                // and the client read that as "not paid disappeared". Commitments are shown
+                // regardless of period; they get their own subtotal in every output.
                 if (!request.ExpensesAllData)
                 {
                     if (request.ExpensesStartDate.HasValue)
                     {
                         var start = DateOnly.FromDateTime(request.ExpensesStartDate.Value);
-                        paymentsQuery = paymentsQuery.Where(p => p.EffectiveDate >= start);
+                        paymentsQuery = paymentsQuery.Where(p => p.StatusId == "PMNT_NOT_PAID" || p.EffectiveDate >= start);
                     }
                     if (request.ExpensesEndDate.HasValue)
                     {
                         var end = DateOnly.FromDateTime(request.ExpensesEndDate.Value);
-                        paymentsQuery = paymentsQuery.Where(p => p.EffectiveDate <= end);
+                        paymentsQuery = paymentsQuery.Where(p => p.StatusId == "PMNT_NOT_PAID" || p.EffectiveDate <= end);
                     }
                 }
 
                 var payments = await paymentsQuery.ToListAsync(ct);
 
-                return payments.OrderByDescending(x => x.EffectiveDate).ThenByDescending(x => x.CreatedStamp).ToList();
+                // Paid block first, then the unpaid commitments, newest first inside each — the
+                // screen grid shows rows in this order and the Excel/PDF partition on the same rule.
+                return payments
+                    .OrderBy(x => ProjectReportSummaryDto.IsUnpaid(x) ? 1 : 0)
+                    .ThenByDescending(x => x.EffectiveDate)
+                    .ThenByDescending(x => x.CreatedStamp)
+                    .ToList();
             }
 
             private async Task<List<PaymentRecord>> GetAccountingTransactions(Query request, CancellationToken ct)
@@ -714,6 +884,12 @@ namespace Application.Projects
                           // Payroll has its own section (GetProjectPayroll, from PAYROL_INVOICE
                           // accruals); exclude payroll payments here so salary isn't double-counted.
                           && pyt.PaymentTypeId != "PAYROL_PAYMENT"
+                          // Commissions likewise have their own block (GetPaidCommissions) and their
+                          // own deduction line in the summary. The operating-expense sub-tree holds
+                          // the commission GL accounts (نسيم: 600025-27 under 600024), so they were
+                          // counted in المصاريف التشغيلية AND again in "الصافي بعد خصم العمولات
+                          // المدفوعة" (2026-09-19 review). Same guard on the main-account query.
+                          && pyt.PaymentTypeId != "COMMISSION_PAYMENT"
                     select new PaymentRecord
                     {
                         PaymentId = pyt.PaymentId,
@@ -1095,16 +1271,16 @@ namespace Application.Projects
                         OverrideGlAccountNameArabic = ogl != null ? ogl.AccountNameArabic : null
                     };
 
-                if (!request.ExpensesAllData)
+                if (!request.CommissionsAllData)
                 {
-                    if (request.ExpensesStartDate.HasValue)
+                    if (request.CommissionsStartDate.HasValue)
                     {
-                        var start = DateOnly.FromDateTime(request.ExpensesStartDate.Value);
+                        var start = DateOnly.FromDateTime(request.CommissionsStartDate.Value);
                         query = query.Where(c => c.EffectiveDate >= start);
                     }
-                    if (request.ExpensesEndDate.HasValue)
+                    if (request.CommissionsEndDate.HasValue)
                     {
-                        var end = DateOnly.FromDateTime(request.ExpensesEndDate.Value);
+                        var end = DateOnly.FromDateTime(request.CommissionsEndDate.Value);
                         query = query.Where(c => c.EffectiveDate <= end);
                     }
                 }
