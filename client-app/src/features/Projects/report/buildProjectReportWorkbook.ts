@@ -18,7 +18,6 @@ export interface ProjectReportWorkbookOptions {
     revenuesPeriod: string;
     salesPeriod: string;
     commissionsPeriod: string;
-    mgmtFeePeriod: string;
 }
 
 const utils = {
@@ -45,7 +44,6 @@ export async function buildProjectReportWorkbook(
     const revPeriod = opts.revenuesPeriod;
     const salPeriod = opts.salesPeriod;
     const comPeriod = opts.commissionsPeriod;
-    const feePeriod = opts.mgmtFeePeriod;
 
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'Golden Land System';
@@ -198,15 +196,15 @@ export async function buildProjectReportWorkbook(
         v.font = { name: 'Amiri', size: 12, bold: !!o.bold };
     };
 
-    sumSection('المصاريف', 'FF1E40AF');
+    sumSection('المصاريف (المدفوع فعلاً)', 'FF1E40AF');
     sumLine('المستخلصات', s.certificateExpenses);
-    sumLine(`الدفعات المباشرة — مدفوعة (${s.directPaymentsPaidCount ?? 0})`, s.directPaymentsPaid ?? s.directPayments);
-    sumLine(`الدفعات المباشرة — غير مدفوعة (${s.directPaymentsUnpaidCount ?? 0})`, s.directPaymentsUnpaid ?? 0);
-    sumLine('إجمالي الدفعات المباشرة', s.directPayments);
+    sumLine(`الدفعات المباشرة — مدفوعة (${s.directPaymentsPaidCount ?? 0})`, s.directPaymentsPaid);
     sumLine('قيود محاسبية', s.accountingTransactions);
     sumLine('رواتب المشروع', s.projectPayroll);
-    sumLine('المصاريف التشغيلية', s.operatingExpenses);
-    sumLine('إجمالي مصاريف المشروع', s.totalProjectExpenses, { bold: true, fill: 'FFBFDBFE' });
+    sumLine(`المصاريف التشغيلية — مدفوعة (${s.operatingExpensesPaidCount ?? 0})`, s.operatingExpenses);
+    sumLine('إجمالي مصاريف المشروع (المدفوع)', s.totalProjectExpenses, { bold: true, fill: 'FFBFDBFE' });
+    sumLine(`للعرض فقط: دفعات مباشرة غير مدفوعة (${s.directPaymentsUnpaidCount ?? 0})`, s.directPaymentsUnpaid ?? 0);
+    sumLine(`للعرض فقط: مصاريف تشغيلية غير مدفوعة (${s.operatingExpensesUnpaidCount ?? 0})`, s.operatingExpensesUnpaid ?? 0);
     wsSum.addRow([]);
 
     sumSection('الإيرادات', 'FF065F46');
@@ -236,19 +234,22 @@ export async function buildProjectReportWorkbook(
     sumLine('إجمالي العمولات', s.commissionsPaid + s.commissionsPending, { bold: true, fill: 'FFFDE9C8' });
     wsSum.addRow([]);
 
-    sumSection(`مبلغ الإدارة (${feePeriod})`, 'FF1E40AF');
+    sumSection('مبلغ الإدارة — جولدن لاند', 'FF1E40AF');
     const excludedLabel = s.mgmtExcludedBuildings.length
         ? ` (عدا ${s.mgmtExcludedBuildings.join('، ')})`
         : '';
-    sumLine(`الإيراد المتفق عليه${excludedLabel}`, s.mgmtFeeBase);
-    sumLine(`نسبة الإدارة (${s.mgmtFeePercent}%)`, s.mgmtFee);
-    sumLine('يُخصم: المصاريف التشغيلية (فترة مبلغ الإدارة)', -(s.mgmtFeeOperatingExpenses ?? s.operatingExpenses));
-    sumLine('صافي مبلغ الإدارة المتبقي', s.mgmtFeeNet, { bold: true, fill: 'FFBFDBFE' });
+    sumLine(`الإيراد المتفق عليه — كل المدة${excludedLabel}`, s.mgmtFeeBase);
+    sumLine(`نسبة الإدارة (${s.mgmtFeePercent}%) — تشمل مصاريف التسويق`, s.mgmtFee, { bold: true, fill: 'FFBFDBFE' });
     wsSum.addRow([]);
 
-    sumSection('الصافي', 'FF7C3AED');
-    sumLine('صافي (المحصل من العملاء - مصاريف المشروع)', s.netAfterExpenses, { bold: true, fill: 'FFEDE9FE' });
-    sumLine('الصافي بعد خصم العمولات المدفوعة', s.netAfterPaidCommissions, { bold: true, fill: 'FFEDE9FE' });
+    // The accountant's waterfall (2026-09-20): cash basis, paid figures only.
+    sumSection('رصيد المشروع', 'FF7C3AED');
+    sumLine('الإيراد المحصل', s.revenueCollected);
+    sumLine('يطرح: نسبة الإدارة مبيعات — جولدن لاند', -s.mgmtFee);
+    sumLine('صافي المحصل', s.netCollectedAfterMgmtFee, { bold: true, fill: 'FFEDE9FE' });
+    sumLine('يطرح: المستخلصات', -s.certificateExpenses);
+    sumLine('يطرح: المصاريف المباشرة المدفوعة', -s.directPaymentsPaid);
+    sumLine('رصيد المشروع', s.projectBalance, { bold: true, fill: 'FFEDE9FE' });
     wsSum.getColumn(1).width = 46;
     wsSum.getColumn(2).width = 24;
     wsSum.getColumn(3).width = 4;
@@ -336,8 +337,8 @@ export async function buildProjectReportWorkbook(
             ],
             8, [18, 20, 32, 32, 14, 18, 14, 18, 18, 20, 16, 16, 25, 45],
             [
-                { label: 'إجمالي المدفوعة', match: (p) => !isUnpaid(p) },
-                { label: 'إجمالي غير المدفوعة', match: isUnpaid },
+                { label: 'إجمالي المدفوعة — تدخل في الحساب', match: (p) => !isUnpaid(p) },
+                { label: 'إجمالي غير المدفوعة — للعرض فقط', match: isUnpaid },
             ]
         );
     }
@@ -384,18 +385,23 @@ export async function buildProjectReportWorkbook(
             'المصاريف التشغيلية',
             `${projectName} - الثروة الخضراء - المصاريف التشغيلية (${expPeriod})`,
             'FF6366F1', 'FFE0E7FF', 'FFF5F3FF',
-            ['رقم الدفعة', 'النوع', 'من طرف', 'إلى طرف', 'الحالة', 'التاريخ', 'المبلغ', 'رقم المرجع',
+            ['رقم الدفعة', 'النوع', 'من طرف', 'إلى طرف', 'حالة السداد', 'الحالة', 'التاريخ', 'المبلغ', 'رقم المرجع',
                 'طريقة الدفع', 'الشيك', 'تاريخ الشيك', 'مركز التكلفة', 'ملاحظات'],
             data.operatingExpenses,
             (p: any) => [
                 utils.safeString(p.paymentId), utils.safeString(p.paymentTypeDescription),
                 utils.safeString(p.partyIdFromName), utils.safeString(p.partyIdToName),
+                settlementLabel(p),
                 utils.safeString(p.dueStatusArabic || p.statusDescription), utils.formatDate(p.effectiveDate),
                 p.amount || 0, utils.safeString(p.paymentRefNum || ''),
                 utils.safeString(p.paymentMethodTypeDescription), utils.safeString(p.chequeNumber),
                 utils.formatDate(p.chequeDate), utils.safeString(p.costCenterDescription), utils.safeString(p.comments)
             ],
-            7, [18, 20, 32, 32, 18, 14, 18, 18, 20, 16, 16, 25, 45]
+            8, [18, 20, 32, 32, 14, 18, 14, 18, 18, 20, 16, 16, 25, 45],
+            [
+                { label: 'إجمالي المدفوعة — تدخل في الحساب', match: (p) => !isUnpaid(p) },
+                { label: 'إجمالي غير المدفوعة — للعرض فقط', match: isUnpaid },
+            ]
         );
     }
 

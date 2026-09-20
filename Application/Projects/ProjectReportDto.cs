@@ -42,13 +42,18 @@ namespace Application.Projects
         // the client reads the unpaid rows as outstanding commitments and wants each side totalled
         // on its own. The two amounts always add up to DirectPayments.
         public decimal DirectPaymentsPaid { get; set; }
-        public decimal DirectPaymentsUnpaid { get; set; }
+        public decimal DirectPaymentsUnpaid { get; set; }       // post-dated cheques etc. — DISPLAY ONLY, never in a total
         public int DirectPaymentsPaidCount { get; set; }
         public int DirectPaymentsUnpaidCount { get; set; }
         public decimal AccountingTransactions { get; set; }     // Σ AccountingTransactions.Amount
         public decimal ProjectPayroll { get; set; }             // Σ Payroll.Amount (GL-entry rows → mirrors the project trial balance)
-        public decimal OperatingExpenses { get; set; }          // Σ OperatingExpenses.Amount (after dedup)
-        public decimal TotalProjectExpenses { get; set; }       // sum of the five above
+        public decimal OperatingExpenses { get; set; }          // Σ PAID OperatingExpenses.Amount (after dedup)
+        public decimal OperatingExpensesUnpaid { get; set; }    // display only, same rule as the direct payments
+        public int OperatingExpensesPaidCount { get; set; }
+        public int OperatingExpensesUnpaidCount { get; set; }
+        // Accountant's rule (2026-09-20): every total is computed on what was actually PAID; unpaid
+        // commitments are listed for information only.
+        public decimal TotalProjectExpenses { get; set; }       // certificates + direct PAID + transactions + payroll + operating PAID
 
         // ===== الإيرادات / وديعة الصيانة — maintenance deposit is custodial, split out =====
         public decimal RevenueScheduled { get; set; }
@@ -80,20 +85,21 @@ namespace Application.Projects
         public decimal CommissionsPaid { get; set; }
         public decimal CommissionsPending { get; set; }
 
-        // ===== مبلغ الإدارة — % of agreed revenue for the non-excluded buildings, less operating expenses =====
-        // All four are taken over the fee's own window (Query.MgmtFee*), which may differ from the
-        // revenue/expense windows the sheets use — so MgmtFeeOperatingExpenses is not necessarily
-        // the OperatingExpenses figure above.
-        public decimal MgmtFeeBase { get; set; }
+        // ===== مبلغ الإدارة (Golden Land's management fee) =====
+        // Accountant's definition (2026-09-20): percent × the project's TOTAL agreed revenue —
+        // every scheduled advance/installment receipt, collected or not, over the whole life of
+        // the project (never windowed by the revenue period) — excluding the chosen buildings
+        // (A1/A2). Nothing is deducted from it: marketing / operating costs are covered by the fee.
+        // Verified against the accountant's sheet for نسيم: 467,745,623.35 × 12% = 56,129,474.80.
+        public decimal MgmtFeeBase { get; set; }                // Σ ScheduledAmount, agreed revenue, non-excluded buildings, all-time
         public decimal MgmtFeePercent { get; set; }
         public decimal MgmtFee { get; set; }
-        public decimal MgmtFeeOperatingExpenses { get; set; }   // operating expenses deducted (fee window)
-        public decimal MgmtFeeNet { get; set; }                 // MgmtFee − MgmtFeeOperatingExpenses
         public List<string> MgmtExcludedBuildings { get; set; } = new();
 
-        // ===== الصافي =====
-        public decimal NetAfterExpenses { get; set; }           // RevenueCollected − TotalProjectExpenses
-        public decimal NetAfterPaidCommissions { get; set; }    // − CommissionsPaid
+        // ===== رصيد المشروع — the accountant's waterfall, cash basis =====
+        //   الإيراد المحصل − نسبة الإدارة = صافي المحصل; − المستخلصات − المصاريف المباشرة المدفوعة = رصيد المشروع
+        public decimal NetCollectedAfterMgmtFee { get; set; }   // RevenueCollected − MgmtFee
+        public decimal ProjectBalance { get; set; }             // NetCollectedAfterMgmtFee − CertificateExpenses − DirectPaymentsPaid
 
         /// <summary>
         /// Straight port of the old client-side summary block in
@@ -125,10 +131,9 @@ namespace Application.Projects
             // Optional so GetCompanyReport (which has no sales-request view) keeps its old
             // receipt-based maintenance figures; the project report always passes it.
             IEnumerable<ProjectMaintenanceDepositRecord>? maintenanceDeposits = null,
-            // Management-fee inputs over the fee's own window. Null (company report) → the fee
-            // uses the same revenue / operating-expense lists as the sheets, as before.
-            IEnumerable<ProjectRevenueRecord>? mgmtFeeRevenues = null,
-            IEnumerable<PaymentRecord>? mgmtFeeOperatingExpenses = null)
+            // ALL-TIME agreed revenue for the fee base. Null (company report) → the fee is taken
+            // over the same (windowed) revenue list as the sheet.
+            IEnumerable<ProjectRevenueRecord>? mgmtFeeRevenues = null)
         {
             // ----- المصاريف -----
             // NetCertifiedAmount is always populated by the handler (gross − discount − deductions
@@ -145,8 +150,13 @@ namespace Application.Projects
             // GL-entry rows straight from the project account — summing them mirrors the project
             // trial balance for payroll (see the payroll section builder), which is the figure to match.
             var payrollTotal = payroll.Sum(p => p.Amount);
-            var opTotal = operatingExpenses.Sum(p => p.Amount);
-            var totalExpenses = certificateExpenses + directTotal + transTotal + payrollTotal + opTotal;
+            var opList = operatingExpenses as IReadOnlyList<PaymentRecord> ?? operatingExpenses.ToList();
+            var opPaid = opList.Where(p => !IsUnpaid(p)).ToList();
+            var opUnpaid = opList.Where(IsUnpaid).ToList();
+            var opTotal = opPaid.Sum(p => p.Amount);
+            var opUnpaidTotal = opUnpaid.Sum(p => p.Amount);
+            // Paid only — unpaid direct payments / operating expenses are display-only commitments.
+            var totalExpenses = certificateExpenses + directPaidTotal + transTotal + payrollTotal + opTotal;
 
             // ----- الإيرادات / وديعة الصيانة (custodial — kept out of agreed revenue & the fee base) -----
             static bool IsMaintenance(ProjectRevenueRecord r) =>
@@ -166,25 +176,20 @@ namespace Application.Projects
             var commissionsPaid = commissionList.Where(c => c.IsPaid).Sum(c => c.Amount);
             var commissionsPending = commissionList.Where(c => !c.IsPaid).Sum(c => c.Amount);
 
-            // ----- مبلغ الإدارة -----
+            // ----- مبلغ الإدارة: % × all-time agreed revenue, excluded buildings out -----
             var excluded = excludedBuildings
                 .Select(b => (b ?? string.Empty).Trim())
                 .Where(b => b.Length > 0)
                 .Distinct()
                 .ToList();
             var excludedSet = excluded.ToHashSet();
-            var feeRevenues = mgmtFeeRevenues != null
-                ? mgmtFeeRevenues.Where(r => !IsMaintenance(r))
-                : agreedRevenues;
-            var mgmtBase = feeRevenues
-                .Where(r => !excludedSet.Contains((r.BuildingNumber ?? string.Empty).Trim()))
+            var mgmtBase = (mgmtFeeRevenues ?? revenueList)
+                .Where(r => !IsMaintenance(r) && !excludedSet.Contains((r.BuildingNumber ?? string.Empty).Trim()))
                 .Sum(r => r.ScheduledAmount);
             var mgmtFee = mgmtBase * (mgmtFeePercent / 100m);
-            var mgmtOpex = mgmtFeeOperatingExpenses != null
-                ? mgmtFeeOperatingExpenses.Sum(p => p.Amount)
-                : opTotal;
 
             var revenueCollected = agreedRevenues.Sum(r => r.CollectedAmount);
+            var netCollected = revenueCollected - mgmtFee;
 
             // ----- وديعة الصيانة -----
             decimal maintScheduled, maintCollected, maintOutstanding;
@@ -216,6 +221,9 @@ namespace Application.Projects
                 AccountingTransactions = transTotal,
                 ProjectPayroll = payrollTotal,
                 OperatingExpenses = opTotal,
+                OperatingExpensesUnpaid = opUnpaidTotal,
+                OperatingExpensesPaidCount = opPaid.Count,
+                OperatingExpensesUnpaidCount = opUnpaid.Count,
                 TotalProjectExpenses = totalExpenses,
 
                 RevenueScheduled = agreedRevenues.Sum(r => r.ScheduledAmount),
@@ -242,12 +250,10 @@ namespace Application.Projects
                 MgmtFeeBase = mgmtBase,
                 MgmtFeePercent = mgmtFeePercent,
                 MgmtFee = mgmtFee,
-                MgmtFeeOperatingExpenses = mgmtOpex,
-                MgmtFeeNet = mgmtFee - mgmtOpex,
                 MgmtExcludedBuildings = excluded,
 
-                NetAfterExpenses = revenueCollected - totalExpenses,
-                NetAfterPaidCommissions = revenueCollected - totalExpenses - commissionsPaid
+                NetCollectedAfterMgmtFee = netCollected,
+                ProjectBalance = netCollected - certificateExpenses - directPaidTotal
             };
         }
     }

@@ -31,7 +31,10 @@ public static class ProjectReportSections
             data.DirectPayments.Where(ProjectReportSummaryDto.IsUnpaid));
         var transactionRows = ProjectReportPdfRows.BuildPayments(data.AccountingTransactions);
         var payrollRows = ProjectReportPdfRows.BuildPayments(data.Payroll);
-        var operatingRows = ProjectReportPdfRows.BuildPayments(data.OperatingExpenses);
+        var operatingPaidRows = ProjectReportPdfRows.BuildPayments(
+            data.OperatingExpenses.Where(p => !ProjectReportSummaryDto.IsUnpaid(p)));
+        var operatingUnpaidRows = ProjectReportPdfRows.BuildPayments(
+            data.OperatingExpenses.Where(ProjectReportSummaryDto.IsUnpaid));
         var revenueRows = ProjectReportPdfRows.BuildRevenues(data.Revenues);
         var maintenanceRows = ProjectReportPdfRows.BuildMaintenance(data.MaintenanceDeposits);
         var salesRows = ProjectReportPdfRows.BuildSales(data.ApartmentSales);
@@ -43,11 +46,14 @@ public static class ProjectReportSections
             new($"المستخلصات ({expenseRows.Count})", ExpenseColumns, expenseRows),
             new($"الدفعات المباشرة — مدفوعة ({directPaidRows.Count})", DirectPaymentColumns, directPaidRows,
                 new SectionTotal("إجمالي الدفعات المباشرة المدفوعة", data.Summary.DirectPaymentsPaid, "Amount")),
-            new($"الدفعات المباشرة — غير مدفوعة ({directUnpaidRows.Count})", DirectPaymentColumns, directUnpaidRows,
-                new SectionTotal("إجمالي الدفعات المباشرة غير المدفوعة", data.Summary.DirectPaymentsUnpaid, "Amount")),
+            new($"الدفعات المباشرة — غير مدفوعة ({directUnpaidRows.Count}) — للعرض فقط", DirectPaymentColumns, directUnpaidRows,
+                new SectionTotal("إجمالي الدفعات المباشرة غير المدفوعة (لا يدخل في الحساب)", data.Summary.DirectPaymentsUnpaid, "Amount")),
             new($"قيود محاسبية ({transactionRows.Count})", PaymentColumns("رقم القيد", "من طرف", "إلى طرف"), transactionRows),
             new($"رواتب المشروع ({payrollRows.Count})", PaymentColumns("رقم القيد", "الموظف", "المشروع"), payrollRows),
-            new($"المصاريف التشغيلية ({operatingRows.Count})", PaymentColumns("رقم الدفعة", "من طرف", "إلى طرف"), operatingRows),
+            new($"المصاريف التشغيلية — مدفوعة ({operatingPaidRows.Count})", DirectPaymentColumns, operatingPaidRows,
+                new SectionTotal("إجمالي المصاريف التشغيلية المدفوعة", data.Summary.OperatingExpenses, "Amount")),
+            new($"المصاريف التشغيلية — غير مدفوعة ({operatingUnpaidRows.Count}) — للعرض فقط", DirectPaymentColumns, operatingUnpaidRows,
+                new SectionTotal("إجمالي المصاريف التشغيلية غير المدفوعة (لا يدخل في الحساب)", data.Summary.OperatingExpensesUnpaid, "Amount")),
             new($"الإيرادات ({revenueRows.Count})", RevenueColumns, revenueRows),
             new($"وديعة الصيانة ({maintenanceRows.Count})", MaintenanceColumns, maintenanceRows),
             new($"مبيعات الوحدات ({salesRows.Count})", SalesColumns, salesRows),

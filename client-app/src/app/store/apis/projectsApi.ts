@@ -199,9 +199,6 @@ const projectsApi = createApi({
                 commissionsStartDate?: string;
                 commissionsEndDate?: string;
                 commissionsAllData: boolean;
-                mgmtFeeStartDate?: string;
-                mgmtFeeEndDate?: string;
-                mgmtFeeAllData: boolean;
                 // Management-fee inputs — drive ProjectReportDto.summary server-side.
                 // excludedBuildings is comma-separated (e.g. "A1,A2").
                 mgmtFeePercent?: number;
@@ -230,9 +227,6 @@ const projectsApi = createApi({
                 commissionsStartDate?: string;
                 commissionsEndDate?: string;
                 commissionsAllData: boolean;
-                mgmtFeeStartDate?: string;
-                mgmtFeeEndDate?: string;
-                mgmtFeeAllData: boolean;
                 mgmtFeePercent?: number;
                 excludedBuildings?: string;
             }>({
@@ -428,8 +422,11 @@ export interface ProjectReportSummary {
     directPaymentsUnpaidCount: number;
     accountingTransactions: number;
     projectPayroll: number;
-    operatingExpenses: number;
-    totalProjectExpenses: number;
+    operatingExpenses: number;           // PAID only
+    operatingExpensesUnpaid: number;     // display only
+    operatingExpensesPaidCount: number;
+    operatingExpensesUnpaidCount: number;
+    totalProjectExpenses: number;        // paid only: certificates + direct paid + transactions + payroll + operating paid
     // الإيرادات / وديعة الصيانة
     revenueScheduled: number;
     revenueCollected: number;
@@ -452,15 +449,13 @@ export interface ProjectReportSummary {
     commissionsPaid: number;
     commissionsPending: number;
     // مبلغ الإدارة
-    mgmtFeeBase: number;
+    mgmtFeeBase: number;                 // all-time agreed revenue (scheduled, paid or not), excluded buildings out
     mgmtFeePercent: number;
-    mgmtFee: number;
-    mgmtFeeOperatingExpenses: number;   // operating expenses deducted, over the fee's own window
-    mgmtFeeNet: number;
+    mgmtFee: number;                     // nothing is deducted from it — marketing is covered by the fee
     mgmtExcludedBuildings: string[];
-    // الصافي
-    netAfterExpenses: number;
-    netAfterPaidCommissions: number;
+    // رصيد المشروع — cash-basis waterfall (accountant's layout, 2026-09-20)
+    netCollectedAfterMgmtFee: number;    // revenueCollected − mgmtFee
+    projectBalance: number;              // − certificateExpenses − directPaymentsPaid
 }
 
 export interface ProjectCommissionPaymentRecord {

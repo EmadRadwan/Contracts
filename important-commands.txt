@@ -373,7 +373,7 @@ trial balance
 soft delete
 ERP and HIS
 build test environment
-Teleril Reports vs
+Telerik Reports vs
 
 
 

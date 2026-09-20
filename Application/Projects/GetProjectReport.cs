@@ -26,14 +26,6 @@ namespace Application.Projects
             public DateTime? CommissionsStartDate { get; set; }
             public DateTime? CommissionsEndDate { get; set; }
             public bool CommissionsAllData { get; set; }
-            // Management-fee window (client ask, 2026-09-19): the fee base (agreed revenue) and the
-            // operating expenses deducted from it are BOTH taken over this one window, instead of
-            // the base following the revenue window and the deduction the expenses window — that
-            // mismatch is what pushed الصافي المتبقي negative. Null start/end + AllData=false
-            // means "no bound on that side".
-            public DateTime? MgmtFeeStartDate { get; set; }
-            public DateTime? MgmtFeeEndDate { get; set; }
-            public bool MgmtFeeAllData { get; set; }
 
             // Management-fee inputs for ProjectReportDto.Summary. Previously lived only in the
             // Excel dialog's local state; the client now passes them so the fee is computed
@@ -69,26 +61,12 @@ namespace Application.Projects
                 var (filteredDirectPayments, filteredOperatingExpenses) =
                     DedupPayments(expenses, directPayments, operatingExpenses);
 
-                // Management-fee inputs over the fee's own window. Reuse the display lists when the
-                // windows coincide; otherwise re-query just those two sides for the fee window.
-                var feeRevenues = revenues;
-                var feeOperatingExpenses = filteredOperatingExpenses;
-                if (!SameWindow(request.MgmtFeeAllData, request.MgmtFeeStartDate, request.MgmtFeeEndDate,
-                        request.RevenuesAllData, request.RevenuesStartDate, request.RevenuesEndDate))
-                {
-                    feeRevenues = await GetRevenues(ForMgmtFeeWindow(request), cancellationToken);
-                }
-                if (!SameWindow(request.MgmtFeeAllData, request.MgmtFeeStartDate, request.MgmtFeeEndDate,
-                        request.ExpensesAllData, request.ExpensesStartDate, request.ExpensesEndDate))
-                {
-                    // Same de-duplication as the display list, so a payment never counts twice
-                    // whichever window it is read under.
-                    var feeQuery = ForMgmtFeeWindow(request);
-                    var feeExpenses = await GetExpenses(feeQuery, cancellationToken);
-                    var feeDirect = await GetDirectPayments(feeQuery, cancellationToken);
-                    var feeOpex = await GetOperatingExpenses(feeQuery, cancellationToken);
-                    (_, feeOperatingExpenses) = DedupPayments(feeExpenses, feeDirect, feeOpex);
-                }
+                // Management fee = % × the project's ALL-TIME agreed revenue (accountant's rule):
+                // never windowed, so re-run the revenue query without the period unless the
+                // sheet is already on "all data".
+                var feeRevenues = request.RevenuesAllData
+                    ? revenues
+                    : await GetRevenues(WithAllRevenues(request), cancellationToken);
 
                 return new ProjectReportDto
                 {
@@ -105,8 +83,7 @@ namespace Application.Projects
                     Summary = ProjectReportSummaryDto.Build(
                         expenses, revenues, filteredDirectPayments, filteredOperatingExpenses,
                         accountingTransactions, payroll, apartmentSales, paidCommissions,
-                        request.MgmtFeePercent, request.ExcludedBuildings, maintenanceDeposits,
-                        feeRevenues, feeOperatingExpenses)
+                        request.MgmtFeePercent, request.ExcludedBuildings, maintenanceDeposits, feeRevenues)
                 };
             }
 
@@ -133,30 +110,22 @@ namespace Application.Projects
                 return (filteredDirect, filteredOpex);
             }
 
-            private static bool SameWindow(bool allA, DateTime? startA, DateTime? endA,
-                bool allB, DateTime? startB, DateTime? endB) =>
-                allA == allB && (allA || (startA == startB && endA == endB));
-
-            // Copy of the request with the revenue AND expense windows replaced by the fee window,
-            // so the existing section queries can be reused unchanged for the fee's inputs.
-            private static Query ForMgmtFeeWindow(Query q) => new()
+            // Copy of the request with the revenue window opened up, for the fee base.
+            private static Query WithAllRevenues(Query q) => new()
             {
                 ProjectId = q.ProjectId,
-                ExpensesStartDate = q.MgmtFeeStartDate,
-                ExpensesEndDate = q.MgmtFeeEndDate,
-                ExpensesAllData = q.MgmtFeeAllData,
-                RevenuesStartDate = q.MgmtFeeStartDate,
-                RevenuesEndDate = q.MgmtFeeEndDate,
-                RevenuesAllData = q.MgmtFeeAllData,
+                ExpensesStartDate = q.ExpensesStartDate,
+                ExpensesEndDate = q.ExpensesEndDate,
+                ExpensesAllData = q.ExpensesAllData,
+                RevenuesStartDate = null,
+                RevenuesEndDate = null,
+                RevenuesAllData = true,
                 SalesStartDate = q.SalesStartDate,
                 SalesEndDate = q.SalesEndDate,
                 SalesAllData = q.SalesAllData,
                 CommissionsStartDate = q.CommissionsStartDate,
                 CommissionsEndDate = q.CommissionsEndDate,
                 CommissionsAllData = q.CommissionsAllData,
-                MgmtFeeStartDate = q.MgmtFeeStartDate,
-                MgmtFeeEndDate = q.MgmtFeeEndDate,
-                MgmtFeeAllData = q.MgmtFeeAllData,
                 MgmtFeePercent = q.MgmtFeePercent,
                 ExcludedBuildings = q.ExcludedBuildings,
             };
@@ -421,6 +390,10 @@ namespace Application.Projects
                               || p.PaymentTypeId == "RECEIPT_DUE_INSTALLMENT"
                               || p.PaymentTypeId == "RECEIPT_MAINTENANCE_AMOUNT")
                           && p.Amount > 0m
+                          // A voided/cancelled receipt is retired (auditor soft-delete rule) — it is
+                          // neither scheduled nor collected revenue, and must not inflate the
+                          // management-fee base. None exist yet; guard added 2026-09-20.
+                          && p.StatusId != "PMNT_VOID" && p.StatusId != "PMNT_CANCELLED"
                     let projId = apt.ProjectId ?? p.WorkEffortId
                     where projId == request.ProjectId
                     select new { p, pf, pt_type, sr, apt, proj, projId };

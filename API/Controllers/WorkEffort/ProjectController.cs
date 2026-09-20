@@ -281,10 +281,7 @@ public class ProjectController : BaseApiController
         [FromQuery] string? excludedBuildings = null,
         [FromQuery] DateTime? commissionsStartDate = null,
         [FromQuery] DateTime? commissionsEndDate = null,
-        [FromQuery] bool commissionsAllData = false,
-        [FromQuery] DateTime? mgmtFeeStartDate = null,
-        [FromQuery] DateTime? mgmtFeeEndDate = null,
-        [FromQuery] bool mgmtFeeAllData = false)
+        [FromQuery] bool commissionsAllData = false)
     {
         return HandleResult(Result<ProjectReportDto>.Success(await Mediator.Send(new GetProjectReport.Query
         {
@@ -301,9 +298,6 @@ public class ProjectController : BaseApiController
             CommissionsStartDate = commissionsStartDate,
             CommissionsEndDate = commissionsEndDate,
             CommissionsAllData = commissionsAllData,
-            MgmtFeeStartDate = mgmtFeeStartDate,
-            MgmtFeeEndDate = mgmtFeeEndDate,
-            MgmtFeeAllData = mgmtFeeAllData,
             MgmtFeePercent = mgmtFeePercent ?? 12m,
             ExcludedBuildings = SplitCsv(excludedBuildings)
         })));
@@ -338,10 +332,7 @@ public class ProjectController : BaseApiController
         [FromQuery] string? excludedBuildings = null,
         [FromQuery] DateTime? commissionsStartDate = null,
         [FromQuery] DateTime? commissionsEndDate = null,
-        [FromQuery] bool commissionsAllData = false,
-        [FromQuery] DateTime? mgmtFeeStartDate = null,
-        [FromQuery] DateTime? mgmtFeeEndDate = null,
-        [FromQuery] bool mgmtFeeAllData = false)
+        [FromQuery] bool commissionsAllData = false)
     {
         var dto = await Mediator.Send(new GetProjectReport.Query
         {
@@ -358,9 +349,6 @@ public class ProjectController : BaseApiController
             CommissionsStartDate = commissionsStartDate,
             CommissionsEndDate = commissionsEndDate,
             CommissionsAllData = commissionsAllData,
-            MgmtFeeStartDate = mgmtFeeStartDate,
-            MgmtFeeEndDate = mgmtFeeEndDate,
-            MgmtFeeAllData = mgmtFeeAllData,
             MgmtFeePercent = mgmtFeePercent ?? 12m,
             ExcludedBuildings = SplitCsv(excludedBuildings)
         });
@@ -369,8 +357,7 @@ public class ProjectController : BaseApiController
             $"المصاريف: {FormatPeriod(expensesAllData, expensesStartDate, expensesEndDate)} · " +
             $"الإيرادات: {FormatPeriod(revenuesAllData, revenuesStartDate, revenuesEndDate)} · " +
             $"المبيعات: {FormatPeriod(salesAllData, salesStartDate, salesEndDate)} · " +
-            $"العمولات: {FormatPeriod(commissionsAllData, commissionsStartDate, commissionsEndDate)} · " +
-            $"مبلغ الإدارة: {FormatPeriod(mgmtFeeAllData, mgmtFeeStartDate, mgmtFeeEndDate)}";
+            $"العمولات: {FormatPeriod(commissionsAllData, commissionsStartDate, commissionsEndDate)}";
 
         var bytes = _projectReportService.Render(dto, projectName, projectId, period);
 

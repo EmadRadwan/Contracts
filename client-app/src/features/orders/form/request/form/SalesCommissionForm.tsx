@@ -1002,7 +1002,10 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         control={
                                                             <Checkbox
                                                                 checked={hasWithholdingTaxExemption}
-                                                                onChange={(e) => setHasWithholdingTaxExemption(e.target.checked)}
+                                                                onChange={(e) => {
+                                                                    setHasWithholdingTaxExemption(e.target.checked);
+                                                                    formRenderProps.onChange("hasWithholdingTaxExemption", { value: e.target.checked });
+                                                                }}
                                                                 disabled={isLocked}
                                                             />
                                                         }
@@ -1014,7 +1017,10 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         control={
                                                             <Checkbox
                                                                 checked={taxInvoiceRaised}
-                                                                onChange={(e) => setTaxInvoiceRaised(e.target.checked)}
+                                                                onChange={(e) => {
+                                                                    setTaxInvoiceRaised(e.target.checked);
+                                                                    formRenderProps.onChange("taxInvoiceRaised", { value: e.target.checked });
+                                                                }}
                                                                 disabled={isLocked}
                                                             />
                                                         }
@@ -1136,7 +1142,10 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         control={
                                                             <Checkbox
                                                                 checked={hasExternalSalesRepWhtExemption}
-                                                                onChange={(e) => setHasExternalSalesRepWhtExemption(e.target.checked)}
+                                                                onChange={(e) => {
+                                                                    setHasExternalSalesRepWhtExemption(e.target.checked);
+                                                                    formRenderProps.onChange("hasExternalSalesRepWhtExemption", { value: e.target.checked });
+                                                                }}
                                                                 disabled={isLocked}
                                                                 size="small"
                                                             />
@@ -1209,7 +1218,10 @@ export default function SalesCommissionForm({ commission, salesRequestId, editMo
                                                         control={
                                                             <Checkbox
                                                                 checked={hasExternalManagerWhtExemption}
-                                                                onChange={(e) => setHasExternalManagerWhtExemption(e.target.checked)}
+                                                                onChange={(e) => {
+                                                                    setHasExternalManagerWhtExemption(e.target.checked);
+                                                                    formRenderProps.onChange("hasExternalManagerWhtExemption", { value: e.target.checked });
+                                                                }}
                                                                 disabled={isLocked}
                                                                 size="small"
                                                             />

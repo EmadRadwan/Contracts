@@ -56,15 +56,15 @@ public sealed class ProjectReportSummaryReport : Report
             y += 0.55;
         }
 
-        SectionHeader("المصاريف");
+        SectionHeader("المصاريف (المدفوع فعلاً)");
         Line("المستخلصات", s.CertificateExpenses);
         Line($"الدفعات المباشرة — مدفوعة ({s.DirectPaymentsPaidCount})", s.DirectPaymentsPaid);
-        Line($"الدفعات المباشرة — غير مدفوعة ({s.DirectPaymentsUnpaidCount})", s.DirectPaymentsUnpaid);
-        Line("إجمالي الدفعات المباشرة", s.DirectPayments);
         Line("قيود محاسبية", s.AccountingTransactions);
         Line("رواتب المشروع", s.ProjectPayroll);
-        Line("المصاريف التشغيلية", s.OperatingExpenses);
-        Line("إجمالي مصاريف المشروع", s.TotalProjectExpenses, true);
+        Line($"المصاريف التشغيلية — مدفوعة ({s.OperatingExpensesPaidCount})", s.OperatingExpenses);
+        Line("إجمالي مصاريف المشروع (المدفوع)", s.TotalProjectExpenses, true);
+        Line($"للعرض فقط: دفعات مباشرة غير مدفوعة ({s.DirectPaymentsUnpaidCount})", s.DirectPaymentsUnpaid);
+        Line($"للعرض فقط: مصاريف تشغيلية غير مدفوعة ({s.OperatingExpensesUnpaidCount})", s.OperatingExpensesUnpaid);
         y += 0.2;
 
         SectionHeader("الإيرادات");
@@ -97,16 +97,18 @@ public sealed class ProjectReportSummaryReport : Report
         var excludedLabel = s.MgmtExcludedBuildings.Count > 0
             ? $" (عدا {string.Join("، ", s.MgmtExcludedBuildings)})"
             : "";
-        SectionHeader("مبلغ الإدارة");
-        Line("الأساس" + excludedLabel, s.MgmtFeeBase);
-        Line($"النسبة ({s.MgmtFeePercent}%)", s.MgmtFee);
-        Line("يُخصم: المصاريف التشغيلية (فترة مبلغ الإدارة)", -s.MgmtFeeOperatingExpenses);
-        Line("الصافي المتبقي", s.MgmtFeeNet, true);
+        SectionHeader("مبلغ الإدارة — جولدن لاند");
+        Line("الإيراد المتفق عليه — كل المدة" + excludedLabel, s.MgmtFeeBase);
+        Line($"نسبة الإدارة ({s.MgmtFeePercent}%) — تشمل مصاريف التسويق", s.MgmtFee, true);
         y += 0.2;
 
-        SectionHeader("الصافي");
-        Line("المحصل − مصاريف المشروع", s.NetAfterExpenses, true);
-        Line("بعد خصم العمولات المدفوعة", s.NetAfterPaidCommissions, true);
+        SectionHeader("رصيد المشروع");
+        Line("الإيراد المحصل", s.RevenueCollected);
+        Line("يطرح: نسبة الإدارة مبيعات — جولدن لاند", -s.MgmtFee);
+        Line("صافي المحصل", s.NetCollectedAfterMgmtFee, true);
+        Line("يطرح: المستخلصات", -s.CertificateExpenses);
+        Line("يطرح: المصاريف المباشرة المدفوعة", -s.DirectPaymentsPaid);
+        Line("رصيد المشروع", s.ProjectBalance, true);
 
         section.Height = Unit.Cm(y + 0.3);
         return section;

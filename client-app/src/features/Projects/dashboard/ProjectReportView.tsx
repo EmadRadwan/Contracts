@@ -344,13 +344,25 @@ function TotalsStrip({ cells }: { cells: TotalCell[] }) {
     );
 }
 
+// Unpaid rows are listed for information only — every total in the report is on paid rows
+// (accountant's rule, 2026-09-20), so the strip has no paid+unpaid grand total.
 function DirectPaymentTotals({ s }: { s: ProjectReportSummary }) {
     return (
         <TotalsStrip
             cells={[
-                [PAID_LABEL, `${count(s.directPaymentsPaidCount)} دفعة`, s.directPaymentsPaid],
-                [UNPAID_LABEL, `${count(s.directPaymentsUnpaidCount)} دفعة`, s.directPaymentsUnpaid],
-                ["الإجمالي", `${count(s.directPaymentsPaidCount + s.directPaymentsUnpaidCount)} دفعة`, s.directPayments, true],
+                [`${PAID_LABEL} — تدخل في الحساب`, `${count(s.directPaymentsPaidCount)} دفعة`, s.directPaymentsPaid, true],
+                [`${UNPAID_LABEL} — للعرض فقط`, `${count(s.directPaymentsUnpaidCount)} دفعة`, s.directPaymentsUnpaid],
+            ]}
+        />
+    );
+}
+
+function OperatingExpenseTotals({ s }: { s: ProjectReportSummary }) {
+    return (
+        <TotalsStrip
+            cells={[
+                [`${PAID_LABEL} — تدخل في الحساب`, `${count(s.operatingExpensesPaidCount)} دفعة`, s.operatingExpenses, true],
+                [`${UNPAID_LABEL} — للعرض فقط`, `${count(s.operatingExpensesUnpaidCount)} دفعة`, s.operatingExpensesUnpaid],
             ]}
         />
     );
@@ -425,16 +437,16 @@ function summaryGroups(s: ProjectReportSummary): { title: string; lines: Summary
         : "";
     return [
         {
-            title: "المصاريف",
+            title: "المصاريف (المدفوع فعلاً)",
             lines: [
                 ["المستخلصات", money(s.certificateExpenses)],
                 [`الدفعات المباشرة — ${PAID_LABEL} (${count(s.directPaymentsPaidCount)})`, money(s.directPaymentsPaid)],
-                [`الدفعات المباشرة — ${UNPAID_LABEL} (${count(s.directPaymentsUnpaidCount)})`, money(s.directPaymentsUnpaid)],
-                ["إجمالي الدفعات المباشرة", money(s.directPayments)],
                 ["قيود محاسبية", money(s.accountingTransactions)],
                 ["رواتب المشروع", money(s.projectPayroll)],
-                ["المصاريف التشغيلية", money(s.operatingExpenses)],
-                ["إجمالي مصاريف المشروع", money(s.totalProjectExpenses), true],
+                [`المصاريف التشغيلية — ${PAID_LABEL} (${count(s.operatingExpensesPaidCount)})`, money(s.operatingExpenses)],
+                ["إجمالي مصاريف المشروع (المدفوع)", money(s.totalProjectExpenses), true],
+                [`للعرض فقط: دفعات مباشرة ${UNPAID_LABEL} (${count(s.directPaymentsUnpaidCount)})`, money(s.directPaymentsUnpaid)],
+                [`للعرض فقط: مصاريف تشغيلية ${UNPAID_LABEL} (${count(s.operatingExpensesUnpaidCount)})`, money(s.operatingExpensesUnpaid)],
             ],
         },
         {
@@ -473,19 +485,21 @@ function summaryGroups(s: ProjectReportSummary): { title: string; lines: Summary
             ],
         },
         {
-            title: "مبلغ الإدارة",
+            title: "مبلغ الإدارة — جولدن لاند",
             lines: [
-                [`الأساس${excluded}`, money(s.mgmtFeeBase)],
-                [`النسبة (${s.mgmtFeePercent}%)`, money(s.mgmtFee)],
-                ["يُخصم: المصاريف التشغيلية (فترة مبلغ الإدارة)", money(-s.mgmtFeeOperatingExpenses)],
-                ["الصافي المتبقي", money(s.mgmtFeeNet), true],
+                [`الإيراد المتفق عليه — كل المدة${excluded}`, money(s.mgmtFeeBase)],
+                [`نسبة الإدارة (${s.mgmtFeePercent}%) — تشمل مصاريف التسويق`, money(s.mgmtFee), true],
             ],
         },
         {
-            title: "الصافي",
+            title: "رصيد المشروع",
             lines: [
-                ["المحصل − مصاريف المشروع", money(s.netAfterExpenses), true],
-                ["بعد خصم العمولات المدفوعة", money(s.netAfterPaidCommissions), true],
+                ["الإيراد المحصل", money(s.revenueCollected)],
+                ["يطرح: نسبة الإدارة مبيعات — جولدن لاند", money(-s.mgmtFee)],
+                ["صافي المحصل", money(s.netCollectedAfterMgmtFee), true],
+                ["يطرح: المستخلصات", money(-s.certificateExpenses)],
+                ["يطرح: المصاريف المباشرة المدفوعة", money(-s.directPaymentsPaid)],
+                ["رصيد المشروع", money(s.projectBalance), true],
             ],
         },
     ];
@@ -552,9 +566,6 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
     const [commissionsStartDate, setCommissionsStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
     const [commissionsEndDate, setCommissionsEndDate] = useState<Dayjs | null>(dayjs());
     const [commissionsAllData, setCommissionsAllData] = useState(false);
-    const [mgmtFeeStartDate, setMgmtFeeStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
-    const [mgmtFeeEndDate, setMgmtFeeEndDate] = useState<Dayjs | null>(dayjs());
-    const [mgmtFeeAllData, setMgmtFeeAllData] = useState(false);
     const [mgmtFeePercent, setMgmtFeePercent] = useState<number>(12);
     const [excludedBuildings, setExcludedBuildings] = useState<string[]>([]);
 
@@ -589,9 +600,6 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
         commissionsStartDate: commissionsAllData ? undefined : commissionsStartDate?.format("YYYY-MM-DD"),
         commissionsEndDate: commissionsAllData ? undefined : commissionsEndDate?.format("YYYY-MM-DD"),
         commissionsAllData,
-        mgmtFeeStartDate: mgmtFeeAllData ? undefined : mgmtFeeStartDate?.format("YYYY-MM-DD"),
-        mgmtFeeEndDate: mgmtFeeAllData ? undefined : mgmtFeeEndDate?.format("YYYY-MM-DD"),
-        mgmtFeeAllData,
         mgmtFeePercent,
         excludedBuildings: excludedBuildings.length ? excludedBuildings.join(",") : undefined,
     });
@@ -615,7 +623,6 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
                 revenuesPeriod: period(revenuesAllData, revenuesStartDate, revenuesEndDate),
                 salesPeriod: period(salesAllData, salesStartDate, salesEndDate),
                 commissionsPeriod: period(commissionsAllData, commissionsStartDate, commissionsEndDate),
-                mgmtFeePeriod: period(mgmtFeeAllData, mgmtFeeStartDate, mgmtFeeEndDate),
             });
             const safe = projectName.replace(/[^a-zA-Z0-9\u0600-\u06FF\s-]/g, "_").trim();
             saveAs(
@@ -670,6 +677,14 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
     // revenue first then the maintenance receipts — same two blocks as the Excel sheet. The
     // summary's الإيراد المتفق عليه still excludes maintenance (custodial); the strip above the
     // grid shows both parts so the tab reconciles to it.
+    const operatingExpenseRows = useMemo(
+        () =>
+            (report?.operatingExpenses || []).map((p: any) => ({
+                ...p,
+                settlementStatus: isUnpaid(p) ? UNPAID_LABEL : PAID_LABEL,
+            })),
+        [report]
+    );
     const revenueRows = useMemo(() => {
         const all = report?.revenues || [];
         return [...all.filter((r: any) => !isMaintenance(r)), ...all.filter((r: any) => isMaintenance(r))];
@@ -686,7 +701,12 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
             },
             { label: "قيود محاسبية", rows: report?.accountingTransactions, columns: transactionColumns },
             { label: "رواتب المشروع", rows: report?.payroll, columns: payrollColumns },
-            { label: "المصاريف التشغيلية", rows: report?.operatingExpenses, columns: paymentColumns },
+            {
+                label: "المصاريف التشغيلية",
+                rows: operatingExpenseRows,
+                columns: directPaymentColumns,
+                totals: report?.summary ? <OperatingExpenseTotals s={report.summary} /> : undefined,
+            },
             {
                 label: "الإيرادات",
                 rows: revenueRows,
@@ -698,7 +718,7 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
             { label: "العمولات المدفوعة", rows: report?.paidCommissions, columns: commissionColumns },
             { label: "قيود العمولات المدفوعة", rows: report?.paidCommissionAcctgEntries, columns: commissionEntryColumns },
         ],
-        [report, directPaymentRows, revenueRows]
+        [report, directPaymentRows, operatingExpenseRows, revenueRows]
     );
 
     return (
@@ -745,21 +765,16 @@ export default function ProjectReportView({ projectId, projectName, onExit }: Pr
                         />
 
                         <Box>
-                            {/* The fee window drives BOTH the fee base and the operating expenses
-                                deducted from it (see GetProjectReport.Query.MgmtFee*). */}
-                            <PeriodFilter
-                                label="مبلغ الإدارة"
-                                all={mgmtFeeAllData} setAll={setMgmtFeeAllData}
-                                start={mgmtFeeStartDate} setStart={setMgmtFeeStartDate}
-                                end={mgmtFeeEndDate} setEnd={setMgmtFeeEndDate}
-                            />
+                            {/* The fee is % × the project's ALL-TIME agreed revenue (no period), minus
+                                the excluded buildings — see ProjectReportSummaryDto.MgmtFeeBase. */}
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>مبلغ الإدارة</Typography>
                             <TextField
                                 select
                                 size="small"
                                 label="النسبة %"
                                 value={mgmtFeePercent}
                                 onChange={(e) => setMgmtFeePercent(Number(e.target.value))}
-                                sx={{ width: 120, mt: 1 }}
+                                sx={{ width: 120, mt: 0.5 }}
                             >
                                 {MGMT_FEE_PERCENT_OPTIONS.map((p) => (
                                     <MenuItem key={p} value={p}>{p}%</MenuItem>
