@@ -1,6 +1,7 @@
 using Application.Core;
 using Application.Interfaces;
 using AutoMapper;
+using Application.Order.SalesRequests;
 using Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -86,8 +87,9 @@ public class CreateProduct
                     GardenSpaceM2 = dto.GardenSpaceM2, // NEW
                     ApartmentPricePerM2 = dto.ApartmentPricePerM2, // NEW
                     GardenPricePerM2 = dto.GardenPricePerM2, // NEW
-                    ApartmentStatusId = !string.IsNullOrWhiteSpace(dto.ApartmentStatusId)
-                        ? dto.ApartmentStatusId
+                    // Status is owned by the Sales Request module; a new unit always starts AVAILABLE.
+                    ApartmentStatusId = dto.ProductTypeId == "APARTMENT"
+                        ? ApartmentLock.AvailableStatusId
                         : null,
                     BuildingNumber = dto.BuildingNumber,
                     CreatedDate = now,

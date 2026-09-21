@@ -84,14 +84,6 @@ const productsApi = createApi({
                 invalidatesTags: ["Products"],
             }),
 
-            reserveApartment: builder.mutation({
-                query: (productId: string) => ({
-                    url: `/products/${productId}/reserve`,
-                    method: "PATCH",
-                }),
-                invalidatesTags: ["Products"],
-            }),
-
             fetchProductStoreFacilities: builder.query<any[], undefined>({
                 query: () => {
                     return {
@@ -184,7 +176,6 @@ export const {
     useFetchProductUOMsQuery,
     useAddProductMutation,
     useUpdateProductMutation,
-    useReserveApartmentMutation,
     useFetchProductStoreFacilitiesQuery,
     useGetServiceProductPriceQuery, useFetchFinishedProductsForWIPQuery,
     endpoints: productsEndpoints, useFetchProductQuantityUomQuery,

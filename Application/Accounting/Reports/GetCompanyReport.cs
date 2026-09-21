@@ -720,7 +720,7 @@ namespace Application.Accounting.Reports
                     MonthsBetweenInstallments = x.sr.MonthsBetweenInstallments
                 }).ToList();
 
-                // Available/reserved rows — all APARTMENT products with no sales request and not SOLD.
+                // Available rows — all APARTMENT products with no sales request and not SOLD.
                 var availableRaw = await (from prod in _context.Products.AsNoTracking()
                     join pt in _context.ProductTypes.AsNoTracking() on prod.ProductTypeId equals pt.ProductTypeId
                     where prod.ProductTypeId == "APARTMENT"

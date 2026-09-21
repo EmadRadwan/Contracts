@@ -67,11 +67,20 @@ export const ApartmentHeaderSection: React.FC<ApartmentHeaderSectionProps> = Rea
             // Value is the selected apartment object from the ComboBox
             const apt = value as any;
 
-            // If status is SOLD and it's not reserved by the current sales request (in edit mode), reject
             if (apt?.apartmentStatusId === "APARTMENT_SOLD") {
                 return getTranslatedLabel(
                     "salesRequest.form.validation.apartmentSold",
                     "This apartment is already sold and cannot be selected."
+                );
+            }
+
+            // Same rule as the form-level validator in SalesRequestForm: an AVAILABLE unit
+            // held by another open sales request cannot be picked.
+            const holder = apt?.reservedBySalesRequestId;
+            if (holder && holder !== formRenderPropsRef.current.valueGetter("salesRequestId")) {
+                return getTranslatedLabel(
+                    "salesRequest.form.validation.apartmentNotAvailable",
+                    "Cannot proceed: this apartment already has an open sales request."
                 );
             }
 

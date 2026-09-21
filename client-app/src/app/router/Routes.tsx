@@ -149,7 +149,6 @@ import MultiPaymentCertificatesList from "../../features/Projects/dashboard/Mult
 import InitialBalanceTransForm from "../../features/accounting/transaction/form/InitialBalanceTransForm";
 import SalesRequestsList from "../../features/orders/form/request/dashboard/SalesRequestsList";
 import PaymentsWithDueAmountsList from "../../features/accounting/payment/dashboard/PaymentsWithDueAmountsList";
-import ReserveRequestsList from "../../features/orders/form/request/dashboard/ReserveRequestsList";
 import ProjectCommissionRatesList from "../../features/orders/form/request/dashboard/ProjectCommissionRatesList";
 import SalesCommissionsList from "../../features/orders/form/request/dashboard/SalesCommissionsList";
 import RequireRole from "./RequireRole";
@@ -431,12 +430,6 @@ export const routes: RouteObject[] = [
                                 element: <RequireRole allowedRoles={["CreateSalesRequest", "ViewSalesRequest"]} />,
                                 children: [
                                     {path: "sales-requests", element: <SalesRequestsList/>},
-                                ],
-                            },
-                            {
-                                element: <RequireRole allowedRoles="CreateReserveRequest" />,
-                                children: [
-                                    {path: "reserve-requests", element: <ReserveRequestsList/>},
                                 ],
                             },
                             {path: "project-commission-rates", element: <ProjectCommissionRatesList/>},

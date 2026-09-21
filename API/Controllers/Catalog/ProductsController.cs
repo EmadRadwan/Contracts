@@ -191,12 +191,6 @@ public class ProductsController : BaseApiController
         return HandleResult(await Mediator.Send(command));
     }
 
-    [HttpPatch("{productId}/reserve")]
-    public async Task<IActionResult> ReserveApartment(string productId)
-    {
-        return HandleResult(await Mediator.Send(new ReserveApartment.Command { ProductId = productId }));
-    }
-
     [HttpPost("createProduct", Name = "CreateProduct")]
     public async Task<IActionResult> CreateProduct([FromBody] CreateProduct.Command command)
     {

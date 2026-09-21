@@ -26,6 +26,9 @@ public class GetSimpleApartmentsLov
         public decimal ApartmentPricePerM2 { get; set; }
         public string ApartmentStatusId { get; set; } = string.Empty;
         public string ApartmentStatusDescription { get; set; }
+        // Sales request currently holding the unit (null = free). The sales-request form
+        // checks this, not the status — a pending request no longer flips the status.
+        public string? ReservedBySalesRequestId { get; set; }
     }
 
     public class Query : IRequest<Result<ApartmentsEnvelope>>
@@ -147,7 +150,8 @@ public class GetSimpleApartmentsLov
                     ApartmentStatusId = p.ApartmentStatusId,
                     ApartmentStatusDescription = p.ApartmentStatusId != null &&
                                                  statusLookup.TryGetValue(p.ApartmentStatusId, out var desc)
-                        ? desc : p.ApartmentStatusId
+                        ? desc : p.ApartmentStatusId,
+                    ReservedBySalesRequestId = p.ReservedBySalesRequestId
                 }).ToList();
 
                 // -----------------------------------------------------------------

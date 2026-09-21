@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
@@ -15,6 +15,7 @@ import { DropDownList, DropDownListChangeEvent } from "@progress/kendo-react-dro
 import { Button as KendoButton } from "@progress/kendo-react-buttons";
 import { filterIcon, filterClearIcon } from "@progress/kendo-svg-icons";
 import { Grid, Paper } from "@mui/material";
+import { toast } from "react-toastify";
 
 import Button from "@mui/material/Button";
 import {DataResult, State} from "@progress/kendo-data-query";
@@ -34,6 +35,110 @@ import {useFetchProjectsLovQuery} from "../../../../../app/store/apis/projectsAp
 import {useFetchPartiesEmployeesLovQuery} from "../../../../../app/store/apis/partiesApi";
 import {TextFilterCell, NumericFilterCell, createSelectFilterCell} from "../../../../../app/common/grid";
 import "../../../../../app/common/grid/grid.styles.css";
+
+// Same split, applied to floor. floorMap (ListSalesRequestsQuery.cs) only ever produces
+// Arabic labels regardless of language — that's a separate pre-existing gap, left as-is —
+// so these option labels intentionally match what the column actually displays in both languages.
+const floorFilterOptions = [
+    { text: "الطابق الأرضي", value: "0" },
+    { text: "الطابق الأول", value: "1" },
+    { text: "الطابق الثاني", value: "2" },
+    { text: "الطابق الثالث", value: "3" },
+    { text: "الطابق الرابع", value: "4" },
+    { text: "الطابق الخامس", value: "5" },
+    { text: "الطابق السادس", value: "6" },
+];
+
+// REFACTOR: Kendo's built-in date FilterCell has no explicit format/locale configured
+// app-wide, so it falls back to a US-style (M/d/y) date input that also misparses
+// dd/MM/yyyy input, silently sending the wrong date to the OData filter.
+// This custom cell mirrors Kendo's default GridFilterCell markup/behavior (operator
+// dropdown + clear button) but pins format/formatPlaceholder to dd/MM/yyyy.
+//
+// Module-level on purpose: a filter cell declared inside SalesRequestsList would be a new
+// component type on every render, so React would unmount/remount the cell (closing the
+// DatePicker popup and dropping the caret) each time the grid refetched.
+const SaleDateFilterCell = (props: GridFilterCellProps & { tdProps?: React.TdHTMLAttributes<HTMLTableCellElement> }) => {
+    const { getTranslatedLabel } = useTranslationHelper();
+    const hasValue = props.value !== null && props.value !== undefined && props.value !== "";
+    const defaultOperator = props.operators[0]?.operator as string;
+
+    const handleDateChange = (event: DatePickerChangeEvent) => {
+        const value = event.value;
+        let operator = props.operator as string;
+        if (!operator || operator === "isnull" || operator === "isnotnull") {
+            operator = defaultOperator;
+        }
+        if (value === null && operator === defaultOperator) {
+            operator = "";
+        }
+        props.onChange({ value, operator, syntheticEvent: event.syntheticEvent as React.SyntheticEvent });
+    };
+
+    const handleOperatorChange = (event: DropDownListChangeEvent) => {
+        // Mirrors Kendo's own cellOperatorChange guard. In v16 the change event's `target`
+        // is the DropDownList's internal component object, which exposes `state.opened`
+        // (the ref *handle* has an `opened` getter, but that is not what arrives here) —
+        // `event.target.opened` is always undefined, which silently ignored every
+        // operator change on this cell.
+        if (!(event.target as any).state?.opened) {
+            return;
+        }
+        const item = event.target.value as { text: string; operator: string };
+        let value = props.value;
+        if (item.operator === "isnull" || item.operator === "isnotnull") {
+            value = null;
+        } else if (props.value === null) {
+            value = undefined;
+        }
+        props.onChange({ value, operator: item.operator, syntheticEvent: event.syntheticEvent as React.SyntheticEvent });
+    };
+
+    const clear = (event: React.SyntheticEvent) => {
+        event.preventDefault();
+        props.onChange({ value: null, operator: "", syntheticEvent: event });
+    };
+
+    const selectedOperator = props.operators.find((op) => op.operator === props.operator) || null;
+
+    return (
+        <td {...props.tdProps}>
+            <div className="k-filtercell">
+                <div className="k-filtercell-wrapper">
+                    <DatePicker
+                        value={props.value ?? null}
+                        format="dd/MM/yyyy"
+                        formatPlaceholder={{ year: "yyyy", month: "mm", day: "dd" }}
+                        onChange={handleDateChange}
+                        title={props.title}
+                        ariaLabel={props.ariaLabel}
+                    />
+                    <div className="k-filtercell-operator">
+                        <DropDownList
+                            data={props.operators}
+                            textField="text"
+                            value={selectedOperator}
+                            onChange={handleOperatorChange}
+                            iconClassName="k-i-filter k-icon"
+                            svgIcon={filterIcon}
+                            className="k-dropdown-operator"
+                            popupSettings={{ width: "" }}
+                        />
+                        &nbsp;
+                        <KendoButton
+                            icon="filter-clear"
+                            svgIcon={filterClearIcon}
+                            type="button"
+                            title={getTranslatedLabel("general.clear", "Clear")}
+                            onClick={clear}
+                            disabled={!(hasValue || props.operator)}
+                        />
+                    </div>
+                </div>
+            </div>
+        </td>
+    );
+};
 
 function SalesRequestsList() {
     const navigate = useNavigate();
@@ -61,7 +166,7 @@ function SalesRequestsList() {
     // and EF Core can't translate a filter/orderby against it into SQL (500s). statusId is
     // stable across languages; only the dropdown's display text needs localizing.
     const language = useSelector((state: any) => state.localization.language);
-    const statusFilterOptions = language === "ar"
+    const statusFilterOptions = useMemo(() => language === "ar"
         ? [
             { text: "تم الإنشاء", value: "SALES_REQUEST_CREATED" },
             { text: "تم الاعتماد", value: "SALES_REQUEST_APPROVED" },
@@ -69,52 +174,48 @@ function SalesRequestsList() {
         : [
             { text: "Created", value: "SALES_REQUEST_CREATED" },
             { text: "Approved", value: "SALES_REQUEST_APPROVED" },
-        ];
+        ], [language]);
 
     // Same statusId/statusDescription split, applied to apartment status
-    // (APARTMENT_STATUS StatusItems: 3 values today).
-    const apartmentStatusFilterOptions = language === "ar"
+    // (APARTMENT_STATUS: AVAILABLE / SOLD — RESERVED retired Sep 2026).
+    const apartmentStatusFilterOptions = useMemo(() => language === "ar"
         ? [
             { text: "متاح", value: "APARTMENT_AVAILABLE" },
-            { text: "محجوز", value: "APARTMENT_RESERVED" },
             { text: "مباع", value: "APARTMENT_SOLD" },
         ]
         : [
             { text: "Available", value: "APARTMENT_AVAILABLE" },
-            { text: "Reserved", value: "APARTMENT_RESERVED" },
             { text: "Sold", value: "APARTMENT_SOLD" },
-        ];
-
-    // Same split, applied to floor. floorMap (ListSalesRequestsQuery.cs) only ever produces
-    // Arabic labels regardless of language — that's a separate pre-existing gap, left as-is —
-    // so these option labels intentionally match what the column actually displays in both languages.
-    const floorFilterOptions = [
-        { text: "الطابق الأرضي", value: "0" },
-        { text: "الطابق الأول", value: "1" },
-        { text: "الطابق الثاني", value: "2" },
-        { text: "الطابق الثالث", value: "3" },
-        { text: "الطابق الرابع", value: "4" },
-        { text: "الطابق الخامس", value: "5" },
-        { text: "الطابق السادس", value: "6" },
-    ];
+        ], [language]);
 
     // Same split, applied to project. Unlike status/apartment-status/floor (small fixed
     // constants), the project list is real business data (WorkEffort rows), so it's fetched
     // via the same LOV endpoint other project pickers in the app already use, rather than
     // hardcoded — a project added later shows up in the dropdown without a code change.
     const { data: projectsLovData } = useFetchProjectsLovQuery();
-    const projectFilterOptions = (projectsLovData?.projects ?? [])
+    const projectFilterOptions = useMemo(() => (projectsLovData?.projects ?? [])
         .map((p) => ({ text: p.projectName, value: p.workEffortId }))
-        .sort((a, b) => a.text.localeCompare(b.text));
+        .sort((a, b) => a.text.localeCompare(b.text)), [projectsLovData]);
 
     // Same split, applied to sales employee. Filters on employeePartyId (already a real,
     // directly-exposed SalesRequest column, no dictionary lookup involved) while displaying
     // employeeName. Options come from the same "EMPLOYEE" role LOV the create/edit form's
     // employee picker (FormComboBoxVirtualPartyEmployee) already uses.
     const { data: employeesLovData } = useFetchPartiesEmployeesLovQuery();
-    const employeeFilterOptions = (employeesLovData?.parties ?? [])
+    const employeeFilterOptions = useMemo(() => (employeesLovData?.parties ?? [])
         .map((p) => ({ text: p.fromPartyName, value: p.fromPartyId }))
-        .sort((a, b) => a.text.localeCompare(b.text));
+        .sort((a, b) => a.text.localeCompare(b.text)), [employeesLovData]);
+
+    // createSelectFilterCell returns a new component type each call, so these must be
+    // memoized (and declared before the early `return` below, as hooks) — otherwise every
+    // render of this list remounts the five dropdown cells, which closes an open dropdown
+    // whenever a previous fetch completes underneath the user.
+    const allLabel = getTranslatedLabel("general.all", "All");
+    const StatusFilterCell = useMemo(() => createSelectFilterCell(statusFilterOptions, allLabel), [statusFilterOptions, allLabel]);
+    const ApartmentStatusFilterCell = useMemo(() => createSelectFilterCell(apartmentStatusFilterOptions, allLabel), [apartmentStatusFilterOptions, allLabel]);
+    const FloorFilterCell = useMemo(() => createSelectFilterCell(floorFilterOptions, allLabel), [allLabel]);
+    const ProjectFilterCell = useMemo(() => createSelectFilterCell(projectFilterOptions, allLabel), [projectFilterOptions, allLabel]);
+    const EmployeeFilterCell = useMemo(() => createSelectFilterCell(employeeFilterOptions, allLabel), [employeeFilterOptions, allLabel]);
 
     // -----------------------------------------------------------------
     // Grid data
@@ -129,7 +230,7 @@ function SalesRequestsList() {
         skip: 0,
         take: 9,
     });
-    const { data, isFetching } = useFetchSalesRequestsQuery({...dataState});
+    const { data, isFetching, isError, error } = useFetchSalesRequestsQuery({...dataState});
 
     React.useEffect(() => {
         if (data) {
@@ -137,6 +238,16 @@ function SalesRequestsList() {
             setSRequests({ data: adjustedData, total: data!.totalCount});
         }
     }, [data]);
+
+    // RTK Query keeps returning the previous successful `data` when a request fails, so a
+    // rejected filter/sort (e.g. an OData 500) would otherwise leave the grid showing the
+    // old rows with no indication that the new criteria were never applied.
+    useEffect(() => {
+        if (isError) {
+            console.error("Sales requests list fetch failed", error);
+            toast.error(getTranslatedLabel("salesRequest.list.loadError", "Could not apply the filter/sort — the list still shows the previous results"));
+        }
+    }, [isError, error, getTranslatedLabel]);
     
     const dataStateChange = (e: GridDataStateChangeEvent) => {
         setDataState(e.dataState);
@@ -372,93 +483,6 @@ function SalesRequestsList() {
         );
     };
 
-    // REFACTOR: Kendo's built-in date FilterCell has no explicit format/locale configured
-    // app-wide, so it falls back to a US-style (M/d/y) date input that also misparses
-    // dd/MM/yyyy input, silently sending the wrong date to the OData filter.
-    // This custom cell mirrors Kendo's default GridFilterCell markup/behavior (operator
-    // dropdown + clear button) but pins format/formatPlaceholder to dd/MM/yyyy.
-    const SaleDateFilterCell = (props: GridFilterCellProps & { tdProps?: React.TdHTMLAttributes<HTMLTableCellElement> }) => {
-        const hasValue = props.value !== null && props.value !== undefined && props.value !== "";
-        const defaultOperator = props.operators[0]?.operator as string;
-
-        const handleDateChange = (event: DatePickerChangeEvent) => {
-            const value = event.value;
-            let operator = props.operator as string;
-            if (!operator || operator === "isnull" || operator === "isnotnull") {
-                operator = defaultOperator;
-            }
-            if (value === null && operator === defaultOperator) {
-                operator = "";
-            }
-            props.onChange({ value, operator, syntheticEvent: event.syntheticEvent as React.SyntheticEvent });
-        };
-
-        const handleOperatorChange = (event: DropDownListChangeEvent) => {
-            if (!event.target.opened) {
-                return;
-            }
-            const item = event.target.value as { text: string; operator: string };
-            let value = props.value;
-            if (item.operator === "isnull" || item.operator === "isnotnull") {
-                value = null;
-            } else if (props.value === null) {
-                value = undefined;
-            }
-            props.onChange({ value, operator: item.operator, syntheticEvent: event.syntheticEvent as React.SyntheticEvent });
-        };
-
-        const clear = (event: React.SyntheticEvent) => {
-            event.preventDefault();
-            props.onChange({ value: null, operator: "", syntheticEvent: event });
-        };
-
-        const selectedOperator = props.operators.find((op) => op.operator === props.operator) || null;
-
-        return (
-            <td {...props.tdProps}>
-                <div className="k-filtercell">
-                    <div className="k-filtercell-wrapper">
-                        <DatePicker
-                            value={props.value ?? null}
-                            format="dd/MM/yyyy"
-                            formatPlaceholder={{ year: "yyyy", month: "mm", day: "dd" }}
-                            onChange={handleDateChange}
-                            title={props.title}
-                            ariaLabel={props.ariaLabel}
-                        />
-                        <div className="k-filtercell-operator">
-                            <DropDownList
-                                data={props.operators}
-                                textField="text"
-                                value={selectedOperator}
-                                onChange={handleOperatorChange}
-                                iconClassName="k-i-filter k-icon"
-                                svgIcon={filterIcon}
-                                className="k-dropdown-operator"
-                                popupSettings={{ width: "" }}
-                            />
-                            &nbsp;
-                            <KendoButton
-                                icon="filter-clear"
-                                svgIcon={filterClearIcon}
-                                type="button"
-                                title={getTranslatedLabel("general.clear", "Clear")}
-                                onClick={clear}
-                                disabled={!(hasValue || props.operator)}
-                            />
-                        </div>
-                    </div>
-                </div>
-            </td>
-        );
-    };
-
-    const StatusFilterCell = createSelectFilterCell(statusFilterOptions, getTranslatedLabel("general.all", "All"));
-    const ApartmentStatusFilterCell = createSelectFilterCell(apartmentStatusFilterOptions, getTranslatedLabel("general.all", "All"));
-    const FloorFilterCell = createSelectFilterCell(floorFilterOptions, getTranslatedLabel("general.all", "All"));
-    const ProjectFilterCell = createSelectFilterCell(projectFilterOptions, getTranslatedLabel("general.all", "All"));
-    const EmployeeFilterCell = createSelectFilterCell(employeeFilterOptions, getTranslatedLabel("general.all", "All"));
-
     return (
         <>
             <SalesRequestMenu
@@ -528,7 +552,7 @@ function SalesRequestsList() {
                                     title={getTranslatedLabel("salesRequest.list.buildingNumber", "Building Number")}
                                     filter="text"
                                     cells={{ filterCell: TextFilterCell }}
-                                    width={100}
+                                    width={140}
                                 />
                                 {/* Displays floorNumber (localized display text) but filters/sorts on
                                     floorNumberId, the raw "0".."6" code — see FloorDescriptionCell. */}
@@ -537,7 +561,7 @@ function SalesRequestsList() {
                                     title={getTranslatedLabel("salesRequest.list.floorNumber", "Floor")}
                                     filter="text"
                                     cells={{ data: FloorDescriptionCell, filterCell: FloorFilterCell }}
-                                    width={110}
+                                    width={160}
                                 />
                                 <Column
                                     field="fromPartyName"
@@ -575,7 +599,7 @@ function SalesRequestsList() {
                                     format="{0:dd/MM/yyyy}"
                                     filter="date"
                                     cells={{ filterCell: SaleDateFilterCell }}
-                                    width={140}
+                                    width={240}
                                 />
                                 <Column
                                     field="totalPrice"
@@ -583,13 +607,13 @@ function SalesRequestsList() {
                                     format="{0:n2}"
                                     filter="numeric"
                                     cells={{ filterCell: NumericFilterCell }}
-                                    width={130}
+                                    width={190}
                                 />
                                 <Column
                                     field="isChequesDelivered"
                                     title={getTranslatedLabel("salesRequest.list.isChequesDelivered", "Total")}
                                     filter="boolean"
-                                    width={120}
+                                    width={160}
                                     cells={{ data: IsChequesDeliveredCell }}
                                 />
                                 <Column
@@ -598,7 +622,7 @@ function SalesRequestsList() {
                                     format="{0:n2}"
                                     filter="numeric"
                                     cells={{ filterCell: NumericFilterCell }}
-                                    width={130}
+                                    width={190}
                                 />
                                 <Column
                                     field="maintenanceDeposit"
@@ -606,7 +630,7 @@ function SalesRequestsList() {
                                     format="{0:n2}"
                                     filter="numeric"
                                     cells={{ filterCell: NumericFilterCell }}
-                                    width={130}
+                                    width={190}
                                 />
                                 <Column
                                     field="apartmentSpaceM2"
@@ -614,7 +638,7 @@ function SalesRequestsList() {
                                     format="{0:n2}"
                                     filter="numeric"
                                     cells={{ filterCell: NumericFilterCell }}
-                                    width={150}
+                                    width={190}
                                 />
                                 <Column
                                     field="gardenSpaceM2"
@@ -622,7 +646,7 @@ function SalesRequestsList() {
                                     format="{0:n2}"
                                     filter="numeric"
                                     cells={{ filterCell: NumericFilterCell }}
-                                    width={150}
+                                    width={190}
                                 />
                                 <Column
                                     field="apartmentPricePerM2"
@@ -630,7 +654,7 @@ function SalesRequestsList() {
                                     format="{0:n2}"
                                     filter="numeric"
                                     cells={{ filterCell: NumericFilterCell }}
-                                    width={130}
+                                    width={190}
                                 />
                                 <Column
                                     field="projectId"
@@ -639,11 +663,15 @@ function SalesRequestsList() {
                                     cells={{ data: ProjectNameCell, filterCell: ProjectFilterCell }}
                                     width={150}
                                 />
+                                {/* Needs an explicit width: every other column is fixed-width and their sum
+                                    already exceeds the container, so a width-less column collapses to 0px
+                                    in a scrollable grid and disappears (header, cells and filter). */}
                                 <Column
                                     field="comments"
                                     title={getTranslatedLabel("salesRequest.list.comments", "Comments")}
                                     filter="text"
                                     cells={{ filterCell: TextFilterCell }}
+                                    width={250}
                                 />
                                 <Column
                                     title="عمولة"

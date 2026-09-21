@@ -10,3 +10,4 @@ export type { RowStyleFn } from './StyledRow';
 export { editDescriptorFrom } from './editDescriptor';
 export type { EditDescriptor } from './editDescriptor';
 export { createReversalAwareRow, ReversalRow, ReversalLegend, reversalRowStyle, isReversalRow, isReversedRow, REVERSAL_COLORS, applyReversalFill } from './ReversalRow';
+export { sanitizeGridFilter, sanitizeGridState } from './odataFilter';

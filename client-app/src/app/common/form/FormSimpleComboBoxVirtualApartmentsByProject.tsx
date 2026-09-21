@@ -91,10 +91,9 @@ export const FormSimpleComboBoxVirtualApartmentsByProject = (fieldRenderProps: F
                 const statusText = props.dataItem.apartmentStatusDescription || "";
 
                 const isSold = statusId === "APARTMENT_SOLD";
-                const isReserved = statusId === "APARTMENT_RESERVED";
 
-                const bg = isSold ? "#ffebee" : isReserved ? "#fff3e0" : "#e8f5e8";
-                const color = isSold ? "#c62828" : isReserved ? "#ef6c00" : "#2e7d32";
+                const bg = isSold ? "#ffebee" : "#e8f5e8";
+                const color = isSold ? "#c62828" : "#2e7d32";
 
                 return (
                     <td

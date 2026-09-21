@@ -30,14 +30,8 @@ const links = [
         icon: <RequestQuoteOutlinedIcon sx={{ color: "#4CAF50" }} />,
         requiredRole: ["CreateSalesRequest", "ViewSalesRequest"],
     },
-    {
-        title: 'Reserve Requests',
-        path: '/reserve-requests',
-        key: "salesRequest.menu.reserveRequests",
-        translationKey: "salesRequest.menu.reserveRequests",
-        icon: <RequestQuoteOutlinedIcon sx={{ color: "#4CAF50" }} />,
-        requiredRole: "CreateReserveRequest" as const,
-    },
+    // Reserve Requests hidden Sep 2026 together with the APARTMENT_RESERVED status
+    // (never used in production). Component and API remain; re-add the entry to restore.
     {
         title: 'Commission Rates',
         path: '/project-commission-rates',

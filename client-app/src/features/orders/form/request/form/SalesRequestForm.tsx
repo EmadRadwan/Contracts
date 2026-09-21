@@ -25,7 +25,7 @@ import {SalesRequestHeader} from "./SalesRequestHeader";
 import {useSalesRequestCalculations} from "../hook/useSalesRequestCalculations";
 import {SalesRequestExcel} from "../report/SalesRequestExcel";
 
-const APARTMENT_AVAILABLE = "APARTMENT_AVAILABLE";
+const APARTMENT_SOLD = "APARTMENT_SOLD";
 
 interface Props {
     salesRequest?: SalesRequest;
@@ -581,20 +581,29 @@ function SalesRequestForm({
     const salesRequestValidator = useCallback((values: any): KeyValue<string> | undefined => {
         const t = getTranslatedLabel;
 
+        // Units are AVAILABLE or SOLD only; a pending request holds the unit through
+        // reservedBySalesRequestId (mirrors ApartmentLock on the server).
         const apt = values.productId;
         const currentSalesRequestId = values.salesRequestId;
         const aptStatusId = typeof apt === "object" ? apt?.apartmentStatusId : null;
+        const holder = typeof apt === "object" ? apt?.reservedBySalesRequestId : null;
 
-        if (aptStatusId && aptStatusId !== APARTMENT_AVAILABLE) {
-            const reservedByThisRequest = apt.reservedBySalesRequestId === currentSalesRequestId;
-            if (!reservedByThisRequest) {
-                return {
-                    VALIDATION_SUMMARY: t(
-                        "salesRequest.form.validation.apartmentNotAvailable",
-                        "Cannot proceed: this apartment is already SOLD or RESERVED by another sales request."
-                    )
-                };
-            }
+        if (aptStatusId === APARTMENT_SOLD) {
+            return {
+                VALIDATION_SUMMARY: t(
+                    "salesRequest.form.validation.apartmentSold",
+                    "This apartment is already sold and cannot be selected."
+                )
+            };
+        }
+
+        if (holder && holder !== currentSalesRequestId) {
+            return {
+                VALIDATION_SUMMARY: t(
+                    "salesRequest.form.validation.apartmentNotAvailable",
+                    "Cannot proceed: this apartment already has an open sales request."
+                )
+            };
         }
 
         // All other validation (payment plan, advance match, etc.) moved to handleSubmitData

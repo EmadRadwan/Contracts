@@ -124,7 +124,7 @@ export const SalesRequestsAndApartmentsDateRangeExcel: React.FC<SalesRequestsAnd
         const legendRowNum = startRow + 1;
         const legendText = utils.rtlEmbed(getTranslatedLabel(
             'salesRequest.report.daterangeWithApartments.legend',
-            'Amber rows = apartments with no sales request yet (available or reserved inventory), not sold.'
+            'Amber rows = apartments with no sales request yet (available inventory), not sold.'
         ));
         ws.getCell(`A${legendRowNum}`).value = legendText;
         ws.mergeCells(legendRowNum, 1, legendRowNum, lastCol);

@@ -402,7 +402,7 @@ export const CompanyReportExcel: React.FC<CompanyReportExcelProps> = ({
 
         // ====================== APARTMENT SALES SHEET (company-wide) ======================
         if (data.apartmentSales && data.apartmentSales.length > 0) {
-            const NOT_SOLD_FILL = 'FFFCE8B2';   // light amber = available/reserved, not sold
+            const NOT_SOLD_FILL = 'FFFCE8B2';   // light amber = available, not sold
             const NOT_SOLD_TEXT = 'FF8A6D00';
 
             const wsSales = workbook.addWorksheet('مبيعات الوحدات');

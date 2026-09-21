@@ -115,7 +115,7 @@ public class ListSalesRequestsAndAvailableApartmentsByDateRange
 
             var soldRecords = await soldQuery.ToListAsync(ct);
 
-            // 3. Available/reserved rows - APARTMENT products with no SalesRequest at all AND
+            // 3. Available rows - APARTMENT products with no SalesRequest at all AND
             // not already marked SOLD on the product itself. Both checks matter: a product can
             // be ApartmentStatusId=SOLD with zero SalesRequest rows (e.g. imported as sold, or a
             // duplicate of another product that carries the real SalesRequest) - without the

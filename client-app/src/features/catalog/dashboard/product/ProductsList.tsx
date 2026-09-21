@@ -8,7 +8,6 @@ import {
 } from "@progress/kendo-react-grid";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
 import { Grid, Paper, ToggleButton, ToggleButtonGroup } from "@mui/material";
-import { BookOnline } from "@mui/icons-material";
 import ProductForm from "../../form/product/ProductForm";
 import {
   useAppDispatch,
@@ -23,12 +22,10 @@ import { setSelectedProduct } from "../../slice/productUiSlice";
 import { useLocation } from "react-router-dom";
 import { State } from "@progress/kendo-data-query";
 import { useTranslationHelper } from "../../../../app/hooks/useTranslationHelper";
-import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
-import { useReserveApartmentMutation } from "../../../../app/store/apis";
 
+// Apartment is AVAILABLE or SOLD only (APARTMENT_RESERVED retired Sep 2026).
 const colorMap = {
   "available": "green",
-  "reserved": "orange",
   "sold": "red"
 }
 
@@ -47,9 +44,6 @@ function ProductsList() {
   const { getTranslatedLabel } = useTranslationHelper();
   const [dataState, setDataState] = React.useState<State>({ take: 9, skip: 0 });
   const [productTypeFilter, setProductTypeFilter] = useState<string>("ALL");
-
-  const [reserveTargetId, setReserveTargetId] = useState<string | null>(null);
-  const [reserveApartment, { isLoading: isReserving }] = useReserveApartmentMutation();
 
   const handleProductTypeFilterChange = (
     _event: React.MouseEvent<HTMLElement>,
@@ -78,21 +72,6 @@ function ProductsList() {
     console.log("dataStateChange", e.dataState);
     setDataState(e.dataState);
   };
-
-  function handleReserveApartment(productId: string) {
-    setReserveTargetId(productId);
-  }
-
-  async function confirmReserve() {
-    if (!reserveTargetId) return;
-    try {
-      await reserveApartment(reserveTargetId).unwrap();
-    } catch (e) {
-      console.error("Failed to reserve apartment:", e);
-    } finally {
-      setReserveTargetId(null);
-    }
-  }
 
   const selectedProduct = useAppSelector(
     (state) => state.productUi.selectedProduct
@@ -130,18 +109,9 @@ function ProductsList() {
         {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
         {...navigationAttributes}
       >
-        <Grid container>
-          <Grid item xs={4}>
-            <Button onClick={() => handleSelectProduct(props.dataItem.productId)}>
-              {props.dataItem.productId}
-            </Button>
-          </Grid>
-          {props.dataItem.apartmentStatusId === "APARTMENT_AVAILABLE" && <Grid item xs={4}>
-            <Button sx={{ '&.MuiButton-root:hover': { bgcolor: 'transparent' } }} disableRipple onClick={() => handleReserveApartment(props.dataItem.productId)}>
-              <BookOnline style={{ color: "red" }} />
-            </Button>
-          </Grid>}
-        </Grid>
+        <Button onClick={() => handleSelectProduct(props.dataItem.productId)}>
+          {props.dataItem.productId}
+        </Button>
       </td>
     );
   };
@@ -150,7 +120,7 @@ function ProductsList() {
     const navigationAttributes = useTableKeyboardNavigation(props.id);
     const statusId = props.dataItem.apartmentStatusId
     if (statusId) {
-      const statusKey = statusId === "APARTMENT_AVAILABLE" ? "available" : statusId === "APARTMENT_RESERVED" ? "reserved" : "sold"
+      const statusKey = statusId === "APARTMENT_AVAILABLE" ? "available" : "sold"
       return (
         <td
           className={props.className}
@@ -313,28 +283,6 @@ function ProductsList() {
           </Grid>
         </Grid>
       </Paper>
-
-      <Dialog open={!!reserveTargetId} onClose={() => setReserveTargetId(null)}>
-        <DialogTitle>
-          {getTranslatedLabel("product.products.reserve.title", "Reserve Apartment")}
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {getTranslatedLabel("product.products.reserve.confirm", "Are you sure you want to reserve apartment")}{" "}
-            <strong>{reserveTargetId}</strong>?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setReserveTargetId(null)} disabled={isReserving}>
-            {getTranslatedLabel("product.products.reserve.cancel", "Cancel")}
-          </Button>
-          <Button onClick={confirmReserve} color="error" variant="contained" disabled={isReserving}>
-            {isReserving
-              ? getTranslatedLabel("product.products.reserve.reserving", "Reserving...")
-              : getTranslatedLabel("product.products.reserve.confirmButton", "Confirm Reserve")}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 }

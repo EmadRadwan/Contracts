@@ -31,8 +31,6 @@ public class EditReserveRequest
         private readonly IUtilityService _utilityService;
         private readonly IUserAccessor _userAccessor;
 
-        private const string ApartmentReservedStatusId = "APARTMENT_RESERVED";
-
         public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService)
         {
             _context = context;

@@ -98,7 +98,6 @@ public class CreateSalesRequest
         private readonly IUserAccessor _userAccessor;
 
         private const string SalesRequestCreatedStatusId = "SALES_REQUEST_CREATED";
-        private const string ApartmentReservedStatusId = "APARTMENT_RESERVED"; // <-- NEW
 
 
         public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService)
@@ -186,9 +185,14 @@ public class CreateSalesRequest
             if (apartment == null)
                 return Result<SalesRequestResponseDto>.Failure("Apartment not found");
 
-            // REFACTOR: Change status to APARTMENT_RESERVED.
-            //           Improves domain consistency: apartment becomes reserved the moment the request is created.
-            apartment.ApartmentStatusId = ApartmentReservedStatusId;
+            // A unit is either AVAILABLE or SOLD (APARTMENT_RESERVED retired Sep 2026). While a
+            // request is pending the unit keeps its AVAILABLE status and the lock lives in
+            // ReservedBySalesRequestId alone, so that pointer is what guards against a second
+            // request on the same unit.
+            var lockError = await ApartmentLock.CheckAsync(_context, apartment, salesRequestId, ct);
+            if (lockError != null)
+                return Result<SalesRequestResponseDto>.Failure(lockError);
+
             apartment.ReservedBySalesRequestId = salesRequestId;
 
 

@@ -90,8 +90,18 @@ function ProductForm({
     productCategoriesRawMaterials,
   ]);
 
+  // Apartment status is owned by the Sales Request module (Approve → Sold, Cancel/Reset →
+  // Available); the form only displays it. The server ignores whatever the dto carries.
+  const apartmentStatusText = (statusId?: string | null) =>
+      statusId === "APARTMENT_SOLD"
+          ? getTranslatedLabel("product.products.list.sold", "Sold")
+          : getTranslatedLabel("product.products.list.available", "Available");
+
   const formInitialValues = useMemo(() => {
-    const base = editMode === 1 ? {} : product || {};
+    const source: any = product || {};
+    const base: any = editMode === 1
+        ? { apartmentStatusDescription: apartmentStatusText(null) }
+        : { ...source, apartmentStatusDescription: apartmentStatusText(source.apartmentStatusId) };
 
     // Only when we are editing (editMode === 2) and a project is attached
     if (editMode === 2 && base.projectId && base.projectName) {
@@ -106,7 +116,7 @@ function ProductForm({
     }
 
     return base;
-  }, [editMode, product]);
+  }, [editMode, product, getTranslatedLabel]);
   
   console.log("Form Initial Values:", formInitialValues);
 
@@ -447,21 +457,14 @@ function ProductForm({
                             <Grid container spacing={2}>
                               <Grid item xs={6}>
                                 <Field
-                                    id="apartmentStatusId"
-                                    name="apartmentStatusId"
+                                    id="apartmentStatusDescription"
+                                    name="apartmentStatusDescription"
                                     label={getTranslatedLabel(
                                         "product.products.form.apartmentStatus",
-                                        "Apartment Status *"
+                                        "Apartment Status"
                                     )}
-                                    component={MemoizedFormDropDownList}
-                                    dataItemKey="apartmentStatusId"
-                                    textField="name"
-                                    data={[
-                                      { apartmentStatusId: "APARTMENT_AVAILABLE", name: "متاح" },
-                                      { apartmentStatusId: "APARTMENT_RESERVED", name: "محجوز" },
-                                      { apartmentStatusId: "APARTMENT_SOLD", name: "مباع" },
-                                    ]}
-                                    validator={requiredValidator}
+                                    component={FormInput}
+                                    disabled
                                 />
                               </Grid>
                               <Grid item xs={6}>

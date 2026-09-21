@@ -6,14 +6,16 @@ namespace Application.CRM.SalesOpportunities;
 /// <summary>
 /// A unit can only be won once. Two code paths mark a deal as won -
 /// UpdateSalesOpportunity (stage moved to Closed Won, including the board's
-/// drag-and-drop) and CreateSalesOpportunityAction (the DONE_DEAL action) - and
-/// both reserve the apartment, so the rule lives here rather than being written
-/// twice and drifting.
+/// drag-and-drop) and CreateSalesOpportunityAction (the DONE_DEAL action) - so
+/// the rule lives here rather than being written twice and drifting.
+///
+/// Winning no longer touches Product.ApartmentStatusId: APARTMENT_RESERVED was
+/// retired in Sep 2026 and the CRM never had a release path for it anyway. The
+/// sale itself (and the unit lock) is owned by the Sales Request module.
 /// </summary>
 public static class UnitReservationGuard
 {
     public const string ClosedWonStageId = "SOSTG_CLOSED_WON";
-    public const string ReservedStatusId = "APARTMENT_RESERVED";
     public const string SoldStatusId = "APARTMENT_SOLD";
 
     /// <summary>
@@ -62,13 +64,25 @@ public static class UnitReservationGuard
 
         // A sold unit is gone for good - the sale lives outside the CRM, so no
         // opportunity may claim it, whether or not a won opportunity is on record.
-        var apartmentStatus = await context.Products
+        // A unit with a pending sales request is equally spoken for.
+        var unit = await context.Products
             .Where(p => p.ProductId == productId)
-            .Select(p => p.ApartmentStatusId)
+            .Select(p => new { p.ApartmentStatusId, p.ReservedBySalesRequestId })
             .FirstOrDefaultAsync(ct);
 
-        if (apartmentStatus == SoldStatusId)
+        if (unit?.ApartmentStatusId == SoldStatusId)
             return $"Unit '{productId}' is already sold and cannot be won again.";
+
+        var holder = unit?.ReservedBySalesRequestId;
+        if (!string.IsNullOrWhiteSpace(holder))
+        {
+            var pending = await context.SalesRequests
+                .AnyAsync(s => s.SalesRequestId == holder
+                            && s.StatusId != "SALES_REQUEST_CANCELLED", ct);
+            if (pending)
+                return $"Unit '{productId}' already has an open sales request " +
+                       $"({holder}) and cannot be won.";
+        }
 
         return null;
     }

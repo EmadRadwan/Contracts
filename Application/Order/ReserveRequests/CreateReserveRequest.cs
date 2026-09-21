@@ -95,7 +95,6 @@ public class CreateReserveRequest
         private readonly IUserAccessor _userAccessor;
 
         private const string ReserveRequestCreatedStatusId = "RESERVE_REQUEST_CREATED";
-        private const string ApartmentReservedStatusId = "APARTMENT_RESERVED";
 
         public Handler(DataContext context, IUserAccessor userAccessor, IUtilityService utilityService)
         {
@@ -122,8 +121,8 @@ public class CreateReserveRequest
             if (apartment == null)
                 return Result<ReserveRequestResponseDto>.Failure("Apartment not found");
 
-            apartment.ApartmentStatusId = ApartmentReservedStatusId;
-            apartment.ReservedBySalesRequestId = null;
+            // APARTMENT_RESERVED retired Sep 2026: a reserve request no longer changes the unit's
+            // status (module hidden from the UI; endpoint kept so existing rows stay editable).
 
             var rr = new ReserveRequest
             {

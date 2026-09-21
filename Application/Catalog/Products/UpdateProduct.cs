@@ -1,4 +1,5 @@
 using Application.Interfaces;
+using Application.Order.SalesRequests;
 using Domain;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -120,7 +121,10 @@ public class UpdateProduct
                     product.GardenSpaceM2 = dto.GardenSpaceM2;
                     product.ApartmentPricePerM2 = dto.ApartmentPricePerM2;
                     product.GardenPricePerM2 = dto.GardenPricePerM2;
-                    product.ApartmentStatusId = !string.IsNullOrWhiteSpace(dto.ApartmentStatusId) ? dto.ApartmentStatusId : null;
+                    // ApartmentStatusId is owned by the Sales Request module (Approve → SOLD,
+                    // Cancel/Reset → AVAILABLE) and is read-only on the product form. Whatever the
+                    // dto carries is ignored; only a unit with no status yet is seeded AVAILABLE.
+                    product.ApartmentStatusId ??= ApartmentLock.AvailableStatusId;
                     product.BuildingNumber = dto.BuildingNumber;
                 }
 

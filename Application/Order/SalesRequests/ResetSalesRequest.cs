@@ -117,9 +117,12 @@ public class ResetSalesRequest
                 sr.StatusId = "SALES_REQUEST_CREATED";
                 sr.LastUpdatedStamp = DateTime.UtcNow;
 
+                // Back to a pending request: unit is AVAILABLE again but stays locked to this
+                // request (APARTMENT_RESERVED retired — see ApartmentLock).
                 if (sr.Product != null)
                 {
-                    sr.Product.ApartmentStatusId = "APARTMENT_RESERVED";
+                    sr.Product.ApartmentStatusId = ApartmentLock.AvailableStatusId;
+                    sr.Product.ReservedBySalesRequestId = sr.SalesRequestId;
                 }
 
                 // 4. Persist all changes in one transaction

@@ -21,9 +21,6 @@ public class UpdateSalesRequest
     public class Handler : IRequestHandler<Command, Result<CreateSalesRequest.SalesRequestResponseDto>>
     {
         private readonly DataContext _context;
-        private const string ApartmentAvailableStatusId = "APARTMENT_AVAILABLE";
-        private const string ApartmentReservedStatusId = "APARTMENT_RESERVED";
-
 
         public Handler(DataContext context)
         {
@@ -57,12 +54,10 @@ public class UpdateSalesRequest
 
             if (oldProductId != newProductId)
             {
-                // Release old apartment (if it was reserved)
-                if (sr.Product != null && sr.Product.ApartmentStatusId == ApartmentReservedStatusId)
-                {
-                    sr.Product.ApartmentStatusId = ApartmentAvailableStatusId;
+                // Release the old unit — only if this request is the one holding it. The unit's
+                // status is untouched: a pending request never changes it (see ApartmentLock).
+                if (sr.Product != null && sr.Product.ReservedBySalesRequestId == sr.SalesRequestId)
                     sr.Product.ReservedBySalesRequestId = null;
-                }
 
                 // Load and validate new apartment
                 var newApartment = await _context.Products
@@ -71,16 +66,10 @@ public class UpdateSalesRequest
                 if (newApartment == null)
                     return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure("Selected apartment not found");
 
-                // Validate availability: must be AVAILABLE or reserved by THIS request
-                if (newApartment.ApartmentStatusId != ApartmentAvailableStatusId &&
-                    newApartment.ReservedBySalesRequestId != sr.SalesRequestId)
-                {
-                    return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(
-                        "Cannot update: the selected apartment is already reserved or sold.");
-                }
+                var lockError = await ApartmentLock.CheckAsync(_context, newApartment, sr.SalesRequestId, ct);
+                if (lockError != null)
+                    return Result<CreateSalesRequest.SalesRequestResponseDto>.Failure(lockError);
 
-                // Reserve the new apartment
-                newApartment.ApartmentStatusId = ApartmentReservedStatusId;
                 newApartment.ReservedBySalesRequestId = sr.SalesRequestId;
             }
 

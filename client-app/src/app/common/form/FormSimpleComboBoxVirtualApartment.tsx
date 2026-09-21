@@ -23,6 +23,9 @@ interface ApartmentItem {
     apartmentPricePerM2: number;
     apartmentStatusId: string;
     apartmentStatusDescription: string;
+    // Sales request holding the unit while it is still AVAILABLE (null = free).
+    // Units are only AVAILABLE or SOLD; a pending request is tracked by this pointer.
+    reservedBySalesRequestId: string | null;
 }
 
 const statusCellStyle = `
@@ -70,7 +73,8 @@ export const FormSimpleComboBoxVirtualApartment = (fieldRenderProps: FieldRender
         gardenPricePerM2: null,
         apartmentPricePerM2: 0,
         apartmentStatusId: "",
-        apartmentStatusDescription: ""
+        apartmentStatusDescription: "",
+        reservedBySalesRequestId: null
     };
 
     const pageSize = 10;
@@ -89,10 +93,12 @@ export const FormSimpleComboBoxVirtualApartment = (fieldRenderProps: FieldRender
                 const statusText = props.dataItem.apartmentStatusDescription || "";
 
                 const isSold = statusId === "APARTMENT_SOLD";
-                const isReserved = statusId === "APARTMENT_RESERVED";
+                // Still AVAILABLE, but an open sales request holds it — amber so the
+                // user sees it is spoken for before the validator refuses it.
+                const isHeld = !isSold && !!props.dataItem.reservedBySalesRequestId;
 
-                const bg = isSold ? "#ffebee" : isReserved ? "#fff3e0" : "#e8f5e8";
-                const color = isSold ? "#c62828" : isReserved ? "#ef6c00" : "#2e7d32";
+                const bg = isSold ? "#ffebee" : isHeld ? "#fff3e0" : "#e8f5e8";
+                const color = isSold ? "#c62828" : isHeld ? "#ef6c00" : "#2e7d32";
 
                 return (
                     <td
@@ -165,6 +171,7 @@ export const FormSimpleComboBoxVirtualApartment = (fieldRenderProps: FieldRender
                                 apartmentPricePerM2: element.apartmentPricePerM2,
                                 apartmentStatusId: element.apartmentStatusId,
                                 apartmentStatusDescription: element.apartmentStatusDescription,
+                                reservedBySalesRequestId: element.reservedBySalesRequestId ?? null,
                             };
                             items.push(item);
                             dataCaching.current[index + skip] = item;

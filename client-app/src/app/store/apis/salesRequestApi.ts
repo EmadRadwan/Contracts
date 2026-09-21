@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { store } from "../configureStore";
 import { State, toODataString } from "@progress/kendo-data-query";
+import { sanitizeGridState } from "../../common/grid/odataFilter";
 import {SalesRequest} from "../../models/order/SalesRequest";
 import {ReserveRequest} from "../../models/order/ReserveRequest";
 
@@ -56,7 +57,9 @@ const salesRequestApi = createApi({
                     // backend, so EF Core throws "binary operator Equal is not defined for
                     // DateOnly and DateTimeOffset". Strip the time/offset to produce a valid
                     // Edm.Date literal instead.
-                    const odata = toODataString(dataState).replace(
+                    // sanitizeGridState first drops operator-only descriptors (`totalPrice gt null`)
+                    // that the filter row emits when an operator is picked before a value.
+                    const odata = toODataString(sanitizeGridState(dataState)).replace(
                         /(saleDate\s+(?:eq|ne|gt|ge|lt|le)\s+)(\d{4}-\d{2}-\d{2})T[\d:.]+Z/g,
                         "$1$2"
                     );

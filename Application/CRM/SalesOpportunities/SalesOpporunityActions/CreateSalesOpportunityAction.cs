@@ -151,14 +151,6 @@ public class CreateSalesOpportunityAction
                     if (conflict != null)
                         return Result<SalesOpportunityActionDto>.Failure(conflict);
 
-                    var apartment = await _context.Products
-                        .FirstOrDefaultAsync(p => p.ProductId == dto.ProductId, ct);
-
-                    if (apartment != null)
-                    {
-                        apartment.ApartmentStatusId = UnitReservationGuard.ReservedStatusId;
-                    }
-
                     opportunity.IsWon = true;
                     opportunity.IsClosed = true;
                     opportunity.OpportunityStageId = doneDealStage.OpportunityStageId;
