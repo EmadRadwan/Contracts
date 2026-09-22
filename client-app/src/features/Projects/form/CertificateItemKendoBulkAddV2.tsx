@@ -185,10 +185,17 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
 
     // ── Sync from initialItems ──────────────────────────────────────────────────
 
+    // Purpose: While this modal is open the local grid is the source of truth. Our own debounced
+    // auto-saves echo straight back here (addItem/updateItem → Redux → initialItems) within ~600 ms,
+    // and the previous version replaced *every* local row with its Redux copy on each echo — so a
+    // product picked in row 2 vanished the moment row 1's timer fired (and row 2's own timer then
+    // saved the reverted row). Now existing local rows are never overwritten; only rows Redux
+    // knows about and we don't (the initial fill on open) are appended.
     useEffect(() => {
         setData(prev => {
-            const mapped = (initialItems || [])
-                .filter(i => !i.isDeleted)
+            const localIds = new Set(prev.map(r => r.workEffortId));
+            const incoming = (initialItems || [])
+                .filter(i => !i.isDeleted && i.workEffortId && !localIds.has(i.workEffortId))
                 .map(item => ({
                     ...item,
                     workEffortId: item.workEffortId!,
@@ -207,13 +214,13 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
                     _isValid: true,     // server-persisted rows are assumed valid
                 } as BulkAddRow));
 
-            const tempRows = prev.filter(
-                d => d.workEffortId.startsWith("TEMP-") &&
-                    !mapped.some(m => m.workEffortId === d.workEffortId)
-            );
+            if (!incoming.length) return prev.length ? prev : [createEmptyRow()];
 
-            const result = [...mapped, ...tempRows];
-            return result.length ? result : [createEmptyRow()];
+            // Drop the untouched placeholder row once real rows arrive (e.g. items fetched after open)
+            const kept = prev.filter(r =>
+                !(r.workEffortId.startsWith("TEMP-") && !r.productId && !r.uomId && !r.description && !r.quantity)
+            );
+            return [...kept, ...incoming];
         });
     }, [initialItems, createEmptyRow]);
 
@@ -292,6 +299,10 @@ const CertificateItemKendoBulkAddV2: React.FC<Props> = ({
             productName: row.productId?.ProductName || "",
             uomId: row.uomId?.UomId || "",
             uomName: row.uomId?.Description || "",
+            // Purpose: the spread above carries the *original* item's uomAbbreviation; without
+            // overriding it, changing a row's UOM left the old abbreviation in Redux, so the
+            // combobox showed the previous unit's label the next time the modal was opened.
+            uomAbbreviation: row.uomId?.Abbreviation || "",
             unitPrice: isContracting ? (row.materialPrice || 0) + (row.laborPrice || 0) : row.unitPrice,
             totalAmount: isContracting ? total : net,
             deserved,

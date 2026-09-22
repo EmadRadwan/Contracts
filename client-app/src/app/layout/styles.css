@@ -224,6 +224,10 @@ input, select, textarea, button {
 
 .k-grid td, .k-grid .k-table-td {
     white-space: nowrap !important;
+    /* Kendo theme v14 only clips overflow on .k-table-td; custom cells that render a bare
+       <td> (368 of them) were spilling text into neighbouring columns. Restore the v6 rule. */
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .invalid-row {

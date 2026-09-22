@@ -8,6 +8,12 @@ Frontend-specific conventions and patterns. See the root `CLAUDE.md` for backend
   - **MobX** (`src/app/stores/`) — legacy stores (`userStore`, `modalStore`, etc.)
 - **Axios** (`src/app/api/agent.ts`) — legacy HTTP client, still used alongside RTK Query
 - Localization to Arabic must alwayes be supported via getTranslatedLabel and @ar.json
+- **Adding a `createApi` slice:** register its middleware in the `apiMiddlewares` array in
+  `src/app/store/configureStore.ts` (wrapped by `deferMiddlewareRegistration`), not as a bare
+  `.concat(x.middleware)`. There are ~97 slices; RTK Query's per-slice `middlewareRegistered`
+  handshake nests one dispatch per slice on the first action and overflowed the call stack on page
+  load (showed up as "Session expired" on every reload). Prefer `baseApi.injectEndpoints` over a
+  new `createApi` when a suitable base slice exists.
 
 ## Naming Conventions — Frontend
 | Thing | Convention | Example |

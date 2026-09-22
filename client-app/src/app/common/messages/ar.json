@@ -1879,7 +1879,7 @@
           "not-paid": "غير مدفوع",
           "received": "تم الاستلام",
           "completed": "مكتمل",
-          "sent": "مرسل",
+          "sent": "مدفوع",
           "confirmed": "مؤكد",
           "cancelled": "ملغى",
           "unknown": "غير معروف",

@@ -78,7 +78,10 @@ export const accountSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(fetchCurrentUser.rejected, (state) => {
+    builder.addCase(fetchCurrentUser.rejected, (state, action) => {
+      // Purpose: this branch also catches non-auth failures (a thrown error inside the thunk,
+      // a network error, a 500) — log the real reason so they can't hide behind the generic toast.
+      console.error("fetchCurrentUser rejected:", JSON.stringify(action.error), JSON.stringify(action.payload));
       state.user = null;
       localStorage.removeItem("user");
       toast.error("Session expired - please login again");

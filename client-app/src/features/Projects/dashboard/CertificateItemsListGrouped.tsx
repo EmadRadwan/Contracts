@@ -209,7 +209,10 @@ export default function CertificateItemsListGrouped({
                         addItem={addItem}
                         updateItem={updateItem}
                         deleteItem={deleteItem}
-                        initialItems={uiItems}
+                        // Purpose: raw slice items, not the display selector's output — see the same
+                        // note in CertificateItemsList.tsx ('N/A' deductionDescription + display-only
+                        // fields were leaking into saved rows).
+                        initialItems={nonDeletedItems}
                     />
                 </ModalContainer>
             )}

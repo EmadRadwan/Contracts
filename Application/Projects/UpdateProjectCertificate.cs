@@ -32,6 +32,7 @@ namespace Application.Projects
         public class Command : IRequest<Result<ProjectCertificateDto>>
         {
             public ProjectCertificateDto? Certificate { get; set; }
+            public string? Language { get; set; }
         }
 
         public class CommandValidator : AbstractValidator<Command>
@@ -468,12 +469,28 @@ namespace Application.Projects
                             ? statusDescriptions[workEffortQuery.CurrentStatusId]
                             : ("Unknown", "غير معروف");
 
+                    // Purpose: Same as CreateProjectCertificate — the client swaps its item list for
+                    // this response, so ProductName/UomName/UomAbbreviation must be present or the
+                    // product & UOM columns (and bulk-add comboboxes) render blank after saving.
+                    var language = request.Language?.ToLower() ?? "en";
                     var resultItems = await _context.WorkEfforts
                         .Where(we => we.WorkEffortParentId == workEffortQuery.WorkEffortId && we.WorkEffortTypeId == "CERTIFICATE_ITEM")
                         .Select(item => new CertificateItemDto
                         {
                             WorkEffortId = item.WorkEffortId,
                             ProductId = item.ProductId,
+                            ProductName = _context.Products
+                                .Where(p => p.ProductId == item.ProductId)
+                                .Select(p => p.ProductName)
+                                .FirstOrDefault(),
+                            UomName = _context.Uoms
+                                .Where(u => u.UomId == item.QuantityUomId)
+                                .Select(u => language == "ar" ? u.DescriptionArabic : u.Description)
+                                .FirstOrDefault(),
+                            UomAbbreviation = _context.Uoms
+                                .Where(u => u.UomId == item.QuantityUomId)
+                                .Select(u => u.Abbreviation)
+                                .FirstOrDefault(),
                             Description = item.Description,
                             DeductionDescription = item.DeductionDescription,
                             Quantity = (decimal)item.Quantity,

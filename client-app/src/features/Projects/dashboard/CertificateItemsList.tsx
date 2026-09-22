@@ -264,7 +264,11 @@ export default function CertificateItemsList({editMode, workEffortId, isFormColl
                         addItem={addItem}
                         updateItem={updateItem}
                         deleteItem={deleteItem}
-                        initialItems={uiCertificateItems}
+                        // Purpose: pass the raw slice items, not the display selector's output — that one
+                        // substitutes 'N/A' for an empty deductionDescription and adds code/displayTotal/
+                        // productSubtotal etc., all of which were flowing into the bulk-add rows and being
+                        // saved back as real item data on the next edit.
+                        initialItems={nonDeletedItems}
                     />
                 </ModalContainer>
             )}

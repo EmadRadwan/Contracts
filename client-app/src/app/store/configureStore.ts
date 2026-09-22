@@ -1,5 +1,5 @@
 import { setStore } from "./storeRef";
-import {configureStore} from "@reduxjs/toolkit";
+import {configureStore, Middleware} from "@reduxjs/toolkit";
 import {TypedUseSelectorHook, useDispatch, useSelector} from "react-redux";
 import {accountSlice} from "../../features/account/accountSlice";
 import {productPriceSlice} from "../../features/catalog/slice/productPriceSlice";
@@ -188,6 +188,129 @@ const composeEnhancers = {
 
 
 
+
+// Purpose: RTK Query (1.9.x) dispatches `<api>/config/middlewareRegistered` from INSIDE each api
+// middleware the first time that middleware sees an action. That dispatch re-enters the whole
+// chain from the top, where the next not-yet-initialised api middleware does the same — so the
+// very first dispatch after store creation nests one level per api slice (96 here), and the stack
+// it needs grows ~quadratically with the slice count. When that first dispatch is
+// `fetchCurrentUser/pending` fired from App's mount effect (already on a deep React stack) it blew
+// the call stack; the thunk rejected and the app showed "Session expired" on every full page load
+// / Vite reload while a click-initiated login (shallow stack) still fit. The flag that action sets
+// only feeds RTK's dev-time "duplicate reducerPath" warning, so deferring the handshake to a
+// microtask (flat dispatches, every middleware initialised by then) is safe. Longer-term fix:
+// collapse these apis into one `createApi` + `injectEndpoints` per base URL.
+const deferMiddlewareRegistration = (mw: Middleware): Middleware => (mwApi) =>
+    mw({
+        ...mwApi,
+        dispatch: (action: any) => {
+            if (typeof action?.type === "string" && action.type.endsWith("/config/middlewareRegistered")) {
+                queueMicrotask(() => mwApi.dispatch(action));
+                return action;
+            }
+            return mwApi.dispatch(action);
+        },
+    });
+
+const apiMiddlewares: Middleware[] = [
+    partiesApi.middleware,
+    projectsApi.middleware,
+    multiPaymentCertificateApi.middleware,
+    quoteItemsApi.middleware,
+    quoteAdjustmentsApi.middleware,
+    vehiclesApi.middleware,
+    vehicleContentsApi.middleware,
+    facilitiesApi.middleware,
+    certificateItemsApi.middleware,
+    facilityTypesApi.middleware,
+    inventoriesApi.middleware,
+    productsApi.middleware,
+    productsWithBOMApi.middleware,
+    costsApi.middleware,
+    workEffortsApi.middleware,
+    paymentsApi.middleware,
+    jobOrdersApi.middleware,
+    ordersApi.middleware,
+    salesRequestApi.middleware,
+    returnsApi.middleware,
+    shipmentReceiptsApi.middleware,
+    orderItemsApi.middleware,
+    jobOrderItemsApi.middleware,
+    returnItemsApi.middleware,
+    orderAdjustmentsApi.middleware,
+    jobOrderAdjustmentsApi.middleware,
+    orderAdjustmentTypesApi.middleware,
+    quoteAdjustmentTypesApi.middleware,
+    roleTypesApi.middleware,
+    salesOrderTaxAdjustmentsApi.middleware,
+    quoteTaxAdjustmentsApi.middleware,
+    processOrderItemApi.middleware,
+    taxApi.middleware,
+    processPurchaseOrderItemApi.middleware,
+    processQuoteItemApi.middleware,
+    salesOrderPromoProductDiscountApi.middleware,
+    quotePromoProductDiscountApi.middleware,
+    customerTaxStatusApi.middleware,
+    availableProductPromotionsApi.middleware,
+    productPromosApi.middleware,
+    productCategoriesApi.middleware,
+    paymentMethodTypesApi.middleware,
+    auditApi.middleware,
+    productAssociationTypesApi.middleware,
+    productAssociationsApi.middleware,
+    invoicesApi.middleware,
+    acctTransApi.middleware,
+    glAccountTypeDefaultsApi.middleware,
+    invoiceItemsApi.middleware,
+    productTypesApi.middleware,
+    productPricesApi.middleware,
+    productFacilitiesApi.middleware,
+    productFeaturesApi.middleware,
+    quotesApi.middleware,
+    globalGlSettingsApi.middleware,
+    orderPaymentMethodsApi.middleware,
+    billingAccountsApi.middleware,
+    bomProductComponentsApi.middleware,
+    fixedAssetsApi.middleware,
+    agreementsApi.middleware,
+    taxAuthoritiesApi.middleware,
+    orgChartOfAccountsLovApi.middleware,
+    organizationGlChartOfAccountsApi.middleware,
+    internalAccountingOrganizationsApi.middleware,
+    orgGlSettingsApi.middleware,
+    customTimePeriodsApi.middleware,
+    invoiceItemTypesApi.middleware,
+    financialAccountsApi.middleware,
+    productStoresApi.middleware,
+    glVarianceReasonsApi.middleware,
+    fxRatesApi.middleware,
+    invoicePaymentApplicationsApi.middleware,
+    productGlAccountsApi.middleware,
+    productCategoryGlAccountsApi.middleware,
+    finAccountTypesApi.middleware,
+    finAccountGlAccountsApi.middleware,
+    partyGlAccountsApi.middleware,
+    paymentMethodTypeGlAccountsApi.middleware,
+    paymentTypesApi.middleware,
+    paymentTypesGlAccountsApi.middleware,
+    creditCardTypeGlAccountsApi.middleware,
+    creditCardTypesApi.middleware,
+    taxAuthoritiesGlAccountsApi.middleware,
+    physicalInventoryApi.middleware,
+    geoApi.middleware,
+    facilityLocationsApi.middleware,
+    termTypesApi.middleware,
+    accountingReportsApi.middleware,
+    finAccountStatusApi.middleware,
+    paymentGroupsApi.middleware,
+    paymentGroupTypesApi.middleware,
+    salesOpportunitiesApi.middleware,
+    leadsApi.middleware,
+    dataSourcesApi.middleware,
+    usersApi.middleware,
+    salesCommissionsApi.middleware,
+];
+
 export const store = configureStore({
     reducer: {
         localization: localizationSlice.reducer,
@@ -340,102 +463,7 @@ export const store = configureStore({
             serializableCheck: false,
         })
             //.concat(loggerMiddleware)
-            .concat(partiesApi.middleware)
-            .concat(projectsApi.middleware)
-            .concat(multiPaymentCertificateApi.middleware)
-            .concat(quoteItemsApi.middleware)
-            .concat(quoteAdjustmentsApi.middleware)
-            .concat(vehiclesApi.middleware)
-            .concat(vehicleContentsApi.middleware)
-            .concat(facilitiesApi.middleware)
-            .concat(certificateItemsApi.middleware)
-            .concat(facilityTypesApi.middleware)
-            .concat(inventoriesApi.middleware)
-            .concat(productsApi.middleware)
-            .concat(productsWithBOMApi.middleware)
-            .concat(costsApi.middleware)
-            .concat(workEffortsApi.middleware)
-            .concat(paymentsApi.middleware)
-            .concat(jobOrdersApi.middleware)
-            .concat(ordersApi.middleware)
-            .concat(salesRequestApi.middleware)
-            .concat(returnsApi.middleware)
-            .concat(shipmentReceiptsApi.middleware)
-            .concat(orderItemsApi.middleware)
-            .concat(jobOrderItemsApi.middleware)
-            .concat(returnItemsApi.middleware)
-            .concat(orderAdjustmentsApi.middleware)
-            .concat(jobOrderAdjustmentsApi.middleware)
-            .concat(orderAdjustmentTypesApi.middleware)
-            .concat(quoteAdjustmentTypesApi.middleware)
-            .concat(roleTypesApi.middleware)
-            .concat(salesOrderTaxAdjustmentsApi.middleware)
-            .concat(quoteTaxAdjustmentsApi.middleware)
-            .concat(processOrderItemApi.middleware)
-            .concat(taxApi.middleware)
-            .concat(processPurchaseOrderItemApi.middleware)
-            .concat(processQuoteItemApi.middleware)
-            .concat(salesOrderPromoProductDiscountApi.middleware)
-            .concat(quotePromoProductDiscountApi.middleware)
-            .concat(customerTaxStatusApi.middleware)
-            .concat(availableProductPromotionsApi.middleware)
-            .concat(productPromosApi.middleware)
-            .concat(productCategoriesApi.middleware)
-            .concat(paymentMethodTypesApi.middleware)
-            .concat(auditApi.middleware)
-            .concat(productAssociationTypesApi.middleware)
-            .concat(productAssociationsApi.middleware)
-            .concat(invoicesApi.middleware)
-            .concat(acctTransApi.middleware)
-            .concat(glAccountTypeDefaultsApi.middleware)
-            .concat(invoiceItemsApi.middleware)
-            .concat(productTypesApi.middleware)
-            .concat(productPricesApi.middleware)
-            .concat(productFacilitiesApi.middleware)
-            .concat(productFeaturesApi.middleware)
-            .concat(quotesApi.middleware)
-            .concat(globalGlSettingsApi.middleware)
-            .concat(orderPaymentMethodsApi.middleware)
-            .concat(billingAccountsApi.middleware)
-            .concat(bomProductComponentsApi.middleware)
-            .concat(fixedAssetsApi.middleware)
-            .concat(agreementsApi.middleware)
-            .concat(taxAuthoritiesApi.middleware)
-            .concat(orgChartOfAccountsLovApi.middleware)
-            .concat(organizationGlChartOfAccountsApi.middleware)
-            .concat(internalAccountingOrganizationsApi.middleware)
-            .concat(orgGlSettingsApi.middleware)
-            .concat(customTimePeriodsApi.middleware)
-            .concat(invoiceItemTypesApi.middleware)
-            .concat(financialAccountsApi.middleware)
-            .concat(productStoresApi.middleware)
-            .concat(glVarianceReasonsApi.middleware)
-            .concat(fxRatesApi.middleware)
-            .concat(invoicePaymentApplicationsApi.middleware)
-            .concat(productGlAccountsApi.middleware)
-            .concat(productCategoryGlAccountsApi.middleware)
-            .concat(finAccountTypesApi.middleware)
-            .concat(finAccountGlAccountsApi.middleware)
-            .concat(partyGlAccountsApi.middleware)
-            .concat(paymentMethodTypeGlAccountsApi.middleware)
-            .concat(paymentTypesApi.middleware)
-            .concat(paymentTypesGlAccountsApi.middleware)
-            .concat(creditCardTypeGlAccountsApi.middleware)
-            .concat(creditCardTypesApi.middleware)
-            .concat(taxAuthoritiesGlAccountsApi.middleware)
-            .concat(physicalInventoryApi.middleware)
-            .concat(geoApi.middleware)
-            .concat(facilityLocationsApi.middleware)
-            .concat(termTypesApi.middleware)
-            .concat(accountingReportsApi.middleware)
-            .concat(finAccountStatusApi.middleware)
-            .concat(paymentGroupsApi.middleware)
-            .concat(paymentGroupTypesApi.middleware)
-            .concat(salesOpportunitiesApi.middleware)
-            .concat(leadsApi.middleware)
-            .concat(dataSourcesApi.middleware)
-            .concat(usersApi.middleware)
-            .concat(salesCommissionsApi.middleware);
+            .concat(apiMiddlewares.map(deferMiddlewareRegistration));
     },
     devTools: devToolsConfig,
 });

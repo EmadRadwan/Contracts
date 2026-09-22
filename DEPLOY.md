@@ -50,7 +50,7 @@ tmux new -s build                    # the build survives a dropped connection
 source ~/.telerik/telerik.env        # Telerik NuGet key + license (see box below) — REQUIRED
 cd ~/erp-contracts
 git fetch origin && git reset --hard origin/master && git clean -fd
-git log --oneline -1                 # must match what you just pushed
+git log --oneline -1
 
 DOCKER_BUILDKIT=0 sudo docker build -f Dockerfile.vm --cpuset-cpus 0 \
   --build-arg TELERIK_NUGET_KEY="$TELERIK_NUGET_KEY" \

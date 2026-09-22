@@ -36,7 +36,7 @@ public class ProjectController : BaseApiController
     [HttpPost("createProjectCertificate", Name = "CreateProjectCertificate")]
     public async Task<ActionResult<ProjectCertificateDto>> CreateProjectCertificate([FromBody] ProjectCertificateDto certificate)
     {
-        var result = await Mediator.Send(new CreateProjectCertificate.Command { Certificate = certificate });
+        var result = await Mediator.Send(new CreateProjectCertificate.Command { Certificate = certificate, Language = GetLanguage() });
         return HandleResult(result);
     }
     
@@ -55,7 +55,7 @@ public class ProjectController : BaseApiController
     public async Task<ActionResult<ProjectCertificateDto>> UpdateProjectCertificate(string workEffortId, [FromBody] ProjectCertificateDto certificate)
     {
         certificate.WorkEffortId = workEffortId;
-        var result = await Mediator.Send(new UpdateProjectCertificate.Command { Certificate = certificate });
+        var result = await Mediator.Send(new UpdateProjectCertificate.Command { Certificate = certificate, Language = GetLanguage() });
         return HandleResult(result);
     }
     
