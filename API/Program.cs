@@ -142,22 +142,40 @@ app.UseSerilogRequestLogging(options =>
 });
 
 app.UseResponseCompression();
-app.UseStaticFiles(new StaticFileOptions
+
+// Purpose: one set of cache rules, shared by the static-file middleware AND the SPA fallback
+// endpoint. MapFallbackToFile does NOT see options passed inline to UseStaticFiles - it resolves
+// StaticFileOptions from DI - so every index.html served through the fallback (which is all of
+// them: "/" and every deep link) previously went out with no Cache-Control header at all.
+// Browsers then apply heuristic freshness and keep serving a stale index.html that points at the
+// previous build's hashed /assets bundles, which ARE cached for a year. Net effect: users stay on
+// the old front-end for hours after a deploy, through refreshes and new tabs.
+// Headers are assigned, not appended, so a re-served file cannot end up with two conflicting values.
+var spaStaticFileOptions = new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
     {
-        if (ctx.File.Name.EndsWith(".css") || ctx.File.Name.EndsWith(".js"))
+        var headers = ctx.Context.Response.Headers;
+
+        // Only Vite's /assets output carries a content hash in its filename, so only it is safe to
+        // cache forever. Unhashed files copied from client-app/public (pdf.worker.min.js, manifest,
+        // images) keep the same URL across builds and must revalidate, or replacing one leaves users
+        // on the old copy for a year.
+        if (ctx.Context.Request.Path.StartsWithSegments("/assets", StringComparison.OrdinalIgnoreCase))
         {
-            ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=31536000");
+            headers["Cache-Control"] = "public,max-age=31536000,immutable";
         }
         else
         {
-            ctx.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
-            ctx.Context.Response.Headers.Append("Pragma", "no-cache");
-            ctx.Context.Response.Headers.Append("Expires", "0");
+            headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            headers["Pragma"] = "no-cache";
+            headers["Expires"] = "0";
         }
     }
-});
+};
+
+app.UseDefaultFiles();
+app.UseStaticFiles(spaStaticFileOptions);
 app.UseCors("CorsPolicy");
 app.UseAuthentication();
 app.UseRouting();
@@ -187,8 +205,7 @@ app.UseEndpoints(endpoints =>
 });
 
 // SPECIAL REMARK: Fallback to index.html for non-API routes (if needed)
-app.UseDefaultFiles();
-app.MapFallbackToFile("index.html");
+app.MapFallbackToFile("index.html", spaStaticFileOptions);
 
 using (var scope = app.Services.CreateScope())
 {

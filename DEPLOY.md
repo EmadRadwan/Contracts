@@ -57,9 +57,9 @@ DOCKER_BUILDKIT=0 sudo docker build -f Dockerfile.vm --cpuset-cpus 0 \
   --build-arg TELERIK_LICENSE="$TELERIK_LICENSE" \
   -t eradwan/contractsapp:1.0.1 . 2>&1 | tee ~/diag/build.log
 
-sudo docker images eradwan/contractsapp   # the image ID MUST differ from the last deploy
+sudo docker images eradwan/contractsapp
 docker compose -f docker-compose.vm.yml down
-docker compose -f docker-compose.vm.yml up -d   # same shell: compose reads $TELERIK_LICENSE for the runtime env
+docker compose -f docker-compose.vm.yml up -d
 docker compose -f docker-compose.vm.yml ps
 ```
 
