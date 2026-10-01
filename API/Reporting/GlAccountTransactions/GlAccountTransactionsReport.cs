@@ -69,9 +69,15 @@ public sealed class GlAccountTransactionsReport : Report
         header.Items.Add(Text("hdrTitle", $"{TitleLabel} {d.AccountName} ({d.AccountCode})",
             0, 0, PageWidthCm, 0.7, 13, true, HorizontalAlign.Right));
 
+        // The trial balance drills into a named CustomTimePeriod; the balance sheet and income
+        // statement drill into an ad-hoc date range with no period name, so the name is optional
+        // and the range stands on its own rather than printing a leading blank.
         var period = d.PeriodName ?? "";
         if (d.PeriodFromDate.HasValue && d.PeriodThruDate.HasValue)
-            period += $" ({d.PeriodFromDate.Value.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)} - {d.PeriodThruDate.Value.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)})";
+        {
+            var range = $"{d.PeriodFromDate.Value.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)} - {d.PeriodThruDate.Value.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)}";
+            period = period.Length > 0 ? $"{period} ({range})" : range;
+        }
         header.Items.Add(Text("hdrSub", $"{d.OrganizationName} — الفترة: {period}",
             0, 0.75, PageWidthCm, 0.5, 9, false, HorizontalAlign.Right, System.Drawing.Color.Gray));
         return header;

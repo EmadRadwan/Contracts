@@ -18,6 +18,12 @@ namespace Application.Accounting.OrganizationGlSettings
             public string GlFiscalTypeId { get; set; } = string.Empty;
             public string GlAccountId { get; set; } = string.Empty;
             public bool IncludePrePeriodTransactions { get; set; }
+
+            // "Y" / "N" to restrict, null or "ALL" for both. The drill-down used to hard-filter
+            // to posted entries, which made it useless behind any report that also shows
+            // unposted figures (Transaction Totals has posted / unposted / all tabs) — the modal
+            // simply came up empty on those.
+            public string? IsPosted { get; set; }
         }
 
         public class Handler : IRequestHandler<Query, Result<GlAccountTransactionDetails>>
@@ -56,6 +62,13 @@ namespace Application.Accounting.OrganizationGlSettings
                     // 2. Determine debit/credit nature of the account
                     bool isDebitAccount = await _acctgMiscService.IsDebitAccount(request.GlAccountId);
 
+                    // Null means "no restriction"; anything else is matched exactly. Defaults to
+                    // posted-only so every existing caller keeps its current behaviour.
+                    string? postedFilter =
+                        string.IsNullOrWhiteSpace(request.IsPosted) ? "Y"
+                        : request.IsPosted.Equals("ALL", StringComparison.OrdinalIgnoreCase) ? null
+                        : request.IsPosted;
+
                     // 3. Opening Balance for Income Statement is usually 0 if we start from the beginning of the period,
                     // but if includePrePeriod is false, we might want "opening" as transactions before fromDate.
                     // However, Income Statement accounts are temporary.
@@ -65,7 +78,7 @@ namespace Application.Accounting.OrganizationGlSettings
                         join act in _context.AcctgTrans on ate.AcctgTransId equals act.AcctgTransId
                         where ate.OrganizationPartyId == request.OrganizationPartyId
                               && ate.GlAccountId == request.GlAccountId
-                              && act.IsPosted == "Y"
+                              && (postedFilter == null || act.IsPosted == postedFilter)
                               && act.GlFiscalTypeId == request.GlFiscalTypeId
                         select new { ate, act };
 
@@ -99,9 +112,18 @@ namespace Application.Accounting.OrganizationGlSettings
                         from prod in products.DefaultIfEmpty()
                         join we in _context.WorkEfforts on act.WorkEffortId equals we.WorkEffortId into workEfforts
                         from we in workEfforts.DefaultIfEmpty()
+                        // Payment -> cost center -> ref num, same chain the trial balance drill-down
+                        // uses. All are left joins on primary keys, so no row is multiplied; they only
+                        // fill columns the shared PDF/Excel exports print.
+                        join project in _context.WorkEfforts on we.ProjectId equals project.WorkEffortId into projects
+                        from project in projects.DefaultIfEmpty()
+                        join pyt in _context.Payments on act.PaymentId equals pyt.PaymentId into payments
+                        from pyt in payments.DefaultIfEmpty()
+                        join cc in _context.CostCenters on pyt.CostCenterId equals cc.CostCenterId into costCenters
+                        from cc in costCenters.DefaultIfEmpty()
                         where ate.OrganizationPartyId == request.OrganizationPartyId
                               && ate.GlAccountId == request.GlAccountId
-                              && act.IsPosted == "Y"
+                              && (postedFilter == null || act.IsPosted == postedFilter)
                               && act.GlFiscalTypeId == request.GlFiscalTypeId
                         select new TransactionEntryDto
                         {
@@ -120,6 +142,24 @@ namespace Application.Accounting.OrganizationGlSettings
                             ReversalOfAcctgTransId = _context.AcctgTransAttributes.Where(a => a.AcctgTransId == act.AcctgTransId && a.AttrName == "REVERSAL_OF").Select(a => a.AttrValue).FirstOrDefault(),
                             ReversedByAcctgTransId = _context.AcctgTransAttributes.Where(a => a.AcctgTransId == act.AcctgTransId && a.AttrName == "REVERSED_BY").Select(a => a.AttrValue).FirstOrDefault(),
                             PostedDate = act.PostedDate,
+                            InvoiceId = act.InvoiceId,
+                            PaymentId = we != null && we.WorkEffortTypeId == "PAYMENT_CERTIFICATE"
+                                ? we.WorkEffortId
+                                : act.PaymentId,
+                            WorkEffortId = act.WorkEffortId,
+                            ShipmentId = act.ShipmentId,
+                            PartyId = act.PartyId,
+                            ProductId = ate.ProductId,
+                            CurrencyUomId = ate.CurrencyUomId,
+                            ProjectName = we != null
+                                ? (we.WorkEffortTypeId == "PROJECT"
+                                    ? (we.ProjectName ?? we.Description ?? we.WorkEffortName)
+                                    : (project != null ? (project.ProjectName ?? project.Description ?? project.WorkEffortName) : null))
+                                : null,
+                            CostCenterDescription = cc != null ? cc.Description : null,
+                            PaymentRefNum = we != null && we.WorkEffortTypeId == "PAYMENT_CERTIFICATE"
+                                ? we.Notes
+                                : (pyt != null ? pyt.PaymentRefNum : null),
                         };
 
                     if (!request.IncludePrePeriodTransactions)
@@ -145,8 +185,34 @@ namespace Application.Accounting.OrganizationGlSettings
                         ? openingBalance + periodDebits - periodCredits 
                         : openingBalance + periodCredits - periodDebits;
 
+                    // 6. Running balance per transaction — same walk as the trial balance drill-down
+                    // (GetGlAccountTransactionDetails step 8). The PDF export prints this column, and
+                    // it is left at 0 on every row without it.
+                    decimal runningBalance = openingBalance;
+                    foreach (var t in transactions)
+                    {
+                        decimal signed = t.DebitCreditFlag == "D" ? t.Amount : -t.Amount;
+                        runningBalance += isDebitAccount ? signed : -signed;
+                        t.RunningBalance = runningBalance;
+                    }
+
+                    // 7. Period identity for the PDF's running header. An income statement drill-down
+                    // is an ad-hoc date range (or a selected month), not a named CustomTimePeriod, so
+                    // only the dates are supplied and PeriodName is left null — the report prints the
+                    // bare range in that case. With "include pre-period" on the listing reaches back
+                    // before fromDate, so the header shows the span actually covered.
+                    var organizationName = await _context.PartyGroups
+                        .Where(pg => pg.PartyId == request.OrganizationPartyId)
+                        .Select(pg => pg.GroupName)
+                        .FirstOrDefaultAsync(cancellationToken);
+
                     return Result<GlAccountTransactionDetails>.Success(new GlAccountTransactionDetails
                     {
+                        OrganizationName = organizationName ?? request.OrganizationPartyId,
+                        PeriodFromDate = request.IncludePrePeriodTransactions
+                            ? (transactions.Count > 0 ? transactions[0].TransactionDate : fromDate)
+                            : fromDate,
+                        PeriodThruDate = thruDate,
                         GlAccountId = request.GlAccountId,
                         AccountCode = glAccount.AccountCode,
                         AccountName = glAccount.AccountNameArabic ?? glAccount.AccountName,

@@ -60,6 +60,27 @@ namespace Application.Projects
                         return Result<MultiPaymentCertificateDto>.Failure("Certificate is already approved");
                     }
 
+                    // A live posting means the cost is already in the ledger. Reset reverses every
+                    // posting it can find for the certificate; one it missed (Jan 2026 rows carried
+                    // no WorkEffortId) was posted a second time on re-approval — cert 10124, 2,220.
+                    var reversalMarkers = _context.AcctgTransAttributes
+                        .Where(a => a.AttrName == AcctgTransReversal.ReversedBy ||
+                                    a.AttrName == AcctgTransReversal.ReversalOf)
+                        .Select(a => a.AcctgTransId);
+                    var livePostingId = await _context.AcctgTrans
+                        .Where(t => t.WorkEffortId == certificate.WorkEffortId &&
+                                    t.AcctgTransTypeId == "DISBURSEMENT" &&
+                                    t.IsPosted == "Y" &&
+                                    !reversalMarkers.Contains(t.AcctgTransId))
+                        .Select(t => t.AcctgTransId)
+                        .FirstOrDefaultAsync(cancellationToken);
+                    if (livePostingId != null)
+                    {
+                        return Result<MultiPaymentCertificateDto>.Failure(
+                            $"المستخلص مُرحّل بالفعل بالقيد {livePostingId}؛ اعكس القيد أو أعد تعيين المستخلص قبل الاعتماد. " +
+                            $"(Certificate already posted by transaction {livePostingId}.)");
+                    }
+
                     // Update certificate status
                     certificate.CurrentStatusId = "WEPR_APPROVED";
                     certificate.LastUpdatedStamp = DateTime.UtcNow;

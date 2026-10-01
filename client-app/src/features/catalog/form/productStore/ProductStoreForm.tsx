@@ -41,7 +41,7 @@ const ProductStoreForm = ({ editMode, cancelEdit }: ProductStoreFormProps) => {
                 {selectedProductStore?.storeName
                   ? selectedProductStore?.storeName
                   : getTranslatedLabel(
-                      "product.store.form.new",
+                      "product.stores.form.new",
                       "New Product"
                     )}{" "}
               </Typography>

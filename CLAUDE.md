@@ -12,7 +12,10 @@ accounting, HR, CRM, manufacturing, and facilities.
 ### Domain
 - All entities live flat in `Domain/` (no subfolders) — mirrors the OFBiz entity model
 - Pure POCOs: string IDs (OFBiz heritage — not int/Guid), nullable properties, nav collections initialized in constructor
-- JSON serialized with snake_case: `[JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]`
+- 191 of them carry `[JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]`. This is a
+  **Newtonsoft** attribute and it only affects Newtonsoft — which in this solution means one thing:
+  deserializing the OFBiz-exported seed files (`API/Json/*.json`, read by `Persistence/SeedContracts.cs`),
+  whose keys are `MIME_TYPE_ID`-style. It does **not** affect API responses — see the gotcha below.
 
 ### Application (CQRS with MediatR)
 - Each feature is a **nested-class file**: `Query`/`Command` + `Handler` all in one file
@@ -66,7 +69,13 @@ Frontend-specific stack notes, naming conventions, and UI patterns (Menu-Exit, A
 
 ## Important Conventions & Gotchas
 - `// REFACTOR:` comments mark known tech debt — do not remove without addressing the underlying issue
-- Snake_case JSON applies only to Domain entities; DTOs use standard C# PascalCase
+- **API responses are camelCase — everything, Domain entities included.** The MVC pipeline is
+  System.Text.Json (`AddControllers().AddJsonOptions(...)` in `Program.cs`; there is no
+  `AddNewtonsoftJson` and no `Microsoft.AspNetCore.Mvc.NewtonsoftJson` package reference), and it
+  ignores Newtonsoft's `[JsonObject(SnakeCaseNamingStrategy)]` entirely. So a handler returning a raw
+  Domain entity — e.g. `GlAccountTrialBalanceResult.GlAccount` — reaches the client as `accountCode`,
+  not `account_code`. There is not a single snake_case property read in `client-app/`. Newtonsoft is
+  referenced only by `Domain` (for the attribute) and `Persistence` (for seed deserialization).
 - OData endpoints must be registered in `Program.cs` `GetEdmModel()` — add new entity sets there when introducing OData-backed list views
 - `Accept-Language` header drives multilingual label resolution server-side; pass it via `GetLanguage()` in controllers
 - `DataContext` has `LazyLoadingEnabled = false` — always write explicit joins or `.Include()` chains

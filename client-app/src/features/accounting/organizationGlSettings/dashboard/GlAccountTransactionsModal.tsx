@@ -1,24 +1,19 @@
-import React, {useEffect, useMemo, useState} from 'react';
-import {
-    Grid as KendoGrid,
-    GridColumn as Column,
-    GridSortChangeEvent,
-    GridToolbar,
-} from '@progress/kendo-react-grid';
-import {DataResult, orderBy, SortDescriptor, State} from '@progress/kendo-data-query';
-import { Box, Button, Checkbox, FormControlLabel, Grid, Typography } from '@mui/material';
-import ModalContainer from '../../../../app/common/modals/ModalContainer';
-import {formatCurrency, handleDatesArray} from '../../../../app/util/utils';
+import { useCallback, useState } from 'react';
+import { SortDescriptor } from '@progress/kendo-data-query';
+
 import { useTranslationHelper } from '../../../../app/hooks/useTranslationHelper';
-import LoadingComponent from '../../../../app/layout/LoadingComponent';
-import {useFetchGlAccountTransactionDetailsQuery} from "../../../../app/store/apis/accounting/accountingReportsApi";
-import {GlAccountTransactionsExcel} from "../report/GlAccountTransactionsExcel";
+import {
+    useFetchGlAccountTransactionDetailsQuery,
+    useLazyFetchGlAccountTransactionsPdfQuery,
+} from '../../../../app/store/apis/accounting/accountingReportsApi';
+import { GlAccountTransactionsExcel } from '../report/GlAccountTransactionsExcel';
 import { GlAccountTransactionsDateRangeExcel } from '../report/GlAccountTransactionsDateRangeExcel';
 import { GlAccountTransactionsPdf } from '../report/GlAccountTransactionsPdf';
-import { createReversalAwareRow, ReversalLegend } from "../../../../app/common/grid";
+import GlAccountTransactionsModalBase from './GlAccountTransactionsModalBase';
 
-// Row background driven by the data item (KendoReact v16 rows.data — must be module-level so row identity is stable)
-const DebitCreditRow = createReversalAwareRow((dataItem) => ({ backgroundColor: dataItem.debitCreditFlag === 'D' ? 'rgba(55,180,0,0.32)' : '#fff' }));
+// Drill-down behind both trial balance reports (flat and by-level). Everything below the fetch is
+// GlAccountTransactionsModalBase; this file only supplies the period-based query, the trial
+// balance's own presentation values and its three exports.
 
 interface Props {
     onClose: () => void;
@@ -27,22 +22,20 @@ interface Props {
     glAccountId: string;
 }
 
-export default function GlAccountTransactionsModal({ onClose, organizationPartyId, customTimePeriodId, glAccountId }: Props) {
+const initialSort: SortDescriptor[] = [
+    { field: 'transactionDate', dir: 'asc' },
+    { field: 'acctgTransId', dir: 'asc' },
+];
+
+export default function GlAccountTransactionsModal({
+    onClose,
+    organizationPartyId,
+    customTimePeriodId,
+    glAccountId,
+}: Props) {
     const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = 'accounting.orgGL.reports.trial-balance.transactions';
-
-    // State
-    const initialSort: SortDescriptor[] = [{ field: 'transactionDate', dir: 'asc' }, { field: 'acctgTransId', dir: 'asc' }];
-    const [sort, setSort] = useState(initialSort);
     const [includePrePeriod, setIncludePrePeriod] = useState(false);
-    const [accountingTransEntries, setAccountingTransEntries] = useState<any[]>([]);
-    const initialDataState: State = {skip: 0, take: 4};
-    const [page, setPage] = React.useState<any>(initialDataState);
 
-    const pageChange = (event: any) => {
-        setPage(event.page);
-    };
-    // Data Fetching
     const { data, isLoading, isFetching } = useFetchGlAccountTransactionDetailsQuery(
         {
             organizationPartyId,
@@ -53,255 +46,75 @@ export default function GlAccountTransactionsModal({ onClose, organizationPartyI
         { skip: !organizationPartyId || !customTimePeriodId || !glAccountId }
     );
 
-    useEffect(() => {
-            if (data) {
-                const adjustedData = handleDatesArray(data.transactions);
-                setAccountingTransEntries(adjustedData)
-            }
-        }
-        , [data, setAccountingTransEntries]);
-
-    // Totals Calculation
-    const { totalDebit, totalCredit } = data?.transactions?.reduce(
-        (totals, e) => {
-            if (e.debitCreditFlag === 'D') {
-                totals.totalDebit += e.amount;
-            } else {
-                totals.totalCredit += e.amount;
-            }
-            return totals;
-        },
-        { totalDebit: 0, totalCredit: 0 }
-    ) ?? { totalDebit: 0, totalCredit: 0 };
-
-    const excelRows = useMemo(() => {
-        if (!accountingTransEntries) return [];
-        return accountingTransEntries.map(t => ({
-            acctgTransId: t.acctgTransId ?? '',
-            transactionDate: t.transactionDate ?? '',
-            acctgTransTypeId: t.acctgTransTypeId ?? '',
-            acctgTransTypeDescription: t.acctgTransTypeDescription ?? t.acctgTransTypeId ?? '',
-            invoiceId: t.invoiceId,
-            paymentId: t.paymentId,
-            workEffortId: t.certificateNumber,
-            partyName: t.partyName,
-            productName: t.productName,
-            isPosted: t.isPosted ?? false,
-            debitCreditFlag: t.debitCreditFlag ?? 'C',
-            amount: t.amount ?? 0,
-            runningBalance: t.runningBalance ?? 0,
-            description: t.description,
-            projectName: t.projectName ?? '',
-            costCenterDescription: t.costCenterDescription ?? '',
-            paymentRefNum: t.paymentRefNum ?? '',
-        }));
-    }, [accountingTransEntries]);
-
-    // Footer Cell for Totals
-    const TotalsFooterCell = () => (
-        <td colSpan={15} style={{ fontWeight: 'bold', color: '#1565C0' }}>
-            {getTranslatedLabel(`${localizationKey}.totalDebit`, 'Total Debit: ')} {formatCurrency(totalDebit)} |{' '}
-            {getTranslatedLabel(`${localizationKey}.totalCredit`, 'Total Credit: ')} {formatCurrency(totalCredit)}
-        </td>
+    const [triggerPdf] = useLazyFetchGlAccountTransactionsPdfQuery();
+    const fetchPdf = useCallback(
+        () =>
+            triggerPdf({
+                organizationPartyId,
+                customTimePeriodId,
+                glAccountId,
+                includePrePeriodTransactions: includePrePeriod,
+            }).unwrap(),
+        [triggerPdf, organizationPartyId, customTimePeriodId, glAccountId, includePrePeriod]
     );
 
     return (
-        <ModalContainer show={true} onClose={onClose} width={1200}>
-            <Box sx={{ p: 2 }}>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                    {getTranslatedLabel(`${localizationKey}.title`, 'Transaction Details for')} {data?.accountName} ({data?.accountCode})
-                </Typography>
-
-                {(isLoading || isFetching) && (
-                    <LoadingComponent message={getTranslatedLabel('general.loading-transactions', 'Loading Transactions...')} />
-                )}
-
-                {data && (
-                    <Grid container spacing={2}>
-                        <Grid item xs={12}>
-                            <Box sx={{ mb: 2 }}>
-                                <Typography variant="body1">
-                                    {getTranslatedLabel(`${localizationKey}.accountCode`, 'Account Code: ')} {data.accountCode}
-                                </Typography>
-                                <Typography variant="body1">
-                                    {getTranslatedLabel(`${localizationKey}.accountName`, 'Description: ')} {data.accountName}
-                                </Typography>
-                                <Typography variant="body1">
-                                    {getTranslatedLabel(`${localizationKey}.openingBalance`, 'Opening Balance: ')} {formatCurrency(data.openingBalance)}
-                                </Typography>
-                                <Typography variant="body1">
-                                    {getTranslatedLabel(`${localizationKey}.postedDebits`, 'Posted Debits: ')} {formatCurrency(data.postedDebits)}
-                                </Typography>
-                                <Typography variant="body1">
-                                    {getTranslatedLabel(`${localizationKey}.postedCredits`, 'Posted Credits: ')} {formatCurrency(data.postedCredits)}
-                                </Typography>
-                                <Typography variant="body1">
-                                    {getTranslatedLabel(`${localizationKey}.endingBalance`, 'Ending Balance: ')} {formatCurrency(data.endingBalance)}
-                                </Typography>
-                            </Box>
-                        </Grid>
-                        <Grid item xs={12}>
-                            <FormControlLabel
-                                control={
-                                    <Checkbox
-                                        checked={includePrePeriod}
-                                        onChange={(e) => setIncludePrePeriod(e.target.checked)}
-                                    />
-                                }
-                                label={getTranslatedLabel(`${localizationKey}.includePrePeriod`, 'Include transactions before period')}
-                            />
-                        </Grid>
-                        <Grid item xs={12}>
-                            <ReversalLegend />
-                            <KendoGrid scrollable="scrollable"
-                                style={{ height: '300px' }}
-                                data={orderBy(accountingTransEntries ?? [], sort).slice(page.skip, page.take + page.skip)}
-                                sortable
-                                skip={page.skip}
-                                take={page.take}
-                                total={accountingTransEntries ? accountingTransEntries.length : 0}
-                                onPageChange={pageChange}
-                                sort={sort}
-                                onSortChange={(e: GridSortChangeEvent) => setSort(e.sort)}
-                                pageable={true}
-                                resizable
-                                rows={{ data: DebitCreditRow }}
-                            >
-                                <GridToolbar>
-                                    <Typography variant="h6">
-                                        {getTranslatedLabel(`${localizationKey}.transactions`, 'Transactions')}
-                                    </Typography>
-
-                                    <GlAccountTransactionsExcel
-                                        accountCode={data?.accountCode ?? ''}
-                                        accountName={data?.accountName ?? ''}
-                                        openingBalance={data?.openingBalance ?? 0}
-                                        postedDebits={data?.postedDebits ?? 0}
-                                        postedCredits={data?.postedCredits ?? 0}
-                                        endingBalance={data?.endingBalance ?? 0}
-                                        rows={excelRows}
-                                        totalDebit={totalDebit}
-                                        totalCredit={totalCredit}
-                                        getTranslatedLabel={getTranslatedLabel}
-                                        isFetching={isFetching}
-                                    />
-                                    {/* REFACTOR (2026-08-14): isDebit is forwarded from the API response so the
-                                        date-range export can do its balance math correctly instead of assuming
-                                        every account is debit-natured. Falls back to true (debit) only if the
-                                        field is ever missing, matching the export's old hardcoded assumption so
-                                        nothing regresses if the backend response is stale. */}
-                                    <GlAccountTransactionsDateRangeExcel
-                                        accountCode={data?.accountCode ?? ''}
-                                        accountName={data?.accountName ?? ''}
-                                        openingBalance={data?.openingBalance ?? 0}
-                                        isDebit={data?.isDebit ?? true}
-                                        rows={excelRows}
-                                        getTranslatedLabel={getTranslatedLabel}
-                                    />
-                                    {/* Server-side Telerik PDF of exactly what the grid shows (same query + pre-period toggle). */}
-                                    <GlAccountTransactionsPdf
-                                        organizationPartyId={organizationPartyId}
-                                        customTimePeriodId={customTimePeriodId}
-                                        glAccountId={glAccountId}
-                                        includePrePeriodTransactions={includePrePeriod}
-                                        accountCode={data?.accountCode ?? ''}
-                                        accountName={data?.accountName ?? ''}
-                                        getTranslatedLabel={getTranslatedLabel}
-                                        isFetching={isFetching}
-                                    />
-                                </GridToolbar>
-                                <Column
-                                    field="acctgTransId"
-                                    title={getTranslatedLabel(`${localizationKey}.transId`, 'Acctg Trans ID')}
-                                    width={120}
-                                    cells={{ footerCell: TotalsFooterCell }}
-                                />
-                                <Column
-                                    field="transactionDate"
-                                    title={getTranslatedLabel(`${localizationKey}.transDate`, 'Transaction Date')}
-                                    width={150}
-                                    format="{0:dd/MM/yyyy}"
-                                />
-                                <Column
-                                    field="acctgTransTypeDescription"
-                                    title={getTranslatedLabel(`${localizationKey}.transType`, 'Acctg Trans Type')}
-                                    width={150}
-                                />
-                                <Column
-                                    title={getTranslatedLabel(`${localizationKey}.debit`, 'Debit')}
-                                    width={120}
-                                    cells={{ data: (props) => (
-                                        <td>
-                                            {props.dataItem.debitCreditFlag === 'D' ? formatCurrency(props.dataItem.amount) : ''}
-                                        </td>
-                                    ) }}
-                                />
-                                <Column
-                                    title={getTranslatedLabel(`${localizationKey}.credit`, 'Credit')}
-                                    width={120}
-                                    cells={{ data: (props) => (
-                                        <td>
-                                            {props.dataItem.debitCreditFlag === 'C' ? formatCurrency(props.dataItem.amount) : ''}
-                                        </td>
-                                    ) }}
-                                />
-                                <Column
-                                    field="runningBalance"
-                                    title={getTranslatedLabel(`${localizationKey}.balance`, 'Balance')}
-                                    width={120}
-                                    format="{0:c2}"
-                                />
-                                {/*<Column
-                                    field="glFiscalTypeId"
-                                    title={getTranslatedLabel(`${localizationKey}.fiscalType`, 'Fiscal GL Type')}
-                                    width={100}
-                                />*/}
-                                <Column
-                                    field="invoiceId"
-                                    title={getTranslatedLabel(`${localizationKey}.invoiceId`, 'Invoice ID')}
-                                    width={100}
-                                />
-                                <Column
-                                    field="paymentId"
-                                    title={getTranslatedLabel(`${localizationKey}.paymentId`, 'Payment ID')}
-                                    width={100}
-                                />
-                                <Column
-                                    field="costCenterDescription"
-                                    title={getTranslatedLabel(`${localizationKey}.costCenter`, 'Cost Center')}
-                                    width={150}
-                                />
-                                <Column
-                                    field="certificateNumber"
-                                    title={getTranslatedLabel(`${localizationKey}.workEffortId`, 'Work Effort ID')}
-                                    width={100}
-                                />
-                                <Column
-                                    field="partyName"
-                                    title={getTranslatedLabel(`${localizationKey}.partyId`, 'Party Name')}
-                                    width={150}
-                                />
-                                <Column
-                                    field="productName"
-                                    title={getTranslatedLabel(`${localizationKey}.productId`, 'Product Name')}
-                                    width={150}
-                                />
-                                <Column
-                                    field="isPosted"
-                                    title={getTranslatedLabel(`${localizationKey}.isPosted`, 'Is Posted')}
-                                    width={80}
-                                />
-                               
-                                <Column
-                                    field="description"
-                                    title={getTranslatedLabel(`${localizationKey}.description`, 'Description')}
-                                    width={200}
-                                />
-                            </KendoGrid>
-                        </Grid>
-                    </Grid>
-                )}
-            </Box>
-        </ModalContainer>
+        <GlAccountTransactionsModalBase
+            onClose={onClose}
+            data={data}
+            isLoading={isLoading}
+            isFetching={isFetching}
+            includePrePeriod={includePrePeriod}
+            onIncludePrePeriodChange={setIncludePrePeriod}
+            localizationKey="accounting.orgGL.reports.trial-balance.transactions"
+            columnSet="detailed"
+            width={1200}
+            gridHeight="300px"
+            pageSize={4}
+            initialSort={initialSort}
+            debitRowBackground="rgba(55,180,0,0.32)"
+            summaryVariant="plain"
+            showFooterTotals
+            includePrePeriodLabel="Include transactions before period"
+            renderExports={({ data: details, rows, totalDebit, totalCredit, isFetching: fetching }) => (
+                <>
+                    <GlAccountTransactionsExcel
+                        accountCode={details.accountCode ?? ''}
+                        accountName={details.accountName ?? ''}
+                        openingBalance={details.openingBalance ?? 0}
+                        postedDebits={details.postedDebits ?? 0}
+                        postedCredits={details.postedCredits ?? 0}
+                        endingBalance={details.endingBalance ?? 0}
+                        rows={rows}
+                        totalDebit={totalDebit}
+                        totalCredit={totalCredit}
+                        getTranslatedLabel={getTranslatedLabel}
+                        isFetching={fetching}
+                    />
+                    {/* REFACTOR (2026-08-14): isDebit is forwarded from the API response so the
+                        date-range export can do its balance math correctly instead of assuming
+                        every account is debit-natured. Falls back to true (debit) only if the
+                        field is ever missing, matching the export's old hardcoded assumption so
+                        nothing regresses if the backend response is stale. */}
+                    <GlAccountTransactionsDateRangeExcel
+                        accountCode={details.accountCode ?? ''}
+                        accountName={details.accountName ?? ''}
+                        openingBalance={details.openingBalance ?? 0}
+                        isDebit={details.isDebit ?? true}
+                        rows={rows}
+                        getTranslatedLabel={getTranslatedLabel}
+                    />
+                    {/* Server-side Telerik PDF of exactly what the grid shows (same query + pre-period toggle). */}
+                    <GlAccountTransactionsPdf
+                        fetchPdf={fetchPdf}
+                        glAccountId={glAccountId}
+                        accountCode={details.accountCode ?? ''}
+                        accountName={details.accountName ?? ''}
+                        getTranslatedLabel={getTranslatedLabel}
+                        isFetching={fetching}
+                    />
+                </>
+            )}
+        />
     );
 }

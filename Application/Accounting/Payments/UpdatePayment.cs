@@ -88,6 +88,11 @@ public class UpdatePayment
                 if (original == null)
                     return Results<PaymentDto>.Failure("الدفعة غير موجودة", "PAYMENT_NOT_FOUND");
 
+                var overrideError = await PaymentOverrideGlGuard.CheckAsync(_context, dto.PaymentId,
+                    original.PaymentPreferenceId, dto.OverrideGlAccountId, cancellationToken);
+                if (overrideError != null)
+                    return Results<PaymentDto>.Failure(overrideError, PaymentOverrideGlGuard.ErrorCode);
+
                 // === NORMALIZE TO DATE-ONLY (Timezone Safe) ===
                 // When IsCollectionDate is flagged the user explicitly set effectiveDate as the cheque
                 // collection date, which must be later than the cheque date itself.

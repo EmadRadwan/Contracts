@@ -39,7 +39,7 @@ function RoutingTasksList() {
     ...dataState,
   });
   const { getTranslatedLabel } = useTranslationHelper();
-  const localizationKey = 'manufacturing.routingTask.form';
+  const localizationKey = 'manufacturing.routingTasks.list';
 
   useEffect(() => {
     if (data) {

@@ -341,6 +341,7 @@ namespace Application.Projects
                     DiscountAmount = x.item.Discount ?? 0m,
                     DeductionsAmount = x.item.Deductions ?? 0m,
                     InsuranceAmount = x.item.Insurance ?? 0m,
+                    AdditionalInsuranceAmount = x.item.AdditionalInsurance ?? 0m,
                     TransportationExpensesAmount = x.item.TransportationExpenses ?? 0m,
                     GratuitiesAmount = x.item.Gratuities ?? 0m,
                     AchievementPercentage = x.header.CertificateCategory == "WORKMANSHIP_CONTRACTING_CERTIFICATE"
@@ -359,6 +360,33 @@ namespace Application.Projects
 
                 foreach (var r in results)
                 {
+                    if (r.IsSupplyProcurement)
+                    {
+                        // A supply line's stored TotalAmount is already net (quantity × price − discount
+                        // + transport + gratuities, CertificateItemBulkAdd) and is what the purchase
+                        // invoice and the ledger book. Applying the adjustments again double-counted
+                        // them (Ladris: 107-0005 +500, 110-0006/09/10/11 −144.49 vs the GL). Rebuild
+                        // the gross so the columns still read gross − discount + extras = net.
+                        r.NetCertifiedAmount = r.GrossAmount;
+                        r.GrossAmount = r.NetCertifiedAmount + r.DiscountAmount
+                                        - r.TransportationExpensesAmount - r.GratuitiesAmount;
+                        continue;
+                    }
+
+                    if (r.IsWorkmanship)
+                    {
+                        // A workmanship line stores the full contract quantity × price; what is earned on
+                        // this certificate is that × achievement %, less what was already paid
+                        // (deductions) and the insurance holds — the same formula as
+                        // CertificateItemBulkAdd and the purchase invoice (all 267 invoiced certs match).
+                        // Ignoring achievement put 82-0006 at 84,980 against a 20,000 invoice
+                        // (400 m × 450 at 63.9% − 95,020 previously paid).
+                        r.GrossAmount = Math.Round(r.GrossAmount * r.AchievementPercentage / 100m, 3);
+                        r.NetCertifiedAmount = Math.Max(0m, r.GrossAmount - r.DeductionsAmount
+                                                            - r.InsuranceAmount - r.AdditionalInsuranceAmount);
+                        continue;
+                    }
+
                     r.NetCertifiedAmount = r.GrossAmount - r.DiscountAmount - r.DeductionsAmount - r.InsuranceAmount
                                            + r.TransportationExpensesAmount + r.GratuitiesAmount;
                 }

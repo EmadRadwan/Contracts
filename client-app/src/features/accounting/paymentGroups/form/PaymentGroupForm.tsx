@@ -45,7 +45,7 @@ export default function PaymentGroupForm({
 }: Props) {
     const { selectedPaymentGroup } = useAppSelector(state => state.accountingSharedUi)
     const { getTranslatedLabel } = useTranslationHelper();
-    const localizationKey = "accounting.pay-group.form";
+    const localizationKey = "accounting.pay-groups.form";
     const localizationKeyList = "accounting.pay-group-payments.list";
     const [getMembers, { data: paymentGroupMembers, isLoading: isLoadingMembers }] = useLazyFetchPaymentGroupMembersQuery()
     const [data, setData] = useState<any[]>([]);

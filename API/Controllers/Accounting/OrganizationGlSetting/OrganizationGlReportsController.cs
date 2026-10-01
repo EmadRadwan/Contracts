@@ -1,4 +1,8 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Application.Accounting.OrganizationGlSettings;
+using Application.Accounting.Services.Models;
+using Application.Interfaces;
 using Application.Shipments.OrganizationGlSettings;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,6 +10,13 @@ namespace API.Controllers.Accounting.OrganizationGlSetting;
 
 public class OrganizationGlReportsController : BaseApiController
 {
+    private readonly IGlAccountTransactionsReportService _glAccountTransactionsReportService;
+
+    public OrganizationGlReportsController(IGlAccountTransactionsReportService glAccountTransactionsReportService)
+    {
+        _glAccountTransactionsReportService = glAccountTransactionsReportService;
+    }
+
     [HttpGet("{companyId}/getPartyAccountingPreferences")]
     public async Task<IActionResult> GetPartyAccountingPreferences(string companyId)
     {
@@ -139,7 +150,8 @@ public class OrganizationGlReportsController : BaseApiController
         [FromQuery] int? selectedMonth,
         [FromQuery] string glFiscalTypeId,
         [FromQuery] string glAccountId,
-        [FromQuery] bool includePrePeriodTransactions
+        [FromQuery] bool includePrePeriodTransactions,
+        [FromQuery] string? isPosted = null
     )
     {
         return HandleResult(await Mediator.Send(new GetIncomeStatementGlAccountTransactionDetails.Query
@@ -150,7 +162,8 @@ public class OrganizationGlReportsController : BaseApiController
             SelectedMonth = selectedMonth,
             GlFiscalTypeId = glFiscalTypeId,
             GlAccountId = glAccountId,
-            IncludePrePeriodTransactions = includePrePeriodTransactions
+            IncludePrePeriodTransactions = includePrePeriodTransactions,
+            IsPosted = isPosted
         }));
     }
 
@@ -192,5 +205,85 @@ public class OrganizationGlReportsController : BaseApiController
             GlFiscalTypeId2 = glFiscalTypeId2,
             SelectedMonth2 = selectedMonth2
         }));
+    }
+
+    // PDF export of the balance sheet's transaction-details modal. Same query the modal itself
+    // uses, rendered server-side with Telerik so Arabic shapes correctly — the client-side
+    // kendo-drawing PDF does not (see the project report). Mirrors
+    // TrialBalanceController.GetGlAccountTransactionsPdf; the only difference is the query.
+    [HttpGet("{selectedAccountingCompanyId}/balanceSheetGlAccountTransactionsPdf")]
+    public async Task<IActionResult> GetBalanceSheetGlAccountTransactionsPdf(
+        string selectedAccountingCompanyId,
+        [FromQuery] DateTime? thruDate,
+        [FromQuery] string glFiscalTypeId,
+        [FromQuery] string glAccountId,
+        [FromQuery] bool includePrePeriodTransactions = false,
+        [FromQuery] string format = "PDF")
+    {
+        var result = await Mediator.Send(new GetBalanceSheetGlAccountTransactionDetails.Query
+        {
+            OrganizationPartyId = selectedAccountingCompanyId,
+            ThruDate = thruDate,
+            GlFiscalTypeId = glFiscalTypeId,
+            GlAccountId = glAccountId,
+            IncludePrePeriodTransactions = includePrePeriodTransactions
+        });
+
+        return RenderGlAccountTransactions(result, format);
+    }
+
+    // PDF export of the income statement's transaction-details modal. See the balance sheet
+    // action above.
+    [HttpGet("{selectedAccountingCompanyId}/incomeStatementGlAccountTransactionsPdf")]
+    public async Task<IActionResult> GetIncomeStatementGlAccountTransactionsPdf(
+        string selectedAccountingCompanyId,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? thruDate,
+        [FromQuery] int? selectedMonth,
+        [FromQuery] string glFiscalTypeId,
+        [FromQuery] string glAccountId,
+        [FromQuery] bool includePrePeriodTransactions = false,
+        [FromQuery] string? isPosted = null,
+        [FromQuery] string format = "PDF")
+    {
+        var result = await Mediator.Send(new GetIncomeStatementGlAccountTransactionDetails.Query
+        {
+            OrganizationPartyId = selectedAccountingCompanyId,
+            FromDate = fromDate,
+            ThruDate = thruDate,
+            SelectedMonth = selectedMonth,
+            GlFiscalTypeId = glFiscalTypeId,
+            GlAccountId = glAccountId,
+            IncludePrePeriodTransactions = includePrePeriodTransactions,
+            IsPosted = isPosted
+        });
+
+        return RenderGlAccountTransactions(result, format);
+    }
+
+    // Shared rendering + download plumbing for the two actions above. The period suffix comes from
+    // the dates the handler resolved, because neither drill-down has a named CustomTimePeriod the
+    // way the trial balance does.
+    private IActionResult RenderGlAccountTransactions(Result<GlAccountTransactionDetails>? result, string format)
+    {
+        if (result == null || !result.IsSuccess || result.Value == null)
+            return BadRequest(result?.Error ?? "Could not load GL account transaction details.");
+
+        var bytes = _glAccountTransactionsReportService.Render(result.Value, format);
+
+        var normalized = string.IsNullOrWhiteSpace(format) ? "PDF" : format.Trim().ToUpperInvariant();
+        var (contentType, extension) = normalized switch
+        {
+            "XLSX" => ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"),
+            "DOCX" => ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx"),
+            _ => ("application/pdf", "pdf")
+        };
+
+        var period = result.Value.PeriodFromDate.HasValue && result.Value.PeriodThruDate.HasValue
+            ? $"{result.Value.PeriodFromDate.Value.ToString("yyyyMMdd", CultureInfo.InvariantCulture)}-{result.Value.PeriodThruDate.Value.ToString("yyyyMMdd", CultureInfo.InvariantCulture)}"
+            : "period";
+        var safePeriod = Regex.Replace(period, @"[^a-zA-Z0-9\u0600-\u06FF\s-]", "_").Trim();
+
+        return File(bytes, contentType, $"GL_Transactions_{result.Value.AccountCode}_{safePeriod}.{extension}");
     }
 }

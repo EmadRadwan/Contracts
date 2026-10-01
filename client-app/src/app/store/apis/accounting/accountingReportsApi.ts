@@ -231,6 +231,28 @@ const accountingReportsApi = createApi({
               cache: 'no-cache',
             }),
           }),
+          // Server-rendered (Telerik) PDF of the balance-sheet drill-down — same query as
+          // fetchBalanceSheetGlAccountTransactionDetails below, rendered by the shared
+          // GlAccountTransactions report.
+          fetchBalanceSheetGlAccountTransactionsPdf: builder.query<ArrayBuffer, { organizationPartyId: string; thruDate: string; glFiscalTypeId: string; glAccountId: string; includePrePeriodTransactions: boolean }>({
+            query: ({ organizationPartyId, thruDate, glFiscalTypeId, glAccountId, includePrePeriodTransactions }) => ({
+              url: `/organizationGlReports/${organizationPartyId}/balanceSheetGlAccountTransactionsPdf`,
+              method: 'GET',
+              params: { thruDate, glFiscalTypeId, glAccountId, includePrePeriodTransactions },
+              responseHandler: (response) => response.arrayBuffer(),
+              cache: 'no-cache',
+            }),
+          }),
+          // Server-rendered (Telerik) PDF of the income-statement drill-down.
+          fetchIncomeStatementGlAccountTransactionsPdf: builder.query<ArrayBuffer, { organizationPartyId: string; fromDate?: string; thruDate?: string; selectedMonth?: number; glFiscalTypeId: string; glAccountId: string; includePrePeriodTransactions: boolean; isPosted?: string }>({
+            query: ({ organizationPartyId, fromDate, thruDate, selectedMonth, glFiscalTypeId, glAccountId, includePrePeriodTransactions, isPosted }) => ({
+              url: `/organizationGlReports/${organizationPartyId}/incomeStatementGlAccountTransactionsPdf`,
+              method: 'GET',
+              params: { fromDate, thruDate, selectedMonth, glFiscalTypeId, glAccountId, includePrePeriodTransactions, isPosted },
+              responseHandler: (response) => response.arrayBuffer(),
+              cache: 'no-cache',
+            }),
+          }),
           fetchBalanceSheetGlAccountTransactionDetails: builder.query<GlAccountTransactionDetails, { organizationPartyId: string; thruDate: string; glFiscalTypeId: string; glAccountId: string; includePrePeriodTransactions: boolean }>({
             query: ({ organizationPartyId, thruDate, glFiscalTypeId, glAccountId, includePrePeriodTransactions }) => ({
               url: `/organizationGlReports/${organizationPartyId}/getBalanceSheetGlAccountTransactionDetails`,
@@ -238,11 +260,11 @@ const accountingReportsApi = createApi({
               params: { thruDate, glFiscalTypeId, glAccountId, includePrePeriodTransactions },
             }),
           }),
-          fetchIncomeStatementGlAccountTransactionDetails: builder.query<GlAccountTransactionDetails, { organizationPartyId: string; fromDate?: string; thruDate?: string; selectedMonth?: number; glFiscalTypeId: string; glAccountId: string; includePrePeriodTransactions: boolean }>({
-            query: ({ organizationPartyId, fromDate, thruDate, selectedMonth, glFiscalTypeId, glAccountId, includePrePeriodTransactions }) => ({
+          fetchIncomeStatementGlAccountTransactionDetails: builder.query<GlAccountTransactionDetails, { organizationPartyId: string; fromDate?: string; thruDate?: string; selectedMonth?: number; glFiscalTypeId: string; glAccountId: string; includePrePeriodTransactions: boolean; isPosted?: string }>({
+            query: ({ organizationPartyId, fromDate, thruDate, selectedMonth, glFiscalTypeId, glAccountId, includePrePeriodTransactions, isPosted }) => ({
                 url: `/organizationGlReports/${organizationPartyId}/getIncomeStatementGlAccountTransactionDetails`,
                 method: 'GET',
-                params: { fromDate, thruDate, selectedMonth, glFiscalTypeId, glAccountId, includePrePeriodTransactions },
+                params: { fromDate, thruDate, selectedMonth, glFiscalTypeId, glAccountId, includePrePeriodTransactions, isPosted },
             }),
           }),
           fetchComparativeIncomeStatementReport: builder.query<any,
@@ -282,16 +304,21 @@ export const {
     useLazyFetchTrialBalanceReportQuery,
     useLazyFetchTrialBalanceByLevelReportQuery,
     useFetchTransactionTotalsReportQuery,
+    useLazyFetchTransactionTotalsReportQuery,
     useFetchIncomeStatementReportQuery,
     useLazyFetchIncomeStatementReportQuery,
     useFetchCashFlowStatementReportQuery,
+    useLazyFetchCashFlowStatementReportQuery,
     useFetchGlAccountTrialBalanceReportQuery,
+    useLazyFetchGlAccountTrialBalanceReportQuery,
     useLazyFetchBalanceSheetReportQuery,
     useFetchComparativeBalanceSheetReportQuery, 
     useFetchGlAccountTransactionDetailsQuery,
     useLazyFetchGlAccountTransactionsPdfQuery,
     useFetchBalanceSheetGlAccountTransactionDetailsQuery,
+    useLazyFetchBalanceSheetGlAccountTransactionsPdfQuery,
     useFetchIncomeStatementGlAccountTransactionDetailsQuery,
+    useLazyFetchIncomeStatementGlAccountTransactionsPdfQuery,
     useLazyFetchComparativeIncomeStatementReportQuery
 } = accountingReportsApi;
 export {accountingReportsApi};

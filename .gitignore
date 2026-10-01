@@ -187,6 +187,10 @@ publish/
 # in these scripts will be unencrypted
 PublishScripts/
 Scripts/
+# ...but the frontend's own scripts/ folder is source, not a Python venv. On a
+# case-insensitive filesystem (macOS) the rule above swallows it, so un-ignore it.
+!client-app/scripts/
+!client-app/scripts/**
 
 # NuGet Packages
 *.nupkg

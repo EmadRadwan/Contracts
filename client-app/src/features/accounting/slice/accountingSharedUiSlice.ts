@@ -32,11 +32,46 @@ interface AccountingSharedState {
     paymentGroupMemberFormEditMode: number
 }
 
+// The accounting company is picked once from the companies list (OrganizationGlSettingsList) and
+// every accounting screen reads it from here. It used to live in memory only, so a page reload
+// wiped it and all ten company-scoped reports bounced back to /orgGl — the two trial balances
+// only escaped that by reading the logged-in user's own org instead, which is why they behave
+// differently from the rest. Persisting the choice fixes every consumer at the source.
+//
+// Wrapped because storage access throws in private mode / when site data is blocked, and the app
+// must still start with nothing selected in that case.
+const COMPANY_ID_KEY = "selectedAccountingCompanyId";
+const COMPANY_NAME_KEY = "selectedAccountingCompanyName";
+
+const readStored = (key: string): string | undefined => {
+    try {
+        return localStorage.getItem(key) ?? undefined;
+    } catch {
+        return undefined;
+    }
+};
+
+const writeStored = (key: string, value: string) => {
+    try {
+        localStorage.setItem(key, value);
+    } catch {
+        /* storage unavailable — the selection simply stays in memory for this session */
+    }
+};
+
+const clearStored = (key: string) => {
+    try {
+        localStorage.removeItem(key);
+    } catch {
+        /* nothing to do — see writeStored */
+    }
+};
+
 export const accountingSharedInitialState: AccountingSharedState = {
     acctgTransEntries: acctgTransEntryAdapter.getInitialState(),
     selectedFixedAsset: undefined,
-    selectedAccountingCompanyId: undefined,
-    selectedAccountingCompanyName: undefined,
+    selectedAccountingCompanyId: readStored(COMPANY_ID_KEY),
+    selectedAccountingCompanyName: readStored(COMPANY_NAME_KEY),
     whatWasClicked: "",
     selectedInvoice: undefined,
     seletedCustomTimePeriodId: undefined,
@@ -57,9 +92,11 @@ export const accountingSharedSlice = createSlice({
     reducers: {
         setSelectedAccountingCompanyId(state, action: PayloadAction<string>) {
             state.selectedAccountingCompanyId = action.payload;
+            writeStored(COMPANY_ID_KEY, action.payload);
         },
         setSelectedAccountingCompanyName(state, action: PayloadAction<string>) {
             state.selectedAccountingCompanyName = action.payload;
+            writeStored(COMPANY_NAME_KEY, action.payload);
         },
         setWhatWasClicked(state, action: PayloadAction<string>) {
             state.whatWasClicked = action.payload;
@@ -100,6 +137,24 @@ export const accountingSharedSlice = createSlice({
         setPaymentGroupMemberFormEditMode(state, {payload}: {payload: number}) {
             state.paymentGroupMemberFormEditMode = payload
         }
+    },
+    extraReducers: (builder) => {
+        // signOut only clears the user; the rest of the store is left standing. Now that the
+        // company selection is persisted it would otherwise outlive the session and the next
+        // user to sign in on this browser would silently inherit the previous one's company.
+        // Session expiry (fetchCurrentUser.rejected) deliberately does not clear it — that is
+        // the same user coming back, and re-picking the company would just be friction.
+        //
+        // Matched by action type rather than by importing accountSlice's `signOut`: accountSlice
+        // imports the router, the router imports the accounting screens, and those import this
+        // slice — so an import here closes a cycle that would leave `signOut` undefined at the
+        // moment createSlice runs. Keep it a string.
+        builder.addCase("account/signOut", (state) => {
+            state.selectedAccountingCompanyId = undefined;
+            state.selectedAccountingCompanyName = undefined;
+            clearStored(COMPANY_ID_KEY);
+            clearStored(COMPANY_NAME_KEY);
+        });
     },
 });
 

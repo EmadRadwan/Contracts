@@ -28,7 +28,7 @@ import { PaymentGroup } from "../../../../app/models/accounting/paymentGroup";
 
 const PaymentGroupsList = () => {
   const { getTranslatedLabel } = useTranslationHelper();
-  const localizationKey = "accounting.pay-group.list";
+  const localizationKey = "accounting.pay-groups.list";
   const location = useLocation()
   const [paymentGroups, setPayments] = React.useState<DataResult>({
     data: [],

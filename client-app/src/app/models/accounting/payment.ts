@@ -27,6 +27,7 @@ export interface Payment {
   finAccountTransId?: any;
   finAcctTransTypeId?: any;
   overrideGlAccountId?: any;
+  paymentPreferenceId?: string;
   actualCurrencyAmount?: any;
   actualCurrencyUomId?: any;
   total?: any;

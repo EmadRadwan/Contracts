@@ -94,7 +94,7 @@ const CashFlowStatementForm = ({onSubmit}: CashFlowStatementFormProps) => {
                       return "";
                     }}
                     onChange={(e) => {
-                      formRenderProps.onChange("month", { value: null });
+                      formRenderProps.onChange("selectedMonth", { value: null });
                       formRenderProps.onChange("fromDate", e);
                     }}
                   />
@@ -117,7 +117,7 @@ const CashFlowStatementForm = ({onSubmit}: CashFlowStatementFormProps) => {
                       return "";
                     }}
                     onChange={(e) => {
-                      formRenderProps.onChange("month", { value: null });
+                      formRenderProps.onChange("selectedMonth", { value: null });
                       formRenderProps.onChange("thruDate", e);
                     }}
                   />

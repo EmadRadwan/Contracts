@@ -2969,6 +2969,11 @@ public class AcctgReportsService : IAcctgReportsService
                     isPosted,
                     glAccountId);
 
+                // Stamp the window this row covers so the client does not have to re-derive the
+                // monthly walk from the period start to label it.
+                monthlyResult.PeriodFromDate = customTimePeriodStartDate;
+                monthlyResult.PeriodThruDate = customTimePeriodEndDate;
+
                 // sum year-to-date
                 totalOfYearToDateDebit += monthlyResult.DebitTotal;
                 monthlyResult.TotalOfYearToDateDebit =

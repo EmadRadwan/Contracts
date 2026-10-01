@@ -771,6 +771,7 @@
         "amount": "Amount *",
         "date": "Effective Date *",
         "comments": "Comments",
+        "overrideGlLinkedHint": "This payment is linked to a certificate or purchase order, so its cost is already booked on the project. Leave Override GL Account empty or the cost is recorded twice.",
         "loading": "Processing Payment...",
         "statuses": {
           "new": "New",
@@ -894,7 +895,20 @@
           "name": "Inventory Valuation",
           "facility": "Facility",
           "product": "Product",
-          "date": "Date Thru"
+          "date": "Date Thru",
+          "title": "Inventory Valuation For: ",
+          "generate": "Generate Report",
+          "quantityUom": "Quantity UOM",
+          "unitCost": "Unit Cost",
+          "currency": "Currency",
+          "accountingQuantity": "Accounting Quantity Sum",
+          "quantityOnHand": "QOH Sum",
+          "value": "Value",
+          "totalValue": "Total Value",
+          "filteredValue": "Filtered Value",
+          "facility-or-product-required": "Select a facility or a product to run the report.",
+          "excel": "Export Inventory Valuation",
+          "generated-at": "Generated At"
         },
         "trial-balance": {
           "title": "Trial Balance For: ",
@@ -936,7 +950,13 @@
             "openingC": "Opening C",
             "debit": "DR",
             "credit": "CR",
-            "balance": "Balance"
+            "balance": "Balance",
+            "posted": "Posted Totals",
+            "unposted": "Unposted Totals",
+            "all": "All Totals",
+            "sectionTotal": "Total",
+            "excel": "Export Transaction Totals",
+            "generated-at": "Generated At"
           },
           "form": {
             "month": "Month",
@@ -967,7 +987,24 @@
         "cash-flow": {
           "list": {
             "title": "Cash Flow Statement For: ",
-            "loading": "Loading Report Data..."
+            "loading": "Loading Report Data...",
+            "code": "Account Code",
+            "name": "Account Name",
+            "debit": "Debit",
+            "credit": "Credit",
+            "balance": "Balance",
+            "opening": "Opening Cash Balances",
+            "period": "Cash Movements For The Period",
+            "closing": "Closing Cash Balances",
+            "totals": "Totals",
+            "section-total": "Section Total",
+            "opening-total": "Opening Cash Balance",
+            "period-total": "Net Cash Movement For The Period",
+            "closing-total": "Closing Cash Balance",
+            "ending-total": "Ending Cash Balance",
+            "excel": "Export Cash Flow",
+            "generated-at": "Generated At",
+            "no-closed-period": "No closed accounting period was found before the selected start date, so an opening cash balance cannot be established. Close the prior period, or choose a later start date."
           },
           "form": {
             "month": "Month",
@@ -980,7 +1017,35 @@
           "title": "Gl Account Trial Balance For: ",
           "glAccount": "GL Account",
           "timePeriod": "Time Period",
-          "isPosted": "Is Posted"
+          "isPosted": "Is Posted",
+          "account": "Account:",
+          "period": "Period:",
+          "accountSide": "Account Side:",
+          "debitSide": "Debit",
+          "creditSide": "Credit",
+          "openingBalance": "Opening Balance:",
+          "month": "Month",
+          "debit": "Debit",
+          "credit": "Credit",
+          "difference": "Difference",
+          "ytdDebit": "YTD Debit",
+          "ytdCredit": "YTD Credit",
+          "monthBalance": "Month Balance",
+          "runningBalance": "Running Balance",
+          "transactions": "Transactions",
+          "yearDebit": "Year Debit: ",
+          "yearCredit": "Year Credit: ",
+          "closingBalance": "Closing Balance: ",
+          "yearTotal": "Year Total",
+          "transId": "Trans ID",
+          "transDate": "Date",
+          "debitCredit": "D/C",
+          "amount": "Amount",
+          "fiscalType": "Fiscal Type",
+          "noTransactions": "No transactions in this month.",
+          "account-and-period-required": "Select both a GL account and a time period.",
+          "excel": "Export Trial Balance",
+          "generated-at": "Generated At"
         },
         "comparative-balance-sheet": {
           "list": {
@@ -996,6 +1061,31 @@
             "total": "Total Name",
             "b1": "Period 1 Balance",
             "b2": "Period 2 Balance"
+          }
+        },
+        "comparative-income-statement": {
+          "form": {
+            "month": "Month",
+            "fromDate": "From Date",
+            "thruDate": "Thru Date",
+            "period1": "Period 1",
+            "period2": "Period 2"
+          },
+          "list": {
+            "title": "Comparative Income Statement For: ",
+            "code": "Account Code",
+            "name": "Account Name",
+            "revenues": "Revenues",
+            "cost-of-goods-sold": "Cost of Goods Sold",
+            "expenses": "Expenses",
+            "income": "Other Income",
+            "net-sales": "Net Sales",
+            "gross-margin": "Gross Margin",
+            "operating-expenses": "Operating Expenses",
+            "net-income": "Net Income",
+            "totals": "Totals",
+            "period1": "Period 1",
+            "period2": "Period 2"
           }
         }
       }

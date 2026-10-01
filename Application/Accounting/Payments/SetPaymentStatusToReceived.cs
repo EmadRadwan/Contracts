@@ -67,6 +67,26 @@ public class SetPaymentStatus
 
             try
             {
+                // ---- 0. Posting statuses: refuse an override that would re-book linked cost ----
+                var targetStatus = request.PaymentChangeStatusDto.StatusId;
+                if (targetStatus == "PMNT_SENT" || targetStatus == "PMNT_RECEIVED")
+                {
+                    var current = await _context.Payments.AsNoTracking()
+                        .Where(p => p.PaymentId == request.PaymentChangeStatusDto.PaymentId)
+                        .Select(p => new { p.PaymentPreferenceId, p.OverrideGlAccountId })
+                        .FirstOrDefaultAsync(ct);
+                    var overrideError = current == null
+                        ? null
+                        : await PaymentOverrideGlGuard.CheckAsync(_context,
+                            request.PaymentChangeStatusDto.PaymentId, current.PaymentPreferenceId,
+                            current.OverrideGlAccountId, ct);
+                    if (overrideError != null)
+                    {
+                        await transaction.RollbackAsync(ct);
+                        return Results<PaymentDetailsResponse>.Failure(overrideError, PaymentOverrideGlGuard.ErrorCode);
+                    }
+                }
+
                 // ---- 1. Change the status -------------------------------------------------
                 var paymentResult = await _paymentHelperService.SetPaymentStatus(
                     request.PaymentChangeStatusDto.PaymentId,

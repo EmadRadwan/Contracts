@@ -14,6 +14,9 @@ import {
   GRID_COL_INDEX_ATTRIBUTE,
 } from "@progress/kendo-react-grid";
 import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
+import ModalContainer from "../../../../app/common/modals/ModalContainer";
+import BalanceSheetGlAccountTransactionsModal from "./BalanceSheetGlAccountTransactionsModal";
+import { formatNumber } from "../../../../app/util/utils";
 
 type ReportData = {
   period1GlFiscalTypeId: string;
@@ -39,6 +42,9 @@ const ComparativeBalanceSheet = () => {
     period2ThruDate: undefined,
   };
   const [reportData, setReportData] = useState<ReportData>(initialData);
+  // Each row carries the same account in two periods, so the drill-down records which column
+  // was clicked — Period 1 and Period 2 are different as-of dates.
+  const [drill, setDrill] = useState<{ glAccountId: string; period: 1 | 2 } | null>(null);
   const {
     data: comparativeBalanceSheetReportData,
     isFetching,
@@ -69,17 +75,21 @@ const ComparativeBalanceSheet = () => {
     setReportData({
       period1GlFiscalTypeId,
       period2GlFiscalTypeId,
+      // ISO, not toLocaleDateString() — this value is sent to the API and is now also handed to
+      // the transaction drill-down, and a locale-formatted date binds differently per browser.
       period1ThruDate: period1ThruDate
-        ? new Date(period1ThruDate).toLocaleDateString()
+        ? new Date(period1ThruDate).toISOString().split("T")[0]
         : undefined,
       period2ThruDate: period2ThruDate
-        ? new Date(period2ThruDate).toLocaleDateString()
+        ? new Date(period2ThruDate).toISOString().split("T")[0]
         : undefined,
     });
+    setDrill(null);
   };
 
-  const AccountCodeCell = (props: any) => {
+  const makeBalanceCell = (period: 1 | 2) => (props: any) => {
     const navigationAttributes = useTableKeyboardNavigation(props.id);
+    const value = props.dataItem[period === 1 ? "balance1" : "balance2"];
     return (
       <td
         className={props.className}
@@ -88,23 +98,17 @@ const ComparativeBalanceSheet = () => {
         role={"gridcell"}
         aria-colindex={props.ariaColumnIndex}
         aria-selected={props.isSelected}
-        {...{
-          [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex,
-        }}
+        {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
         {...navigationAttributes}
       >
-        <Button
-          onClick={() => {
-            router.navigate("/accountingTransactionEntries", {
-              state: { glAccountId: props.dataItem.glAccountId },
-            });
-          }}
-        >
-          {props.dataItem.glAccountId}
+        <Button onClick={() => setDrill({ glAccountId: props.dataItem.glAccountId, period })}>
+          {formatNumber(value)}
         </Button>
       </td>
     );
   };
+  const Balance1Cell = makeBalanceCell(1);
+  const Balance2Cell = makeBalanceCell(2);
 
   return (
     <>
@@ -143,7 +147,6 @@ const ComparativeBalanceSheet = () => {
                     `${localizationKey}.code`,
                     "Account Code"
                   )}
-                  cells={{ data: AccountCodeCell }}
                 />
                 <Column
                   field="accountName"
@@ -158,7 +161,7 @@ const ComparativeBalanceSheet = () => {
                     `${localizationKey}.b1`,
                     "Period 1 Balance"
                   )}
-                  format="{0:c2}"
+                  cells={{ data: Balance1Cell }}
                 />
                 <Column
                   field="balance2"
@@ -166,7 +169,7 @@ const ComparativeBalanceSheet = () => {
                     `${localizationKey}.b2`,
                     "Period 2 Balance"
                   )}
-                  format="{0:c2}"
+                  cells={{ data: Balance2Cell }}
                 />
               </KendoGrid>
               <KendoGrid scrollable="scrollable"
@@ -187,7 +190,6 @@ const ComparativeBalanceSheet = () => {
                     `${localizationKey}.code`,
                     "Account Code"
                   )}
-                  cells={{ data: AccountCodeCell }}
                 />
                 <Column
                   field="accountName"
@@ -202,7 +204,7 @@ const ComparativeBalanceSheet = () => {
                     `${localizationKey}.b1`,
                     "Period 1 Balance"
                   )}
-                  format="{0:c2}"
+                  cells={{ data: Balance1Cell }}
                 />
                 <Column
                   field="balance2"
@@ -210,7 +212,7 @@ const ComparativeBalanceSheet = () => {
                     `${localizationKey}.b2`,
                     "Period 2 Balance"
                   )}
-                  format="{0:c2}"
+                  cells={{ data: Balance2Cell }}
                 />
               </KendoGrid>
               <KendoGrid scrollable="scrollable"
@@ -231,7 +233,6 @@ const ComparativeBalanceSheet = () => {
                     `${localizationKey}.code`,
                     "Account Code"
                   )}
-                  cells={{ data: AccountCodeCell }}
                 />
                 <Column
                   field="accountName"
@@ -246,7 +247,7 @@ const ComparativeBalanceSheet = () => {
                     `${localizationKey}.b1`,
                     "Period 1 Balance"
                   )}
-                  format="{0:c2}"
+                  cells={{ data: Balance1Cell }}
                 />
                 <Column
                   field="balance2"
@@ -254,7 +255,7 @@ const ComparativeBalanceSheet = () => {
                     `${localizationKey}.b2`,
                     "Period 2 Balance"
                   )}
-                  format="{0:c2}"
+                  cells={{ data: Balance2Cell }}
                 />
               </KendoGrid>
               <KendoGrid scrollable="scrollable"
@@ -279,7 +280,7 @@ const ComparativeBalanceSheet = () => {
                     `${localizationKey}.b1`,
                     "Period 1 Balance"
                   )}
-                  format="{0:c2}"
+                  cells={{ data: Balance1Cell }}
                 />
                 <Column
                   field="balance2"
@@ -287,13 +288,31 @@ const ComparativeBalanceSheet = () => {
                     `${localizationKey}.b2`,
                     "Period 2 Balance"
                   )}
-                  format="{0:c2}"
+                  cells={{ data: Balance2Cell }}
                 />
               </KendoGrid>
             </>
           )}
         </Paper>
       </Grid>
+
+      {drill && (
+        <ModalContainer show={true} onClose={() => setDrill(null)} width={1280}>
+          <BalanceSheetGlAccountTransactionsModal
+            onClose={() => setDrill(null)}
+            organizationPartyId={selectedAccountingCompanyId!}
+            thruDate={
+              (drill.period === 1 ? reportData.period1ThruDate : reportData.period2ThruDate) ?? ""
+            }
+            glFiscalTypeId={
+              drill.period === 1
+                ? reportData.period1GlFiscalTypeId
+                : reportData.period2GlFiscalTypeId
+            }
+            glAccountId={drill.glAccountId}
+          />
+        </ModalContainer>
+      )}
     </>
   );
 };

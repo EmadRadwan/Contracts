@@ -449,7 +449,7 @@ function EmployeeAdvanceForm({
                                             onApply={(schedules) => {
                                                 setCustomSchedules(schedules);
                                                 setShowDeductionPlan(false);
-                                                toast.success(getTranslatedLabel("employeeAdvance.deductionPlan.applied", "Deduction plan applied"));
+                                                toast.success(getTranslatedLabel("party.employeeAdvance.deductionPlan.applied", "Deduction plan applied"));
 
                                                 // Sync form fields
                                                 if (formRef.current) {

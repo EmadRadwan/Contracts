@@ -127,7 +127,8 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                 false
             );
         }
-    }, [payment?.paymentTypeId, partyIdTo, currentProjectId, triggerBalanceFetch]);
+    // statusId: a Reset takes this payment out of "used", so the limit must be re-read
+    }, [payment?.paymentTypeId, payment?.statusId, partyIdTo, currentProjectId, triggerBalanceFetch]);
 
     const hasBillingAccountIssueForToast =
         shouldCheckBalance &&
@@ -149,6 +150,9 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
 
     const nonEditableStatuses = ['PMNT_RECEIVED', 'PMNT_SENT', 'PMNT_CONFIRMED', 'PMNT_VOID', 'PMNT_CANCELLED'];
     const isFormDisabled = payment && nonEditableStatuses.includes(payment.statusId);
+    // Paid against a certificate / purchase order: its cost is already on the project, so an
+    // override would book it twice (server enforces the same rule: PaymentOverrideGlGuard).
+    const isLinkedPayment = !!payment?.paymentPreferenceId;
     const {user} = useAppSelector((state) => state.account);
     const companyId = user?.organizationPartyId || "";
     const companyName = useAppSelector((state: RootState) => state.accountingSharedUi.selectedAccountingCompanyName);
@@ -574,17 +578,29 @@ const EditPaymentForm: React.FC<EditPaymentFormProps> = ({
                                                 {isLoadingGlAccounts ? (
                                                     <Skeleton variant="rounded" height={56}/>
                                                 ) : (
-                                                    <Field
-                                                        id="overrideGlAccountId"
-                                                        name="overrideGlAccountId"
-                                                        label={getTranslatedLabel(`${localizationKey}.overrideGlAccountId`, "Override GL Account")}
-                                                        data={glAccounts || []}
-                                                        component={FormDropDownTreeGlAccount2}
-                                                        dataItemKey="glAccountId"
-                                                        textField="text"
-                                                        selectField="selected"
-                                                        expandField="expanded"
-                                                    />
+                                                    <>
+                                                        <Field
+                                                            id="overrideGlAccountId"
+                                                            name="overrideGlAccountId"
+                                                            label={getTranslatedLabel(`${localizationKey}.overrideGlAccountId`, "Override GL Account")}
+                                                            data={glAccounts || []}
+                                                            component={FormDropDownTreeGlAccount2}
+                                                            dataItemKey="glAccountId"
+                                                            textField="text"
+                                                            selectField="selected"
+                                                            expandField="expanded"
+                                                            // Linked payments may only clear a legacy value, never pick one
+                                                            disabled={isLinkedPayment && !valueGetter("overrideGlAccountId")}
+                                                        />
+                                                        {isLinkedPayment && (
+                                                            <Alert severity={valueGetter("overrideGlAccountId") ? "error" : "info"} sx={{mt: 1}}>
+                                                                {getTranslatedLabel(
+                                                                    `${localizationKey}.overrideGlLinkedHint`,
+                                                                    "هذه الدفعة مرتبطة بمستخلص أو أمر شراء، والتكلفة مسجلة بالفعل على المشروع. اترك «حساب دفتر الأستاذ» فارغاً حتى لا تُسجَّل التكلفة مرتين."
+                                                                )}
+                                                            </Alert>
+                                                        )}
+                                                    </>
                                                 )}
                                             </Grid>
 

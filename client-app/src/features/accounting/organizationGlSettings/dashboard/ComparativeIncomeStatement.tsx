@@ -1,5 +1,5 @@
-import { Paper, Typography, Grid, Box } from "@mui/material";
-import React, { useState, useMemo } from "react";
+import { Paper, Typography, Grid, Box, Button } from "@mui/material";
+import { useState } from "react";
 import { router } from "../../../../app/router/Routes";
 import { useAppSelector } from "../../../../app/store/configureStore";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
@@ -13,8 +13,13 @@ import {
   GridColumn as Column,
   GridToolbar,
 } from "@progress/kendo-react-grid";
-import { filterBy, orderBy, SortDescriptor } from "@progress/kendo-data-query";
+import { orderBy, SortDescriptor } from "@progress/kendo-data-query";
 import { toast } from "react-toastify";
+import { GRID_COL_INDEX_ATTRIBUTE } from "@progress/kendo-react-grid";
+import { useTableKeyboardNavigation } from "@progress/kendo-react-data-tools";
+import ModalContainer from "../../../../app/common/modals/ModalContainer";
+import IncomeStatementGlAccountTransactionsModal from "./IncomeStatementGlAccountTransactionsModal";
+import { formatNumber } from "../../../../app/util/utils";
 
 const ComparativeIncomeStatement = () => {
   const { getTranslatedLabel } = useTranslationHelper();
@@ -33,6 +38,17 @@ const ComparativeIncomeStatement = () => {
 
   const [sort, setSort] = useState<Array<SortDescriptor>>([{ field: "accountCode", dir: "asc" }]);
 
+  // Each row shows the same account in two periods, so the drill-down has to know which column
+  // was clicked — the transactions behind Period 1 are a different window from Period 2.
+  type PeriodParams = {
+    fromDate?: string;
+    thruDate?: string;
+    selectedMonth?: number;
+    glFiscalTypeId: string;
+  };
+  const [periods, setPeriods] = useState<{ p1: PeriodParams; p2: PeriodParams } | null>(null);
+  const [drill, setDrill] = useState<{ glAccountId: string; period: 1 | 2 } | null>(null);
+
   const onSubmit = (values: any) => {
     const { fromDate1, thruDate1, selectedMonth1, glFiscalTypeId1, fromDate2, thruDate2, selectedMonth2, glFiscalTypeId2 } = values;
 
@@ -41,25 +57,57 @@ const ComparativeIncomeStatement = () => {
       return;
     }
 
+    const p1: PeriodParams = {
+      fromDate: fromDate1 ? new Date(fromDate1).toISOString().split('T')[0] : undefined,
+      thruDate: thruDate1 ? new Date(thruDate1).toISOString().split('T')[0] : undefined,
+      selectedMonth: selectedMonth1 ? selectedMonth1 - 1 : undefined,
+      glFiscalTypeId: glFiscalTypeId1,
+    };
+    const p2: PeriodParams = {
+      fromDate: fromDate2 ? new Date(fromDate2).toISOString().split('T')[0] : undefined,
+      thruDate: thruDate2 ? new Date(thruDate2).toISOString().split('T')[0] : undefined,
+      selectedMonth: selectedMonth2 ? selectedMonth2 - 1 : undefined,
+      glFiscalTypeId: glFiscalTypeId2,
+    };
+    setPeriods({ p1, p2 });
+    setDrill(null);
+
     trigger({
       organizationPartyId: selectedAccountingCompanyId!,
       glFiscalTypeId1,
-      fromDate1: fromDate1 ? new Date(fromDate1).toISOString().split('T')[0] : undefined,
-      thruDate1: thruDate1 ? new Date(thruDate1).toISOString().split('T')[0] : undefined,
-      selectedMonth1: selectedMonth1 ? selectedMonth1 - 1 : undefined,
+      fromDate1: p1.fromDate,
+      thruDate1: p1.thruDate,
+      selectedMonth1: p1.selectedMonth,
       glFiscalTypeId2,
-      fromDate2: fromDate2 ? new Date(fromDate2).toISOString().split('T')[0] : undefined,
-      thruDate2: thruDate2 ? new Date(thruDate2).toISOString().split('T')[0] : undefined,
-      selectedMonth2: selectedMonth2 ? selectedMonth2 - 1 : undefined,
+      fromDate2: p2.fromDate,
+      thruDate2: p2.thruDate,
+      selectedMonth2: p2.selectedMonth,
     });
   };
 
-  const formatNumber = (value: number | undefined) => {
-    return value?.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }) || '0.00';
+  // Balance cells open the drill-down for their own period.
+  const makeBalanceCell = (period: 1 | 2) => (props: any) => {
+    const navigationAttributes = useTableKeyboardNavigation(props.id);
+    const value = props.dataItem[period === 1 ? "balance1" : "balance2"];
+    return (
+      <td
+        className={props.className}
+        style={{ ...props.style, color: "blue" }}
+        colSpan={props.colSpan}
+        role={"gridcell"}
+        aria-colindex={props.ariaColumnIndex}
+        aria-selected={props.isSelected}
+        {...{ [GRID_COL_INDEX_ATTRIBUTE]: props.columnIndex }}
+        {...navigationAttributes}
+      >
+        <Button onClick={() => setDrill({ glAccountId: props.dataItem.glAccountId, period })}>
+          {formatNumber(value)}
+        </Button>
+      </td>
+    );
   };
+  const Balance1Cell = makeBalanceCell(1);
+  const Balance2Cell = makeBalanceCell(2);
 
   const renderGrid = (data: any[], title: string) => {
     const processedData = orderBy(data || [], sort);
@@ -77,8 +125,8 @@ const ComparativeIncomeStatement = () => {
             </GridToolbar>
             <Column field="accountCode" title={getTranslatedLabel(`${localizationKey}.code`, "Code")} />
             <Column field="accountName" title={getTranslatedLabel(`${localizationKey}.name`, "Name")} />
-            <Column field="balance1" title={getTranslatedLabel(`${localizationKey}.period1`, "Period 1")} format="{0:n2}" />
-            <Column field="balance2" title={getTranslatedLabel(`${localizationKey}.period2`, "Period 2")} format="{0:n2}" />
+            <Column field="balance1" title={getTranslatedLabel(`${localizationKey}.period1`, "Period 1")} cells={{ data: Balance1Cell }} />
+            <Column field="balance2" title={getTranslatedLabel(`${localizationKey}.period2`, "Period 2")} cells={{ data: Balance2Cell }} />
           </KendoGrid>
         </Grid>
     );
@@ -145,6 +193,20 @@ const ComparativeIncomeStatement = () => {
           )}
         </Paper>
       </Grid>
+
+      {drill && periods && (
+        <ModalContainer show={true} onClose={() => setDrill(null)} width={1280}>
+          <IncomeStatementGlAccountTransactionsModal
+            onClose={() => setDrill(null)}
+            organizationPartyId={selectedAccountingCompanyId!}
+            fromDate={(drill.period === 1 ? periods.p1 : periods.p2).fromDate}
+            thruDate={(drill.period === 1 ? periods.p1 : periods.p2).thruDate}
+            selectedMonth={(drill.period === 1 ? periods.p1 : periods.p2).selectedMonth}
+            glFiscalTypeId={(drill.period === 1 ? periods.p1 : periods.p2).glFiscalTypeId}
+            glAccountId={drill.glAccountId}
+          />
+        </ModalContainer>
+      )}
     </>
   );
 };

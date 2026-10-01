@@ -357,6 +357,7 @@ namespace Application.Projects
         public decimal DiscountAmount { get; set; }
         public decimal DeductionsAmount { get; set; }
         public decimal InsuranceAmount { get; set; }
+        public decimal AdditionalInsuranceAmount { get; set; }
         public decimal TransportationExpensesAmount { get; set; }
         public decimal GratuitiesAmount { get; set; }
         public decimal NetCertifiedAmount { get; set; }

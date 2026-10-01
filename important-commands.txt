@@ -312,9 +312,7 @@ Summarize this entire conversation as a concise JSON or bullet-point outline, in
  a.agiba@usfaaf.com
  
  
- /////////Temporary data:
- 
- the following a put in my CV, give me some details so i can answer questions about it
+
  
  //////
  
@@ -374,9 +372,7 @@ soft delete
 ERP and HIS
 build test environment
 Telerik Reports vs
+Trial Balance report vs Project report issues
 
 
-
-active directory
-integration with smart care
-integration with Saudi services like Nafees
+Abdulrahman$7

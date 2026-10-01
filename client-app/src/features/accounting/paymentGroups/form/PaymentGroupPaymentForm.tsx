@@ -40,7 +40,7 @@ export default function PaymentGroupPaymentForm({
 }: Props) {
     const { getTranslatedLabel } = useTranslationHelper();
     const { selectedPaymentGroupMember, selectedPaymentGroup } = useAppSelector(state => state.accountingSharedUi)
-    const localizationKey = "accounting.pay-group.form";
+    const localizationKey = "accounting.pay-groups.form";
     const dispatch = useAppDispatch();
     const formRef = useRef<any>(null);
     const [updateGroupMember, { isLoading: isUpdating }] = useUpdatePaymentGroupMemberMutation()

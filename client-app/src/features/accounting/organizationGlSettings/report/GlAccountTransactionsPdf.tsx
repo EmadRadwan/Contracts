@@ -2,7 +2,6 @@
 import React, { useCallback, useState } from 'react';
 import { Button } from '@mui/material';
 import PdfPreviewDialog from '../../../../app/common/modals/PdfPreviewDialog';
-import { useLazyFetchGlAccountTransactionsPdfQuery } from '../../../../app/store/apis/accounting/accountingReportsApi';
 
 // PDF counterpart of GlAccountTransactionsExcel. Unlike the Excel button (built client-side with
 // ExcelJS), the PDF is rendered server-side with Telerik Reporting — kendo-drawing cannot shape or
@@ -11,29 +10,31 @@ import { useLazyFetchGlAccountTransactionsPdfQuery } from '../../../../app/store
 // toggle) rather than posting the grid rows back, so the file always reflects the backend's
 // running-balance calculation. Opens in the shared view / print / download dialog first.
 interface GlAccountTransactionsPdfProps {
-    organizationPartyId: string;
-    customTimePeriodId: string;
+    /** Runs the report's own PDF endpoint and resolves the rendered bytes. Each drill-down modal
+     *  supplies its own (trial balance by time period, balance sheet by thru date, income
+     *  statement by date range/month) — the button itself is report-agnostic. */
+    fetchPdf: () => Promise<ArrayBuffer>;
     glAccountId: string;
-    includePrePeriodTransactions: boolean;
     accountCode: string;
     accountName: string;
     getTranslatedLabel: (key: string, defaultValue: string) => string;
     isFetching?: boolean;
 }
 
+// The button's own four labels (Preview PDF / title / generating / failed) are generic and are
+// deliberately read from the trial balance subtree for every report, so the balance sheet and
+// income statement get the existing Arabic translations instead of falling back to English under
+// their own prefixes.
 const localizationKey = 'accounting.orgGL.reports.trial-balance.transactions';
 
 export const GlAccountTransactionsPdf: React.FC<GlAccountTransactionsPdfProps> = ({
-    organizationPartyId,
-    customTimePeriodId,
+    fetchPdf,
     glAccountId,
-    includePrePeriodTransactions,
     accountCode,
     accountName,
     getTranslatedLabel,
     isFetching = false,
 }) => {
-    const [triggerPdf] = useLazyFetchGlAccountTransactionsPdfQuery();
     const [loading, setLoading] = useState(false);
     const [showViewer, setShowViewer] = useState(false);
     const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
@@ -43,19 +44,14 @@ export const GlAccountTransactionsPdf: React.FC<GlAccountTransactionsPdfProps> =
         setPdfBlob(null);
         setShowViewer(true);
         try {
-            const buffer = await triggerPdf({
-                organizationPartyId,
-                customTimePeriodId,
-                glAccountId,
-                includePrePeriodTransactions,
-            }).unwrap();
+            const buffer = await fetchPdf();
             setPdfBlob(new Blob([buffer], { type: 'application/pdf' }));
         } catch (e) {
             console.error('GlAccountTransactionsPdf: render failed', e);
         } finally {
             setLoading(false);
         }
-    }, [triggerPdf, organizationPartyId, customTimePeriodId, glAccountId, includePrePeriodTransactions]);
+    }, [fetchPdf]);
 
     const handleClose = () => {
         setShowViewer(false);
