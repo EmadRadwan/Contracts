@@ -191,7 +191,7 @@ export default function InvoiceDisplayForm({invoiceId: propInvoiceId, mode}: Pro
                 refetchInvoiceEntries();
                 refetchPaymentAppEntries();
             } catch (e) {
-                toast.error(getTranslatedLabel(`${localizationKey}.error`, "Something went wrong"));
+                toast.error(apiErrorMessage(e, getTranslatedLabel(`${localizationKey}.error`, "Something went wrong")));
                 console.error(e);
             }
         },

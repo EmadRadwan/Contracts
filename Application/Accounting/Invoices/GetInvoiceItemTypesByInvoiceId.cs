@@ -74,8 +74,9 @@ namespace Application.Accounting.Invoices
                         "PITM_SALES_TAX",
                         "PITM_SHIP_CHARGES",
                         "PITM_DISCOUNT_ADJ",
-                        "PITM_FEE",
-                        "INV_LAND_ITEM"
+                        "PITM_FEE"
+                        // INV_LAND_ITEM removed 2026-10-05: it defaults to revenue 401010, so a purchase
+                        // posted with it would hit sales. Land purchases use PINV_LAND_ITEM (child of PINV_PROD_ITEM).
                     }
                 },
                 { 

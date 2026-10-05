@@ -60,8 +60,7 @@ DOCKER_BUILDKIT=0 sudo docker build -f Dockerfile.vm --cpuset-cpus 0 \
 sudo docker images eradwan/contractsapp
 docker compose -f docker-compose.vm.yml down
 docker compose -f docker-compose.vm.yml up -d
-docker compose -f docker-compose.vm.yml ps
-```
+you```
 
 tmux: detach with **Ctrl-b** then **d**, come back with `tmux attach -t build`.
 

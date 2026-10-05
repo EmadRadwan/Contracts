@@ -9,7 +9,7 @@ using Persistence;
 
 public class ChangeInvoiceStatus
 {
-    public class Query : IRequest<InvoiceStatusDto>
+    public class Query : IRequest<Result<InvoiceStatusDto>>
     {
         public string InvoiceId { get; set; }
         public string StatusId { get; set; }
@@ -18,19 +18,22 @@ public class ChangeInvoiceStatus
         public bool ActualCurrency { get; set; }
     }
 
-    public class Handler : IRequestHandler<Query, InvoiceStatusDto>
+    public class Handler : IRequestHandler<Query, Result<InvoiceStatusDto>>
     {
         private readonly IInvoiceUtilityService _invoiceUtilityService;
+        private readonly IGlAccountOrganizationGuard _glAccountGuard;
         private readonly DataContext _context;
 
 
-        public Handler(DataContext context, IInvoiceUtilityService invoiceUtilityService)
+        public Handler(DataContext context, IInvoiceUtilityService invoiceUtilityService,
+            IGlAccountOrganizationGuard glAccountGuard)
         {
             _invoiceUtilityService = invoiceUtilityService;
+            _glAccountGuard = glAccountGuard;
             _context = context;
         }
 
-        public async Task<InvoiceStatusDto> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<Result<InvoiceStatusDto>> Handle(Query request, CancellationToken cancellationToken)
         {
             var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
@@ -44,8 +47,10 @@ public class ChangeInvoiceStatus
                     request.PaidDate,
                     request.ActualCurrency
                 );
-                
-                
+
+                // Turns the ACCTTXENT_GLACOG FK violation into a message the user can act on.
+                await _glAccountGuard.EnsurePendingEntriesAssignedAsync(cancellationToken);
+
                 await _context.SaveChangesAsync(cancellationToken);
 
                 await transaction.CommitAsync(cancellationToken);
@@ -54,7 +59,12 @@ public class ChangeInvoiceStatus
                 var updatedStatus = await _invoiceUtilityService.GetInvoiceStatus(request.InvoiceId);
 
 
-                return updatedStatus; // Return the updated status
+                return Result<InvoiceStatusDto>.Success(updatedStatus);
+            }
+            catch (Exception ex) when (ex is GlAccountNotAssignedException or ClosedAccountingPeriodException)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return Result<InvoiceStatusDto>.Failure(ex.Message);
             }
             catch (Exception ex)
             {

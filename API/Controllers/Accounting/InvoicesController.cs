@@ -76,7 +76,7 @@ public class InvoicesController : BaseApiController
             StatusDate = request.StatusDate,
             StatusId = request.StatusId
         });
-        return Ok(result);
+        return HandleResult(result);
     }
 
     [HttpPost("CreateInvoiceItem")]

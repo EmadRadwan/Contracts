@@ -111,6 +111,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IAcctgTransService, AcctgTransService>();
         // Ledger-integrity primitives (auditor soft-delete requirement, Sep 2026)
         services.AddScoped<IAccountingPeriodGuard, AccountingPeriodGuard>();
+        services.AddScoped<IGlAccountOrganizationGuard, GlAccountOrganizationGuard>();
         services.AddScoped<IAcctgTransReversalService, AcctgTransReversalService>();
         services.AddScoped<ILedgerHistoryService, LedgerHistoryService>();
         services.AddScoped<IPaymentVoidService, PaymentVoidService>();
