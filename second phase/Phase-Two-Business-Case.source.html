@@ -115,6 +115,10 @@ body.ar .chip{letter-spacing:0}
 .chip.later{background:var(--neutral-soft);color:var(--ink-3)}
 .chip.built{background:var(--built-soft);color:var(--built)}
 .chip.partial{background:var(--partial-soft);color:var(--partial)}
+.chip.rev{background:transparent;color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--rule-strong)}
+.chip.chat{background:transparent;color:var(--ink-3);box-shadow:inset 0 0 0 1px var(--rule);border-radius:10px}
+.module-note{margin:10px 0 0;font-size:13.5px;color:var(--ink-3);font-style:italic}
+body.ar .module-note{font-style:normal}
 .effort{font-size:11.5px;color:var(--ink-3);display:flex;align-items:center;gap:6px}
 .effort b{font-family:var(--serif);font-weight:600;font-size:13px;color:var(--brass)}
 body.ar .effort b{font-family:var(--arabic)}
@@ -133,7 +137,34 @@ body.ar .close h2{font-family:var(--arabic)}
 .startlist li{font-size:14.5px;padding:7px 0;border-top:1px solid var(--rule);
   display:flex;gap:10px;align-items:baseline}
 .startlist .tag{font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums;
-  min-width:34px;letter-spacing:.04em}
+  min-width:44px;white-space:nowrap;letter-spacing:.04em}
+
+/* ---------- design section ---------- */
+.design{margin-top:60px}
+.design h2{font-family:var(--serif);font-size:23px;font-weight:600;margin:0;letter-spacing:-.01em}
+body.ar .design h2{font-family:var(--arabic);letter-spacing:0}
+.design .lede{color:var(--ink-2);font-size:15.5px;max-width:70ch;margin:10px 0 0}
+body.ar .design > .ar-only{display:block}
+.steps{list-style:none;padding:0;margin:26px 0 0;display:grid;grid-template-columns:repeat(2,1fr);gap:20px 34px;
+  counter-reset:step}
+.steps li{counter-increment:step;display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+.steps li::before{content:counter(step);width:28px;height:28px;border-radius:50%;background:var(--accent-soft);
+  color:var(--accent);display:grid;place-items:center;font-size:12.5px;font-weight:600}
+body.ar .steps li::before{content:counter(step,arabic-indic)}
+.steps h3{font-size:15px;margin:3px 0 0;font-weight:600}
+.steps p{font-size:14.5px;color:var(--ink-2);margin:5px 0 0;line-height:1.55}
+.steps .refs{font-size:12px;color:var(--ink-3);margin-top:5px}
+.example{margin-top:30px;padding:20px 22px;background:var(--surface);border:1px solid var(--rule)}
+.example h3{font-size:15.5px;margin:0 0 12px;font-weight:600}
+.tablewrap{overflow-x:auto}
+.example table{border-collapse:collapse;width:100%;max-width:620px;font-size:14px;font-variant-numeric:tabular-nums}
+.example th,.example td{padding:7px 12px;border-bottom:1px solid var(--rule);text-align:end;white-space:nowrap}
+.example th:first-child,.example td:first-child{text-align:start;white-space:normal;color:var(--ink-2)}
+.example thead th{font-size:12.5px;color:var(--ink-3);font-weight:600;border-bottom:1px solid var(--rule-strong)}
+.example tr.total td{font-weight:600;color:var(--ink);border-top:1px solid var(--rule-strong)}
+.example .note{font-size:13.5px;color:var(--ink-2);margin:12px 0 0;max-width:70ch}
+.design .aside{margin-top:22px;font-size:14px;color:var(--ink-2);max-width:72ch;
+  padding-inline-start:14px;border-inline-start:2px solid var(--rule-strong)}
 
 footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--rule);
   font-size:12.5px;color:var(--ink-3);max-width:74ch}
@@ -149,6 +180,7 @@ body.ar .theme .ar-only,body.ar .row .ar-only{display:block}
   .tallies{grid-template-columns:repeat(2,1fr)}
   .themes{grid-template-columns:1fr}
   .startlist{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr}
   .row{grid-template-columns:1fr;gap:10px;padding:22px 0}
   .val{padding-inline-start:0;border-inline-start:0;padding-top:2px}
   .meta{flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px}
@@ -173,6 +205,8 @@ body.ar .theme .ar-only,body.ar .row .ar-only{display:block}
   .module-head{break-after:avoid}
   .close{break-before:page}
   footer{break-inside:avoid}
+  .design{break-before:page}
+  .steps li,.example{break-inside:avoid}
   .row{grid-template-columns:46px minmax(0,1fr) minmax(0,1.2fr) 104px;gap:14px;padding:13px 0}
   .themes{grid-template-columns:repeat(2,1fr);gap:18px 26px}
   .startlist{grid-template-columns:repeat(2,1fr)}
@@ -199,18 +233,29 @@ body.ar .theme .ar-only,body.ar .row .ar-only{display:block}
     </h1>
 
     <p class="standfirst">
-      <span class="en-only">Forty-two requests came back from the people who use the system every day.
-      This document restates each one in the only terms that matter to the person funding it: what it
+      <span class="en-only">Eighty-three requests came back from the people who use the system every day &mdash; first as a
+      handwritten list in July, revised line by line by the client in October, and completed from a year of their messages. This document restates each one in the only terms that matter to the person funding it: what it
       costs the business today, and what changes the day it ships.</span>
-      <span class="ar-only">اثنان وأربعون طلبًا وردت ممن يستخدمون النظام يوميًا. تعيد هذه الوثيقة صياغة
+      <span class="ar-only">ثلاثة وثمانون طلبًا وردت ممن يستخدمون النظام يوميًا &mdash; أولًا كقائمة مكتوبة بخط اليد في يوليو، ثم راجعها العميل بندًا بندًا في أكتوبر، واستُكملت من رسائلهم على مدى عام. تعيد هذه الوثيقة صياغة
       كل طلب منها بالمعيار الوحيد الذي يهمّ من يموّله: ماذا يكلّف الشركة اليوم، وما الذي يتغيّر يوم تسليمه.</span>
     </p>
 
     <p class="provenance">
-      <span class="en-only">Compiled from the client's six-page handwritten list dated 29 July 2026.
-      Page references below point back to that original so any item can be checked against the handwriting.</span>
-      <span class="ar-only">مجمّعة من قائمة العميل المكتوبة بخط اليد في ست صفحات بتاريخ ٢٩ يوليو ٢٠٢٦.
-      وأرقام الصفحات أدناه تشير إلى الأصل ليتسنى مراجعة أي بند على النص المكتوب.</span>
+      <span class="en-only">Compiled from the client's six-page handwritten list dated 29 July 2026, as revised
+      by the client on 6 October 2026, with bank reconciliation added at the client's request on 7 October.
+      Items changed in that revision are marked. Page references point back to the original list. Two items
+      the revision removed are not lost: cancelling a payment while keeping it on record is being handled under
+      the auditor's no-deletion rule, and approving staff advances falls inside the wider approval queue. On 8 October a section was added on how
+      certificates and contracts will work, drawn from how Odoo and its community solve the same problem. Partner shares per project and a register of monthly obligations were added on 10 October, from the client’s partnership and obligations workbooks. The 36 items marked
+      as raised in the chats come from the users' messages between September 2025 and October 2026 and are on no list yet;
+      each awaits the client's decision to accept, defer or drop it.</span>
+      <span class="ar-only">مجمّعة من قائمة العميل المكتوبة بخط اليد في ست صفحات بتاريخ ٢٩ يوليو ٢٠٢٦، بعد
+      مراجعة العميل لها في ٦ أكتوبر ٢٠٢٦، مع إضافة التسوية البنكية بطلبه في ٧ أكتوبر. والبنود التي تغيّرت في
+      هذه المراجعة مُعلَّمة، وأرقام الصفحات تشير إلى القائمة الأصلية. وبندان حذفتهما المراجعة لم يضيعا: إلغاء
+      الدفعة مع بقائها في السجل يُعالَج ضمن قاعدة المراجع بعدم الحذف، واعتماد سلف الموظفين يدخل في قائمة
+      الاعتماد العامة. وفي ٨ أكتوبر أُضيف قسم يشرح كيف ستعمل المستخلصات والعقود، مستفادًا من طريقة Odoo
+      ومجتمعه في حل المشكلة نفسها. وفي ١٠ أكتوبر أُضيفت حصص الشركاء في كل مشروع وسجل الالتزامات الشهرية، من ملفي الشراكات والالتزامات اللذين أرسلهما العميل. أما البنود الستة والثلاثون المعلَّمة بأنها من المحادثات فمصدرها رسائل المستخدمين
+      بين سبتمبر ٢٠٢٥ وأكتوبر ٢٠٢٦، وليست على أي قائمة بعد، وينتظر كل منها قرار العميل بقبوله أو تأجيله أو استبعاده.</span>
     </p>
 
     <div class="tallies" id="tallies"></div>
@@ -218,8 +263,8 @@ body.ar .theme .ar-only,body.ar .row .ar-only{display:block}
 
   <section class="section-head">
     <h2>
-      <span class="en-only">These are not forty-two problems. They are four.</span>
-      <span class="ar-only">ليست اثنين وأربعين مشكلة. بل أربع.</span>
+      <span class="en-only">These are not eighty-three problems. They are four.</span>
+      <span class="ar-only">ليست ثلاثًا وثمانين مشكلة. بل أربع.</span>
     </h2>
     <p>
       <span class="en-only">Read as a list, phase two looks like a long bill of small features. Read by
@@ -249,12 +294,12 @@ body.ar .theme .ar-only,body.ar .row .ar-only{display:block}
         <div class="mark"><span class="en-only">2</span><span class="ar-only">٢</span></div>
         <div>
           <h3><span class="en-only">Money that moves unwatched</span><span class="ar-only">أموال تتحرك دون رقابة</span></h3>
-          <p><span class="en-only">There is no approval queue, no ceiling on what a contractor can be
-          certified for, and no budget-against-actual per project. Overpayment is discoverable only after
+          <p><span class="en-only">There is no approval queue, no reconciliation of the books against the bank,
+          no ceiling on what a party or contractor can draw, and no budget-against-actual per project. Overpayment is discoverable only after
           the project closes, which is after the money has left.</span>
-          <span class="ar-only">لا توجد قائمة اعتمادات، ولا سقف لما يمكن اعتماده لمقاول، ولا مقارنة بين
+          <span class="ar-only">لا توجد قائمة اعتمادات، ولا تسوية للدفاتر مع البنك، ولا سقف لما يمكن أن يسحبه طرف أو مقاول، ولا مقارنة بين
           الموازنة والفعلي لكل مشروع. ولا يُكتشف تجاوز الصرف إلا بعد إقفال المشروع، أي بعد خروج المال.</span></p>
-          <div class="refs"><span class="en-only">Vouchers 7, 8 &middot; Journal 2 &middot; Certificates 1, 3, 4</span><span class="ar-only">السندات ٧ و٨ &middot; القيود ٢ &middot; المستخلصات ١ و٣ و٤</span></div>
+          <div class="refs"><span class="en-only">Vouchers 7 &middot; Journal 2 &middot; System 11 &middot; Credit limits 1, 2 &middot; Certificates 1, 3, 4</span><span class="ar-only">السندات ٧ &middot; القيود ٢ &middot; النظام ١١ &middot; حدود الائتمان ١ و٢ &middot; المستخلصات ١ و٣ و٤</span></div>
         </div>
       </div>
 
@@ -269,7 +314,7 @@ body.ar .theme .ar-only,body.ar .row .ar-only{display:block}
           <span class="ar-only">تذكير الأقساط يدوي، والشيكات الآجلة خارج النظام، ورصيد العميل يظهر خاطئًا
           كلما حُصّلت مبالغ قبل التعاقد. وكل ذلك يؤخّر التحصيل ولا يُضيعه &mdash; وهذا بالضبط ما يجعل
           معالجته مجدية.</span></p>
-          <div class="refs"><span class="en-only">Sales 1, 7 &middot; System 5 &middot; Vouchers 3</span><span class="ar-only">المبيعات ١ و٧ &middot; النظام ٥ &middot; السندات ٣</span></div>
+          <div class="refs"><span class="en-only">Sales 1, 7, 8 &middot; System 5 &middot; Vouchers 2, 3</span><span class="ar-only">المبيعات ١ و٧ و٨ &middot; النظام ٥ &middot; السندات ٢ و٣</span></div>
         </div>
       </div>
 
@@ -297,37 +342,104 @@ body.ar .theme .ar-only,body.ar .row .ar-only{display:block}
       <span class="en-only">Later</span><span class="ar-only">لاحقًا</span></span>
     <span class="item"><span class="chip partial">&nbsp;</span>
       <span class="en-only">Foundations already in the system</span><span class="ar-only">أساسه قائم في النظام</span></span>
-    <span class="item"><span class="chip built">&nbsp;</span>
-      <span class="en-only">Delivered since the list was written</span><span class="ar-only">منجز بعد كتابة القائمة</span></span>
+    <span class="item"><span class="chip rev">&nbsp;</span>
+      <span class="en-only">Changed or added in the October revision</span><span class="ar-only">عُدّل أو أُضيف في مراجعة أكتوبر</span></span>
+    <span class="item"><span class="chip chat">&nbsp;</span>
+      <span class="en-only">Raised in the chats, not on the list</span><span class="ar-only">من المحادثات وخارج القائمة</span></span>
     <span class="item"><b style="font-family:var(--serif);color:var(--brass)">S / M / L</b>
       <span class="en-only">build size</span><span class="ar-only">حجم التنفيذ: صغير / متوسط / كبير</span></span>
   </div>
 
   <main id="register"></main>
 
+  <section class="design" id="certificates-design">
+    <div class="en-only">
+      <h2>How the certificates will work — and what we are borrowing</h2>
+      <p class="lede">Certificates come last in phase two, but their design decides how the contracts module, the
+      project credit limit and budget against actual are built, so it is settled now. Before writing it we looked at
+      how Odoo — the most widely used open ERP — and the people who build on it handle the same problem: Odoo’s own
+      “Property Developer” package, the purchase modules of the Odoo Community Association, and the specialised
+      certificate (IPC) modules sold on the Odoo Apps Store. They agree on one model, and it is the model below. We
+      borrow the behaviour, not their code.</p>
+      <ol class="steps">
+        <li><div><h3>The contract comes first</h3><p>Each contractor or supplier contract is entered once against its project and building: value, bill of quantities (item, unit, quantity, rate), retention %, advance and dates. Every certificate is raised against a contract, never on its own, so contracted, certified, paid and remaining are always on screen.</p><div class="refs">Certificates 1, 4</div></div></li>
+        <li><div><h3>Progress is cumulative; the certificate is the difference</h3><p>Each line keeps the quantity or percentage achieved to date. The engineer enters this period’s progress — as a percentage or a quantity — and the screen shows previous, this certificate and to date. A whole section can be advanced by one percentage.</p><div class="refs">Certificates 2</div></div></li>
+        <li><div><h3>No edits after approval</h3><p>The amount due is always “to date minus what was already certified”, so a mistake in one certificate corrects itself in the next, instead of someone editing an approved one.</p></div></li>
+        <li><div><h3>Over-certification stopped at entry</h3><p>Going above 100% of a line, or above the contract value, is blocked on a fixed-price contract unless an approved variation raises it; on a re-measured contract it warns.</p><div class="refs">Certificates 4</div></div></li>
+        <li><div><h3>Retention, advance and penalties belong to the contract</h3><p>Retention is held in its own account per contract and released by a release certificate at handover and after the defects period. An advance paid to a contractor is recovered automatically from each certificate. A delay penalty is worked out from the due date. Today retention is added as extra lines on each order.</p></div></li>
+        <li><div><h3>One approved certificate, one supplier invoice</h3><p>Approval creates the invoice for the net amount — today a new purchase order is created for every certificate. Payments link to it, so each certificate shows paid, remaining and status.</p><div class="refs">Vouchers 3</div></div></li>
+        <li><div><h3>A visible approval path</h3><p>Draft → submitted by the site engineer → verified by the quantity surveyor → approved by the project or finance manager → invoiced → paid. A rejection carries its reason; an approved certificate is locked and printed for signature. It joins the same approval queue as vouchers.</p><div class="refs">Vouchers 7</div></div></li>
+        <li><div><h3>Variations are documents, not edits</h3><p>Extra or changed work is a variation with its own approval. Contract value = original + approved variations, so the record of what was agreed survives.</p></div></li>
+        <li><div><h3>Committed money becomes visible</h3><p>Contract value not yet certified is committed; certified is actual. Contracted, certified, paid and remaining per project are available from the first contract, before any budget exists — and are what the project credit limit measures. With a budget: under 90% passes, 90–100% warns and needs the project or finance manager, over 100% is blocked until the budget is raised.</p><div class="refs">Certificates 3 · Credit limits 2</div></div></li>
+        <li><div><h3>Numbering per contract</h3><p>“Contract C-012, certificate 4” replaces the running number per contractor, which is how some certificate numbers were issued twice this year.</p></div></li>
+      </ol>
+      <div class="example">
+        <h3>The client’s own arithmetic, worked through: a 10,000 contract, 5% retention, and an advance recovered at 10% of each certificate</h3>
+        <div class="tablewrap"><table><thead><tr><th></th><th>Certificate 1</th><th>Certificate 2</th></tr></thead><tbody><tr><td>Progress this certificate</td><td>10%</td><td>20%</td></tr><tr><td>Progress to date</td><td>10%</td><td>30%</td></tr><tr><td>Gross to date</td><td>1,000</td><td>3,000</td></tr><tr><td>Retention to date (5%)</td><td>50</td><td>150</td></tr><tr><td>Advance recovered to date (10%)</td><td>100</td><td>300</td></tr><tr><td>Net to date</td><td>850</td><td>2,550</td></tr><tr><td>Already certified</td><td>0</td><td>850</td></tr><tr class="total"><td>Due on this certificate</td><td>850</td><td>1,700</td></tr></tbody></table></div>
+        <p class="note">Certificate 2 is worth 20% of the contract (2,000), less 5% retention and 10% advance recovery:
+        1,700. The figure comes out of the cumulative columns — nobody types it.</p>
+      </div>
+      <p class="aside"><b>On the sales side</b> (proposed, not on the client’s list): an instalment can fall due when a
+      construction milestone is reached — the roof completed, say — not only on a date; each unit shows its status
+      (available, reserved, sold) with one click to its sales request, payments and commissions; and a list of site
+      remarks per unit supports handover to buyers.</p>
+    </div>
+    <div class="ar-only">
+      <h2>كيف ستعمل المستخلصات — وما الذي نستفيده من غيرنا</h2>
+      <p class="lede">المستخلصات في آخر المرحلة الثانية، لكن تصميمها يحدد كيف يُبنى موديول العقود وحد ائتمان المشروع
+      والموازنة مقابل الفعلي، لذلك حُسم الآن. وقبل كتابته راجعنا كيف يعالج Odoo — أوسع أنظمة ERP المفتوحة
+      انتشارًا — ومن يطوّرون عليه المشكلة نفسها: حزمة «المطوّر العقاري» الرسمية من Odoo، وموديولات المشتريات لدى
+      جمعية مجتمع Odoo (OCA)، وموديولات المستخلصات المتخصصة (IPC) المعروضة في متجر تطبيقات Odoo. وكلها تتفق على
+      نموذج واحد، هو النموذج التالي. نأخذ منها طريقة العمل، لا الكود.</p>
+      <ol class="steps">
+        <li><div><h3>العقد أولًا</h3><p>يُسجَّل عقد كل مقاول أو مورد مرة واحدة على مشروعه ومبناه: القيمة، وجدول الكميات (البند والوحدة والكمية والسعر)، ونسبة التأمين، والدفعة المقدمة، والتواريخ. وكل مستخلص يُحرَّر على عقد لا منفردًا، فيظهر دائمًا المتعاقد عليه والمستخلَص والمدفوع والمتبقي.</p><div class="refs">المستخلصات ١ و٤</div></div></li>
+        <li><div><h3>الإنجاز تراكمي، والمستخلص هو الفرق</h3><p>يحفظ كل بند الكمية أو النسبة المنجزة حتى تاريخه. ويُدخل المهندس إنجاز هذه الفترة — نسبةً أو كمية — فتعرض الشاشة السابق وهذا المستخلص والإجمالي حتى تاريخه. ويمكن تقديم قسم كامل من البنود بنسبة واحدة.</p><div class="refs">المستخلصات ٢</div></div></li>
+        <li><div><h3>لا تعديل بعد الاعتماد</h3><p>المستحق دائمًا هو «الإجمالي حتى تاريخه ناقص ما سبق استخلاصه»، فيُصحَّح أي خطأ في مستخلص تلقائيًا في المستخلص التالي، بدل تعديل مستخلص معتمد.</p></div></li>
+        <li><div><h3>منع تجاوز العقد لحظة الإدخال</h3><p>تجاوز ١٠٠٪ من البند أو قيمة العقد ممنوع في عقد السعر الثابت إلا بأمر تغيير معتمد يرفعه، ويظهر كتحذير في عقد إعادة القياس.</p><div class="refs">المستخلصات ٤</div></div></li>
+        <li><div><h3>التأمين والدفعة المقدمة والغرامات جزء من العقد</h3><p>يُحتجز التأمين في حساب خاص لكل عقد، ويُرد بمستخلص رد تأمين عند التسليم وبعد انتهاء فترة الضمان. وتُسترد الدفعة المقدمة للمقاول تلقائيًا من كل مستخلص. وتُحسب غرامة التأخير من تاريخ الاستحقاق. أما اليوم فيُضاف التأمين كسطور إضافية على كل أمر شراء.</p></div></li>
+        <li><div><h3>مستخلص معتمد = فاتورة مورد واحدة</h3><p>الاعتماد ينشئ فاتورة بصافي المستخلص — بينما يُنشأ اليوم أمر شراء جديد لكل مستخلص. وتُربط بها الدفعات، فيظهر على كل مستخلص المدفوع والمتبقي وحالته.</p><div class="refs">السندات ٣</div></div></li>
+        <li><div><h3>مسار اعتماد ظاهر</h3><p>مسودة ← مقدَّم من مهندس الموقع ← مراجَع من مهندس الكميات ← معتمد من مدير المشروع أو المدير المالي ← مُفوتر ← مدفوع. والرفض يُسجَّل بسببه، والمستخلص المعتمد يُقفل ويُطبع للتوقيع، ويدخل في قائمة الاعتماد نفسها مع السندات.</p><div class="refs">السندات ٧</div></div></li>
+        <li><div><h3>أوامر التغيير مستندات لا تعديلات</h3><p>الأعمال الإضافية أو المعدّلة أمر تغيير باعتماد مستقل، وقيمة العقد = الأصل + أوامر التغيير المعتمدة، فيبقى سجل ما اتُّفق عليه.</p></div></li>
+        <li><div><h3>ظهور المبالغ الملتزم بها</h3><p>قيمة العقد التي لم تُستخلص بعد التزامٌ قائم، والمستخلَص فعلي. فيتاح لكل مشروع المتعاقد عليه والمستخلَص والمدفوع والمتبقي من أول عقد، قبل وجود أي موازنة — وهو ما يقيسه حد ائتمان المشروع. ومع الموازنة: أقل من ٩٠٪ يمر، ومن ٩٠٪ إلى ١٠٠٪ تحذير مع اعتماد مدير المشروع أو المدير المالي، وأكثر من ١٠٠٪ يُمنع حتى تُرفع الموازنة.</p><div class="refs">المستخلصات ٣ · حدود الائتمان ٢</div></div></li>
+        <li><div><h3>ترقيم لكل عقد</h3><p>«العقد C-012، المستخلص ٤» بدل التسلسل لكل مقاول، وهو ما تسبّب هذا العام في صدور بعض أرقام المستخلصات مرتين.</p></div></li>
+      </ol>
+      <div class="example">
+        <h3>الحسبة التي كتبها العميل بخطه، بالتفصيل: عقد ١٠٬٠٠٠، وتأمين ٥٪، ودفعة مقدمة تُسترد بنسبة ١٠٪ من كل مستخلص</h3>
+        <div class="tablewrap"><table><thead><tr><th></th><th>المستخلص ١</th><th>المستخلص ٢</th></tr></thead><tbody><tr><td>نسبة هذا المستخلص</td><td>١٠٪</td><td>٢٠٪</td></tr><tr><td>النسبة التراكمية</td><td>١٠٪</td><td>٣٠٪</td></tr><tr><td>الإجمالي حتى تاريخه</td><td>١٬٠٠٠</td><td>٣٬٠٠٠</td></tr><tr><td>التأمين حتى تاريخه (٥٪)</td><td>٥٠</td><td>١٥٠</td></tr><tr><td>المسترد من الدفعة المقدمة (١٠٪)</td><td>١٠٠</td><td>٣٠٠</td></tr><tr><td>الصافي حتى تاريخه</td><td>٨٥٠</td><td>٢٬٥٥٠</td></tr><tr><td>ما سبق استخلاصه</td><td>٠</td><td>٨٥٠</td></tr><tr class="total"><td>المستحق في هذا المستخلص</td><td>٨٥٠</td><td>١٬٧٠٠</td></tr></tbody></table></div>
+        <p class="note">المستخلص الثاني يساوي ٢٠٪ من العقد (٢٬٠٠٠) ناقص ٥٪ تأمين و١٠٪ استرداد دفعة مقدمة: ١٬٧٠٠.
+        والرقم يخرج من الأعمدة التراكمية — ولا يكتبه أحد.</p>
+      </div>
+      <p class="aside"><b>وفي جانب المبيعات</b> (مقترح، وليس في قائمة العميل): قسط يستحق عند بلوغ مرحلة إنشائية —
+      كإتمام السقف — لا في تاريخ فقط؛ وحالة ظاهرة لكل وحدة (متاحة، محجوزة، مباعة) مع الوصول بضغطة إلى طلب المبيعات
+      والدفعات والعمولات؛ وقائمة ملاحظات موقع لكل وحدة تخدم التسليم للمشترين.</p>
+    </div>
+  </section>
+
   <section class="close">
     <h2><span class="en-only">Where I would start</span><span class="ar-only">من أين أبدأ</span></h2>
     <p>
-      <span class="en-only">These fourteen carry the weight of all four costs above, and none of them
+      <span class="en-only">These twelve carry the weight of all four costs above, and none of them
       depends on the rest of the list being funded. Taken together they stop the rework, put a visible
-      approval in front of money leaving the company, and make a project's profit readable while it can
-      still be changed.</span>
-      <span class="ar-only">هذه البنود الأربعة عشر تحمل ثقل التكاليف الأربع السابقة، ولا يتوقف أي منها على
-      تمويل بقية القائمة. وهي مجتمعة توقف إعادة العمل، وتضع اعتمادًا ظاهرًا أمام أي مال يخرج من الشركة،
-      وتجعل ربح المشروع مقروءًا وهو ما زال قابلًا للتعديل.</span>
+      approval and a bank reconciliation in front of the company's cash, and keep every customer's balance
+      true from the first payment. The contractor-certificate work &mdash; contracts, progress, budget against
+      actual &mdash; follows at the end of phase two, as the client asked.</span>
+      <span class="ar-only">هذه البنود الاثنا عشر تحمل ثقل التكاليف الأربع السابقة، ولا يتوقف أي منها على
+      تمويل بقية القائمة. وهي مجتمعة توقف إعادة العمل، وتضع اعتمادًا ظاهرًا وتسوية بنكية أمام نقدية الشركة،
+      وتُبقي رصيد كل عميل صحيحًا من أول دفعة. أما أعمال المستخلصات &mdash; العقود ونسب الإنجاز والموازنة
+      مقابل الفعلي &mdash; فتأتي في آخر المرحلة الثانية كما طلب العميل.</span>
     </p>
     <ul class="startlist" id="startlist"></ul>
   </section>
 
   <footer>
-    <p><span class="en-only"><b>On the source.</b> The original is handwritten and a few marginal notes are
-    genuinely ambiguous &mdash; the annotation beside post-dated cheques on page 1, the boundary between
-    the payroll and advances items on page 4, and the final line on page 6. Those three are transcribed as
-    read and should be confirmed with the user before any of them is priced.</span>
-    <span class="ar-only"><b>عن المصدر.</b> الأصل مكتوب بخط اليد، وبعض الملاحظات الهامشية غير قاطعة
-    &mdash; التعليق المجاور للشيكات الآجلة في الصفحة الأولى، والفاصل بين بنود الرواتب والسلف في الصفحة
-    الرابعة، والسطر الأخير في الصفحة السادسة. وقد نُقلت هذه الثلاثة كما قُرئت، ويُستحسن مراجعتها مع
-    المستخدم قبل تسعير أي منها.</span></p>
+    <p><span class="en-only"><b>On the source.</b> The original is handwritten, and three marginal notes were
+    ambiguous. The client's October revision settled two of them &mdash; the post-dated cheque annotation on
+    page 1, and the boundary on page 4, which turned out to be credit limits rather than advances. Only the
+    final line on page 6, on changing units of measure, still needs confirming before it is priced.</span>
+    <span class="ar-only"><b>عن المصدر.</b> الأصل مكتوب بخط اليد، وكانت ثلاث ملاحظات هامشية غير قاطعة. وقد
+    حسمت مراجعة العميل في أكتوبر اثنتين منها &mdash; التعليق المجاور للشيكات الآجلة في الصفحة الأولى، والفاصل
+    في الصفحة الرابعة الذي تبيّن أنه حدود ائتمان لا سلف. ويبقى السطر الأخير في الصفحة السادسة، عن تغيير وحدة
+    القياس، بحاجة إلى تأكيد قبل تسعيره.</span></p>
     <p><span class="en-only">Build sizes are relative effort, not price: S is days, M is a week or two,
     L is a month or more of development. Items marked as having foundations already in the system are
     cheaper than their size suggests.</span>
@@ -345,42 +457,50 @@ const MODULES = [
   {key:'vou',  en:'Payment vouchers — disbursement and receipt', ar:'سندات الصرف والقبض'},
   {key:'jrn',  en:'Journal entries', ar:'القيود اليومية'},
   {key:'pay',  en:'Payroll and staff advances', ar:'الرواتب والسلف'},
+  {key:'crd',  en:'Credit limits', ar:'حدود الائتمان'},
   {key:'sal',  en:'Sales', ar:'المبيعات'},
-  {key:'cer',  en:'Contractor certificates', ar:'المستخلصات'}
+  {key:'crm',  en:'CRM', ar:'إدارة العملاء المحتملين'},
+  {key:'prj',  en:'Projects, partners and obligations', ar:'المشاريع والشركاء والالتزامات',
+   note:{en:'Requirements still being settled with the client: pooled or in-kind per project, the share basis, how a share change treats earlier entries, management-fee exemptions, and how payments made for partners are booked.',
+         ar:'المتطلبات قيد الحسم مع العميل: توزيع مجمّع أم عيني لكل مشروع، وأساس الحصة، وأثر تغيير الحصة على القيود السابقة، والإعفاء من رسوم الإدارة، وطريقة تسجيل المدفوعات نيابةً عن الشركاء.'}},
+  {key:'cer',  en:'Contractor certificates', ar:'المستخلصات',
+   note:{en:'Sequenced last in phase two, at the client’s request (6 Oct). Built on a contracts module — see “How the certificates will work” below.',
+         ar:'تُنفَّذ في آخر المرحلة الثانية بطلب العميل (٦ أكتوبر). وتُبنى على موديول العقود — انظر «كيف ستعمل المستخلصات» أدناه.'}}
 ];
 
+// r: 'rev' = rewritten in the client's 6 Oct revision, 'add' = new in the 6–7 Oct revision, 'chat' = raised in the chats, on no list
 const ITEMS = [
   // ---------- system / reports ----------
-  {m:'sys',p:1,e:'L',b:'next',s:'partial',
-   en:{t:'A reporting engine of its own, plus detailed custom reports on request',
-       v:'Every new report today is a development request. An engine lets the finance team build their own and stops small reporting asks from consuming paid development time.'},
-   ar:{t:'محرك تقارير مستقل، مع تقارير تفصيلية مخصّصة عند الطلب',
-       v:'كل تقرير جديد يمرّ اليوم بالبرمجة. ووجود محرك تقارير يتيح للإدارة المالية بناء تقاريرها بنفسها، ويوقف استهلاك وقت التطوير المدفوع في طلبات صغيرة.'}},
-  {m:'sys',p:1,e:'M',b:'next',s:'new',
-   en:{t:'Grouping levels and subtotals in departmental reports',
-       v:'Lets the owner read a project or department total off the report itself, instead of exporting to Excel and summing it by hand.'},
-   ar:{t:'مستويات تجميع ومجاميع فرعية في تقارير الأقسام',
-       v:'تتيح للمالك قراءة إجمالي المشروع أو القسم من التقرير نفسه، بدل تصديره إلى إكسل وجمعه يدويًا.'}},
-  {m:'sys',p:1,e:'L',b:'next',s:'new',
-   en:{t:'More than one company on one system — Golden and Al-Ard Holding',
-       v:'Runs both entities on a single system rather than buying and staffing a second one, and makes consolidated group figures possible at all.'},
-   ar:{t:'أكثر من شركة على نظام واحد — جولدن والأرض القابضة',
-       v:'تشغيل الشركتين على نظام واحد بدل شراء نظام ثانٍ وتشغيله، ويجعل استخراج أرقام مجمّعة للمجموعة ممكنًا أصلًا.'}},
+  {m:'sys',p:1,e:'L',b:'next',s:'partial',r:'rev',
+   en:{t:'A reporting engine of its own — pick, order and subtotal the columns, export to Excel and PDF',
+       v:'Every new report today is a development request. An engine lets the finance team build their own, choosing which columns print and in what order, and stops small reporting asks from consuming paid development time. The client will send the list of reports it must cover separately.'},
+   ar:{t:'محرك تقارير مستقل — اختيار الأعمدة وترتيبها ومجاميعها الفرعية، مع التصدير إلى إكسل وPDF',
+       v:'كل تقرير جديد يمرّ اليوم بالبرمجة. ووجود محرك تقارير يتيح للإدارة المالية بناء تقاريرها بنفسها، واختيار الأعمدة المطبوعة وترتيبها، ويوقف استهلاك وقت التطوير المدفوع في طلبات صغيرة. وسيرسل العميل قائمة التقارير المطلوبة بشكل منفصل.'}},
+  {m:'sys',p:1,e:'L',b:'next',s:'new',r:'rev',
+   en:{t:'Financial statements and comparisons with grouping levels, subtotals, and a drill-down on every number',
+       v:'Lets the owner read a project or department total off the report itself, and click any figure to see what makes it up, instead of exporting to Excel and rebuilding it by hand.'},
+   ar:{t:'القوائم المالية والمقارنات بمستويات تجميع ومجاميع فرعية، مع رابط تفصيلي لكل رقم',
+       v:'تتيح للمالك قراءة إجمالي المشروع أو القسم من التقرير نفسه، والضغط على أي رقم لمعرفة تفاصيله، بدل تصديره إلى إكسل وإعادة بنائه يدويًا.'}},
+  {m:'sys',p:1,e:'L',b:'next',s:'new',r:'rev',
+   en:{t:'Four companies on one system — Golden, Ladris, Sawa and the Holding',
+       v:'Runs every entity on a single system rather than buying and staffing more, and makes consolidated group figures possible at all.'},
+   ar:{t:'أربع شركات على نظام واحد — جولدن ولادريس وسوا والقابضة',
+       v:'تشغيل كل الشركات على نظام واحد بدل شراء أنظمة أخرى وتشغيلها، ويجعل استخراج أرقام مجمّعة للمجموعة ممكنًا أصلًا.'}},
   {m:'sys',p:1,e:'M',b:'next',s:'partial',
    en:{t:'Scanned documents attached to every record, opened straight from the payment number',
        v:'Ends the search through paper files during an audit or a dispute: the supporting document sits one click from the transaction.'},
    ar:{t:'ربط المستندات الممسوحة بكل حركة، وفتحها مباشرة من رقم الدفعة',
        v:'ينهي البحث في الملفات الورقية عند المراجعة أو الخلاف: المستند المؤيّد على بُعد ضغطة واحدة من الحركة.'}},
-  {m:'sys',p:1,e:'L',b:'next',s:'new',
-   en:{t:'Post-dated cheque management — maturity, presentation, returns',
-       v:'Post-dated cheques are the company’s real cash calendar. Holding them in the system prevents a cheque being presented against an account nobody funded.'},
-   ar:{t:'إدارة الشيكات الآجلة — الاستحقاق والتقديم والمرتجع',
-       v:'الشيكات الآجلة هي تقويم السيولة الحقيقي للشركة. وحفظها داخل النظام يمنع تقديم شيك على حساب لم يُموَّل.'}},
-  {m:'sys',p:1,e:'M',b:'now',s:'partial',
+  {m:'sys',p:1,e:'L',b:'next',s:'new',r:'rev',
+   en:{t:'Post-dated cheque management — maturity, presentation, returns and replacements',
+       v:'Post-dated cheques are the company’s real cash calendar. Holding them in the system — including a cheque swapped for a new one without losing the original transaction — prevents a cheque being presented against an account nobody funded.'},
+   ar:{t:'إدارة الشيكات الآجلة — الاستحقاق والتقديم والمرتجع والمستبدل',
+       v:'الشيكات الآجلة هي تقويم السيولة الحقيقي للشركة. وحفظها داخل النظام — بما في ذلك الشيك المستبدل مع الاحتفاظ بالمعاملة الأصلية — يمنع تقديم شيك على حساب لم يُموَّل.'}},
+  {m:'sys',p:1,e:'M',b:'now',s:'partial',r:'rev',
    en:{t:'Printing that works first time — fixed layout, right page size, company template',
-       v:'Staff re-format a report or a receipt on every single print. It is the most repeated complaint in the list and the cheapest hour of the day to hand back.'},
+       v:'Staff re-format a report or a receipt on every single print. It is the most repeated complaint in the list and the cheapest hour of the day to hand back. The client has since sent a sample of the receipt standard it expects.'},
    ar:{t:'طباعة سليمة من أول مرة — تنسيق ثابت ومقاس صفحة صحيح ونموذج الشركة',
-       v:'يعيد الموظفون ضبط التنسيق مع كل طباعة. وهي الشكوى الأكثر تكرارًا في القائمة، وأرخص ساعة عمل يمكن استردادها يوميًا.'}},
+       v:'يعيد الموظفون ضبط التنسيق مع كل طباعة. وهي الشكوى الأكثر تكرارًا في القائمة، وأرخص ساعة عمل يمكن استردادها يوميًا. وقد أرسل العميل نموذجًا للمستوى المطلوب في الإيصالات.'}},
   {m:'sys',p:1,e:'M',b:'next',s:'new',
    en:{t:'A screen for transfers between banks and treasury — CIB to ADIB, treasury to bank',
        v:'Internal transfers are entered today as two unrelated payments, which is the standard way a bank balance drifts away from the ledger.'},
@@ -391,63 +511,69 @@ const ITEMS = [
        v:'The current list no longer matches how the company actually pays and collects, which quietly distorts every report grouped by payment type.'},
    ar:{t:'إعادة تعريف أنواع الدفعات',
        v:'القائمة الحالية لم تعد تطابق واقع الصرف والتحصيل، فتشوّه في صمت كل تقرير مبني على نوع الدفعة.'}},
-  {m:'sys',p:1,e:'S',b:'now',s:'new',
-   en:{t:'Show the debit and credit entry on screen before the voucher is posted',
-       v:'Catches a wrong account at the moment of entry rather than at the monthly close, when correcting it costs an accountant the better part of a day.'},
-   ar:{t:'عرض القيد مدينًا ودائنًا على الشاشة قبل اعتماد السند',
-       v:'يكشف الحساب الخطأ لحظة الإدخال بدل الإقفال الشهري، حين يكلّف تصحيحه معظم يوم عمل محاسب.'}},
+  {m:'sys',p:1,e:'M',b:'now',s:'new',r:'rev',
+   en:{t:'Show the debit and credit entry before the voucher is posted, and allow a ledger account — custody or a partner’s current account — as the payment method',
+       v:'Catches a wrong account at the moment of entry rather than at the monthly close, when correcting it costs an accountant the better part of a day. Printing the ledger account on the voucher, and paying straight from custody or a partner account, removes the manual journal that follows today.'},
+   ar:{t:'عرض القيد مدينًا ودائنًا قبل اعتماد السند، وإتاحة حساب مالي — كالعهدة أو جاري الشريك — كطريقة دفع',
+       v:'يكشف الحساب الخطأ لحظة الإدخال بدل الإقفال الشهري، حين يكلّف تصحيحه معظم يوم عمل محاسب. وطباعة حساب الأستاذ على السند، والصرف مباشرة من العهدة أو جاري الشريك، يُلغيان القيد اليدوي الذي يتبع ذلك اليوم.'}},
   {m:'sys',p:2,e:'M',b:'next',s:'new',
    en:{t:'Reports generated and delivered on a schedule — daily, weekly, monthly, quarterly',
        v:'The owner gets the numbers without asking anyone for them, and nobody spends the first hour of the day assembling a report by hand.'},
    ar:{t:'تقارير تُنشأ وتُرسل بمواعيد محددة — يومي وأسبوعي وشهري وربع سنوي',
        v:'تصل الأرقام إلى المالك دون أن يطلبها من أحد، ولا يُستهلك أول ساعة من اليوم في تجميع تقرير يدويًا.'}},
+  {m:'sys',p:null,e:'M',b:'now',s:'partial',r:'add',
+   src:{en:'7 Oct',ar:'٧ أكتوبر'},
+   en:{t:'Bank reconciliation — book balance against the bank statement, account by account',
+       v:'Confirming one CIB balance this summer took days of manual tracing. A reconciliation screen shows the difference, and the items that explain it, in minutes — and it is the first thing any external auditor asks for. It starts as a manual matching screen; statement upload and automatic matching follow.'},
+   ar:{t:'التسوية البنكية — رصيد الدفاتر مقابل كشف البنك، حسابًا بحساب',
+       v:'استغرق التأكد من رصيد البنك التجاري الدولي وحده أيامًا من التتبع اليدوي هذا الصيف. وشاشة التسوية تُظهر الفرق والبنود التي تفسّره في دقائق، وهي أول ما يطلبه أي مراجع خارجي. تبدأ بشاشة مطابقة يدوية، ثم رفع الكشف والمطابقة التلقائية.'}},
 
   // ---------- vouchers ----------
-  {m:'vou',p:3,e:'S',b:'next',s:'partial',
-   en:{t:'Party and payment type editable when a payment is duplicated',
-       v:'Recurring payments are entered by duplication; locking the party forces the clerk back to a blank form every time.'},
-   ar:{t:'إتاحة تعديل الطرف ونوع الدفعة عند تكرار الدفعة',
-       v:'الدفعات المتكررة تُدخل بالنسخ، وتثبيت الطرف يعيد الموظف إلى نموذج فارغ في كل مرة.'}},
-  {m:'vou',p:3,e:'S',b:'now',s:'partial',
-   en:{t:'Cancel a payment from the actions menu, and keep it on screen in red',
-       v:'Cancelled payments vanish today, so nobody can explain what became of a voucher. Keeping the record visible preserves the audit trail without touching balances.'},
-   ar:{t:'إلغاء الدفعة من قائمة الإجراءات مع بقائها ظاهرة باللون الأحمر',
-       v:'الدفعات الملغاة تختفي اليوم فلا يستطيع أحد تفسير مصير السند. وبقاؤها ظاهرة يحفظ أثر المراجعة دون المساس بالأرصدة.'}},
+  {m:'vou',p:3,e:'S',b:'next',s:'partial',r:'rev',
+   en:{t:'Party and payment type editable when a payment is duplicated, and new payment types wired to the right entries',
+       v:'Recurring payments are entered by duplication; locking the party forces the clerk back to a blank form every time. New payment types must post to the correct accounts from the first day they are used.'},
+   ar:{t:'إتاحة تعديل الطرف ونوع الدفعة عند تكرار الدفعة، مع أنواع دفعات جديدة مربوطة بقيودها الصحيحة',
+       v:'الدفعات المتكررة تُدخل بالنسخ، وتثبيت الطرف يعيد الموظف إلى نموذج فارغ في كل مرة. وأنواع الدفعات الجديدة يجب أن تُرحَّل إلى حساباتها الصحيحة من أول يوم استخدام.'}},
+  {m:'vou',p:3,e:'M',b:'now',s:'new',r:'rev',
+   en:{t:'Sales receipts showing instalment, amount paid and remainder — an overpayment rolls into the next instalment',
+       v:'Customers rarely pay the exact instalment. Today an over- or under-payment leaves the schedule out of step with the cash, and someone reconciles it by hand. Carrying the difference forward keeps every customer balance true.'},
+   ar:{t:'سندات قبض دفعات المبيعات بمبلغ القسط والمدفوع والمتبقي — والزيادة تُخصم من القسط التالي',
+       v:'نادرًا ما يدفع العميل مبلغ القسط بالضبط. واليوم تترك الزيادة أو النقص الجدول غير مطابق للنقدية، فيُسوّى يدويًا. وترحيل الفرق إلى القسط التالي يُبقي رصيد كل عميل صحيحًا.'}},
   {m:'vou',p:3,e:'M',b:'now',s:'partial',
    en:{t:'Partial payment showing amount due, amount actually paid, and the remainder',
        v:'Suppliers and contractors are paid in stages. With no remaining balance on screen, the company pays twice or pays short.'},
    ar:{t:'الدفع الجزئي مع إظهار المستحق والمصروف فعليًا والمتبقي',
        v:'الموردون والمقاولون يُدفع لهم على مراحل. وبغياب المتبقي على الشاشة تتكرر الدفعة أو تنقص.'}},
-  {m:'vou',p:3,e:'S',b:'next',s:'partial',
-   en:{t:'A screen to edit or delete a cost centre',
-       v:'Cost centres can be created but never corrected, so one typo follows every report ever built on it.'},
-   ar:{t:'شاشة لتعديل مركز التكلفة أو حذفه',
-       v:'يمكن إنشاء مركز التكلفة ولا يمكن تصحيحه، فيلاحق الخطأ الواحد كل تقرير يُبنى عليه.'}},
+  {m:'vou',p:3,e:'M',b:'next',s:'partial',r:'rev',
+   en:{t:'Edit or delete a cost centre, and arrange cost centres in a tree with levels',
+       v:'Cost centres can be created but never corrected, so one typo follows every report ever built on it. A tree lets costs roll up from a building to its project.'},
+   ar:{t:'تعديل مركز التكلفة أو حذفه، وترتيب مراكز التكلفة في شجرة بمستويات',
+       v:'يمكن إنشاء مركز التكلفة ولا يمكن تصحيحه، فيلاحق الخطأ الواحد كل تقرير يُبنى عليه. والشجرة تتيح تجميع التكاليف من المبنى إلى مشروعه.'}},
   {m:'vou',p:3,e:'M',b:'next',s:'new',
    en:{t:'Voucher lists restructured so every column fits without scrolling sideways',
        v:'Clerks scroll left and right to read a single line. Fitting the columns is a small change felt on every screen, every day.'},
    ar:{t:'إعادة هيكلة شاشات السندات لتظهر كل الأعمدة دون تنقّل يمينًا ويسارًا',
        v:'يتنقّل الموظف يمينًا ويسارًا لقراءة سطر واحد. وضبط الأعمدة تعديل صغير يُلمس أثره في كل شاشة وكل يوم.'}},
-  {m:'vou',p:3,e:'M',b:'next',s:'partial',
-   en:{t:'Receipts printed on the company’s own approved template',
-       v:'The receipt is the one thing the customer or contractor keeps. A printout that looks improvised weakens the company in front of the people paying it.'},
-   ar:{t:'طباعة الإيصالات على نموذج الشركة المعتمد',
-       v:'الإيصال هو ما يحتفظ به العميل أو المقاول. وشكل غير منضبط يضعف صورة الشركة أمام من يدفع لها.'}},
-  {m:'vou',p:3,e:'M',b:'now',s:'partial',
-   en:{t:'Daily treasury movement, and a daily activity report per employee',
-       v:'Opening balance, movement, closing balance — plus entry date against approval date, which is what exposes where a payment sat waiting.'},
-   ar:{t:'تقرير الحركة اليومية للخزينة، وتقرير نشاط يومي لكل موظف',
-       v:'رصيد أول اليوم والحركة ورصيد آخره، مع تاريخ الإنشاء مقابل تاريخ الاعتماد، وهو ما يكشف أين توقّفت الدفعة منتظرة.'}},
-  {m:'vou',p:3,e:'M',b:'now',s:'new',
-   en:{t:'An approval queue for transactions awaiting sign-off',
-       v:'Approvals are chased by phone today. A queue makes the delay visible and stops a payment sitting unapproved for days.'},
-   ar:{t:'شاشة للمعاملات التي تنتظر الاعتماد',
-       v:'الاعتمادات تُتابَع اليوم بالهاتف. والقائمة تُظهر التأخير وتمنع بقاء دفعة بلا اعتماد لأيام.'}},
-  {m:'vou',p:3,e:'S',b:'next',s:'partial',
-   en:{t:'Real filters — date range, several filters at once, sorting by due status',
-       v:'Finding last quarter’s payments to one contractor is a manual scan today; proper filters turn it into a few seconds.'},
-   ar:{t:'فلاتر حقيقية — نطاق تاريخي، وأكثر من فلتر معًا، وترتيب حسب حالة الاستحقاق',
-       v:'البحث عن دفعات مقاول خلال ربع سنة يتم اليوم بالمسح اليدوي، والفلاتر السليمة تختصره إلى ثوانٍ.'}},
+  {m:'vou',p:3,e:'M',b:'next',s:'partial',r:'rev',
+   en:{t:'Receipts printed on the company’s own approved template, with their own serial',
+       v:'The receipt is the one thing the customer or contractor keeps. A printout that looks improvised weakens the company in front of the people paying it. Sales receipts also need a serial that stays in step with the system’s automatic numbering.'},
+   ar:{t:'طباعة الإيصالات على نموذج الشركة المعتمد، بتسلسل خاص بها',
+       v:'الإيصال هو ما يحتفظ به العميل أو المقاول. وشكل غير منضبط يضعف صورة الشركة أمام من يدفع لها. كما تحتاج سندات قبض المبيعات إلى تسلسل متوافق مع الترقيم التلقائي للنظام.'}},
+  {m:'vou',p:3,e:'L',b:'now',s:'partial',r:'rev',
+   en:{t:'Daily treasury movement, an account statement for any account, a daily activity report per employee — and an approval queue for vouchers and journal entries',
+       v:'Opening balance, movement, closing balance — plus entry date against approval date, which exposes where a payment sat waiting. Approvals are chased by phone today; one queue for receipts, payments and journal entries makes the delay visible and stops anything sitting unapproved for days.'},
+   ar:{t:'الحركة اليومية للخزينة، وكشف حساب لأي حساب، وتقرير نشاط يومي لكل موظف — مع قائمة اعتماد للسندات والقيود',
+       v:'رصيد أول اليوم والحركة ورصيد آخره، مع تاريخ الإنشاء مقابل تاريخ الاعتماد، وهو ما يكشف أين توقّفت الدفعة منتظرة. والاعتمادات تُتابَع اليوم بالهاتف؛ وقائمة واحدة لاعتماد سندات القبض والصرف والقيود تُظهر التأخير وتمنع بقاء أي معاملة بلا اعتماد لأيام.'}},
+  {m:'vou',p:3,e:'L',b:'next',s:'new',r:'add',
+   en:{t:'A rentals screen — rent due, due dates and parties, with the accrual posted automatically',
+       v:'Rent obligations are tracked outside the system today, so they reach the books only when paid. Accruing them on their due date, against each party’s account, shows what the company owes before the payment falls due.'},
+   ar:{t:'شاشة للإيجارات — مبلغ الإيجار المستحق وتاريخ استحقاقه والأطراف، مع إثبات الاستحقاق تلقائيًا',
+       v:'التزامات الإيجار تُتابَع اليوم خارج النظام، فلا تصل إلى الدفاتر إلا عند السداد. وإثباتها في تاريخ استحقاقها على حساب كل طرف يُظهر ما على الشركة قبل حلول موعد الدفع.'}},
+  {m:'vou',p:3,e:'S',b:'next',s:'partial',r:'rev',
+   en:{t:'Real filters — date range, several filters at once, sorting by due status, subtotals that follow the filter',
+       v:'Finding last quarter’s payments to one contractor is a manual scan today; proper filters turn it into a few seconds, and a subtotal answers “how much” without an export.'},
+   ar:{t:'فلاتر حقيقية — نطاق تاريخي، وأكثر من فلتر معًا، وترتيب حسب حالة الاستحقاق، ومجاميع فرعية حسب الفلتر',
+       v:'البحث عن دفعات مقاول خلال ربع سنة يتم اليوم بالمسح اليدوي، والفلاتر السليمة تختصره إلى ثوانٍ، والمجموع الفرعي يجيب عن «كم» دون تصدير.'}},
 
   // ---------- journal ----------
   {m:'jrn',p:4,e:'S',b:'next',s:'partial',
@@ -477,86 +603,98 @@ const ITEMS = [
        v:'A single late change forces deleting and re-entering every employee — hours of work and a fresh chance of error, every month.'},
    ar:{t:'تعديل فاتورة موظف واحد دون حذف المسيّر كله',
        v:'تغيير واحد متأخر يفرض حذف كل الموظفين وإعادة إدخالهم — ساعات عمل وفرصة جديدة للخطأ، كل شهر.'}},
-  {m:'pay',p:4,e:'M',b:'next',s:'new',
-   en:{t:'Advance balance shown alongside leave balance and accrued entitlement',
+  {m:'pay',p:4,e:'M',b:'next',s:'new',r:'rev',
+   en:{t:'Leave used shown alongside leave balance and accrued entitlement',
        v:'Answers the question every employee brings to HR, without an accountant opening three screens to work it out.'},
-   ar:{t:'عرض رصيد السلفة مع رصيد الإجازات والمستحقات',
+   ar:{t:'عرض الرصيد المستخدم مع رصيد الإجازات والمستحقات',
        v:'يجيب عن السؤال الذي يحمله كل موظف إلى شؤون العاملين، دون أن يفتح المحاسب ثلاث شاشات لحسابه.'}},
-  {m:'pay',p:4,e:'M',b:'next',s:'new',
-   en:{t:'Change the monthly deduction on an advance after a new agreement',
-       v:'Repayment terms get renegotiated. The system should record the new instalment instead of forcing the advance to be cancelled and rebuilt.'},
-   ar:{t:'تعديل الاستقطاع الشهري للسلفة بعد اتفاق جديد',
-       v:'شروط السداد يُعاد الاتفاق عليها، والمفروض أن يسجّل النظام القسط الجديد بدل إلغاء السلفة وإعادة إنشائها.'}},
+  {m:'pay',p:4,e:'M',b:'next',s:'new',r:'rev',
+   en:{t:'Change the monthly deduction on an advance, or let the employee pay an instalment in cash',
+       v:'Repayment terms get renegotiated. The system should record the new instalment instead of forcing the advance to be cancelled and rebuilt — and a cash option stops a missed deduction becoming a debt nobody tracks.'},
+   ar:{t:'تعديل الاستقطاع الشهري للسلفة، أو سداد القسط نقدًا بدل الخصم من الراتب',
+       v:'شروط السداد يُعاد الاتفاق عليها، والمفروض أن يسجّل النظام القسط الجديد بدل إلغاء السلفة وإعادة إنشائها — وخيار السداد النقدي يمنع تحوّل الخصم الفائت إلى دين لا يتابعه أحد.'}},
   {m:'pay',p:4,e:'S',b:'later',s:'new',
    en:{t:'Reassign or increase an existing advance',
        v:'Handles the ordinary case of a second advance on top of the first, without leaving a duplicate record to reconcile later.'},
    ar:{t:'إعادة تعيين السلفة القائمة أو زيادتها',
        v:'يعالج الحالة المعتادة لسلفة ثانية فوق الأولى، دون ترك سجل مكرر يحتاج تسوية لاحقًا.'}},
-  {m:'pay',p:4,e:'S',b:'later',s:'new',
-   en:{t:'Click an advance amount to see and print its full statement',
-       v:'Settles an argument about what an employee has repaid with a printed statement instead of a conversation.'},
-   ar:{t:'الضغط على مبلغ السلفة لعرض كشف حركتها وطباعته',
-       v:'يحسم الخلاف حول ما سدّده الموظف بكشف مطبوع بدل نقاش شفهي.'}},
-  {m:'pay',p:4,e:'S',b:'next',s:'new',
-   en:{t:'Advance requests listed with their voucher numbers and amounts, behind an approval queue',
-       v:'An advance is cash leaving the company; it should pass the same visible approval as any other payment.'},
-   ar:{t:'عرض طلبات السلف بأرقام سنداتها ومبالغها، مع قائمة اعتماد',
-       v:'السلفة نقد يخرج من الشركة، ومن حقّها أن تمرّ باعتماد ظاهر كأي دفعة أخرى.'}},
+  {m:'pay',p:4,e:'M',b:'later',s:'new',r:'rev',
+   en:{t:'An advance statement — the payment that funded it, every deduction since, and what remains',
+       v:'Settles an argument about what an employee has repaid with a printed statement instead of a conversation. Showing advance, paid and remaining on the main screen answers it before anyone asks.'},
+   ar:{t:'كشف حساب السلفة — الدفعة التي صُرفت بها، وكل خصم بعدها، والمتبقي',
+       v:'يحسم الخلاف حول ما سدّده الموظف بكشف مطبوع بدل نقاش شفهي. وعرض السلفة والمدفوع والمتبقي في الشاشة الرئيسية يجيب عن السؤال قبل أن يُطرح.'}},
+
+  // ---------- credit limits ----------
+  {m:'crd',p:5,e:'M',b:'next',s:'partial',r:'add',
+   en:{t:'Credit limit per party — raise it in the system, and see each payment drawn against it with the running balance',
+       v:'Limits are raised today by asking the developer, and nobody can see how much of a limit is left. Limit, used and remaining on the main screen turn a phone call into a glance.'},
+   ar:{t:'حد الائتمان للطرف — زيادته من داخل النظام، مع كشف بكل دفعة استُخدمت منه والرصيد بعدها',
+       v:'تُرفع الحدود اليوم بطلب من المبرمج، ولا يعرف أحد كم تبقّى من الحد. وعرض الحد والمستخدم والمتبقي في الشاشة الرئيسية يحوّل المكالمة إلى نظرة.'}},
+  {m:'crd',p:5,e:'L',b:'later',s:'new',r:'add',
+   en:{t:'Credit limit per project — usage across every certificate and contractor, and what remains',
+       v:'Puts a ceiling on what a project can commit across all its contractors and suppliers, so the total is watched, not just each contract. It depends on the certificates work and is sequenced with it.'},
+   ar:{t:'حد الائتمان للمشروع — المستخدم عبر كل المستخلصات والمقاولين، والمتبقي',
+       v:'يضع سقفًا لما يمكن أن يلتزم به المشروع عبر كل مقاوليه ومورديه، فيُراقَب الإجمالي لا كل عقد على حدة. ويعتمد على أعمال المستخلصات ويُنفَّذ معها.'}},
 
   // ---------- sales ----------
-  {m:'sal',p:5,e:'M',b:'now',s:'new',
+  {m:'sal',p:5,e:'M',b:'now',s:'new',r:'rev',
    en:{t:'WhatsApp messaging to customers — reminders before a due date, overdue notices, cheque instructions',
-       v:'Collection improves most from a reminder sent before the money is late. This is the clearest direct return on cash flow anywhere in the list.'},
+       v:'Collection improves most from a reminder sent before the money is late. This is the clearest direct return on cash flow anywhere in the list. The same alerts reach the treasury clerk and their manager the day before a cheque is due, so it gets to the bank on time.'},
    ar:{t:'مراسلة العملاء عبر واتساب — تذكير قبل الاستحقاق، وإشعارات التأخير، وتعليمات الشيكات',
-       v:'التحصيل يتحسّن أكثر ما يتحسّن بتذكير يُرسل قبل أن يتأخر المال. وهذا أوضح عائد مباشر على السيولة في القائمة كلها.'}},
-  {m:'sal',p:5,e:'M',b:'now',s:'new',
-   en:{t:'Edit a sales request without deleting every instalment behind it',
+       v:'التحصيل يتحسّن أكثر ما يتحسّن بتذكير يُرسل قبل أن يتأخر المال. وهذا أوضح عائد مباشر على السيولة في القائمة كلها. وتصل التنبيهات نفسها إلى موظف الخزينة ومديره قبل استحقاق الشيك بيوم، ليصل إلى البنك في موعده.'}},
+  {m:'sal',p:5,e:'M',b:'now',s:'new',r:'rev',
+   en:{t:'Edit the non-financial details of a sales request — a date, the salesperson — without deleting every instalment behind it',
        v:'Changing one date destroys the payment schedule and its history. Rebuilding it by hand is exactly where collection records get lost.'},
-   ar:{t:'تعديل طلب المبيعات دون حذف كل الدفعات المرتبطة به',
+   ar:{t:'تعديل البيانات غير المالية في طلب المبيعات — كالتاريخ واسم الموظف — دون حذف كل الدفعات المرتبطة به',
        v:'تغيير تاريخ واحد يهدم جدول الدفعات وتاريخه، وإعادة بنائه يدويًا هي بالضبط حيث تضيع سجلات التحصيل.'}},
   {m:'sal',p:5,e:'L',b:'next',s:'new',
    en:{t:'Keep the sales request through a resale, a change of customer, or an increase in area and price',
        v:'A unit resold, or a roof added once a permit comes through, is ordinary business here. The contract history should survive it rather than be re-created.'},
    ar:{t:'الاحتفاظ بطلب المبيعات عند إعادة البيع أو تغيير العميل أو زيادة المساحة والسعر',
        v:'إعادة بيع وحدة، أو إضافة الروف بعد صدور الترخيص، أمر معتاد في هذا النشاط. ويجب أن يبقى تاريخ التعاقد قائمًا بدل إعادة إنشائه.'}},
-  {m:'sal',p:5,e:'L',b:'now',s:'new',
-   en:{t:'Restructure instalments freely, mixing monthly, quarterly and annual in one plan',
-       v:'The payment plan is what closes the sale. A system that offers only one rhythm limits what the sales team is able to agree to.'},
-   ar:{t:'إعادة هيكلة الدفعات بمرونة، بالجمع بين الشهري والربع سنوي والسنوي في خطة واحدة',
-       v:'خطة السداد هي ما يُغلق البيعة، ونظام لا يتيح إلا إيقاعًا واحدًا يحدّ مما تستطيع إدارة المبيعات الاتفاق عليه.'}},
-  {m:'sal',p:5,e:'M',b:'later',s:'built',
-   en:{t:'Commission calculated on what is actually collected, keyed to the unit, payable to more than one party',
-       v:'Delivered since this list was written. Commission now follows collection instead of contract value, which stops a broker being paid for money the company has not received.'},
-   ar:{t:'احتساب العمولة على المحصّل فعليًا، مرتبطة برقم الوحدة، وقابلة للصرف لأكثر من طرف',
-       v:'مُنجز بعد كتابة هذه القائمة. صارت العمولة تتبع التحصيل لا قيمة العقد، ما يمنع صرف عمولة عن مال لم تستلمه الشركة.'}},
-  {m:'sal',p:5,e:'L',b:'next',s:'partial',
-   en:{t:'One comprehensive sales report — requests, revenue, and tax payable, linked to e-invoicing',
-       v:'Brings the amount owed to the tax authority out of a spreadsheet and into the system that already holds the underlying invoices.'},
-   ar:{t:'تقرير مبيعات شامل — الطلبات والإيرادات والضريبة المستحقة، مرتبطًا بالفاتورة الإلكترونية',
-       v:'ينقل المبلغ المستحق للضرائب من ملف إكسل إلى النظام الذي يحتفظ أصلًا بالفواتير نفسها.'}},
-  {m:'sal',p:5,e:'M',b:'next',s:'new',
-   en:{t:'Fold payments taken before contracting into the approved schedule',
-       v:'Reservation money collected before the sales request sits outside the plan, so the customer’s balance is wrong from day one.'},
-   ar:{t:'ضم الدفعات المحصّلة قبل التعاقد إلى الجدول المعتمد',
-       v:'مبالغ الحجز المحصّلة قبل طلب المبيعات تبقى خارج الخطة، فيظهر رصيد العميل خاطئًا من اليوم الأول.'}},
+  {m:'sal',p:5,e:'L',b:'now',s:'new',r:'rev',
+   en:{t:'Restructure instalments freely, mixing monthly, quarterly and annual, in a plan built and printed before posting',
+       v:'The payment plan is what closes the sale. A system that offers only one rhythm limits what the sales team is able to agree to. Building the plan on screen and printing it for the customer replaces the Excel sheet used today.'},
+   ar:{t:'إعادة هيكلة الدفعات بمرونة، بالجمع بين الشهري والربع سنوي والسنوي، في خطة تُعدّ وتُطبع قبل تمرير المعاملة',
+       v:'خطة السداد هي ما يُغلق البيعة، ونظام لا يتيح إلا إيقاعًا واحدًا يحدّ مما تستطيع إدارة المبيعات الاتفاق عليه. وإعداد الخطة على الشاشة وطباعتها للعميل يُغني عن ملف الإكسل المستخدم اليوم.'}},
+  {m:'sal',p:5,e:'M',b:'next',s:'new',r:'add',
+   en:{t:'Targets against actuals — sales, collections, construction and spend — by month or quarter, with project taxes and expenses in the project report',
+       v:'A dashboard can show what happened; only targets stored in the system can show whether it was good enough. Management enters each target once, and every report then measures against it.'},
+   ar:{t:'المستهدف مقابل الفعلي — المبيعات والتحصيل والإنشاءات والصرف — شهريًا أو ربع سنوي، مع إضافة الضرائب والمصاريف المحمّلة على المشروع إلى تقريره',
+       v:'لوحة المؤشرات تُظهر ما حدث؛ أما معرفة إن كان كافيًا فتحتاج مستهدفًا محفوظًا في النظام. تُدخل الإدارة كل مستهدف مرة واحدة، ثم يقيس كل تقرير عليه.'}},
+  {m:'sal',p:5,e:'M',b:'next',s:'partial',r:'rev',
+   en:{t:'Commission calculated on what is actually collected, keyed to the unit, payable to more than one party — with its tax',
+       v:'The core was delivered after the list was written: commission now follows collection instead of contract value, which stops a broker being paid for money the company has not received. Still open: the tax withheld from commissions and owed to the tax authority, linked to e-invoicing, with commission payments posting the agreed entries.'},
+   ar:{t:'احتساب العمولة على المحصّل فعليًا، مرتبطة برقم الوحدة، وقابلة للصرف لأكثر من طرف — مع ضريبتها',
+       v:'أُنجز الأساس بعد كتابة القائمة: صارت العمولة تتبع التحصيل لا قيمة العقد، ما يمنع صرف عمولة عن مال لم تستلمه الشركة. ويتبقى: الضريبة المستقطعة من العمولات والمستحق توريدها، وربطها بالفاتورة الإلكترونية، ودفعات عمولة تُرحِّل القيود المتفق عليها.'}},
+  {m:'sal',p:5,e:'L',b:'now',s:'new',r:'rev',
+   en:{t:'A payment plan that totals sale price plus maintenance deposit, with cheque details and one receipt for all of a unit’s cheques',
+       v:'The maintenance deposit is collected alongside the price but sits outside the plan, so the contracted total on screen is wrong. One receipt for all of a unit’s cheques matches how the customer actually hands them over.'},
+   ar:{t:'جدول سداد إجماليه سعر البيع مع وديعة الصيانة، بتفاصيل الشيكات وسند قبض واحد لكل شيكات الوحدة',
+       v:'وديعة الصيانة تُحصّل مع الثمن لكنها خارج الجدول، فيظهر إجمالي التعاقد على الشاشة خاطئًا. وسند قبض واحد لكل شيكات الوحدة يطابق طريقة تسليم العميل لها فعلًا.'}},
+  {m:'sal',p:5,e:'M',b:'next',s:'new',r:'rev',
+   en:{t:'Fold reservation deposits taken before contracting into the down payment',
+       v:'Reservation money collected before the sales request sits in the project’s reservation account, outside the plan, so the customer’s balance is wrong from day one.'},
+   ar:{t:'ضم مبالغ جدية الحجز المحصّلة قبل التعاقد إلى الدفعة المقدمة',
+       v:'مبالغ جدية الحجز المحصّلة قبل طلب المبيعات تبقى في حساب جدية الحجز للمشروع خارج الخطة، فيظهر رصيد العميل خاطئًا من اليوم الأول.'}},
 
   // ---------- certificates ----------
-  {m:'cer',p:6,e:'L',b:'now',s:'new',
+  {m:'cer',p:6,e:'L',b:'later',s:'new',
    en:{t:'Record every contractor and supplier contract against its project — value, paid, remaining',
        v:'Without the contract in the system, nobody can say whether a contractor has been overpaid until the project is finished and the money is gone.'},
    ar:{t:'تسجيل عقد كل مقاول ومورد على مشروعه — قيمة العقد والمدفوع والمتبقي',
        v:'بدون العقد داخل النظام لا يمكن معرفة تجاوز المدفوع لقيمة العقد إلا بعد انتهاء المشروع وخروج المال.'}},
-  {m:'cer',p:6,e:'M',b:'now',s:'new',
+  {m:'cer',p:6,e:'M',b:'later',s:'new',
    en:{t:'Cumulative progress percentages on certificates — this certificate against the total to date',
        v:'The client wrote the arithmetic out himself: 10,000 at 20% this certificate, 30% cumulative. That calculation decides what a contractor is owed this month.'},
    ar:{t:'نسب الإنجاز التراكمية في المستخلصات — نسبة هذا المستخلص مقابل الإجمالي حتى تاريخه',
        v:'كتب العميل الحسبة بخطه: ١٠٬٠٠٠ بنسبة ٢٠٪ لهذا المستخلص و٣٠٪ تراكمي. وهذه الحسبة هي التي تحدد مستحق المقاول هذا الشهر.'}},
-  {m:'cer',p:6,e:'L',b:'now',s:'partial',
+  {m:'cer',p:6,e:'L',b:'later',s:'partial',
    en:{t:'Budget against actual for every project, with expenses matched to committed amounts',
        v:'The one report that tells the owner whether a project is making money while it can still be corrected, rather than after handover.'},
    ar:{t:'الموازنة مقابل الفعلي لكل مشروع، بمطابقة المصروفات بالمبالغ المعتمدة',
        v:'التقرير الوحيد الذي يخبر المالك بربحية المشروع وهو ما زال قابلًا للتصحيح، لا بعد التسليم.'}},
-  {m:'cer',p:6,e:'M',b:'next',s:'new',
+  {m:'cer',p:6,e:'M',b:'later',s:'new',
    en:{t:'Link every certificate to that contractor’s contract value on the project',
        v:'Makes over-certification visible at the moment of entry instead of at final account.'},
    ar:{t:'ربط كل مستخلص بقيمة عقد المقاول على المشروع',
@@ -570,7 +708,209 @@ const ITEMS = [
    en:{t:'Convert quantities when the unit of measure changes',
        v:'Changing a unit without converting its quantity silently changes the value of the certificate.'},
    ar:{t:'تحويل الكميات عند تغيير وحدة القياس',
-       v:'تغيير الوحدة دون تحويل الكمية يغيّر قيمة المستخلص في صمت.'}}
+       v:'تغيير الوحدة دون تحويل الكمية يغيّر قيمة المستخلص في صمت.'}},
+
+  // ---------- raised in the chats, not on the October sheet (r:'chat') ----------
+  {m:'sal',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'next',s:'new',r:'chat',
+   en:{t:'Instalment amounts with piastres, matching the customer’s cheques exactly',
+       v:'Cheques are written for the exact instalment (for example 117,303). When the system accepts only rounded amounts, the schedule and the cheques never match and every receipt needs a manual adjustment.'},
+   ar:{t:'قبول مبالغ الأقساط بالكسور لتطابق شيكات العميل تمامًا',
+       v:'تُكتب الشيكات بقيمة القسط بالضبط (مثل ١١٧٬٣٠٣). وحين لا يقبل النظام إلا المبالغ المقرّبة لا يتطابق الجدول مع الشيكات أبدًا، ويحتاج كل سند قبض إلى تعديل يدوي.'}},
+  {m:'sal',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'later',s:'new',r:'chat',
+   en:{t:'Instalments numbered 1 to 40 regardless of down payments',
+       v:'Customers and the sales team refer to instalments by number. When down payments shift the numbering, the same instalment has two names.'},
+   ar:{t:'ترقيم الأقساط من ١ إلى ٤٠ بغضّ النظر عن الدفعات المقدمة',
+       v:'يشير العملاء وفريق المبيعات إلى الأقساط برقمها، وحين تُزيح الدفعات المقدمة الترقيم يصبح للقسط الواحد اسمان.'}},
+  {m:'sal',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'next',s:'new',r:'chat',
+   en:{t:'A discount on an instalment recorded as a discount, not as a payment and a refund',
+       v:'A handover at red brick instead of plaster was settled with an 85,500 reduction on the last instalment. Without a discount entry it has to be faked with cash in and cash out.'},
+   ar:{t:'تسجيل الخصم على قسط كخصم، لا كدفعة ثم استرداد',
+       v:'سُوّي تسليم وحدة على الطوب الأحمر بدل المحارة بخصم ٨٥٬٥٠٠ من القسط الأخير، وبدون قيد خصم يُسجَّل ذلك بصرف ثم قبض صوريين.'}},
+  {m:'sal',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'next',s:'new',r:'chat',
+   en:{t:'Customers imported in bulk from an Excel template',
+       v:'Each new project brings dozens of customers typed one by one, which is how duplicate customers with different spellings appear.'},
+   ar:{t:'استيراد العملاء دفعة واحدة من قالب إكسل',
+       v:'كل مشروع جديد يأتي بعشرات العملاء يُدخلون واحدًا واحدًا، ومن هنا يظهر العميل المكرر بأكثر من تهجئة.'}},
+  {m:'sal',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'later',s:'new',r:'chat',
+   en:{t:'Commissions paid before the system loaded as history',
+       v:'Without them, a unit can look unpaid to its broker and be paid twice.'},
+   ar:{t:'تحميل العمولات المصروفة قبل النظام كسجل سابق',
+       v:'بدونها قد تبدو الوحدة غير مسددة العمولة فيُصرف لها مرتين.'}},
+
+  {m:'vou',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'next',s:'new',r:'chat',
+   en:{t:'Several scheduled payments created from one invoice',
+       v:'Large supplier invoices are paid in agreed parts. Creating each part by hand loses the link back to the invoice.'},
+   ar:{t:'إنشاء عدة دفعات مجدولة من فاتورة واحدة',
+       v:'فواتير الموردين الكبيرة تُسدَّد على أجزاء متفق عليها، وإنشاء كل جزء يدويًا يفقد الربط بالفاتورة.'}},
+  {m:'vou',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'next',s:'new',r:'chat',
+   en:{t:'A warning when a payment reference has already been used',
+       v:'The cheapest protection against paying the same bill twice: the clerk is asked before saving, not told after the audit.'},
+   ar:{t:'تنبيه عند استخدام رقم مرجع دفعة سبق استخدامه',
+       v:'أرخص حماية من سداد الفاتورة نفسها مرتين: يُسأل الموظف قبل الحفظ، لا بعد المراجعة.'}},
+  {m:'vou',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'later',s:'new',r:'chat',
+   en:{t:'Bank-transfer reference in its own column',
+       v:'Today it is typed into the description, so a transfer cannot be found by its bank reference.'},
+   ar:{t:'رقم مرجع التحويل البنكي في خانة مستقلة',
+       v:'يُكتب اليوم داخل البيان، فلا يمكن البحث عن التحويل برقم مرجعه في البنك.'}},
+  {m:'vou',p:null,src:{en:'Chats',ar:'المحادثات'},e:'M',b:'next',s:'partial',r:'chat',
+   en:{t:'Future payments in and out, including those outside projects, with the net for any date range',
+       v:'Shows whether next month’s collections cover next month’s commitments, before the month starts.'},
+   ar:{t:'المدفوعات المستقبلية الواردة والصادرة، بما فيها غير المرتبطة بمشروع، مع الصافي لأي فترة',
+       v:'يُظهر هل تغطي تحصيلات الشهر القادم التزاماته قبل أن يبدأ الشهر.'}},
+  {m:'vou',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'later',s:'partial',r:'chat',
+   en:{t:'A credit limit opened with the amount already used',
+       v:'A limit created for an existing customer or supplier shows its true remaining balance from the first day.'},
+   ar:{t:'فتح حد الائتمان بالمبلغ المستخدم مسبقًا',
+       v:'الحد الذي يُفتح لعميل أو مورد قائم يُظهر المتبقي الحقيقي من اليوم الأول.'}},
+  {m:'vou',p:null,src:{en:'Chats',ar:'المحادثات'},e:'M',b:'later',s:'new',r:'chat',
+   en:{t:'Bank and cash accounts in other currencies (USD, SAR)',
+       v:'Foreign-currency balances are recorded today as if they were pounds, which misstates the company’s cash.'},
+   ar:{t:'حسابات بنوك ونقدية بعملات أخرى (دولار، ريال سعودي)',
+       v:'تُسجَّل الأرصدة بالعملات الأجنبية اليوم كأنها جنيهات، فتظهر نقدية الشركة على غير حقيقتها.'}},
+  {m:'vou',p:null,src:{en:'Chats',ar:'المحادثات'},e:'M',b:'next',s:'partial',r:'chat',
+   en:{t:'Multi-voucher: optional party, recurring and repeat, and a report by custody holder',
+       v:'Custody settlements are monthly and repetitive; a report per custody holder answers what each one spent without rebuilding it in Excel.'},
+   ar:{t:'السند المتعدد: طرف اختياري، وتكرار ودفعات متكررة، وتقرير لكل صاحب عهدة',
+       v:'تسويات العهد شهرية ومتكررة، وتقرير لكل صاحب عهدة يجيب عمّا صرفه دون إعادة بنائه في إكسل.'}},
+
+  {m:'jrn',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'next',s:'new',r:'chat',
+   en:{t:'Find an account by any word in its name',
+       v:'Accountants search by name, not by number; today they open the tree level by level.'},
+   ar:{t:'البحث عن الحساب بأي كلمة في اسمه',
+       v:'يبحث المحاسب بالاسم لا بالرقم، واليوم يفتح الشجرة مستوى بعد مستوى.'}},
+  {m:'jrn',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'later',s:'new',r:'chat',
+   en:{t:'Recurring journal entries, like recurring payments',
+       v:'Monthly accruals are retyped every month, with a fresh chance of error each time.'},
+   ar:{t:'قيود يومية متكررة مثل الدفعات المتكررة',
+       v:'تُعاد كتابة قيود الاستحقاق الشهرية كل شهر، مع فرصة جديدة للخطأ في كل مرة.'}},
+  {m:'jrn',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'later',s:'new',r:'chat',
+   en:{t:'Delete an account that was never used',
+       v:'Mistyped accounts stay in the tree for good and confuse every report. Accounts with entries stay protected.'},
+   ar:{t:'حذف حساب لم يُستخدم قط',
+       v:'الحسابات المنشأة بالخطأ تبقى في الشجرة وتربك كل تقرير، والحسابات التي عليها حركات تبقى محمية.'}},
+  {m:'jrn',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'next',s:'new',r:'chat',
+   en:{t:'Cancelled transactions labelled as cancelled on statements',
+       v:'A reversed amount with no label reads as a real movement, and the auditor asks about it.'},
+   ar:{t:'إظهار المعاملات الملغاة بوصفها ملغاة في كشوف الحساب',
+       v:'المبلغ المعكوس بلا وصف يُقرأ كحركة حقيقية، فيسأل عنه المراجع.'}},
+  {m:'jrn',p:null,src:{en:'Chats',ar:'المحادثات'},e:'M',b:'next',s:'partial',r:'chat',
+   en:{t:'One statement per party with cost centre, payment reference and a summary of all the party’s accounts',
+       v:'Partners and contractors hold several accounts; one statement with a summary sheet gives their whole position at once.'},
+   ar:{t:'كشف حساب واحد لكل طرف بمركز التكلفة ومرجع الدفعة وملخص لكل حساباته',
+       v:'للشركاء والمقاولين أكثر من حساب، وكشف واحد بورقة ملخص يُظهر موقفهم كاملًا دفعة واحدة.'}},
+
+  {m:'pay',p:null,src:{en:'Chats',ar:'المحادثات'},e:'M',b:'next',s:'new',r:'chat',
+   en:{t:'Payslips printed per employee and for everyone',
+       v:'Each employee gets a statement of how their salary was reached. Today a Word file is merged from Excel by hand every month.'},
+   ar:{t:'طباعة بيان الراتب لكل موظف وللجميع',
+       v:'يحصل كل موظف على بيان بكيفية احتساب راتبه، واليوم يُدمج ملف وورد من إكسل يدويًا كل شهر.'}},
+  {m:'pay',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'later',s:'new',r:'chat',
+   en:{t:'Keep the last payroll draft when the month’s invoices are cancelled',
+       v:'Re-running a cancelled month starts from nothing; a kept draft keeps the manual adjustments already made.'},
+   ar:{t:'الاحتفاظ بآخر مسودة رواتب عند إلغاء فواتير الشهر',
+       v:'إعادة تشغيل شهر ملغى تبدأ من الصفر، والمسودة المحفوظة تحفظ التعديلات اليدوية التي تمّت.'}},
+  {m:'pay',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'next',s:'new',r:'chat',
+   en:{t:'Payroll visible to HR and finance only',
+       v:'An accountant entering vouchers could open every salary. Salaries are the most sensitive data the company holds.'},
+   ar:{t:'إتاحة الرواتب لشؤون العاملين والمالية فقط',
+       v:'كان بإمكان محاسب يُدخل السندات فتح كل الرواتب، والرواتب أكثر بيانات الشركة حساسية.'}},
+  {m:'pay',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'next',s:'partial',r:'chat',
+   en:{t:'Absence and overtime totals, and an absence report by employee',
+       v:'HR checks the run against its own Excel; totals that match end that double work.'},
+   ar:{t:'إجماليات الغياب والإضافي، وتقرير غياب لكل موظف',
+       v:'تراجع شؤون العاملين المسيّر على ملف إكسل خاص بها، والإجماليات المتطابقة تنهي هذا العمل المزدوج.'}},
+
+  {m:'crm',p:null,src:{en:'Chats',ar:'المحادثات'},e:'M',b:'later',s:'new',r:'chat',
+   en:{t:'A won deal creates the reservation form',
+       v:'The customer’s details are typed twice today, once in CRM and once in sales.'},
+   ar:{t:'تحويل الصفقة المكتسبة إلى استمارة حجز تلقائيًا',
+       v:'تُكتب بيانات العميل اليوم مرتين، مرة في إدارة العملاء ومرة في المبيعات.'}},
+  {m:'crm',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'later',s:'new',r:'chat',
+   en:{t:'Project and campaign source on every lead',
+       v:'Shows which campaign and which agency actually brought the customers who bought, so marketing money follows results.'},
+   ar:{t:'المشروع ومصدر الحملة على كل عميل محتمل',
+       v:'يُظهر أي حملة وأي وكالة جلبت العملاء الذين اشتروا فعلًا، فيتبع إنفاق التسويق النتائج.'}},
+  {m:'crm',p:null,src:{en:'Chats',ar:'المحادثات'},e:'M',b:'later',s:'new',r:'chat',
+   en:{t:'Leads arriving directly from Facebook campaigns',
+       v:'Leads are copied from Facebook by hand today; each delay leaves a customer to cool off.'},
+   ar:{t:'وصول العملاء المحتملين مباشرة من حملات فيسبوك',
+       v:'يُنقل العملاء المحتملون من فيسبوك يدويًا اليوم، وكل تأخير يعني عميلًا فقد اهتمامه.'}},
+
+  // ---------- projects and partners ----------
+  {m:'prj',p:null,e:'M',b:'next',s:'partial',r:'add',
+   src:{en:'10 Oct',ar:'١٠ أكتوبر'},
+   en:{t:'Partner shares per project — each partner’s % (or shares, m², feddan) with a start date, used to split project revenue and expense',
+       v:'Partner shares live only in a spreadsheet today: Sawa 40/36/24, Ladris 60/40, Naseem split across 11 holders by m², the desert plots by feddan. Held on the project, the project report shows each partner’s part of revenue, cost and profit on the date it happened, and a share change no longer means rebuilding history in Excel.'},
+   ar:{t:'حصص الشركاء في كل مشروع — نسبة كل شريك (أو أسهمه أو أمتاره أو أفدنته) بتاريخ سريان، تُستخدم لتوزيع إيرادات المشروع ومصروفاته',
+       v:'حصص الشركاء محفوظة اليوم في ملف إكسل فقط: سوا ٤٠/٣٦/٢٤، ولادريس ٦٠/٤٠، والنسيم موزعة على ١١ شريكًا بالمتر المربع، وأراضي الصحراوي بالفدان. وحفظها على المشروع يجعل تقرير المشروع يُظهر نصيب كل شريك من الإيراد والتكلفة والربح في تاريخ حدوثه، فلا يعني تغيير الحصة إعادة بناء التاريخ في إكسل.'}},
+  {m:'prj',p:null,e:'L',b:'next',s:'partial',r:'add',
+   src:{en:'10 Oct',ar:'١٠ أكتوبر'},
+   en:{t:'A register of monthly obligations — payee, amount, due day, method and who it is charged to — paid through a monthly approved run, with payments made for a partner deducted from that partner’s share',
+       v:'About 30 recurring payments, 600,000–800,000 a month, are run from a spreadsheet today: investor returns, guards and maintenance, and partners’ car, chalet and bank-loan instalments. Only about 14,000 of that is a true company expense; the rest are distributions, financing and drawings, and each must post differently. In the system each line is approved before it is paid, an unpaid line carries over instead of living in a note, and each partner’s statement shows gross share, what was paid for them and the net — the figure the sheet is built to produce.'},
+   ar:{t:'سجل للالتزامات الشهرية — المستفيد والمبلغ ويوم الاستحقاق وطريقة الدفع والجهة المحمَّل عليها — يُصرف عبر تشغيل شهري معتمد، مع خصم ما يُدفع نيابةً عن الشريك من نصيبه',
+       v:'نحو ٣٠ دفعة متكررة، بين ٦٠٠ ألف و٨٠٠ ألف شهريًا، تُدار اليوم من ملف إكسل: عوائد المستثمرين، والغفر والصيانة، وأقساط سيارات الشركاء وشاليهاتهم وقروضهم البنكية. ولا يتجاوز المصروف الفعلي للشركة منها نحو ١٤ ألفًا، والباقي توزيعات وتمويل ومسحوبات، ولكل منها قيد مختلف. وفي النظام يُعتمد كل سطر قبل صرفه، ويُرحَّل السطر غير المدفوع بدل أن يبقى في ملاحظة، ويُظهر كشف كل شريك نصيبه الإجمالي وما دُفع عنه والصافي — وهو الرقم الذي بُني الملف لاستخراجه.'}},
+
+  {m:'cer',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'later',s:'new',r:'chat',
+   en:{t:'Certificates started from the project list: one button for supply, one for contracting',
+       v:'Site staff asked for one obvious way in; fewer screens means fewer certificates entered in the wrong place.'},
+   ar:{t:'بدء المستخلص من قائمة المشاريع: زر للتوريدات وزر للمقاولة',
+       v:'طلب فريق الموقع طريقًا واحدًا واضحًا للدخول، وشاشات أقل تعني مستخلصات أقل تُدخل في المكان الخطأ.'}},
+  {m:'cer',p:null,src:{en:'Chats',ar:'المحادثات'},e:'M',b:'later',s:'partial',r:'chat',
+   en:{t:'Separate lists of materials and of work items, maintained by users, with automatic item codes',
+       v:'Missing items are improvised under the wrong category today, which breaks every cost report by work item.'},
+   ar:{t:'قائمتان منفصلتان للمواد ولبنود الأعمال يحدّثهما المستخدم، مع أكواد أصناف تلقائية',
+       v:'الأصناف غير الموجودة تُرتجل اليوم تحت فئة خاطئة، فيختل كل تقرير تكلفة حسب بنود الأعمال.'}},
+  {m:'cer',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'later',s:'new',r:'chat',
+   en:{t:'Units of measure as a maintained list, each with its code and calculation',
+       v:'The site engineer prices by square metre, cubic metre, linear metre or piece; a shared list with formulas keeps quantity times price consistent.'},
+   ar:{t:'وحدات القياس كقائمة محدّثة لكل منها رمزها وطريقة حسابها',
+       v:'يسعّر مهندس الموقع بالمتر المربع والمكعب والطولي والقطعة، والقائمة المشتركة بمعادلاتها تُبقي الكمية في السعر متسقة.'}},
+  {m:'cer',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'later',s:'new',r:'chat',
+   en:{t:'Contractor opening balances per project, and the project on every contractor statement',
+       v:'A contractor working on two projects has one balance today; nobody can say what is owed on which site.'},
+   ar:{t:'أرصدة افتتاحية للمقاول لكل مشروع، وإظهار المشروع في كشف حسابه',
+       v:'المقاول العامل في مشروعين له اليوم رصيد واحد، ولا يمكن معرفة المستحق له عن كل موقع.'}},
+  {m:'cer',p:null,src:{en:'Chats',ar:'المحادثات'},e:'M',b:'later',s:'new',r:'chat',
+   en:{t:'Project cost reports by work item and classification, with ground, typical and roof floors',
+       v:'Cost per floor type is how a developer prices the next building; today it is rebuilt in Excel.'},
+   ar:{t:'تقارير تكلفة المشروع حسب بند الأعمال والتصنيف، مع الدور الأرضي والمتكرر والسطح',
+       v:'تكلفة كل نوع دور هي ما يسعّر به المطوّر المبنى التالي، واليوم يُعاد بناؤها في إكسل.'}},
+
+  {m:'sys',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'next',s:'new',r:'chat',
+   en:{t:'Choose which sheets print to PDF; PDF statements for every account',
+       v:'A twelve-sheet report printed whole wastes paper and hides the page that was needed.'},
+   ar:{t:'اختيار الأوراق التي تُطبع PDF، وكشوف PDF لكل حساب',
+       v:'طباعة تقرير من اثنتي عشرة ورقة كاملًا تهدر الورق وتُخفي الصفحة المطلوبة.'}},
+  {m:'sys',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'later',s:'new',r:'chat',
+   en:{t:'Power BI pages that print in full',
+       v:'Arrears are followed up on paper; long pages cut off in PDF drop the customers at the bottom.'},
+   ar:{t:'صفحات Power BI تُطبع كاملة',
+       v:'تُتابَع المتأخرات على الورق، والصفحات الطويلة المقطوعة في PDF تُسقط العملاء في أسفلها.'}},
+  {m:'sys',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'next',s:'new',r:'chat',
+   en:{t:'Contracted value split into price and maintenance, with the share of price received',
+       v:'The 600 million contracted mixes two different kinds of money; the maintenance deposit is not the company’s revenue.'},
+   ar:{t:'فصل قيمة التعاقد إلى ثمن الوحدة والصيانة، مع نسبة المحصّل من الثمن',
+       v:'الستمائة مليون المتعاقد عليها تخلط نوعين من المال، ووديعة الصيانة ليست إيرادًا للشركة.'}},
+  {m:'sys',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'later',s:'new',r:'chat',
+   en:{t:'Unit number instead of building in Power BI tables',
+       v:'Arrears are chased per flat, not per building.'},
+   ar:{t:'رقم الوحدة بدل رقم المبنى في جداول Power BI',
+       v:'تُتابَع المتأخرات لكل شقة لا لكل مبنى.'}},
+  {m:'sys',p:null,src:{en:'Chats',ar:'المحادثات'},e:'M',b:'next',s:'new',r:'chat',
+   en:{t:'Merge duplicate parties into one',
+       v:'The same customer under two spellings splits their balance in two; merging keeps one true statement.'},
+   ar:{t:'دمج الأطراف المكررة في طرف واحد',
+       v:'العميل نفسه بتهجئتين يُقسم رصيده إلى نصفين، والدمج يُبقي كشفًا واحدًا صحيحًا.'}},
+  {m:'sys',p:null,src:{en:'Chats',ar:'المحادثات'},e:'L',b:'later',s:'new',r:'chat',
+   en:{t:'Usable on a phone',
+       v:'Managers approve and check balances away from the office; today the screens need a laptop.'},
+   ar:{t:'إتاحة الاستخدام من الهاتف',
+       v:'يعتمد المديرون ويراجعون الأرصدة خارج المكتب، واليوم تحتاج الشاشات إلى حاسوب.'}},
+  {m:'sys',p:null,src:{en:'Chats',ar:'المحادثات'},e:'S',b:'next',s:'new',r:'chat',
+   en:{t:'Scheduled backups the company can restore from',
+       v:'The company’s entire financial record lives in one database; a scheduled, tested backup is the insurance on it.'},
+   ar:{t:'نسخ احتياطية مجدولة يمكن الاستعادة منها',
+       v:'السجل المالي الكامل للشركة في قاعدة بيانات واحدة، والنسخة الاحتياطية المجدولة والمجرَّبة هي التأمين عليها.'}}
 ];
 
 const BAND = {
@@ -581,6 +921,11 @@ const BAND = {
 const STATUS = {
   partial:{en:'Foundations in place', ar:'أساسه قائم'},
   built:  {en:'Delivered',            ar:'مُنجز'}
+};
+const REV = {
+  rev:{en:'Revised 6 Oct', ar:'عُدّل ٦ أكتوبر'},
+  add:{en:'Added in Oct',  ar:'أُضيف في أكتوبر'},
+  chat:{en:'From the chats', ar:'من المحادثات'}
 };
 const EFFORT = {
   S:{en:'Small',  ar:'صغير'},
@@ -598,7 +943,9 @@ function renderRegister(){
     const items = ITEMS.filter(i => i.m === mod.key);
     const rows = items.map((it, idx) => {
       const n = idx + 1;
-      const src = bi('p.' + it.p + ' &middot; ' + n, 'ص ' + toAr(it.p) + ' &middot; ' + toAr(n));
+      const src = it.src ? bi(it.src.en, it.src.ar)
+        : bi('p.' + it.p + ' &middot; ' + n, 'ص ' + toAr(it.p) + ' &middot; ' + toAr(n));
+      const revChip = it.r ? '<span class="chip ' + (it.r === 'chat' ? 'chat' : 'rev') + '">' + bi(REV[it.r].en, REV[it.r].ar) + '</span>' : '';
       const statusChip = it.s === 'new' ? '' :
         '<span class="chip ' + it.s + '">' + bi(STATUS[it.s].en, STATUS[it.s].ar) + '</span>';
       return '<div class="row">' +
@@ -607,7 +954,7 @@ function renderRegister(){
         '<div class="val">' + bi(it.en.v, it.ar.v) + '</div>' +
         '<div class="meta">' +
           '<span class="chip ' + it.b + '">' + bi(BAND[it.b].en, BAND[it.b].ar) + '</span>' +
-          statusChip +
+          statusChip + revChip +
           '<span class="effort"><b>' + it.e + '</b>' +
             bi(EFFORT[it.e].en, EFFORT[it.e].ar) + '</span>' +
         '</div>' +
@@ -617,6 +964,7 @@ function renderRegister(){
     return '<section class="module">' +
       '<div class="module-head"><h2>' + bi(mod.en, mod.ar) + '</h2>' +
       '<span class="count">' + bi(items.length + ' requests', toAr(items.length) + ' طلبًا') + '</span></div>' +
+      (mod.note ? '<p class="module-note">' + bi(mod.note.en, mod.note.ar) + '</p>' : '') +
       rows + '</section>';
   }).join('');
 }
@@ -625,12 +973,14 @@ function renderTallies(){
   const total   = ITEMS.length;
   const now     = ITEMS.filter(i => i.b === 'now').length;
   const started = ITEMS.filter(i => i.s !== 'new').length;
+  const revised = ITEMS.filter(i => i.r === 'rev' || i.r === 'add').length;
+  const fromChats = ITEMS.filter(i => i.r === 'chat').length;
   const el = document.getElementById('tallies');
   const tiles = [
-    [total,          'requests on the list',        'طلبًا في القائمة'],
-    [MODULES.length, 'areas of the business',       'مجالات في العمل'],
+    [total,          'requests in total',           'طلبًا إجمالًا'],
+    [revised,        'changed or added in October', 'بندًا عُدّل أو أُضيف في أكتوبر'],
     [now,            'to start with',               'بندًا يُبدأ به'],
-    [started,        'already part-built and cheaper','بندًا أساسه قائم وأقل كلفة']
+    [fromChats,      'raised in the chats, not on the list','بندًا من المحادثات خارج القائمة']
   ];
   el.innerHTML = tiles.map(([n, en, ar]) =>
     '<div class="tally"><div class="n">' + bi(String(n), toAr(n)) + '</div>' +
@@ -641,7 +991,8 @@ function renderStartList(){
   const host = document.getElementById('startlist');
   host.innerHTML = ITEMS.filter(i => i.b === 'now').map(it => {
     const mod = MODULES.find(m => m.key === it.m);
-    return '<li><span class="tag">' + bi('p.' + it.p, 'ص ' + toAr(it.p)) + '</span>' +
+    const tag = it.src ? bi(it.src.en, it.src.ar) : bi('p.' + it.p, 'ص ' + toAr(it.p));
+    return '<li><span class="tag">' + tag + '</span>' +
       '<span>' + bi(it.en.t, it.ar.t) + '</span></li>';
   }).join('');
 }

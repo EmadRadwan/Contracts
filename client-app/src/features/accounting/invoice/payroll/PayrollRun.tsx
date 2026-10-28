@@ -109,39 +109,54 @@ const PayrollRun: React.FC = () => {
     const [deleteInvoices, { isLoading: isDeleting }] = useDeletePayrollInvoicesMutation();
 
     const isInitialMount = useRef(true);
+    // `${companyId}|yyyy-MM` the screen was last loaded for; a day change inside the same month keeps the user's edits
+    const loadedMonthKey = useRef<string | null>(null);
+    // A saved draft for a different month than the selected date: offered to the user, never auto-loaded
+    const [otherMonthDraft, setOtherMonthDraft] = useState<{ invoiceDate: string; data: EmployeePayrollData[] } | null>(null);
 
-    // Check for draft in localStorage
-    // Load draft - but only if no data yet (runs first)
+    // Load the draft from localStorage only when it belongs to the selected month. A draft from another month
+    // (e.g. one left over from an earlier payroll run) used to switch the screen to that month on every visit.
     useEffect(() => {
+        const month = invoiceDate.substring(0, 7);
+        const monthKey = `${companyId}|${month}`;
+        if (loadedMonthKey.current === monthKey) return;
+        const monthChanged = loadedMonthKey.current !== null;
+        loadedMonthKey.current = monthKey;
+
         try {
             const savedDraft = localStorage.getItem(`payroll_draft_${companyId}`);
+            let draftData: EmployeePayrollData[] = [];
+            let savedDate: string | undefined;
+
             if (savedDraft) {
-                setHasDraft(true);
                 const parsed = JSON.parse(savedDraft);
-                const { invoiceDate: savedDate, data: savedData } = parsed || {};
+                const savedData = parsed?.data;
+                savedDate = parsed?.invoiceDate;
 
                 if (Array.isArray(savedData)) {
                     // Filter out any invalid items to load "maximum of the data"
-                    const validData = savedData.filter((emp: any) => emp && emp.employeeId);
+                    draftData = savedData.filter((emp: any) => emp && emp.employeeId);
 
-                    if (validData.length > 0) {
-                        if (savedDate === invoiceDate) {
-                            setPayrollData(validData);
-                            if (isInitialMount.current) {
-                                toast.success(getTranslatedLabel("accounting.payroll.run.draft-loaded", "Draft loaded successfully"));
-                            }
-                        } else if (isInitialMount.current && savedDate) {
-                            // On mount, if date differs, we still load it but update the date
-                            setInvoiceDate(savedDate);
-                            setPayrollData(validData);
-                            toast.info(getTranslatedLabel("accounting.payroll.run.draft-loaded-date-mismatch", `Draft from ${savedDate} loaded`));
-                        }
-                    }
-
-                    if (validData.length < savedData.length && isInitialMount.current) {
+                    if (draftData.length < savedData.length && isInitialMount.current) {
                         toast.warning(getTranslatedLabel("accounting.payroll.run.draft-partially-corrupted", "Draft was partially corrupted, some data might be missing"));
                     }
                 }
+            }
+
+            const hasValidDraft = draftData.length > 0 && !!savedDate;
+            setHasDraft(hasValidDraft);
+
+            if (hasValidDraft && savedDate!.substring(0, 7) === month) {
+                setOtherMonthDraft(null);
+                setPayrollData(draftData);
+                if (savedDate !== invoiceDate) setInvoiceDate(savedDate!);
+                if (isInitialMount.current) {
+                    toast.success(getTranslatedLabel("accounting.payroll.run.draft-loaded", "Draft loaded successfully"));
+                }
+            } else {
+                setOtherMonthDraft(hasValidDraft ? { invoiceDate: savedDate!, data: draftData } : null);
+                // Don't carry another month's absence / overtime / selection into this month
+                if (monthChanged) setPayrollData([]);
             }
         } catch (e) {
             console.error("Failed to parse payroll draft", e);
@@ -153,6 +168,27 @@ const PayrollRun: React.FC = () => {
         }
     }, [companyId, invoiceDate]);
 
+    const handleLoadOtherMonthDraft = () => {
+        if (!otherMonthDraft) return;
+        loadedMonthKey.current = `${companyId}|${otherMonthDraft.invoiceDate.substring(0, 7)}`;
+        setInvoiceDate(otherMonthDraft.invoiceDate);
+        setPayrollData(otherMonthDraft.data);
+        setOtherMonthDraft(null);
+        toast.success(getTranslatedLabel("accounting.payroll.run.draft-loaded", "Draft loaded successfully"));
+    };
+
+    const handleDeleteOtherMonthDraft = () => {
+        try {
+            localStorage.removeItem(`payroll_draft_${companyId}`);
+            setOtherMonthDraft(null);
+            setHasDraft(false);
+            toast.success(getTranslatedLabel("accounting.payroll.run.draft-deleted", "Draft deleted successfully"));
+        } catch (e) {
+            console.error("Failed to delete payroll draft", e);
+            toast.error(getTranslatedLabel("accounting.payroll.run.draft-delete-failed", "Failed to delete draft locally"));
+        }
+    };
+
     const handleSaveDraft = () => {
         try {
             localStorage.setItem(`payroll_draft_${companyId}`, JSON.stringify({
@@ -160,6 +196,7 @@ const PayrollRun: React.FC = () => {
                 data: payrollData
             }));
             setHasDraft(true);
+            setOtherMonthDraft(null);
             toast.info(getTranslatedLabel("accounting.payroll.run.draft-saved", "Draft saved locally"));
         } catch (e) {
             console.error("Failed to save payroll draft", e);
@@ -398,6 +435,14 @@ const PayrollRun: React.FC = () => {
             };
 
             await batchCreate(command).unwrap();
+            // The draft for this month is now posted; a draft kept for another month stays
+            if (!otherMonthDraft) {
+                try {
+                    localStorage.removeItem(`payroll_draft_${companyId}`);
+                } catch (e) {
+                    console.error("Failed to delete payroll draft", e);
+                }
+            }
             toast.success(getTranslatedLabel("accounting.payroll.run.success", "Payroll Run completed successfully"));
             navigate("/invoicesDashboard");
         } catch (error) {
@@ -486,6 +531,28 @@ const PayrollRun: React.FC = () => {
                 </Box>
             )}
 
+            {otherMonthDraft && (
+                <Box mb={3}>
+                    <Alert
+                        severity="info"
+                        action={
+                            <Box display="flex" gap={1}>
+                                <Button color="inherit" size="small" variant="outlined" onClick={handleLoadOtherMonthDraft}>
+                                    {getTranslatedLabel("accounting.payroll.run.load-draft", "Load Draft")}
+                                </Button>
+                                <Button color="error" size="small" variant="outlined" onClick={handleDeleteOtherMonthDraft}>
+                                    {getTranslatedLabel("accounting.payroll.run.delete-draft", "Delete Draft")}
+                                </Button>
+                            </Box>
+                        }
+                    >
+                        <AlertTitle>{getTranslatedLabel("accounting.payroll.run.other-month-draft", "Saved draft for another month")}</AlertTitle>
+                        {getTranslatedLabel("accounting.payroll.run.other-month-draft-warning", "A saved draft exists for a different month. Load it to continue it, or delete it if that month's payroll was already run.")}
+                        {" "}({otherMonthDraft.invoiceDate})
+                    </Alert>
+                </Box>
+            )}
+
             <Box mb={3} display="flex" alignItems="center" gap={2}>
                 <TextField
                     label={getTranslatedLabel("accounting.invoices.display.form.invoice-date", "Invoice Date")}
@@ -497,7 +564,7 @@ const PayrollRun: React.FC = () => {
                 <Button variant="outlined" onClick={handleSaveDraft}>
                     {getTranslatedLabel("accounting.payroll.run.save-draft", "Save as Draft")}
                 </Button>
-                {hasDraft && (
+                {hasDraft && !otherMonthDraft && (
                     <Button variant="outlined" color="error" onClick={handleDeleteDraft}>
                         {getTranslatedLabel("accounting.payroll.run.delete-draft", "Delete Draft")}
                     </Button>

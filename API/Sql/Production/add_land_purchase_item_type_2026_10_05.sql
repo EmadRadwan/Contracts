@@ -1,3 +1,4 @@
+-- NOTE 2026-10-06: client corrected the credit account to 250560 — see fix_party_193_ap_account_250560_2026_10_06.sql.
 -- Land purchase item type for purchase invoices + vendor GL mapping for Issa Al-Nomisi (party 193).
 -- Client request 2026-10-05: "اضافة بند شراء اراضى - مدين اراضى بغرض الاستثمار - دائن عيسى النميسى حساب رقم 125100"
 --
