@@ -316,6 +316,16 @@ const paymentsApi = createApi({
                 // Invalidate the payments list so the grid refreshes automatically
                 invalidatesTags: ['Payments'],
             }),
+            // A draft entered twice by mistake while linked to a certificate or sales request; the
+            // server allows it only when the linked document keeps another payment. Reason is audited.
+            deleteDuplicatePayment: builder.mutation<void, { paymentId: string; reason: string }>({
+                query: ({ paymentId, reason }) => ({
+                    url: `/payments/deleteDuplicate/${paymentId}`,
+                    method: 'POST',
+                    body: { reason },
+                }),
+                invalidatesTags: ['Payments'],
+            }),
             resetPayment: builder.mutation<{ message: string }, string>({
                 query: (paymentId) => ({
                     url: `/payments/reset/${paymentId}`,
@@ -375,6 +385,7 @@ export const {
     useLazyGetPaymentReportPdfQuery,
     useLazyFetchPaymentsByDateRangeQuery,
     useDeletePaymentMutation,
+    useDeleteDuplicatePaymentMutation,
     useDuplicatePaymentMutation, useResetPaymentMutation, useVoidPaymentMutation,
     useLazyFetchPaymentsForExportQuery,
 } = paymentsApi;

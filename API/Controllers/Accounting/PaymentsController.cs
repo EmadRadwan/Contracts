@@ -116,6 +116,29 @@ public class PaymentsController : BaseApiController
         }));
     }
 
+    public class DeleteDuplicatePaymentRequest
+    {
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Deletes a draft payment entered twice by mistake when it is linked to a project certificate or a
+    /// sales request (a plain DELETE refuses those). Only when the linked document stays covered.
+    /// </summary>
+    [HttpPost("deleteDuplicate/{paymentId}")]
+    public async Task<IActionResult> DeleteDuplicatePayment(string paymentId,
+        [FromBody] DeleteDuplicatePaymentRequest body, CancellationToken ct = default)
+    {
+        var result = await Mediator.Send(new DeleteDuplicatePayment.Command
+        {
+            PaymentId = paymentId,
+            Reason = body?.Reason ?? string.Empty
+        }, ct);
+
+        if (!result.IsSuccess) return BadRequest(new { error = result.Error });
+        return NoContent();
+    }
+
     [HttpPut("updatePayment", Name = "UpdatePayment")]
     public async Task<IActionResult> UpdatePayment(PaymentDto paymentDto)
     {

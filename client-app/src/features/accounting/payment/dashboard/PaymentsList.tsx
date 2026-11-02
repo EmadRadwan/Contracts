@@ -14,7 +14,7 @@ import {
 } from "@progress/kendo-react-grid";
 import { DataResult, State } from "@progress/kendo-data-query";
 import Button from "@mui/material/Button";
-import {Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, Paper} from "@mui/material";
+import {Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, Paper, TextField} from "@mui/material";
 import LoadingComponent from "../../../../app/layout/LoadingComponent";
 import AccountingMenu from "../../invoice/menu/AccountingMenu";
 import { handleDatesArray } from "../../../../app/util/utils";
@@ -26,7 +26,7 @@ import {setSelectedPayment} from "../../slice/accountingSharedUiSlice";
 import {useSelector} from "react-redux";
 import {PaymentsDailyExcel} from "../report/PaymentsDailyExcel";
 import {PaymentsDateRangeExcel} from "../report/PaymentsDateRangeExcel";
-import {useDeletePaymentMutation} from "../../../../app/store/apis";
+import {useDeleteDuplicatePaymentMutation, useDeletePaymentMutation} from "../../../../app/store/apis";
 import {Can} from "../../../account/Can";
 import {toast} from "react-toastify";
 import ModalContainer from "../../../../app/common/modals/ModalContainer";
@@ -67,10 +67,19 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
 
-  const [deletePayment, { isLoading: isDeleting }] = useDeletePaymentMutation();
+  // A draft linked to a certificate or sales request can only go as a "duplicate entered by mistake":
+  // reason required, and the server checks the linked document still has another payment.
+  const [deleteIsLinked, setDeleteIsLinked] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
 
-  const handleDeleteClick = (paymentId: string) => {
+  const [deletePlainPayment, { isLoading: isDeletingPlain }] = useDeletePaymentMutation();
+  const [deleteDuplicatePayment, { isLoading: isDeletingDuplicate }] = useDeleteDuplicatePaymentMutation();
+  const isDeleting = isDeletingPlain || isDeletingDuplicate;
+
+  const handleDeleteClick = (paymentId: string, linked: boolean) => {
     setPaymentToDelete(paymentId);
+    setDeleteIsLinked(linked);
+    setDeleteReason("");
     setDeleteDialogOpen(true);
   };
 
@@ -78,7 +87,11 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
     if (!paymentToDelete) return;
 
     try {
-      await deletePayment(paymentToDelete).unwrap();
+      if (deleteIsLinked) {
+        await deleteDuplicatePayment({ paymentId: paymentToDelete, reason: deleteReason.trim() }).unwrap();
+      } else {
+        await deletePlainPayment(paymentToDelete).unwrap();
+      }
 
       // Success toast
       toast.success(
@@ -102,6 +115,8 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
       // Always close the dialog, whether success or failure
       setDeleteDialogOpen(false);
       setPaymentToDelete(null);
+      setDeleteIsLinked(false);
+      setDeleteReason("");
     }
   };
 
@@ -297,7 +312,10 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
                   size="small"
                   color="error"
                   variant="outlined"
-                  onClick={() => handleDeleteClick(props.dataItem.paymentId)}
+                  onClick={() => handleDeleteClick(
+                      props.dataItem.paymentId,
+                      !!(props.dataItem.salesRequestId || props.dataItem.certificateNumber)
+                  )}
                   disabled={isDeleting || props.dataItem.statusId !== "PMNT_NOT_PAID"}
                   title={props.dataItem.statusId !== "PMNT_NOT_PAID"
                       ? getTranslatedLabel("accounting.payments.list.deleteOnlyDrafts", "تُحذف الدفعات غير المدفوعة فقط؛ الدفعات المرسلة/المستلمة تُلغى من شاشة الدفعة")
@@ -633,6 +651,26 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
                           "Are you sure you want to delete payment {0}? This action cannot be undone."
                       ).replace("{0}", paymentToDelete || "")}
                     </DialogContentText>
+                    {deleteIsLinked && (
+                        <>
+                          <DialogContentText sx={{ mt: 2, color: "warning.main" }}>
+                            {getTranslatedLabel(
+                                "accounting.payments.list.deleteDuplicateMessage",
+                                "This payment is linked to a certificate or sales request. It can be deleted only as a duplicate entered by mistake: the certificate must keep another payment, or, for a sales request, it must be a copy of an existing payment. Write the reason."
+                            )}
+                          </DialogContentText>
+                          <TextField
+                              autoFocus
+                              fullWidth
+                              multiline
+                              minRows={2}
+                              margin="dense"
+                              label={getTranslatedLabel("accounting.payments.list.deleteDuplicateReason", "Reason")}
+                              value={deleteReason}
+                              onChange={(e) => setDeleteReason(e.target.value)}
+                          />
+                        </>
+                    )}
                   </DialogContent>
                   <DialogActions>
                     <Button onClick={handleCancelDelete} disabled={isDeleting}>
@@ -642,8 +680,8 @@ export default function PaymentsList({ paymentType }: PaymentsListProps) {
                         onClick={handleConfirmDelete}
                         color="error"
                         variant="contained"
-                        disabled={isDeleting}
-                        autoFocus
+                        disabled={isDeleting || (deleteIsLinked && deleteReason.trim().length < 5)}
+                        autoFocus={!deleteIsLinked}
                     >
                       {isDeleting
                           ? getTranslatedLabel("global.deleting", "Deleting...")
